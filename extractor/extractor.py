@@ -29,6 +29,7 @@ class ExtractorConfig:
 @dataclass
 class ExtractionResult:
     formal: dict        # FormalRIS (formal language)
+    device_spec: object # DeviceSpec (backend-independent semantics)
     warnings: list[str]
     stats: dict
 
@@ -51,7 +52,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     if not funcs:
         warnings.append("No function definitions found in target file")
 
-    extractions, inlined_names = extract_with_inlining(
+    extractions, inlined_names, callback_entries = extract_with_inlining(
         funcs, macros, tu, source_lines, max_depth=config.max_inline_depth
     )
 
@@ -71,4 +72,11 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     from .formal import emitted_stats
     stats.update(emitted_stats(formal))
 
-    return ExtractionResult(formal=formal, warnings=warnings, stats=stats)
+    # infer backend-independent FunctionSpec / DeviceSpec (plan M3/M4)
+    from .spec_infer import infer_function_specs, infer_device_spec
+    fn_specs = infer_function_specs(formal, funcs, source_text, source,
+                                    callback_entries)
+    device_spec = infer_device_spec(formal, funcs, fn_specs, source, source_text)
+
+    return ExtractionResult(formal=formal, device_spec=device_spec,
+                            warnings=warnings, stats=stats)

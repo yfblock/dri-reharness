@@ -33,15 +33,13 @@ def call_graph(funcs: list[Func]) -> dict[str, set[str]]:
 
 
 def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
-                          max_depth: int = 3) -> tuple[dict, set]:
+                          max_depth: int = 3) -> tuple[dict, set, set]:
     """Final extraction with wrapper inlining enabled.
 
-    Returns (extractions, inlined_names) where `inlined_names` is the set of
-    pure-helper functions inlined into a caller (dedup'd — their ops already
-    live in the caller). Callback entries (function-pointer / ops-table
-    references, detected via AST DeclRefExpr) are kept as their own modules and
-    NOT inlined, so calls to them remain real calls (clean boundaries, no
-    duplication).
+    Returns (extractions, inlined_names, callback_entries) where:
+      - inlined_names: pure-helper functions inlined into a caller (dedup'd)
+      - callback_entries: functions referenced as function-pointer values
+        (kept as own modules, not inlined)
     """
     base = build_inline_cache(funcs, macros, tu, source_lines)
     names = {f.name for f in funcs}
@@ -66,4 +64,4 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
             inline_cache=inline_cache,
             max_depth=max_depth,
         )
-    return result, inlined_names
+    return result, inlined_names, callback_entries

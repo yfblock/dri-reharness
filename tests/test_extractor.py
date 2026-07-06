@@ -368,6 +368,121 @@ def test_cli_stats_match_emitted_ris():
     assert st["total_ops"] == reads + writes + rmw
 
 
+# ── Milestone 2-8: spec inference, dspec, bind, codegen, readiness ───
+
+def test_ftgpio_function_roles(ftgpio_formal):
+    """Callback-table field → role inference for ftgpio010 irq callbacks."""
+    from extractor.extractor import extract_ris
+    ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
+    roles = {f.name: f.role for f in ds.functions}
+    assert roles["ftgpio_gpio_ack_irq"] == "interrupt_ack"
+    assert roles["ftgpio_gpio_mask_irq"] == "interrupt_mask"
+    assert roles["ftgpio_gpio_unmask_irq"] == "interrupt_unmask"
+    assert roles["ftgpio_gpio_set_irq_type"] == "set_irq_type"
+    assert roles["ftgpio_gpio_probe"] == "probe"
+    # callback entries keep their table binding
+    ack = next(f for f in ds.functions if f.name == "ftgpio_gpio_ack_irq")
+    assert ack.is_callback_entry and ack.callback_table == "irq_chip"
+
+
+def test_ftgpio_device_spec(ftgpio_formal):
+    from extractor.extractor import extract_ris
+    ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
+    assert ds.cls == "gpio_controller"
+    reg_names = {r.name for r in ds.registers}
+    assert "GPIO_INT_EN" in reg_names and "GPIO_INT_CLR" in reg_names
+    # state has base; resources include mmio + irq
+    assert any(s.name == "base" for s in ds.state)
+    rtypes = {r.type for r in ds.resources}
+    assert "MmioResource" in rtypes and "IrqResource" in rtypes
+
+
+def test_dspec_display_roundtrip():
+    from extractor.extractor import extract_ris
+    ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
+    text = ds.display()
+    assert text.startswith("device gpio-ftgpio010 {")
+    assert "class gpio_controller" in text
+    assert "function ftgpio_gpio_ack_irq" in text
+    assert "role interrupt_ack" in text
+    assert "effect writes_register(GPIO_INT_CLR)" in text
+
+
+def test_bind_default_and_parse():
+    from extractor.extractor import extract_ris
+    from extractor.bind import default_bind, parse
+    ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
+    b = default_bind(ds, "linux")
+    assert b.prim("MmioWrite", "B4") == "writel"
+    assert b.type_of("MmioBase") == "void __iomem *"
+    # round-trip parse
+    text = b.display()
+    b2 = parse(text)
+    assert b2.backend == "linux"
+    assert b2.prim("MmioWrite", "B4") == "writel"
+    assert any(c.function == "ftgpio_gpio_ack_irq" for c in b2.callbacks)
+
+
+def test_baremetal_backend_compiles():
+    """Generated bare-metal C compiles freestanding."""
+    import tempfile, subprocess
+    from extractor.extractor import extract_ris
+    from extractor.bind import default_bind
+    from generator import baremetal
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    bind = default_bind(res.device_spec, "baremetal")
+    code = baremetal.generate(res.formal, res.device_spec, bind)
+    with tempfile.NamedTemporaryFile("w", suffix=".c", delete=False) as tf:
+        tf.write(code)
+        path = tf.name
+    r = subprocess.run(["cc", "-ffreestanding", "-c", "-o", "/dev/null", path],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, f"bare-metal compile failed:\n{r.stderr}"
+
+
+def test_harness_trace_matches_ris():
+    """Userspace harness trace shape (op kind + offset) matches extracted RIS."""
+    import tempfile, subprocess, re
+    from extractor.extractor import extract_ris
+    from extractor.bind import default_bind
+    from generator import harness
+    from extractor.formal import walk_leaf_ops, expr_to_c
+
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    bind = default_bind(res.device_spec, "harness")
+    code = harness.generate(res.formal, res.device_spec, bind)
+    with tempfile.NamedTemporaryFile("w", suffix=".c", delete=False) as tf:
+        tf.write(code); path = tf.name
+    binp = path + ".bin"
+    r = subprocess.run(["cc", "-o", binp, path], capture_output=True, text=True)
+    assert r.returncode == 0, f"harness compile failed:\n{r.stderr}"
+    out = subprocess.run([binp], capture_output=True, text=True).stdout
+
+    # parse trace lines: [trace N] (R|W) 0xOFF = 0xVAL
+    traced = re.findall(r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", out)
+    traced_ops = [(k, int(off, 16)) for k, off in traced]
+
+    # expected: probe's 4 writes (the entry the harness calls)
+    probe = next(m for m in res.formal["modules"] if m["name"] == "ftgpio_gpio_probe")
+    regs = {r["name"]: r["offset"] for r in res.formal["register_map"]}
+    expected = []
+    for o in walk_leaf_ops(probe["ops"]):
+        if "Write" in o:
+            reg = o["Write"]["addr"]["Symbolic"]["register"]
+            expected.append(("W", regs[reg]))
+    assert traced_ops == expected, f"trace {traced_ops} != expected {expected}"
+
+
+def test_readiness_score():
+    from extractor.extractor import extract_ris
+    from extractor.readiness import score
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    s = score(res.device_spec, res.formal, res.warnings)
+    assert s["ris_quality"] >= 0.9
+    assert s["backend_bare_metal_ready"] is True
+    assert 0 <= s["function_spec_quality"] <= 1.0
+
+
 # ── standalone runner (no pytest required) ───────────────────────────
 
 def _run_standalone():

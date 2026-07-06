@@ -114,6 +114,38 @@ def width_of(n: int) -> str:
     return {1: "B1", 2: "B2", 4: "B4", 8: "B8"}.get(n, "B4")
 
 
+# ── Expr → C source (inverse of parse_expr, for codegen) ─────────────
+
+_ALL_ONES = 0xFFFFFFFF
+
+
+def expr_to_c(e: dict | None) -> str:
+    if e is None:
+        return "0"
+    if "Const" in e:
+        return f"0x{e['Const']:x}"
+    if "Var" in e:
+        return e["Var"]
+    if "Top" in e:
+        return "0 /* TODO: unknown */"
+    if "BinOp" in e:
+        b = e["BinOp"]
+        op = b["op"]
+        left = expr_to_c(b["left"])
+        right = expr_to_c(b["right"])
+        # ~x is encoded as BitXor(x, 0xffffffff)
+        if op == "BitXor" and "Const" in b["right"] and b["right"]["Const"] == _ALL_ONES:
+            return f"(~{left})"
+        sym = BINOP_SYM.get(op, op)
+        return f"({left} {sym} {right})"
+    if "Bits" in e:
+        b = e["Bits"]
+        inner = expr_to_c(b["expr"])
+        width = b["hi"] - b["lo"] + 1
+        return f"(({inner}) >> {b['lo']}) & ((1u << {width}) - 1)"
+    return "0"
+
+
 # ── formal RegAddr ───────────────────────────────────────────────────
 
 def formal_addr(flat_addr: dict, reg_name: Optional[str]) -> dict:

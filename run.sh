@@ -15,12 +15,16 @@ Usage: $0 <command> [args]
 Commands:
   extract <src> [out.ris]   extract RIS spec language from a C driver
   show <ris>                print a .ris file
+  spec <src> [out.dspec]    infer & print backend-independent .dspec
+  gen <src> <backend> [out.c]   generate C (backend: harness|baremetal|linux)
+  metrics <src>             per-module extraction quality metrics
+  score <src>               generation readiness scoring
   pipeline <src> [out.ris]  extract (alias of extract)
   demo                      extract gpio-ftgpio010 → output/demo/gpio-ftgpio010.ris
   compare                   per-driver extraction stats over drivers/test/*.c
   test                      run the test suite
 
-No JSON is produced. The .ris spec language is the sole output format.
+No JSON is produced. The .ris spec language is the sole RIS output format.
 EOF
 }
 
@@ -31,10 +35,22 @@ cmd_extract() {
   $PY -m extractor extract -s "$src" -o "$out"
 }
 
-cmd_show() {
-  local ris="${1:?need .ris file}"
-  cat "$ris"
+cmd_show() { cat "${1:?need .ris file}"; }
+
+cmd_spec() {
+  local src="${1:?need src}" out="${2:-}"
+  if [ -n "$out" ]; then $PY -m extractor spec -s "$src" -o "$out"
+  else $PY -m extractor spec -s "$src"; fi
 }
+
+cmd_gen() {
+  local src="${1:?need src}" backend="${2:?need backend (harness|baremetal|linux)}" out="${3:-}"
+  if [ -n "$out" ]; then $PY -m extractor gen -s "$src" -b "$backend" -o "$out"
+  else $PY -m extractor gen -s "$src" -b "$backend"; fi
+}
+
+cmd_metrics() { $PY -m extractor metrics -s "${1:?need src}"; }
+cmd_score()   { $PY -m extractor score   -s "${1:?need src}"; }
 
 cmd_pipeline() {
   local src="${1:?need src}" out="${2:-output/ris.ris}"
@@ -45,18 +61,17 @@ cmd_demo() {
   cmd_extract drivers/test/gpio-ftgpio010.c output/demo/gpio-ftgpio010.ris
 }
 
-cmd_compare() {
-  $PY verification/compare.py
-}
-
-cmd_test() {
-  $PY tests/test_extractor.py
-}
+cmd_compare() { $PY verification/compare.py; }
+cmd_test()    { $PY tests/test_extractor.py; }
 
 banner
 case "${1:-help}" in
   extract)   shift; cmd_extract "$@";;
   show)      shift; cmd_show "$@";;
+  spec)      shift; cmd_spec "$@";;
+  gen)       shift; cmd_gen "$@";;
+  metrics)   shift; cmd_metrics "$@";;
+  score)     shift; cmd_score "$@";;
   pipeline)  shift; cmd_pipeline "$@";;
   demo)      shift; cmd_demo "$@";;
   compare)   shift; cmd_compare "$@";;
