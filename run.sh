@@ -17,6 +17,7 @@ Commands:
   show <ris>                print a .ris file
   spec <src> [out.dspec]    infer & print backend-independent .dspec
   gen <src> <backend> [out.c]   generate C (backend: harness|baremetal|linux)
+  driver <src> [outdir]         one-shot full pipeline (RIS+dspec+bind+backends+trace)
   metrics <src>             per-module extraction quality metrics
   score <src>               generation readiness scoring
   pipeline <src> [out.ris]  extract (alias of extract)
@@ -51,6 +52,7 @@ cmd_gen() {
 
 cmd_metrics() { $PY -m extractor metrics -s "${1:?need src}"; }
 cmd_score()   { $PY -m extractor score   -s "${1:?need src}"; }
+cmd_driver()  { $PY -m extractor driver  -s "${1:?need src}" ${2:+-o "$2"}; }
 
 cmd_pipeline() {
   local src="${1:?need src}" out="${2:-output/ris.ris}"
@@ -70,6 +72,7 @@ case "${1:-help}" in
   show)      shift; cmd_show "$@";;
   spec)      shift; cmd_spec "$@";;
   gen)       shift; cmd_gen "$@";;
+  driver)    shift; cmd_driver "$@";;
   metrics)   shift; cmd_metrics "$@";;
   score)     shift; cmd_score "$@";;
   pipeline)  shift; cmd_pipeline "$@";;

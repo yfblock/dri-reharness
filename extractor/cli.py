@@ -41,6 +41,11 @@ def main(argv: list[str] | None = None) -> int:
     sc = sub.add_parser("score", help="Generation readiness scoring")
     sc.add_argument("-s", "--source", required=True)
 
+    dr = sub.add_parser("driver", help="One-shot full pipeline: RIS + dspec + bind "
+                                       "+ all backends + trace verification")
+    dr.add_argument("-s", "--source", required=True)
+    dr.add_argument("-o", "--outdir", default=None, help="output dir (default output/<name>/)")
+
     args = p.parse_args(argv)
 
     if args.command == "extract":
@@ -88,7 +93,6 @@ def main(argv: list[str] | None = None) -> int:
         res = extract_ris(ExtractorConfig(source=args.source))
         text = res.device_spec.display()
         if args.output:
-            import os
             os.makedirs(os.path.dirname(os.path.abspath(args.output)) or ".", exist_ok=True)
             with open(args.output, "w", encoding="utf-8") as fh:
                 fh.write(text + "\n")
@@ -98,7 +102,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "gen":
-        import os
         from extractor.bind import default_bind
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
@@ -118,6 +121,85 @@ def main(argv: list[str] | None = None) -> int:
         from .readiness import score, format_score
         res = extract_ris(ExtractorConfig(source=args.source))
         print(format_score(score(res.device_spec, res.formal, res.warnings)))
+        return 0
+
+    if args.command == "driver":
+        import subprocess
+        from .metrics import driver_metrics, format_metrics
+        from .readiness import score as score_fn, format_score
+        from .bind import default_bind
+        from generator import harness as G_harness
+        from generator import baremetal as G_baremetal
+        from generator import linux as G_linux
+
+        res = extract_ris(ExtractorConfig(source=args.source))
+        name = res.formal["driver"]
+        outdir = args.outdir or f"output/{name}"
+        os.makedirs(outdir, exist_ok=True)
+
+        def _w(path: str, text: str):
+            with open(os.path.join(outdir, path), "w", encoding="utf-8") as fh:
+                fh.write(text.rstrip() + "\n")
+
+        print(f"🚀 driver pipeline: {name} → {outdir}/")
+        # 1. RIS
+        from .formalize import save_formal_text
+        save_formal_text(res.formal, os.path.join(outdir, f"{name}.ris"))
+        # 2. dspec
+        _w(f"{name}.dspec", res.device_spec.display())
+        # 3. metrics + score
+        _w(f"{name}.metrics.txt", format_metrics(
+            driver_metrics(res.formal, n_clang_diag=len(res.warnings))))
+        sc = score_fn(res.device_spec, res.formal, res.warnings)
+        _w(f"{name}.score.txt", format_score(sc))
+
+        # 4. three backends
+        gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
+        results = {}
+        for backend, gen in gens.items():
+            bind = default_bind(res.device_spec, backend)
+            _w(f"{name}.{backend}.bind", bind.display())
+            code = gen.generate(res.formal, res.device_spec, bind)
+            cpath = os.path.join(outdir, f"{name}.{backend}.c")
+            with open(cpath, "w", encoding="utf-8") as fh:
+                fh.write(code)
+            # compile check
+            if backend == "harness":
+                binp = cpath + ".bin"
+                r = subprocess.run(["cc", "-o", binp, cpath], capture_output=True, text=True)
+                if r.returncode == 0:
+                    out = subprocess.run([binp], capture_output=True, text=True).stdout
+                    _w(f"{name}.{backend}.trace.txt", out)
+                    n = out.count("[trace")
+                    results[backend] = f"compiled+ran ({n} ops traced)"
+                else:
+                    _w(f"{name}.{backend}.compile.log", r.stderr)
+                    results[backend] = f"compile FAILED (see .compile.log)"
+            elif backend == "baremetal":
+                r = subprocess.run(["cc", "-ffreestanding", "-c", "-o", "/dev/null", cpath],
+                                   capture_output=True, text=True)
+                results[backend] = "compiles freestanding" if r.returncode == 0 else "compile FAILED"
+            else:  # linux skeleton — syntax check only (not kernel-buildable here)
+                r = subprocess.run(["cc", "-fsyntax-only", "-D__KERNEL__",
+                                    "-Ireharness/linux/include", cpath],
+                                   capture_output=True, text=True)
+                # linux skeleton intentionally has unresolved kernel symbols; just report
+                results[backend] = "generated (kernel-build scaffold)"
+
+        # summary
+        print()
+        print("── artifacts ──")
+        for f in sorted(os.listdir(outdir)):
+            if f.endswith(".bin"):
+                continue
+            print(f"   {outdir}/{f}")
+        print()
+        print("── backend results ──")
+        for b, r in results.items():
+            print(f"   {b:<10} {r}")
+        print()
+        print("── readiness ──")
+        print(format_score(sc).replace("\n", "\n  "))
         return 0
 
     return 1

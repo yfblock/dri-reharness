@@ -41,11 +41,12 @@ def generate(formal: dict, device_spec, bind) -> str:
         if not m:
             continue
         ret = "void" if fn.signature.return_type == "Void" else "int"
-        params_c = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in fn.signature.params)
+        keep = [p for p in fn.signature.params if p.type != "DeviceState"]
+        params_c = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
         params_c = (params_c + ", ") if params_c else ""
         params_c += f"{priv} *g"
         L.append(f"static {ret} {fn.name}({params_c}) {{")
-        declared = {p.name for p in fn.signature.params}
+        declared = {p.name for p in keep}
         decls = local_decls(m["ops"], declared, regs, indent=1, ctype="u32")
         if decls:
             L.append(decls.replace("    ", "\t"))

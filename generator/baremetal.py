@@ -46,11 +46,12 @@ def generate(formal: dict, device_spec, bind) -> str:
         m = func_by_name.get(fn.ris_ref)
         if not m:
             continue
-        params_c = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in fn.signature.params)
+        keep = [p for p in fn.signature.params if p.type != "DeviceState"]
+        params_c = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
         params_c = (params_c + ", ") if params_c else ""
         params_c += f"{priv} *dev"
         L.append(f"void {fn.name}({params_c}) {{")
-        declared = {p.name for p in fn.signature.params}
+        declared = {p.name for p in keep}
         L.append(local_decls(m["ops"], declared, regs, indent=1))
         L.append(f"    uintptr_t base = {base};")
         L.append(ops_to_c(m["ops"], bind, "base", regs, indent=1))
