@@ -495,6 +495,33 @@ def test_facts_extraction():
     assert all(not k.startswith("_") for k in f.constants)  # no compiler builtins
 
 
+def test_facts_trimmed_no_kernel_noise():
+    """recom.md: .facts must not dump kernel-wide CONFIG_*/KASAN_*/TASK_* noise."""
+    from extractor.extractor import extract_ris
+    f = extract_ris(ExtractorConfig(source=FTGPIO)).facts
+    for k in f.constants:
+        assert not k.startswith(("CONFIG_", "KASAN_", "TASK_", "CPUINFO_",
+                                 "BUG_", "TAINT_", "pt_regs_")), f"noise kept: {k}"
+    # virtio facts: only VIRTIO_* register/status constants
+    fv = extract_ris(ExtractorConfig(source=VIRTIO)).facts
+    assert all(k.startswith("VIRTIO_") for k in fv.constants)
+    assert "VIRTIO_STATUS_RESET" in fv.constants
+
+
+def test_merged_bind_roundtrip():
+    """recom.md: per-backend .bind files merge into one multi-block file."""
+    from extractor.extractor import extract_ris
+    from extractor.spec import default_bind, display_bind_set, parse_bind_set
+    ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
+    binds = [default_bind(ds, b) for b in ("harness", "baremetal", "linux")]
+    text = display_bind_set(binds)
+    assert text.count("backend ") == 3
+    parsed = parse_bind_set(text)
+    assert len(parsed) == 3
+    assert {b.backend for b in parsed} == {"harness", "baremetal", "linux"}
+    assert parsed[0].prim("MmioWrite", "B4")  # round-trips primitives
+
+
 def test_llm_synthesis_ready_gate():
     from extractor.extractor import extract_ris
     from extractor.metrics import score

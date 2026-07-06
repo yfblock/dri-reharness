@@ -119,7 +119,8 @@ def format_metrics(metrics: dict) -> str:
 # ═══════════════════════════════════════════════════════════════════
 # Generation readiness scoring (consolidated from readiness.py per plan)
 # ═══════════════════════════════════════════════════════════════════
-def score(device_spec, formal: dict, warnings: list[str], facts=None) -> dict:
+def score(device_spec, formal: dict, warnings: list[str], facts=None,
+          gen_results: dict | None = None) -> dict:
     met = driver_metrics(formal, n_clang_diag=len(warnings))
     total_ops = met["total_ops"] or 1
     addr_total = met["symbolic"] + met["fixed"] + met["computed"] or 1
@@ -174,6 +175,28 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None) -> dict:
     baremetal_ready = (met["computed"] == 0 and ris_quality >= 0.7)
     linux_ready = (baremetal_ready and function_spec_quality >= 0.6
                    and not unbound_callbacks and len(device_spec.registers) > 0)
+    harness_ready = baremetal_ready  # trace check applied below if gen_results present
+
+    # Tighten readiness with actual generated-code quality (recom.md §"Make
+    # Readiness Scoring Stricter"): a backend is ready only if its generated C
+    # compiles, has no TODOs, and (harness) passes RIS trace equivalence.
+    if gen_results:
+        def _gr(backend):
+            return gen_results.get(backend, {})
+        h = _gr("harness")
+        if h:
+            harness_ready = bool(h.get("compiled") and h.get("trace_passed")
+                                 and not h.get("has_todo"))
+        bm = _gr("baremetal")
+        if bm:
+            baremetal_ready = bool(bm.get("compiled") and not bm.get("has_todo"))
+        lx = _gr("linux")
+        if lx:
+            linux_ready = bool(baremetal_ready and function_spec_quality >= 0.6
+                               and not lx.get("has_todo")
+                               and lx.get("syntax_ok", False)
+                               and len(device_spec.registers) > 0)
+
     # LLM synthesis gate (plan M9): artifacts sufficient to ask an LLM to
     # synthesize/repair a candidate under verification feedback. Distinct from
     # deterministic Linux readiness — does not require Linux gen to be complete.
@@ -187,6 +210,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None) -> dict:
         "function_spec_quality": function_spec_quality,
         "device_spec_quality": device_spec_quality,
         "facts_quality": facts_quality,
+        "backend_harness_ready": harness_ready,
         "backend_bare_metal_ready": baremetal_ready,
         "backend_linux_ready": linux_ready,
         "llm_synthesis_ready": llm_synthesis_ready,
@@ -199,6 +223,7 @@ def format_score(s: dict) -> str:
     for k in ("ris_quality", "function_spec_quality", "device_spec_quality",
               "facts_quality"):
         lines.append(f"  {k}: {s[k]}")
+    lines.append(f"  backend_harness_ready: {s['backend_harness_ready']}")
     lines.append(f"  backend_bare_metal_ready: {s['backend_bare_metal_ready']}")
     lines.append(f"  backend_linux_ready: {s['backend_linux_ready']}")
     lines.append(f"  llm_synthesis_ready: {s['llm_synthesis_ready']}")

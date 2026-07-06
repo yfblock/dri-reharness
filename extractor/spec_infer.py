@@ -402,20 +402,53 @@ def _target_structs(tu, target_file: str) -> list[StructDef]:
 
 
 def infer_facts(source_text: str, source_path: str, tu, macros,
-                callback_bindings: dict, register_names: set[str]) -> FactsSpec:
+                callback_bindings: dict, register_names: set[str],
+                formal: dict | None = None, driver_name: str = "") -> FactsSpec:
     includes = _INCLUDE_RE.findall(source_text)
     structs = _target_structs(tu, source_path)
 
-    # constants = int-valued macros that are NOT registers (flags/status codes/etc.)
-    # exclude compiler builtins (names starting with _) and very long generic names
+    # driver prefix (e.g. GPIO, VIRTIO, AHCI) from register names + driver name
+    prefixes: set[str] = set()
+    for rn in register_names:
+        pfx = rn.split("_")[0]
+        if pfx:
+            prefixes.add(pfx.upper())
+    if driver_name:
+        prefixes.add(re.split(r"[^A-Za-z0-9]", driver_name)[0].upper())
+
+    # names referenced by RIS / callbacks / resources / errors / helpers — these
+    # constants are reconstruction-relevant even without a driver prefix
+    referenced: set[str] = set(register_names)
+    if formal is not None:
+        from .formal import walk_all_ops
+        for m in formal["modules"]:
+            for op in walk_all_ops(m["ops"]):
+                if "Cond" in op:
+                    referenced |= _vars_in_expr(op["Cond"]["guard"])
+                elif "Write" in op:
+                    referenced |= _vars_in_expr(op["Write"].get("value"))
+                elif "ReadModifyWrite" in op:
+                    referenced |= _vars_in_expr(op["ReadModifyWrite"].get("transform"))
+    referenced |= set(callback_bindings.keys())
+    for h in _HELPER_CALLS:
+        if h in source_text:
+            referenced.add(h)
+
+    # constants = int macros that are reconstruction-relevant.
+    # Drop compiler builtins, kernel-wide config/arch noise, and anything not
+    # driver-prefixed or referenced (recom.md §"Trim .facts").
     constants: dict = {}
     for name in macros.names():
         if name.startswith("_") or name in register_names:
             continue
+        if _is_noise_constant(name):
+            continue
         off = macros.offset(name)
         if off is None:
             continue
-        constants[name] = off
+        pfx = name.split("_")[0].upper()
+        if name in referenced or pfx in prefixes:
+            constants[name] = off
 
     # callbacks: {table.field: fn}
     callbacks: dict = {}
@@ -447,3 +480,39 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
         error_paths=[f"return {e}" for e in error_paths],
         helper_calls=helper_calls,
     )
+
+
+# kernel-wide / config / arch constants that are NOT reconstruction-relevant
+_NOISE_PREFIXES = (
+    "CONFIG_", "KASAN_", "TASK_", "pt_regs_", "CPUINFO_", "BUG_", "TAINT_",
+    "BITS_PER_", "PAGE_", "VM_", "SLAB_", "KMALLOC_", "NR_", "MAX_", "MIN_",
+    "ULONG", "LONG", "UINT", "INT", "CHAR", "SIZE_", "ALIGNOF", "offsetof",
+    "container_of", "READ", "WRITE", "unix", "linux",
+)
+
+
+def _is_noise_constant(name: str) -> bool:
+    up = name
+    for p in _NOISE_PREFIXES:
+        if up.startswith(p):
+            return True
+    # all-lowercase or single-token generic (unix, linux, etc.) — drop
+    if name.islower() and len(name) <= 8:
+        return True
+    return False
+
+
+def _vars_in_expr(e) -> set[str]:
+    if e is None:
+        return set()
+    out: set[str] = set()
+    if "Var" in e:
+        v = e["Var"]
+        if re.fullmatch(r"[A-Za-z_]\w*", v):
+            out.add(v)
+    if "BinOp" in e:
+        out |= _vars_in_expr(e["BinOp"].get("left"))
+        out |= _vars_in_expr(e["BinOp"].get("right"))
+    if "Bits" in e:
+        out |= _vars_in_expr(e["Bits"].get("expr"))
+    return out

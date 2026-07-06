@@ -1,0 +1,104 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{chou2001empirical,swift2003improving}
+\citation{ball2006thorough,ryzhyk2009dingo,kadav2009tolerating}
+\citation{witkowski2007automated}
+\citation{cadar2008klee}
+\citation{emrath2021c2rust}
+\citation{roelofs2023large}
+\@writefile{toc}{\contentsline {section}{Abstract}{1}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{driverharness}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Motivation}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}The Limits of Regex-Based Extraction}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Design Goals}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}System Overview}{2}{section.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textsc  {reharness}pipeline. C source is parsed via libclang to extract formal RIS; semantic inference enriches RIS into backend-independent specs; code generation targets multiple backends; a dashed LLM repair loop patches candidates under verification feedback.}}{3}{figure.caption.4}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:arch}{{1}{3}{\reharness pipeline. C source is parsed via libclang to extract formal RIS; semantic inference enriches RIS into backend-independent specs; code generation targets multiple backends; a dashed LLM repair loop patches candidates under verification feedback}{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Formal RIS Language}{3}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Grammar}{3}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Operations}{3}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Expression Algebra}{3}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Example}{3}{subsection.4.4}\protected@file@percent }
+\newlabel{lst:ris_example}{{1}{3}{Extracted \rislang specification for gpio-ftgpio010 (7 modules, 22 ops)}{lstlisting.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}{\ignorespaces Extracted RISspecification for gpio-ftgpio010 (7 modules, 22 ops)}}{3}{lstlisting.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}RIS Extraction via AST Analysis}{4}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Translation Unit Parsing}{4}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Function Identification and Callback Detection}{4}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Flow-Sensitive Dataflow and Taint Tracking}{4}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Wrapper Function Inlining}{5}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Intent Annotation}{5}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Semantic Inference}{5}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Function Specification (FunctionSpec)}{5}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Device Specification (DeviceSpec)}{5}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Backend Binding (.bind)}{5}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Source Facts (.facts)}{5}{subsection.6.4}\protected@file@percent }
+\citation{crustbench}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Code Generation}{6}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Userspace Harness Backend}{6}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Bare-Metal Backend}{6}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Linux Backend}{6}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}LLM-Assisted Synthesis Loop}{6}{subsection.7.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Extraction statistics across 17 test drivers (aggregate across all modules).}}{6}{table.caption.5}\protected@file@percent }
+\newlabel{tab:extraction}{{1}{6}{Extraction statistics across 17 test drivers (aggregate across all modules)}{table.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Evaluation}{6}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Experimental Setup}{6}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Extraction Coverage (RQ1, RQ2)}{6}{subsection.8.2}\protected@file@percent }
+\citation{emrath2021c2rust}
+\citation{andinator2026}
+\citation{ball2006thorough}
+\citation{ryzhyk2009dingo}
+\citation{ryzhyk2009termite}
+\citation{cadar2008klee}
+\citation{chipounov2011s2e}
+\citation{ryzhyk2014termite2}
+\citation{roelofs2023large}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Generation readiness scores per driver.}}{7}{table.caption.6}\protected@file@percent }
+\newlabel{tab:readiness}{{2}{7}{Generation readiness scores per driver}{table.caption.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Comparison of \textsc  {reharness}vs. regex baseline on four key patterns.}}{7}{table.caption.7}\protected@file@percent }
+\newlabel{tab:comparison}{{3}{7}{Comparison of \reharness vs. regex baseline on four key patterns}{table.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Generation Readiness (RQ3)}{7}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Comparison to Regex Baseline (RQ4)}{7}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Case Study: gpio-ftgpio010}{7}{subsection.8.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Related Work}{7}{section.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Driver Analysis and Extraction}{7}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Formal Specification and Code Generation}{7}{subsection.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}Intermediate Representations for Drivers}{7}{subsection.9.3}\protected@file@percent }
+\citation{haiku}
+\citation{baumann2009multikernel}
+\bibstyle{ACM-Reference-Format}
+\bibcite{chou2001empirical}{{1}{}{{}}{{}}}
+\bibcite{swift2003improving}{{2}{}{{}}{{}}}
+\bibcite{ball2006thorough}{{3}{}{{}}{{}}}
+\bibcite{ryzhyk2009dingo}{{4}{}{{}}{{}}}
+\bibcite{kadav2009tolerating}{{5}{}{{}}{{}}}
+\bibcite{witkowski2007automated}{{6}{}{{}}{{}}}
+\bibcite{cadar2008klee}{{7}{}{{}}{{}}}
+\bibcite{emrath2021c2rust}{{8}{}{{}}{{}}}
+\bibcite{roelofs2023large}{{9}{}{{}}{{}}}
+\bibcite{driverharness}{{10}{}{{}}{{}}}
+\bibcite{crustbench}{{11}{}{{}}{{}}}
+\bibcite{ryzhyk2009termite}{{12}{}{{}}{{}}}
+\bibcite{ryzhyk2014termite2}{{13}{}{{}}{{}}}
+\bibcite{chipounov2011s2e}{{14}{}{{}}{{}}}
+\bibcite{baumann2009multikernel}{{15}{}{{}}{{}}}
+\bibcite{haiku}{{16}{}{{}}{{}}}
+\bibcite{andinator2026}{{17}{}{{}}{{}}}
+\newlabel{tocindent-1}{0pt}
+\newlabel{tocindent0}{0pt}
+\newlabel{tocindent1}{8.37pt}
+\newlabel{tocindent2}{14.53499pt}
+\newlabel{tocindent3}{0pt}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\@writefile{toc}{\contentsline {section}{\numberline {10}Discussion and Limitations}{8}{section.10}\protected@file@percent }
+\newlabel{sec:discussion}{{10}{8}{Discussion and Limitations}{section.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Current Limitations}{8}{subsection.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Future Work}{8}{subsection.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11}Conclusion}{8}{section.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Acknowledgments}{8}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{8}{section*.11}\protected@file@percent }
+\newlabel{TotPages}{{8}{8}{}{page.8}{}}
+\gdef \@abspage@last{8}

@@ -459,3 +459,21 @@ class FactsSpec:
                 for c in calls:
                     lines.append(f"    - \"{c}\"")
         return "\n".join(lines)
+
+
+# ── multi-backend .bind (merged file, recom.md §"Merge Backend Bind Files") ──
+
+def display_bind_set(binds: list[BindSpec]) -> str:
+    """Emit multiple backend blocks into one .bind file."""
+    return "\n\n".join(b.display() for b in binds)
+
+
+def parse_bind_set(text: str) -> list[BindSpec]:
+    """Parse a merged .bind file containing multiple `backend ...` blocks."""
+    blocks = re.split(r"\n(?=backend\s+\w+\s+for\s+device\s+\w+)", text)
+    out = []
+    for b in blocks:
+        b = b.strip()
+        if b.startswith("backend "):
+            out.append(parse(b))
+    return out

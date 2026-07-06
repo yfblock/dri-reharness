@@ -139,10 +139,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "driver":
-        import subprocess
+        import subprocess, tempfile
         from .metrics import driver_metrics, format_metrics
         from .metrics import score as score_fn, format_score
-        from .spec import default_bind
+        from .spec import default_bind, display_bind_set
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
@@ -150,66 +150,101 @@ def main(argv: list[str] | None = None) -> int:
         res = extract_ris(ExtractorConfig(source=args.source))
         name = res.formal["driver"]
         outdir = args.outdir or f"output/{name}"
-        os.makedirs(outdir, exist_ok=True)
+        gen_dir = os.path.join(outdir, "generated")
+        ver_dir = os.path.join(outdir, "verify")
+        tmp_dir = os.path.join(ver_dir, "tmp")
+        for d in (outdir, gen_dir, ver_dir, tmp_dir):
+            os.makedirs(d, exist_ok=True)
 
-        def _w(path: str, text: str):
-            with open(os.path.join(outdir, path), "w", encoding="utf-8") as fh:
+        def _w(base: str, path: str, text: str):
+            with open(os.path.join(base, path), "w", encoding="utf-8") as fh:
                 fh.write(text.rstrip() + "\n")
 
         print(f"🚀 driver pipeline: {name} → {outdir}/")
-        # 1. RIS
-        from .formalize import save_formal_text
+        # ── core reconstruction inputs (recom.md) ──
         save_formal_text(res.formal, os.path.join(outdir, f"{name}.ris"))
-        # 2. dspec
-        _w(f"{name}.dspec", res.device_spec.display())
-        # 2b. facts
-        _w(f"{name}.facts", res.facts.display())
-        # 3. metrics + score
-        _w(f"{name}.metrics.txt", format_metrics(
-            driver_metrics(res.formal, n_clang_diag=len(res.warnings))))
-        sc = score_fn(res.device_spec, res.formal, res.warnings, res.facts)
-        _w(f"{name}.score.txt", format_score(sc))
+        _w(outdir, f"{name}.dspec", res.device_spec.display())
+        _w(outdir, f"{name}.facts", res.facts.display())
 
-        # 4. three backends
+        # ── generated C + verification (derived) ──
         gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
-        results = {}
+        binds, results, gen_results = [], {}, {}
         for backend, gen in gens.items():
             bind = default_bind(res.device_spec, backend)
-            _w(f"{name}.{backend}.bind", bind.display())
+            binds.append(bind)
             code = gen.generate(res.formal, res.device_spec, bind)
-            cpath = os.path.join(outdir, f"{name}.{backend}.c")
+            cpath = os.path.join(gen_dir, f"{backend}.c")
             with open(cpath, "w", encoding="utf-8") as fh:
                 fh.write(code)
-            # compile check
+            has_todo = "TODO" in code
+            gr: dict = {"has_todo": has_todo}
+
             if backend == "harness":
-                binp = cpath + ".bin"
+                binp = os.path.join(tmp_dir, "harness.bin")
                 r = subprocess.run(["cc", "-o", binp, cpath], capture_output=True, text=True)
+                gr["compiled"] = r.returncode == 0
                 if r.returncode == 0:
                     out = subprocess.run([binp], capture_output=True, text=True).stdout
-                    _w(f"{name}.{backend}.trace.txt", out)
-                    n = out.count("[trace")
-                    results[backend] = f"compiled+ran ({n} ops traced)"
+                    _w(ver_dir, "harness.trace.txt", out)
+                    # trace equivalence vs RIS entry (probe) module
+                    from extractor.formal import walk_leaf_ops
+                    regs = {r2["name"]: r2["offset"] for r2 in res.formal["register_map"]}
+                    probe_fn = next((fn for fn in res.device_spec.functions if fn.role == "probe"), None)
+                    entry = probe_fn.ris_ref if probe_fn else res.formal["modules"][0]["name"]
+                    mod = next((m for m in res.formal["modules"] if m["name"] == entry), None)
+                    expected = []
+                    if mod:
+                        for o in walk_leaf_ops(mod["ops"]):
+                            if "Write" in o:
+                                expected.append(("W", regs.get(o["Write"]["addr"]["Symbolic"]["register"], 0)))
+                            elif "Read" in o:
+                                expected.append(("R", regs.get(o["Read"]["addr"]["Symbolic"]["register"], 0)))
+                    import re as _re
+                    traced = [(k, int(off, 16)) for k, off in
+                              _re.findall(r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", out)]
+                    gr["trace_passed"] = traced == expected
+                    results[backend] = f"compiled+ran ({out.count('[trace')} ops, trace {'✓' if gr['trace_passed'] else '✗'})"
                 else:
-                    _w(f"{name}.{backend}.compile.log", r.stderr)
-                    results[backend] = f"compile FAILED (see .compile.log)"
+                    _w(ver_dir, "harness.compile.log", r.stderr)
+                    results[backend] = "compile FAILED (see verify/harness.compile.log)"
             elif backend == "baremetal":
-                r = subprocess.run(["cc", "-ffreestanding", "-c", "-o", "/dev/null", cpath],
+                r = subprocess.run(["cc", "-ffreestanding", "-Wall", "-c", "-o", "/dev/null", cpath],
                                    capture_output=True, text=True)
+                gr["compiled"] = r.returncode == 0
+                if r.returncode != 0:
+                    _w(ver_dir, "baremetal.compile.log", r.stderr)
                 results[backend] = "compiles freestanding" if r.returncode == 0 else "compile FAILED"
-            else:  # linux skeleton — syntax check only (not kernel-buildable here)
+            else:  # linux — syntax check (not a real kernel build)
                 r = subprocess.run(["cc", "-fsyntax-only", "-D__KERNEL__",
                                     "-Ireharness/linux/include", cpath],
                                    capture_output=True, text=True)
-                # linux skeleton intentionally has unresolved kernel symbols; just report
+                gr["syntax_ok"] = r.returncode == 0
                 results[backend] = "generated (kernel-build scaffold)"
+            gen_results[backend] = gr
 
-        # summary
+        # merged .bind (recom.md §"Merge Backend Bind Files")
+        _w(outdir, f"{name}.bind", display_bind_set(binds))
+
+        # verification reports
+        _w(ver_dir, "metrics.txt", format_metrics(
+            driver_metrics(res.formal, n_clang_diag=len(res.warnings))))
+        sc = score_fn(res.device_spec, res.formal, res.warnings, res.facts,
+                      gen_results=gen_results)
+        _w(ver_dir, "score.txt", format_score(sc))
+
+        # ── summary ──
         print()
-        print("── artifacts ──")
-        for f in sorted(os.listdir(outdir)):
-            if f.endswith(".bin"):
-                continue
+        print("── core reconstruction inputs ──")
+        for f in (f"{name}.ris", f"{name}.dspec", f"{name}.bind", f"{name}.facts"):
             print(f"   {outdir}/{f}")
+        print("── generated/ ──")
+        for f in sorted(os.listdir(gen_dir)):
+            print(f"   {gen_dir}/{f}")
+        print("── verify/ ──")
+        for f in sorted(os.listdir(ver_dir)):
+            if f == "tmp":
+                continue
+            print(f"   {ver_dir}/{f}")
         print()
         print("── backend results ──")
         for b, r in results.items():

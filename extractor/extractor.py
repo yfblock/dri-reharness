@@ -79,7 +79,8 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
                                                  callback_entries)
     device_spec = infer_device_spec(formal, funcs, fn_specs, source, source_text)
     register_names = {r["name"] for r in formal.get("register_map", [])}
-    facts = infer_facts(source_text, source, tu, macros, cb_bindings, register_names)
+    facts = infer_facts(source_text, source, tu, macros, cb_bindings,
+                        register_names, formal=formal, driver_name=driver_name)
 
     return ExtractionResult(formal=formal, device_spec=device_spec, facts=facts,
                             warnings=warnings, stats=stats)
