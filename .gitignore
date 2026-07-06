@@ -1,0 +1,24 @@
+# Generated RIS output (extractor artifacts)
+output/
+
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local symlinks to the sibling driver-harness repo.
+# These point outside this repo (../driver-harness/{drivers,linux}); recreate
+# them locally — see README. Not committed to avoid broken links for others.
+/drivers
+/linux
+
+# Editor / OS cruft
+*.swp
+*.swo
+*~
+.*.un~
+.DS_Store
+
+# Scratch planning doc (design captured in README)
+plan.md

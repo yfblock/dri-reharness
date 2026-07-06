@@ -1,0 +1,480 @@
+"""Flow-sensitive intra-procedural dataflow + taint tracking.
+
+Walks each function's calls in source order, maintaining an abstract store
+(var -> AbsVal). At each MMIO call it resolves the address argument to a
+RegAddr via the store + macro table, records branch conditions, and detects
+read-modify-write patterns (readl→modify→writel on the same address).
+"""
+from __future__ import annotations
+import re
+from dataclasses import dataclass, field
+from typing import Optional
+
+from . import mmio
+from . import taint as T
+from .taint import (
+    BasePtr, Offset, ReadTaint, Const, SymExpr, Top, AbsVal,
+    addr_fixed, addr_offset, addr_indirect, addr_equal,
+)
+from .ast_model import Func, function_calls, walk_with_conditions, source_text
+
+BASE_FIELDS = {"base", "base_addr", "regs", "io_base", "mmio_base",
+               "reg_base", "virtbase", "base0", "base1"}
+
+_CONTROL_KW = {"if", "for", "while", "switch", "return", "sizeof", "typeof"}
+
+
+@dataclass
+class Op:
+    kind: str                       # Read | Write | ReadModifyWrite | Delay
+    addr: dict
+    width: int
+    value: Optional[str] = None
+    condition: Optional[str] = None
+    intent: str = "Unknown"
+    source_loc: Optional[str] = None
+    reg_name: Optional[str] = None  # resolved register macro name (internal)
+    line: int = 0
+    var: Optional[str] = None       # Read LHS variable (for formal `x := R(...)`)
+    cond_stack: list = field(default_factory=list)  # full branch predicate stack
+
+
+# ── expression evaluation ────────────────────────────────────────────
+
+_CAST_RE = re.compile(
+    r"^\s*\(\s*(?:unsigned\s+|signed\s+|const\s+|volatile\s+|struct\s+|enum\s+)*"
+    r"(?:u\d+|s\d+|u8|u16|u32|u64|int|long|short|char|void|size_t|__u\d+|le\d+|be\d+)"
+    r"(?:\s*\*+)?\s*\)\s*(.+)$", re.S
+)
+
+
+def _strip_parens(t: str) -> str:
+    t = t.strip()
+    while t.startswith("(") and t.endswith(")"):
+        # verify balanced
+        depth = 0
+        balanced_outer = True
+        for i, ch in enumerate(t):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0 and i != len(t) - 1:
+                    balanced_outer = False
+                    break
+        if balanced_outer:
+            t = t[1:-1].strip()
+        else:
+            break
+    return t
+
+
+def _strip_casts(t: str) -> str:
+    while True:
+        m = _CAST_RE.match(t)
+        if not m:
+            break
+        t = m.group(1).strip()
+    return _strip_parens(t)
+
+
+def _split_top(text: str, sep: str) -> list[str]:
+    """Split on `sep` at paren depth 0, ignoring sep inside ()/[] and
+    inside multi-char tokens like -> << >>."""
+    parts = []
+    depth = 0
+    cur = ""
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if ch in "([":
+            depth += 1
+            cur += ch
+            i += 1
+            continue
+        if ch in ")]":
+            depth -= 1
+            cur += ch
+            i += 1
+            continue
+        if depth == 0 and text[i:i + len(sep)] == sep:
+            # avoid matching inside -> / << / >> when sep is - or < or >
+            if sep == "-" and i + 1 < n and text[i + 1] == ">":
+                cur += ch
+                i += 1
+                continue
+            if sep == ">" and i - 1 >= 0 and text[i - 1] == "-":
+                cur += ch
+                i += 1
+                continue
+            if sep == "<" and i + 1 < n and text[i + 1] == "<":
+                cur += ch
+                i += 1
+                continue
+            if sep == ">" and i - 1 >= 0 and text[i - 1] == ">":
+                cur += ch
+                i += 1
+                continue
+            parts.append(cur)
+            cur = ""
+            i += len(sep)
+            continue
+        cur += ch
+        i += 1
+    parts.append(cur)
+    return [p for p in parts if p.strip() != ""] or [text]
+
+
+_MEMBER_RE = re.compile(r"^(\w+)(?:->|\.)(\w+)$")
+_IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
+_HEX_RE = re.compile(r"^0[xX][0-9a-fA-F]+$")
+_DEC_RE = re.compile(r"^\d+$")
+_BIT_RE = re.compile(r"^BIT\s*\(\s*(\d+)\s*\)$", re.I)
+
+
+def eval_expr(text: str, store: dict, macros) -> AbsVal:
+    """Evaluate an expression string to an AbsVal."""
+    t = _strip_casts(text).strip()
+    if not t:
+        return Top()
+
+    # BIT(n)
+    m = _BIT_RE.match(t)
+    if m:
+        return Const(1 << int(m.group(1)))
+
+    # additive: A + B  /  A - B  (resolve base+offset)
+    plus_parts = _split_top(t, "+")
+    if len(plus_parts) > 1:
+        vals = [eval_expr(p, store, macros) for p in plus_parts]
+        return _combine_add(vals)
+
+    minus_parts = _split_top(t, "-")
+    if len(minus_parts) > 1:
+        vals = [eval_expr(p, store, macros) for p in minus_parts]
+        return _combine_sub(vals)
+
+    # bitwise OR / AND / shift on constants → Const, else SymExpr
+    for sep in ("|", "&", "<<", ">>"):
+        parts = _split_top(t, sep)
+        if len(parts) > 1:
+            vals = [eval_expr(p, store, macros) for p in parts]
+            if all(isinstance(v, Const) for v in vals):
+                n = vals[0].n
+                for v in vals[1:]:
+                    if sep == "|":
+                        n |= v.n
+                    elif sep == "&":
+                        n &= v.n
+                    elif sep == "<<":
+                        n <<= v.n
+                    else:
+                        n >>= v.n
+                return Const(n)
+            return SymExpr(_strip_casts(text))
+
+    # unary ~
+    if t.startswith("~"):
+        inner = eval_expr(t[1:], store, macros)
+        if isinstance(inner, Const):
+            return Const(~inner.n & 0xFFFFFFFF)
+        return SymExpr(_strip_casts(text))
+
+    # hex / dec literal
+    if _HEX_RE.match(t):
+        return Const(int(t, 16))
+    if _DEC_RE.match(t):
+        return Const(int(t))
+
+    # member access: var->field / var.field
+    m = _MEMBER_RE.match(t)
+    if m:
+        var, fld = m.group(1), m.group(2)
+        fld_low = fld.lower()
+        # field that holds the MMIO base (base, pll_base, io_base, regs, ...)
+        if fld in BASE_FIELDS or "base" in fld_low or fld_low in ("regs", "reg"):
+            return BasePtr(f"{var}->{fld}")
+        # chained member or known store value
+        key = f"{var}->{fld}"
+        if key in store:
+            return store[key]
+        return SymExpr(t)
+
+    # identifier
+    if _IDENT_RE.match(t):
+        if t in store:
+            return store[t]
+        if t in macros:
+            off = macros.offset(t)
+            if off is not None:
+                return Offset("", off, reg_name=t)
+        return SymExpr(t)
+
+    return SymExpr(t)
+
+
+def _combine_add(vals: list[AbsVal]) -> AbsVal:
+    base: Optional[str] = None
+    reg_name: Optional[str] = None
+    off = 0
+    have_const = False
+    have_base = False
+    for v in vals:
+        if isinstance(v, BasePtr):
+            base = v.base
+            have_base = True
+        elif isinstance(v, Offset):
+            if not have_base:
+                base = v.base
+                have_base = True
+            off += v.off
+            if v.reg_name:
+                reg_name = v.reg_name
+        elif isinstance(v, Const):
+            off += v.n
+            have_const = True
+        elif isinstance(v, SymExpr):
+            # a bare identifier in an additive address expression is the
+            # MMIO base (e.g. `mmio + REG`). Treat it as BasePtr.
+            if not have_base and _IDENT_RE.match(v.text):
+                base = v.text
+                have_base = True
+            else:
+                return Top()
+        else:
+            return Top()
+    if have_base:
+        return Offset(base or "", off, reg_name)
+    if have_const:
+        return Const(off)
+    return Top()
+
+
+def _combine_sub(vals: list[AbsVal]) -> AbsVal:
+    first = vals[0]
+    if isinstance(first, (BasePtr, Offset)):
+        base = first.base if isinstance(first, BasePtr) else first.base
+        off = 0 if isinstance(first, BasePtr) else first.off
+        reg_name = first.reg_name if isinstance(first, Offset) else None
+        for v in vals[1:]:
+            if isinstance(v, Const):
+                off -= v.n
+            else:
+                return Top()
+        return Offset(base or "", off, reg_name)
+    if all(isinstance(v, Const) for v in vals):
+        n = vals[0].n
+        for v in vals[1:]:
+            n -= v.n
+        return Const(n)
+    return Top()
+
+
+def resolve_addr(text: str, store: dict, macros) -> tuple[dict, Optional[str]]:
+    """Resolve an MMIO address argument to (RegAddr dict, reg_name)."""
+    v = eval_expr(text, store, macros)
+
+    if isinstance(v, BasePtr):
+        return addr_offset(v.base, 0), None
+    if isinstance(v, Offset):
+        if v.base:
+            return addr_offset(v.base, v.off), v.reg_name
+        # bare macro/const with no base → treat as fixed offset
+        return addr_fixed(v.off if v.off >= 0 else 0), v.reg_name
+    if isinstance(v, Const):
+        return addr_fixed(v.n), None
+
+    # symbolic offset on a base: try to recover base + variable → Indirect
+    plus = _split_top(_strip_casts(text), "+")
+    if len(plus) == 2:
+        a = eval_expr(plus[0], store, macros)
+        b = eval_expr(plus[1], store, macros)
+        base = None
+        if isinstance(a, BasePtr):
+            base = a.base
+        elif isinstance(b, BasePtr):
+            base = b.base
+        if base is not None:
+            return addr_indirect(base, 0), None
+
+    # fallback: keep the symbolic base string as Offset{base: text, offset:0}
+    return addr_offset(_strip_casts(text), 0), None
+
+
+# ── function extraction ──────────────────────────────────────────────
+
+@dataclass
+class FuncExtraction:
+    name: str
+    ops: list[Op] = field(default_factory=list)
+    calls: list = field(default_factory=list)   # CallSite list (for call graph)
+    warnings: list[str] = field(default_factory=list)
+
+
+def _assign_target(lhs_text: str) -> Optional[str]:
+    """From an assignment LHS, the store key to bind."""
+    lhs = lhs_text.strip()
+    if _MEMBER_RE.match(lhs) or _IDENT_RE.match(lhs):
+        return lhs
+    return None
+
+
+_LHS_RE = re.compile(r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*\w+)*)\s*=\s*(?!=)")
+_LHS_CONT_RE = re.compile(r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*\w+)*)\s*=\s*$")
+
+
+def _bind_lhs(source_lines: list[str], call_line: int, call_name: str) -> Optional[str]:
+    """Find the LHS variable assigned by a call on `call_line`.
+
+    Handles `var = call(...)` on one line and `var =\n  call(...)` across two.
+    """
+    if call_line <= 0 or call_line > len(source_lines):
+        return None
+    line = source_lines[call_line - 1]
+    # same line: var = callname(
+    m = _LHS_RE.match(line)
+    if m and call_name and call_name in line:
+        lhs = m.group(1).replace(" ", "")
+        return lhs
+    # continuation: previous line ends with `var =`
+    if call_line > 1:
+        prev = source_lines[call_line - 2]
+        m2 = _LHS_CONT_RE.match(prev)
+        if m2:
+            return m2.group(1).replace(" ", "")
+    return None
+
+
+def _norm_key(lhs: str) -> str:
+    return lhs.replace(" ", "")
+
+
+def extract_function(func: Func, macros, tu, *,
+                     source_lines: Optional[list[str]] = None,
+                     inline_cache: Optional[dict] = None,
+                     depth: int = 0, max_depth: int = 3,
+                     condition: Optional[str] = None) -> FuncExtraction:
+    """Extract register ops for one function (with wrapper inlining)."""
+    result = FuncExtraction(name=func.name)
+    store: dict[str, AbsVal] = {}
+    # seed params — iomem/pointer params are MMIO base candidates
+    for pname, ptype in func.params:
+        if not pname:
+            continue
+        if ptype and ("__iomem" in ptype or "void *" in ptype or ptype.endswith("*")):
+            store[pname] = BasePtr(pname)
+        else:
+            store[pname] = SymExpr(pname)
+
+    calls = function_calls(func.cursor)
+    result.calls = calls
+
+    # map line → condition stack (path-insensitive: innermost branch pred)
+    line_to_cond: dict[int, list[str]] = {}
+    for cursor, stack in walk_with_conditions(func.cursor):
+        if cursor.location and cursor.location.file:
+            ln = cursor.location.line
+            if stack:
+                line_to_cond.setdefault(ln, stack)
+
+    for cs in calls:
+        name = cs.name
+        if not name or name in _CONTROL_KW:
+            continue
+        cond = None
+        cond_stack = []
+        if cs.line in line_to_cond:
+            st = line_to_cond[cs.line]
+            if st:
+                cond_stack = list(st)
+                cond = st[-1]
+
+        lhs = _bind_lhs(source_lines or [], cs.line, name)
+
+        # ioremap → taint LHS as BasePtr
+        if mmio.is_ioremap(name):
+            if lhs:
+                store[_norm_key(lhs)] = BasePtr(lhs)
+            continue
+
+        if mmio.is_mmio_read(name):
+            addr_arg = cs.arg_text[0] if cs.arg_text else ""
+            addr, reg_name = resolve_addr(addr_arg, store, macros)
+            op = Op(
+                kind="Read", addr=addr, width=mmio.infer_width(name),
+                value=None, condition=cond, cond_stack=cond_stack,
+                reg_name=reg_name, var=lhs or None,
+                source_loc=f"{func.name}:{cs.line}", line=cs.line,
+            )
+            result.ops.append(op)
+            if lhs:
+                store[_norm_key(lhs)] = ReadTaint(addr=addr, reg_name=reg_name)
+            continue
+
+        if mmio.is_mmio_write(name):
+            # writel(val, addr) — Linux convention
+            if len(cs.arg_text) >= 2:
+                val_text, addr_text = cs.arg_text[0], cs.arg_text[1]
+            else:
+                val_text, addr_text = (cs.arg_text[0] if cs.arg_text else ""), ""
+            addr, reg_name = resolve_addr(addr_text, store, macros)
+            val = eval_expr(val_text, store, macros)
+            kind = "Write"
+            value = val_text.strip() or None
+            # RMW: value is a read-taint of the SAME address
+            if isinstance(val, ReadTaint) and addr_equal(val.addr, addr):
+                kind = "ReadModifyWrite"
+            op = Op(
+                kind=kind, addr=addr, width=mmio.infer_width(name),
+                value=value, condition=cond, cond_stack=cond_stack,
+                reg_name=reg_name,
+                source_loc=f"{func.name}:{cs.line}", line=cs.line,
+            )
+            result.ops.append(op)
+            continue
+
+        if mmio.is_delay(name):
+            arg = cs.arg_text[0] if cs.arg_text else "0"
+            ns = _parse_delay_ns(name, arg)
+            op = Op(
+                kind="Delay", addr=addr_fixed(0), width=0,
+                value=str(ns), condition=cond, cond_stack=cond_stack,
+                intent="Synchronization",
+                source_loc=f"{func.name}:{cs.line}", line=cs.line,
+            )
+            op._delay_ns = ns  # type: ignore[attr-defined]
+            result.ops.append(op)
+            continue
+
+        # framework → ignore (filtered)
+        if mmio.is_framework(name):
+            continue
+
+        # wrapper function inlining
+        if (inline_cache and depth < max_depth and name in inline_cache):
+            inlined = inline_cache[name]
+            if inlined.ops:
+                import copy
+                for op in inlined.ops:
+                    o2 = copy.copy(op)
+                    o2.condition = cond or op.condition
+                    o2.cond_stack = cond_stack or op.cond_stack
+                    o2.source_loc = f"{func.name}:{cs.line} (↳ {op.source_loc})"
+                    result.ops.append(o2)
+
+    return result
+
+
+def _parse_delay_ns(name: str, arg: str) -> int:
+    try:
+        n = int(arg, 0)
+    except Exception:
+        return 0
+    if name in ("mdelay", "msleep", "ssleep"):
+        return n * 1_000_000
+    if name == "udelay":
+        return n * 1000
+    if name == "ndelay":
+        return n
+    return n

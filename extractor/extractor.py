@@ -1,0 +1,74 @@
+"""Top-level orchestrator: source → formal RIS (.ris spec language).
+
+parse TU → collect macros → find target functions → dataflow extraction
+(with wrapper inlining) → intent annotation → build FormalRIS.
+"""
+from __future__ import annotations
+import os
+import datetime
+from dataclasses import dataclass, field
+
+from . import tu as tu_mod
+from . import macros as macros_mod
+from .ast_model import target_functions
+from .call_graph import extract_with_inlining
+from .formalize import build_formal_ris
+from .dataflow import Op
+
+
+@dataclass
+class ExtractorConfig:
+    source: str
+    output: str = "output/ris.ris"        # formal-language text (primary, only output)
+    include_framework: bool = False
+    extra_blacklist: list[str] = field(default_factory=list)
+    linux_root: str | None = None
+    max_inline_depth: int = 3
+
+
+@dataclass
+class ExtractionResult:
+    formal: dict        # FormalRIS (formal language)
+    warnings: list[str]
+    stats: dict
+
+
+def extract_ris(config: ExtractorConfig) -> ExtractionResult:
+    source = os.path.abspath(config.source)
+    with open(source, "r", encoding="utf-8", errors="replace") as fh:
+        source_text = fh.read()
+    source_lines = source_text.splitlines()
+
+    warnings: list[str] = []
+    tu, diag = tu_mod.parse_translation_unit(source, config.linux_root)
+    warnings.extend(diag)
+
+    # macros (TU + regex fallback)
+    macros = macros_mod.build(tu, source, source_text)
+
+    # target-file function definitions
+    funcs = target_functions(tu, source)
+    if not funcs:
+        warnings.append("No function definitions found in target file")
+
+    extractions, inlined_names = extract_with_inlining(
+        funcs, macros, tu, source_lines, max_depth=config.max_inline_depth
+    )
+
+    # stats — functions_analyzed / macros_resolved are raw counts; op counts
+    # are recomputed from the EMITTED formal modules (excludes inlined helpers)
+    stats = {
+        "extracted_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "functions_analyzed": len(funcs),
+        "macros_resolved": sum(1 for n in macros.names() if macros.offset(n) is not None),
+    }
+
+    driver_name = os.path.splitext(os.path.basename(source))[0]
+    formal = build_formal_ris(driver_name, source, funcs, extractions, macros,
+                              stats, inlined_names)
+
+    # recompute op stats from the emitted .ris (consistent with output)
+    from .formal import emitted_stats
+    stats.update(emitted_stats(formal))
+
+    return ExtractionResult(formal=formal, warnings=warnings, stats=stats)
