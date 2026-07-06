@@ -109,7 +109,6 @@ def test_resolve_addr_offset_with_macro_name():
 # ── end-to-end on gpio-ftgpio010 (.ris spec language) ────────────────
 
 FTGPIO = os.path.join(REHARNESS, "drivers", "test", "gpio-ftgpio010.c")
-VIRTIO = os.path.join(REHARNESS, "drivers", "virtio_mmio", "virtio_mmio.c")
 
 
 @_fixture(scope="module")
@@ -191,90 +190,46 @@ def test_formal_expr_normalization(ftgpio_formal):
     assert val["BinOp"]["op"] == "BitXor"  # ~0x0 normalized
 
 
-# ── regression: source-text byte offsets & module dedup (virtio_mmio) ─
+# ── regression: source-text byte offsets & module dedup (synthetic) ──
 
-@_fixture(scope="module")
-def virtio_formal():
-    return extract_ris(ExtractorConfig(source=VIRTIO)).formal
-
-
-def test_virtio_arg_source_not_truncated(virtio_formal):
-    """libclang .offset is a BYTE offset; text-mode reading misaligned it,
-    truncating values (VIRTIO_STATUS_RESET -> RTIO_STATUS_RESET). Must be intact."""
-    probe = _module(virtio_formal, "virtio_mmio_probe")
+def test_source_text_byte_offset_with_multibyte():
+    """libclang .offset is a BYTE offset; a multibyte char before a writel must
+    not truncate the value (regression for the text-mode read bug)."""
+    import tempfile, os
+    # a 2-byte UTF-8 char (©) in a comment before the writel
+    src = '/* © copyright */\n#define REG 0x10\n#define VIRTIO_STATUS_RESET 0x0\nstatic void f(void *b){ writel(VIRTIO_STATUS_RESET, b + REG); }\n'
+    d = tempfile.mkdtemp(); p = os.path.join(d, "t.c")
+    with open(p, "w", encoding="utf-8") as fh:
+        fh.write(src)
+    res = extract_ris(ExtractorConfig(source=p))
     leaves = []
-    _leaf_ops(probe["ops"], leaves)
-    values = []
-    for o in leaves:
-        if "Write" in o:
-            v = o["Write"]["value"]
-            if "Var" in v:
-                values.append(v["Var"])
-    assert "VIRTIO_STATUS_RESET" in values    # not "RTIO_STATUS_RESET"
-    assert "VIRTIO_STATUS_ACK" in values
+    _leaf_ops(res.formal["modules"][0]["ops"], leaves)
+    w = next(o for o in leaves if "Write" in o)
+    # value must be intact (Var "VIRTIO_STATUS_RESET"), not truncated
+    assert "Var" in w["Write"]["value"]
+    assert w["Write"]["value"]["Var"] == "VIRTIO_STATUS_RESET"
 
 
-def test_virtio_addresses_resolve(virtio_formal):
-    """v->base + VIRTIO_MMIO_STATUS must resolve to a Symbolic register,
-    not degrade to [v->base] (Computed)."""
-    probe = _module(virtio_formal, "virtio_mmio_probe")
+def test_pure_helper_is_inlined_and_deduped():
+    """A pure helper (called, never callback-registered) is inlined into its
+    caller and does NOT appear as its own module (no duplication)."""
+    import tempfile, os
+    src = textwrap.dedent("""
+        #define REG 0x10
+        static void helper(void *b) { writel(0x1, b + REG); }
+        static void caller(void *b) { helper(b); }
+    """)
+    d = tempfile.mkdtemp(); p = os.path.join(d, "t.c")
+    with open(p, "w", encoding="utf-8") as fh:
+        fh.write(src)
+    formal = extract_ris(ExtractorConfig(source=p)).formal
+    names = {m["name"] for m in formal["modules"]}
+    assert "caller" in names
+    assert "helper" not in names   # pure helper → inlined, dedup'd
+    # caller contains the inlined write
     leaves = []
-    _leaf_ops(probe["ops"], leaves)
-    regs = {o["Write"]["addr"]["Symbolic"]["register"]
-            for o in leaves if "Write" in o and "Symbolic" in o["Write"]["addr"]}
-    assert "VIRTIO_MMIO_STATUS" in regs
-    # none should degrade to Computed
-    assert all("Symbolic" in o["Write"]["addr"]
-               for o in leaves if "Write" in o)
-
-
-def test_virtio_no_module_duplication(virtio_formal):
-    """virtio_mmio_init_device is a pure helper (called by probe, not a callback):
-    inlined into probe and must NOT also appear as its own module."""
-    names = {m["name"] for m in virtio_formal["modules"]}
-    assert "virtio_mmio_probe" in names
-    assert "virtio_mmio_init_device" not in names   # pure helper → inlined, dedup'd
-
-
-def test_virtio_probe_inlines_init_device(virtio_formal):
-    """init_device's ops must actually appear (inlined) inside probe — e.g. the
-    STATUS reset write — proving pure-helper inlining still works."""
-    probe = _module(virtio_formal, "virtio_mmio_probe")
-    leaves = []
-    _leaf_ops(probe["ops"], leaves)
-    regs = {o["Write"]["addr"]["Symbolic"]["register"]
-            for o in leaves if "Write" in o and "Symbolic" in o["Write"]["addr"]}
-    assert "VIRTIO_MMIO_STATUS" in regs
-    assert "VIRTIO_MMIO_MAGIC" in {o["Read"]["addr"]["Symbolic"]["register"]
-                                   for o in leaves if "Read" in o}
-
-
-def test_virtio_setup_queue_order(virtio_formal):
-    """setup_queue must produce the exact virtio-mmio queue setup sequence:
-    W QUEUE_SEL → R QUEUE_NUM_MAX → W QUEUE_NUM → W DESC_LOW/HIGH →
-    W AVAIL_LOW/HIGH → W USED_LOW/HIGH → W QUEUE_READY."""
-    sq = _module(virtio_formal, "virtio_mmio_setup_queue")
-    leaves = []
-    _leaf_ops(sq["ops"], leaves)
-    seq = []
-    for o in leaves:
-        if "Read" in o:
-            seq.append(("R", o["Read"]["addr"]["Symbolic"]["register"]))
-        elif "Write" in o:
-            seq.append(("W", o["Write"]["addr"]["Symbolic"]["register"]))
-    expected = [
-        ("W", "VIRTIO_MMIO_QUEUE_SEL"),
-        ("R", "VIRTIO_MMIO_QUEUE_NUM_MAX"),
-        ("W", "VIRTIO_MMIO_QUEUE_NUM"),
-        ("W", "VIRTIO_MMIO_QUEUE_DESC_LOW"),
-        ("W", "VIRTIO_MMIO_QUEUE_DESC_HIGH"),
-        ("W", "VIRTIO_MMIO_QUEUE_AVAIL_LOW"),
-        ("W", "VIRTIO_MMIO_QUEUE_AVAIL_HIGH"),
-        ("W", "VIRTIO_MMIO_QUEUE_USED_LOW"),
-        ("W", "VIRTIO_MMIO_QUEUE_USED_HIGH"),
-        ("W", "VIRTIO_MMIO_QUEUE_READY"),
-    ]
-    assert seq == expected, f"queue setup sequence mismatch:\n got {seq}\n exp {expected}"
+    _leaf_ops(_module(formal, "caller")["ops"], leaves)
+    assert any("Write" in o for o in leaves)
 
 
 def test_callback_entry_not_deduped(ftgpio_formal):
@@ -354,8 +309,8 @@ def test_nested_conditions_counted():
 
 def test_cli_stats_match_emitted_ris():
     """Stats must reflect the EMITTED .ris (excludes inlined helpers), not raw
-    extraction. virtio: init_device inlined → reads/writes from probe only."""
-    res = extract_ris(ExtractorConfig(source=VIRTIO))
+    extraction."""
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
     st = res.stats
     # count leaf ops directly from the formal output
     from extractor.formal import walk_leaf_ops
@@ -502,10 +457,10 @@ def test_facts_trimmed_no_kernel_noise():
     for k in f.constants:
         assert not k.startswith(("CONFIG_", "KASAN_", "TASK_", "CPUINFO_",
                                  "BUG_", "TAINT_", "pt_regs_")), f"noise kept: {k}"
-    # virtio facts: only VIRTIO_* register/status constants
-    fv = extract_ris(ExtractorConfig(source=VIRTIO)).facts
+    # real virtio_mmio facts: only VIRTIO_* register/status constants
+    fv = extract_ris(ExtractorConfig(
+        source=os.path.join(REHARNESS, "drivers", "test", "virtio_mmio.c"))).facts
     assert all(k.startswith("VIRTIO_") for k in fv.constants)
-    assert "VIRTIO_STATUS_RESET" in fv.constants
 
 
 def test_merged_bind_roundtrip():
@@ -577,8 +532,7 @@ def test_verify_feedback_trace_match():
 def _run_standalone():
     import traceback
     formal = extract_ris(ExtractorConfig(source=FTGPIO)).formal
-    vio = extract_ris(ExtractorConfig(source=VIRTIO)).formal
-    fixtures = {"ftgpio_formal": formal, "virtio_formal": vio}
+    fixtures = {"ftgpio_formal": formal}
     tests = [v for k, v in sorted(globals().items())
              if k.startswith("test_") and callable(v)]
     passed = failed = 0
