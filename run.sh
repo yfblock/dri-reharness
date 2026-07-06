@@ -18,6 +18,9 @@ Commands:
   spec <src> [out.dspec]    infer & print backend-independent .dspec
   gen <src> <backend> [out.c]   generate C (backend: harness|baremetal|linux)
   driver <src> [outdir]         one-shot full pipeline (RIS+dspec+bind+backends+trace)
+  facts <src>                  source facts (.facts) for LLM synthesis
+  bundle <src> [backend] [outdir]   build LLM input bundle
+  synth <src> [backend] [outdir]    LLM repair loop (scaffold -> verify -> patch)
   metrics <src>             per-module extraction quality metrics
   score <src>               generation readiness scoring
   pipeline <src> [out.ris]  extract (alias of extract)
@@ -51,6 +54,9 @@ cmd_gen() {
 }
 
 cmd_metrics() { $PY -m extractor metrics -s "${1:?need src}"; }
+cmd_facts()   { $PY -m extractor facts   -s "${1:?need src}" ${2:+-o "$2"}; }
+cmd_bundle()  { $PY -m extractor bundle  -s "${1:?need src}" -b "${2:-harness}" ${3:+-o "$3"}; }
+cmd_synth()   { $PY -m extractor synth   -s "${1:?need src}" -b "${2:-harness}" ${3:+-o "$3"}; }
 cmd_score()   { $PY -m extractor score   -s "${1:?need src}"; }
 cmd_driver()  { $PY -m extractor driver  -s "${1:?need src}" ${2:+-o "$2"}; }
 
@@ -73,6 +79,9 @@ case "${1:-help}" in
   spec)      shift; cmd_spec "$@";;
   gen)       shift; cmd_gen "$@";;
   driver)    shift; cmd_driver "$@";;
+  facts)     shift; cmd_facts "$@";;
+  bundle)    shift; cmd_bundle "$@";;
+  synth)     shift; cmd_synth "$@";;
   metrics)   shift; cmd_metrics "$@";;
   score)     shift; cmd_score "$@";;
   pipeline)  shift; cmd_pipeline "$@";;

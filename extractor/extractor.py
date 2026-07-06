@@ -30,6 +30,7 @@ class ExtractorConfig:
 class ExtractionResult:
     formal: dict        # FormalRIS (formal language)
     device_spec: object # DeviceSpec (backend-independent semantics)
+    facts: object       # FactsSpec (source facts for LLM synthesis)
     warnings: list[str]
     stats: dict
 
@@ -72,11 +73,13 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     from .formal import emitted_stats
     stats.update(emitted_stats(formal))
 
-    # infer backend-independent FunctionSpec / DeviceSpec (plan M3/M4)
-    from .spec_infer import infer_function_specs, infer_device_spec
-    fn_specs = infer_function_specs(formal, funcs, source_text, source,
-                                    callback_entries)
+    # infer backend-independent FunctionSpec / DeviceSpec (plan M3/M4) + facts (M9)
+    from .spec_infer import infer_function_specs, infer_device_spec, infer_facts
+    fn_specs, cb_bindings = infer_function_specs(formal, funcs, source_text, source,
+                                                 callback_entries)
     device_spec = infer_device_spec(formal, funcs, fn_specs, source, source_text)
+    register_names = {r["name"] for r in formal.get("register_map", [])}
+    facts = infer_facts(source_text, source, tu, macros, cb_bindings, register_names)
 
-    return ExtractionResult(formal=formal, device_spec=device_spec,
+    return ExtractionResult(formal=formal, device_spec=device_spec, facts=facts,
                             warnings=warnings, stats=stats)

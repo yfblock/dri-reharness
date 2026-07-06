@@ -46,6 +46,21 @@ def main(argv: list[str] | None = None) -> int:
     dr.add_argument("-s", "--source", required=True)
     dr.add_argument("-o", "--outdir", default=None, help="output dir (default output/<name>/)")
 
+    fa = sub.add_parser("facts", help="Print source facts (.facts) for LLM synthesis")
+    fa.add_argument("-s", "--source", required=True)
+    fa.add_argument("-o", "--output", default=None)
+
+    bu = sub.add_parser("bundle", help="Build LLM input bundle (RIS+dspec+bind+facts+scaffold)")
+    bu.add_argument("-s", "--source", required=True)
+    bu.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
+    bu.add_argument("-o", "--outdir", default=None)
+
+    sy = sub.add_parser("synth", help="LLM-assisted repair loop (scaffold -> verify -> patch)")
+    sy.add_argument("-s", "--source", required=True)
+    sy.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
+    sy.add_argument("-o", "--outdir", default=None)
+    sy.add_argument("--max-iters", type=int, default=3)
+
     args = p.parse_args(argv)
 
     if args.command == "extract":
@@ -102,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "gen":
-        from extractor.bind import default_bind
+        from .spec import default_bind
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
@@ -118,16 +133,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "score":
-        from .readiness import score, format_score
+        from .metrics import score, format_score
         res = extract_ris(ExtractorConfig(source=args.source))
-        print(format_score(score(res.device_spec, res.formal, res.warnings)))
+        print(format_score(score(res.device_spec, res.formal, res.warnings, res.facts)))
         return 0
 
     if args.command == "driver":
         import subprocess
         from .metrics import driver_metrics, format_metrics
-        from .readiness import score as score_fn, format_score
-        from .bind import default_bind
+        from .metrics import score as score_fn, format_score
+        from .spec import default_bind
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
@@ -147,10 +162,12 @@ def main(argv: list[str] | None = None) -> int:
         save_formal_text(res.formal, os.path.join(outdir, f"{name}.ris"))
         # 2. dspec
         _w(f"{name}.dspec", res.device_spec.display())
+        # 2b. facts
+        _w(f"{name}.facts", res.facts.display())
         # 3. metrics + score
         _w(f"{name}.metrics.txt", format_metrics(
             driver_metrics(res.formal, n_clang_diag=len(res.warnings))))
-        sc = score_fn(res.device_spec, res.formal, res.warnings)
+        sc = score_fn(res.device_spec, res.formal, res.warnings, res.facts)
         _w(f"{name}.score.txt", format_score(sc))
 
         # 4. three backends
@@ -200,6 +217,43 @@ def main(argv: list[str] | None = None) -> int:
         print()
         print("── readiness ──")
         print(format_score(sc).replace("\n", "\n  "))
+        return 0
+
+    if args.command == "bundle":
+        import synthesis
+        res = extract_ris(ExtractorConfig(source=args.source))
+        outdir = args.outdir or f"output/{res.formal['driver']}.bundle-{args.backend}"
+        bdir = synthesis.build_bundle(res, args.backend, outdir)
+        print(f"✅ bundle → {bdir}/")
+        for f in sorted(os.listdir(bdir)):
+            print(f"   {bdir}/{f}")
+        return 0
+
+    if args.command == "facts":
+        res = extract_ris(ExtractorConfig(source=args.source))
+        text = res.facts.display()
+        if args.output:
+            os.makedirs(os.path.dirname(os.path.abspath(args.output)) or ".", exist_ok=True)
+            with open(args.output, "w", encoding="utf-8") as fh:
+                fh.write(text + "\n")
+            print(f"✅ facts saved to {args.output}")
+        else:
+            print(text)
+        return 0
+
+    if args.command == "synth":
+        import synthesis
+        res = extract_ris(ExtractorConfig(source=args.source))
+        outdir = args.outdir or f"output/{res.formal['driver']}.synth-{args.backend}"
+        print(f"🔬 LLM repair loop ({args.backend}) → {outdir}/")
+        result = synthesis.run_repair_loop(res, args.backend, outdir,
+                                           max_iters=args.max_iters)
+        print(f"   llm: {result['llm']}  iters: {result['iters']}  "
+              f"accepted: {result['accepted']}")
+        print(synthesis.format_feedback(result["final_feedback"]))
+        if not result["accepted"] and result["llm"] == "null":
+            print("\n(set REHARNESS_LLM_CMD='<cmd>' to enable LLM repair)")
+        print(f"   bundle: {result['bundle']}")
         return 0
 
     return 1

@@ -410,7 +410,7 @@ def test_dspec_display_roundtrip():
 
 def test_bind_default_and_parse():
     from extractor.extractor import extract_ris
-    from extractor.bind import default_bind, parse
+    from extractor.spec import default_bind, parse
     ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
     b = default_bind(ds, "linux")
     assert b.prim("MmioWrite", "B4") == "writel"
@@ -427,7 +427,7 @@ def test_baremetal_backend_compiles():
     """Generated bare-metal C compiles freestanding."""
     import tempfile, subprocess
     from extractor.extractor import extract_ris
-    from extractor.bind import default_bind
+    from extractor.spec import default_bind
     from generator import baremetal
     res = extract_ris(ExtractorConfig(source=FTGPIO))
     bind = default_bind(res.device_spec, "baremetal")
@@ -444,7 +444,7 @@ def test_harness_trace_matches_ris():
     """Userspace harness trace shape (op kind + offset) matches extracted RIS."""
     import tempfile, subprocess, re
     from extractor.extractor import extract_ris
-    from extractor.bind import default_bind
+    from extractor.spec import default_bind
     from generator import harness
     from extractor.formal import walk_leaf_ops, expr_to_c
 
@@ -475,12 +475,74 @@ def test_harness_trace_matches_ris():
 
 def test_readiness_score():
     from extractor.extractor import extract_ris
-    from extractor.readiness import score
+    from extractor.metrics import score
     res = extract_ris(ExtractorConfig(source=FTGPIO))
-    s = score(res.device_spec, res.formal, res.warnings)
+    s = score(res.device_spec, res.formal, res.warnings, res.facts)
     assert s["ris_quality"] >= 0.9
     assert s["backend_bare_metal_ready"] is True
     assert 0 <= s["function_spec_quality"] <= 1.0
+
+
+# ── Milestone 9: facts, bundle, llm_synthesis_ready, repair loop ─────
+
+def test_facts_extraction():
+    from extractor.extractor import extract_ris
+    f = extract_ris(ExtractorConfig(source=FTGPIO)).facts
+    assert any(s.name == "ftgpio_gpio" for s in f.structs)
+    assert f.callbacks.get("irq_chip.irq_ack") == "ftgpio_gpio_ack_irq"
+    assert any(r.acquisition == "devm_platform_ioremap_resource" for r in f.resources)
+    assert any("ENOMEM" in e for e in f.error_paths)
+    assert all(not k.startswith("_") for k in f.constants)  # no compiler builtins
+
+
+def test_llm_synthesis_ready_gate():
+    from extractor.extractor import extract_ris
+    from extractor.metrics import score
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    s = score(res.device_spec, res.formal, res.warnings, res.facts)
+    assert "llm_synthesis_ready" in s and "facts_quality" in s
+    assert s["facts_quality"] >= 0.6
+    assert s["llm_synthesis_ready"] is True
+
+
+def test_bundle_assembly():
+    import tempfile, os
+    from extractor.extractor import extract_ris
+    import synthesis
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    bdir = synthesis.build_bundle(res, "harness", tempfile.mkdtemp())
+    files = set(os.listdir(bdir))
+    name = res.formal["driver"]
+    for need in (f"{name}.ris", f"{name}.dspec", f"{name}.facts",
+                 f"{name}.harness.bind", f"{name}.scaffold.c",
+                 "constraints.md", "verification.md"):
+        assert need in files, f"missing {need}"
+
+
+def test_repair_loop_offline():
+    import tempfile, os
+    from extractor.extractor import extract_ris
+    import synthesis
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    result = synthesis.run_repair_loop(res, "harness", tempfile.mkdtemp(),
+                                       llm=synthesis.NullLLM(), max_iters=2)
+    assert result["llm"] == "null" and result["iters"] >= 1
+    assert os.path.exists(result["candidate"])
+    assert any(f.startswith("feedback.iter") for f in os.listdir(result["bundle"]))
+
+
+def test_verify_feedback_trace_match():
+    import tempfile, os, shutil
+    from extractor.extractor import extract_ris
+    import synthesis
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    bdir = synthesis.build_bundle(res, "harness", tempfile.mkdtemp())
+    name = res.formal["driver"]
+    shutil.copy(os.path.join(bdir, f"{name}.scaffold.c"),
+                os.path.join(bdir, f"{name}.candidate.c"))
+    fb = synthesis.verify_candidate(os.path.join(bdir, f"{name}.candidate.c"), res, "harness")
+    assert fb["compile"]["status"] == "passed"
+    assert fb["trace"]["status"] == "passed"
 
 
 # ── standalone runner (no pytest required) ───────────────────────────
