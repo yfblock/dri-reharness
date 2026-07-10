@@ -54,7 +54,8 @@ static int edu_open(struct inode *inode, struct file *filp)
 ```
    **严禁** 用 container_of(inode->i_cdev, struct miscdevice, cdev) —— struct miscdevice 在 7.1 内核里没有 cdev 成员, 这样编不过。
 4) edu_read/edu_write: `struct edu_priv *priv = filp->private_data;` 然后 readl/writel(priv->mmio + *off) + copy_to/from_user。*off 按 4 对齐, 每次读写 4 字节, *off += 4。
-5) edu_pci_probe: devm_kzalloc; pci_enable_device_mem; pci_request_regions(pdev, KBUILD_MODNAME); priv->mmio = pci_ioremap_bar(pdev,0) (判 NULL); readl(mmio+0) 读 id 并 dev_info; (可选 dma_alloc_coherent + DMA 寄存器写入序列 IO_DMA_SRC/DST/CNT/CMD); priv->irq=pdev->irq; request_irq(priv->irq, edu_irq_handler, IRQF_SHARED, KBUILD_MODNAME, priv); misc 设置:
+5) edu_pci_probe: devm_kzalloc; pci_enable_device_mem; pci_request_regions
+   **稳定性**: probe 里**不要**做 dma_alloc_coherent / request_irq / 写 DMA_CMD|DMA_IRQ —— 会触发 QEMU edu 中断风暴导致 QEMU core dump/卡死。probe 只做 ioremap+读id(0x0)+misc_register+dev_info。irq_handler 可定义但不要 request_irq。(pdev, KBUILD_MODNAME); priv->mmio = pci_ioremap_bar(pdev,0) (判 NULL); readl(mmio+0) 读 id 并 dev_info; (可选 dma_alloc_coherent + DMA 寄存器写入序列 IO_DMA_SRC/DST/CNT/CMD); priv->irq=pdev->irq; request_irq(priv->irq, edu_irq_handler, IRQF_SHARED, KBUILD_MODNAME, priv); misc 设置:
 ```c
 	priv->mdev.minor = MISC_DYNAMIC_MINOR;
 	priv->mdev.name  = KBUILD_MODNAME;   /* 节点 /dev/edu_drv */
@@ -110,7 +111,8 @@ CONSTRAINTS_BLOCK='## 关键约束 (不要破坏)
 - file_operations.open 必须用 container_of(file->private_data, struct edu_priv, mdev) 取回 priv (misc_open 已把 private_data 设为 miscdevice*); struct miscdevice **没有** cdev 成员, 不要用 container_of(inode->i_cdev, struct miscdevice, cdev)
 - misc 设备名 = KBUILD_MODNAME ("edu_drv"), 节点在 /dev/edu_drv
 - 保持 .ris 语义: readl/writel/copy_to/from_user 用于寄存器读写; irq_handler 读 IO_IRQ_STATUS 写 IO_IRQ_ACK
-- dma_alloc_coherent / request_irq(IRQF_SHARED) / pci_ioremap_bar(pdev,0) 等资源在 remove 里成对释放'
+- dma_alloc_coherent / request_irq(IRQF_SHARED) / pci_ioremap_bar(pdev,0) 等资源在 remove 里成对释放
+- **probe 禁止** DMA(request_irq/dma_alloc/writel DMA_CMD|DMA_IRQ) —— 触发 QEMU edu 中断风暴致 core dump; probe 只 ioremap+读id+misc_register'
 
 # 3. Makefile + 编译 (失败则 opencode 迭代修复, 最多 MAX_COMPILE_ITER 次)
 MAX_COMPILE_ITER="${MAX_COMPILE_ITER:-3}"

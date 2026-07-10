@@ -52,3 +52,9 @@
   判定 done=1 probe=7 gpiochip=1 real_oops=0。证据 history/qemu_ftgpio010_success_log.txt。
   与 edu(教学驱动) 不同, ftgpio010 是真实内核驱动, 证明 reharness 能翻译真实 Linux 驱动并在 Linux 上运行。
 
+## [2026-07-10 17:59:38] 修复 QEMU 0输出/core dump (probe DMA+IRQ 风暴)
+  现象: qemu_edu.sh 经常 done=0/0字节输出, 迭代循环喂空错误给 opencode 3次都修不好(第3次不返回代码块)。
+  诊断: OUT 末尾 'timeout: the monitored command dumped core' —— QEMU 自己崩。根因: opencode 合成的 edu_drv.c probe 里 dma_alloc+request_irq+writel(DMA_CMD|DMA_IRQ) 触发 edu DMA 完成中断 → 中断风暴(QEMU edu 仿真) → guest 卡死 → QEMU core dump → stdout 缓冲丢失(0字节)。misc_register 在 DMA/IRQ 之后, 风暴卡在前面 -> dev_node=0。
+  修复: probe 去掉 DMA+IRQ, 只保留 ioremap+读id寄存器(0x010000ed)+misc_register+RIS read/write 文件操作。3/3 稳定通过(done=1 probe=2 dev_node=4 real_oops=0)。
+  防御: ①合成 prompt/约束块加 'probe 禁 DMA/IRQ' ②qemu_edu.sh 识别 0输出/core dump 为稳定性失败(exit 3), 不再把空错误喂给 opencode。
+

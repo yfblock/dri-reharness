@@ -82,18 +82,6 @@ static const struct file_operations edu_fops = {
 	.write  = edu_write,
 };
 
-static irqreturn_t edu_irq_handler(int irq, void *data)
-{
-	struct edu_priv *priv = data;
-	u32 status;
-
-	status = readl(priv->mmio + IO_IRQ_STATUS);
-	if (!status)
-		return IRQ_NONE;
-
-	writel(status, priv->mmio + IO_IRQ_ACK);
-	return IRQ_HANDLED;
-}
 
 static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
@@ -122,44 +110,18 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	dev_info(&pdev->dev, "edu id: 0x%08x\n", readl(priv->mmio + 0));
 
-	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
-	if (ret)
-		goto err_iounmap;
-
-	priv->dma_buf = dma_alloc_coherent(&pdev->dev, DMA_SIZE,
-					   &priv->dma_handle, GFP_KERNEL);
-	if (!priv->dma_buf) {
-		ret = -ENOMEM;
-		goto err_iounmap;
-	}
-
-	priv->irq = pdev->irq;
-	ret = request_irq(priv->irq, edu_irq_handler, IRQF_SHARED,
-			  KBUILD_MODNAME, priv);
-	if (ret)
-		goto err_dma;
-
-	writel(priv->dma_handle, priv->mmio + IO_DMA_SRC);
-	writel(pci_resource_start(pdev, 0) + DMA_BASE, priv->mmio + IO_DMA_DST);
-	writel(DMA_SIZE, priv->mmio + IO_DMA_CNT);
-	writel(DMA_CMD | DMA_IRQ, priv->mmio + IO_DMA_CMD);
 
 	priv->mdev.minor = MISC_DYNAMIC_MINOR;
 	priv->mdev.name  = KBUILD_MODNAME;
 	priv->mdev.fops  = &edu_fops;
 	ret = misc_register(&priv->mdev);
 	if (ret)
-		goto err_irq;
+		goto err_iounmap;
 
 	pci_set_drvdata(pdev, priv);
-	dev_info(&pdev->dev, "edu probed (irq %d)\n", priv->irq);
+	dev_info(&pdev->dev, "edu probed\n");
 	return 0;
 
-err_irq:
-	free_irq(priv->irq, priv);
-err_dma:
-	dma_free_coherent(&pdev->dev, DMA_SIZE, priv->dma_buf,
-			  priv->dma_handle);
 err_iounmap:
 	iounmap(priv->mmio);
 err_release:
@@ -174,9 +136,6 @@ static void edu_pci_remove(struct pci_dev *pdev)
 	struct edu_priv *priv = pci_get_drvdata(pdev);
 
 	misc_deregister(&priv->mdev);
-	free_irq(priv->irq, priv);
-	dma_free_coherent(&pdev->dev, DMA_SIZE, priv->dma_buf,
-			  priv->dma_handle);
 	iounmap(priv->mmio);
 	pci_release_regions(pdev);
 	pci_disable_device(pdev);
@@ -196,4 +155,5 @@ static struct pci_driver edu_pci_driver = {
 };
 
 module_pci_driver(edu_pci_driver);
+MODULE_DESCRIPTION("QEMU edu PCI driver (reharness-synthesized)");
 MODULE_LICENSE("GPL");
