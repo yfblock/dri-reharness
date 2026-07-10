@@ -353,11 +353,15 @@ def _norm_key(lhs: str) -> str:
 def extract_function(func: Func, macros, tu, *,
                      source_lines: Optional[list[str]] = None,
                      inline_cache: Optional[dict] = None,
+                     mmio_globals: Optional[list[str]] = None,
                      depth: int = 0, max_depth: int = 3,
                      condition: Optional[str] = None) -> FuncExtraction:
     """Extract register ops for one function (with wrapper inlining)."""
     result = FuncExtraction(name=func.name)
     store: dict[str, AbsVal] = {}
+    # seed file-scope MMIO base globals (e.g. `static void __iomem *mmio`)
+    for g in (mmio_globals or []):
+        store[g] = BasePtr(g)
     # seed params — iomem/pointer params are MMIO base candidates
     for pname, ptype in func.params:
         if not pname:

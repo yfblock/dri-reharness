@@ -1,0 +1,6 @@
+[2026-07-10 12:38:56] ✅ reharness 端到端(迭代+修复)
+
+1) run_edu_e2e.sh 新增编译迭代循环: MAX_COMPILE_ITER=3, 编译失败 -> 把错误+当前代码+约束(包括 miscdevice 没有 cdev 成员的关键提示)喂给 opencode -> 取回修复版 -> 重编。最多重试 3 次。
+2) 当前驱动 .open 用 container_of(file->private_data, struct edu_priv, mdev) (正确模式: misc_open 已把 file->private_data 设成 miscdevice*, 不要再走 inode->i_cdev 那条路, 因为 struct miscdevice 没有 cdev 成员)。
+3) /dev/edu_drv (不是 /dev/edu, 因为 misc 设备名 = KBUILD_MODNAME = 'edu_drv') 真实存在 (crw 10, 258), dd 读 /dev/edu_drv 无崩溃, probe 打印 'edu device ID register: 0x010000ed' 和 'edu probed (IRQ 11)', rmmod 干净, 无 oops。
+判定: done=1 probe=2 dev_node=4 real_oops=0 -> 成功。证据 history/qemu_edu_success_log.txt。

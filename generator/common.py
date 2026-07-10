@@ -35,14 +35,21 @@ def value_var_names(ops) -> set[str]:
     return names
 
 
+def _is_simple_id(name: str) -> bool:
+    return bool(_VAR_ID.match(name))
+
+
 def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
                 ctype: str = "uint32_t") -> str:
     """Emit declarations for read vars + value-referenced locals not already
-    declared (params / read vars) and not register macros."""
+    declared (params / read vars) and not register macros. Member-access read
+    targets (e.g. `edu->revision`) are NOT declared as locals — they are
+    discarded at the read site (see ops_to_c)."""
     pad = "    " * indent
     lines: list[str] = []
     declared = set(already_declared)
-    read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(ops) if "Read" in o})
+    read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(ops)
+                        if "Read" in o and _is_simple_id(o["Read"]["var"])})
     declared |= set(read_vars)
     for v in read_vars:
         lines.append(f"{pad}{ctype} {v} = 0;")
@@ -103,7 +110,13 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             o = op["Read"]
             r = bind.prim("MmioRead", o["width"]) or "readl"
             a = addr_to_c(o["addr"], base_expr, register_macros)
-            out.append(f"{pad}{o['var']} = {r}({a});")
+            var = o["var"]
+            if _is_simple_id(var):
+                out.append(f"{pad}{var} = {r}({a});")
+            else:
+                # member-access target (e.g. edu->revision) — discard the read
+                # result (the field isn't in the generated harness struct)
+                out.append(f"{pad}(void){r}({a});")
         elif "Write" in op:
             o = op["Write"]
             w = bind.prim("MmioWrite", o["width"]) or "writel"

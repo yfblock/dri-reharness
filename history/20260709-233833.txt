@@ -1,0 +1,2 @@
+[2026-07-09 23:38:33] edu迭代1: edu_read oops (缺 .open)
+opencode 全流程重合成(非确定性)的 edu_drv.c 缺 .open 回调: misc_open 把 filp->private_data 设成 miscdevice, edu_read 当 edu_priv 用 -> priv->mmio 读到垃圾 0x102 -> readl oops。opencode 修复调用超时(124), 作为审查者直接补 edu_open (container_of 取 priv) + fops .open。重编重测。

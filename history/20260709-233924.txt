@@ -1,0 +1,5 @@
+[2026-07-09 23:39:24] ✅ reharness edu 端到端成功(迭代后)
+opencode 全流程重合成版 edu_drv.c 有运行时 bug(缺 .open -> edu_read oops), 修复后重跑成功:
+QEMU -device edu: insmod → probe 真实 edu PCI 设备 → 读 chip ID + DMA 初始化 → 注册 /dev/edu → dd 读 /dev/edu 无崩溃 → rmmod 干净。
+判定 done=1 probe=5 dev_node=4 real_oops=0。证据 history/qemu_edu_success_log.txt。
+本次为 opencode 非确定性重合成暴露的迭代场景: 编译通过但运行 oops → 诊断(缺.open) → 修复 → 成功。

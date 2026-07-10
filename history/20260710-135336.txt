@@ -1,0 +1,6 @@
+[2026-07-10 13:53:36] ✅ 强化prompt后 opencode 合成驱动 QEMU 直接通过
+强化合成 prompt(把 .open 正确实现/mdev 非 cdev/misc 名 KBUILD_MODNAME 等写成必须照抄片段)后, 全流程 ./run_edu_e2e.sh 一次跑通:
+- 合成: edu_drv.c 正确(mdev/container_of(file->private_data)/module_pci_driver)
+- 编译: 尝试1 modpost 报 missing MODULE_LICENSE(opencode 偶发漏) → 迭代循环 opencode 修 → 尝试2 通过
+- QEMU: 尝试1 即通过(done=1 probe=2 dev_node=4 real_oops=0), probe 读 id + DMA + 注册 /dev/edu_drv + rmmod 干净
+生成的驱动本身正确, QEMU 直接运行通过。证据 history/e2e_success_log.txt + qemu_edu_success_log.txt。

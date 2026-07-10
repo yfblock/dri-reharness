@@ -1,0 +1,33 @@
+############ reharness edu 端到端 ############
+kernel: /home/yfblock/Code/linux
+bzImage: /home/yfblock/Code/linux/arch/x86/boot/bzImage
+
+[0] reharness 自测
+  ✓ test passed
+
+[1] 提取 .ris/.dspec/.bind/.facts (bundle)
+   output/edu_synth/score.txt
+   output/edu_synth/verification.md
+
+[2] opencode 从 bundle 合成 edu_drv.c
+  ✓ 合成 edu_drv.c
+
+[3] 编译 (~/Code/linux, 最多迭代 3 次)
+  --- 编译尝试 1/3 ---
+  ✗ 编译失败 (尝试 1), 喂给 opencode 修复...
+    ERROR: modpost: missing MODULE_LICENSE() in edu_drv.o
+    WARNING: modpost: missing MODULE_DESCRIPTION() in edu_drv.o
+  ✓ opencode 已写回 edu_drv.c
+  --- 编译尝试 2/3 ---
+  ✓ edu_drv.ko 编译成功 (尝试 2)
+
+[4] QEMU 运行 (-device edu, 最多迭代 3 次)
+  --- QEMU 尝试 1/3 ---
+    
+    === 成功判定 ===
+      done=1 probe=2 dev_node=4 real_oops=0
+      => 成功: edu_drv probe 真实 QEMU edu 设备, 完成寄存器交互
+  ✓ QEMU 成功 (尝试 1)
+
+############ 端到端成功 ############
+E2E_EXIT=0

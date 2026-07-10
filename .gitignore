@@ -22,3 +22,7 @@ __pycache__/
 
 # Scratch planning doc (design captured in README)
 plan.md
+
+# QEMU/build artifacts (regenerable)
+/initramfs_edu.cpio.gz
+/test_rootfs/

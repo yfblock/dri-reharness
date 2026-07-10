@@ -159,14 +159,18 @@ def verify_candidate(candidate_path: str, res, backend: str) -> dict:
         entry = next((m for m in res.formal["modules"] if m["name"] == entry_name), None)
         expected = []
         if entry:
-            for o in walk_leaf_ops(entry["ops"]):
+            for o in entry["ops"]:   # top-level only; Cond/Loop ops may not run
                 if "Write" in o:
                     reg = o["Write"]["addr"]["Symbolic"]["register"]
                     expected.append(("W", regs.get(reg, 0)))
                 elif "Read" in o:
                     reg = o["Read"]["addr"]["Symbolic"]["register"]
                     expected.append(("R", regs.get(reg, 0)))
-        ok = traced_ops == expected
+        # unconditional ops must appear in the trace in order (subsequence)
+        def _subseq(sub, seq):
+            it = iter(seq)
+            return all(x in it for x in sub)
+        ok = _subseq(expected, traced_ops)
         feedback["trace"] = {"status": "passed" if ok else "failed",
                              "traced": traced_ops, "expected": expected}
 

@@ -109,11 +109,34 @@ def test_resolve_addr_offset_with_macro_name():
 # ── end-to-end on gpio-ftgpio010 (.ris spec language) ────────────────
 
 FTGPIO = os.path.join(REHARNESS, "drivers", "test", "gpio-ftgpio010.c")
+EDU = os.path.join(REHARNESS, "drivers", "test", "edu.c")
 
 
 @_fixture(scope="module")
 def ftgpio_formal():
     return extract_ris(ExtractorConfig(source=FTGPIO)).formal
+
+
+def test_edu_pci_extraction():
+    """QEMU EDU PCI driver (cirosantilli): pci_iomap global mmio, DMA writes, IRQ.
+    Registers resolve to Symbolic; global mmio base recognized."""
+    res = extract_ris(ExtractorConfig(source=EDU))
+    regs = {r.name: r.offset for r in res.device_spec.registers}
+    assert regs.get("IO_IRQ_STATUS") == 0x24
+    assert regs.get("IO_DMA_SRC") == 0x80
+    assert regs.get("IO_DMA_CMD") == 0x98
+    # mmio global recognized as base → no Top addresses; DMA writes Symbolic
+    from extractor.formal import walk_leaf_ops
+    for m in res.formal["modules"]:
+        for o in walk_leaf_ops(m["ops"]):
+            if "Delay" in o:
+                continue
+            a = (o.get("Read") or o.get("Write") or o.get("ReadModifyWrite") or {}).get("addr", {})
+            # no address should degrade to Top (completely unknown base)
+            assert "Top" not in a, f"Top addr in {m['name']}: {a}"
+    # probe callback bound (pci_driver.probe)
+    probe = next(f for f in res.device_spec.functions if f.name == "pci_probe")
+    assert probe.role == "probe"
 
 
 def test_formal_resolves_register_offsets(ftgpio_formal):

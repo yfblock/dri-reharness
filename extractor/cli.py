@@ -8,6 +8,14 @@ from .extractor import ExtractorConfig, extract_ris
 from .formalize import save_formal_text
 
 
+def _is_subsequence(sub, seq) -> bool:
+    """True if `sub` appears in `seq` in order (not necessarily contiguous).
+    Used for trace equivalence: unconditional RIS ops must appear in the
+    runtime trace in order, with conditional ops possibly interleaved."""
+    it = iter(seq)
+    return all(x in it for x in sub)
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="reharness",
@@ -94,6 +102,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"⚠️  {n_warn} clang diagnostics (non-fatal); first few:")
             for w in res.warnings[:5]:
                 print(f"   {w}")
+            # always show SVF alias analysis result (may be after clang diags)
+            svf_w = [w for w in res.warnings if 'SVF' in w]
+            for w in svf_w:
+                if w not in res.warnings[:5]:
+                    print(f"   {w}")
         print(f"✅ RIS spec saved to {out}")
         return 0
 
@@ -186,15 +199,17 @@ def main(argv: list[str] | None = None) -> int:
                 if r.returncode == 0:
                     out = subprocess.run([binp], capture_output=True, text=True).stdout
                     _w(ver_dir, "harness.trace.txt", out)
-                    # trace equivalence vs RIS entry (probe) module
-                    from extractor.formal import walk_leaf_ops
+                    # trace equivalence vs RIS entry (probe) module. Only the
+                    # UNCONDITIONAL (top-level) ops are compared — ops inside a
+                    # Cond/Loop may or may not run at runtime (RIS is path-
+                    # insensitive), so they are excluded from the expected seq.
                     regs = {r2["name"]: r2["offset"] for r2 in res.formal["register_map"]}
                     probe_fn = next((fn for fn in res.device_spec.functions if fn.role == "probe"), None)
                     entry = probe_fn.ris_ref if probe_fn else res.formal["modules"][0]["name"]
                     mod = next((m for m in res.formal["modules"] if m["name"] == entry), None)
                     expected = []
                     if mod:
-                        for o in walk_leaf_ops(mod["ops"]):
+                        for o in mod["ops"]:   # top-level only (no Cond/Loop descent)
                             if "Write" in o:
                                 expected.append(("W", regs.get(o["Write"]["addr"]["Symbolic"]["register"], 0)))
                             elif "Read" in o:
@@ -202,7 +217,9 @@ def main(argv: list[str] | None = None) -> int:
                     import re as _re
                     traced = [(k, int(off, 16)) for k, off in
                               _re.findall(r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", out)]
-                    gr["trace_passed"] = traced == expected
+                    # runtime trace must contain the unconditional ops as a
+                    # subsequence (conditional ops may appear interleaved)
+                    gr["trace_passed"] = _is_subsequence(expected, traced)
                     results[backend] = f"compiled+ran ({out.count('[trace')} ops, trace {'✓' if gr['trace_passed'] else '✗'})"
                 else:
                     _w(ver_dir, "harness.compile.log", r.stderr)

@@ -1,0 +1,2 @@
+[2026-07-09 19:34:16] edu: opencode 从 reharness bundle 合成驱动
+从 output/edu_synth/(.ris/.dspec/.bind/.facts) 用 opencode 合成 output/edu_drv/edu_drv.c (215行, PCI 驱动 0x1234:0x11e8, module_pci_driver)。忠实 .ris: probe 读id+DMA序列, irq_handler 读STATUS写ACK, read/write 走readl/writel+copy_to/from_user。

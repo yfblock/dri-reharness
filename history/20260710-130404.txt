@@ -1,0 +1,2 @@
+[2026-07-10 13:04:04] QEMU 迭代循环已加入 run_edu_e2e.sh
+目标要求'遇到错误继续迭代', 之前 QEMU 步骤失败直接退出。现重写: 抽出 opencode_write_c/compile_once 函数 + 公共约束块(含 miscdevice 无 cdev 成员、设备名 edu_drv 等教训)。步骤4 QEMU 循环(MAX_QEMU_ITER=3): 跑 qemu_edu.sh -> 失败则提取 RIP/Call Trace/Oops/probe failed/超时等 -> 喂 opencode 修 -> 重编(若编译再失败跑2轮编译修复) -> 重跑 QEMU。skip-synth 验证: 编译+QEMU 各第1轮通过, 循环正确收敛。用户遇到的 0字节/timeout(done=0) 会被循环重试+修复。

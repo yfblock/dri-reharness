@@ -1,0 +1,29 @@
+driver edu v0.1.0 {
+  module irq_handler {
+    IF (devi == major) {
+      irq_status := R(B4, mmio.IO_IRQ_STATUS) -- Interrupt
+      W(B4, mmio.IO_IRQ_ACK) = irq_status -- Interrupt
+    }
+  }
+  module read {
+    IF ((*off % 4 || len) == 0x0) {
+      kbuf := R(B4, [mmio]) -- Status
+    }
+  }
+  module write {
+    IF !(*off % 4) {
+      IF ((copy_from_user((void *)&kbuf, buf, 4) || len) != 0x4) {
+        W(B4, [mmio]) = kbuf -- Config
+      }
+    }
+  }
+  module pci_probe {
+    IF (i < 0x28) {
+      r5 := R(B4, 0x0) -- Status
+    }
+    W(B4, mmio.IO_DMA_SRC) = dma_handle_from -- Config
+    W(B4, mmio.IO_DMA_DST) = DMA_BASE -- Config
+    W(B4, mmio.IO_DMA_CNT) = SIZE -- Config
+    W(B4, mmio.IO_DMA_CMD) = (DMA_CMD | DMA_IRQ) -- Config
+  }
+}

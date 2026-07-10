@@ -28,7 +28,8 @@ IOREMAP_FNS = {
     "ioremap", "ioremap_wc", "ioremap_uc", "ioremap_cache", "ioremap_nocache",
     "devm_ioremap", "devm_ioremap_resource", "devm_ioremap_resource_byname",
     "devm_platform_ioremap_resource", "devm_platform_ioremap_resource_byname",
-    "of_iomap", "pci_ioremap_bar",
+    "of_iomap", "pci_iomap", "pcim_iomap", "devm_pci_iomap",
+    "pci_ioremap_bar", "pci_ioremap_wc_bar",
 }
 
 FRAMEWORK_FNS = {

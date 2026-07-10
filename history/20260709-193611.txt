@@ -1,0 +1,7 @@
+[2026-07-09 19:36:11] ✅ reharness 端到端成功
+reharness(真项目) 端到端跑通:
+1) reharness 从 drivers/test/edu.c 提取 .ris/.dspec/.bind/.facts (libclang+数据流)
+2) opencode 从 bundle 合成 Linux PCI 驱动 edu_drv.c (215行, PCI 0x1234:0x11e8, module_pci_driver, 忠实 .ris: probe读id+DMA序列, irq_handler读STATUS写ACK, read/write走readl/writel+copy_to/from_user)
+3) ~/Code/linux(7.1.0-rc7) 编译一次通过 (edu_drv.ko, vermagic 匹配, 无错误)
+4) qemu-system-x86_64 -device edu 运行成功: probe 真实 edu PCI 设备 0000:00:04.0, 读到识别码 0x010000ed, DMA初始化, 注册 /dev/edu, irq 11, rmmod 干净, 无崩溃。
+opencode 已接入 reharness synth (REHARNESS_LLM_CMD=tools/opencode_llm.sh)。本次合成+编译+QEMU 一次通过, 无需迭代; 迭代基础设施已就位。证据 history/qemu_edu_success_log.txt。

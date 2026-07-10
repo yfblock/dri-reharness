@@ -7,7 +7,7 @@ with plain `cc`.
 from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops, walk_all_ops
-from .common import ops_to_c
+from .common import ops_to_c, local_decls
 
 _VAR_RE = re.compile(r"\b[A-Za-z_]\w*\b")
 _KEYWORDS = {"if", "else", "for", "while", "return", "uint32_t", "uint16_t",
@@ -63,6 +63,8 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define le32_to_cpu(x) (x)")
     L.append("#define cpu_to_le16(x) (x)")
     L.append("#define le16_to_cpu(x) (x)")
+    L.append("#define lower_32_bits(x) ((uint32_t)((x) & 0xffffffff))")
+    L.append("#define upper_32_bits(x) ((uint32_t)((x) >> 32))")
     L.append("#define PAGE_SIZE 4096")
     L.append("#define PTR_ERR(x) ((long)(x))")
     L.append("#define ENOMEM (-12)")
@@ -102,15 +104,12 @@ def generate(formal: dict, device_spec, bind) -> str:
         params = (params + ", ") if params else ""
         params += f"{priv} *dev"
         L.append(f"static void {fn.name}({params}) {{")
-        # declare read vars + any locals referenced in value/guard expressions
+        # declare read vars + value/guard locals (common.local_decls skips
+        # member-access read targets, which ops_to_c discards)
         declared = {p.name for p in keep}
-        read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(m["ops"]) if "Read" in o})
-        declared |= set(read_vars)
-        for v in read_vars:
-            L.append(f"    uint32_t {v} = 0;")
-        extra = sorted(_value_var_names(m["ops"]) - declared - set(regs.keys()))
-        for v in extra:
-            L.append(f"    uint32_t {v} = 0;")
+        decls = local_decls(m["ops"], declared, regs, indent=1)
+        if decls:
+            L.append(decls)
         L.append(f"    uintptr_t base = dev->base;")
         L.append(ops_to_c(m["ops"], bind, "base", regs, indent=1))
         L.append("}")

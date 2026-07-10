@@ -123,6 +123,21 @@ def target_functions(tu, target_file: str) -> list[Func]:
     return funcs
 
 
+def target_mmio_globals(tu, target_file: str) -> list[str]:
+    """File-scope pointer variables that hold an MMIO base, e.g.
+    `static void __iomem *mmio;`. These are global bases used by callbacks that
+    don't receive the device as a parameter (common in char-device drivers).
+    Returns the variable names."""
+    out: list[str] = []
+    for c in tu.cursor.walk_preorder():
+        if c.kind != cx.CursorKind.VAR_DECL or not in_file(c, target_file):
+            continue
+        ty = c.type.spelling if c.type else ""
+        if "__iomem" in ty or (ty.endswith("*") and "void" in ty):
+            out.append(c.spelling)
+    return out
+
+
 def direct_callees(func_cursor) -> set[str]:
     """Names of functions called within `func_cursor` (any file)."""
     out: set[str] = set()

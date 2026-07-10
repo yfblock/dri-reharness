@@ -1,0 +1,2 @@
+[2026-07-09 19:25:52] opencode 接入 reharness
+新增 tools/opencode_llm.sh (stdin prompt -> opencode run --model deepseek-v4-flash)。设 REHARNESS_LLM_CMD 即让 synthesis.py 的 make_llm() 走 ShellLLM -> opencode, run_repair_loop 的 patch 步骤由 opencode 完成。已验证 wrapper 可用。同时从 edu bundle(.ris/.dspec/.bind/.facts) 用 opencode 合成完整 PCI 驱动(因 scaffold 是 platform 骨架, edu 是 PCI, 故做整段合成而非修补 scaffold)。

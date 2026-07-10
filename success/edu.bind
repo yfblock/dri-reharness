@@ -1,0 +1,15 @@
+backend linux for device edu {
+  include <linux/io.h>
+  include <linux/platform_device.h>
+  type DeviceState -> "struct edu_priv"
+  type MmioBase -> "void __iomem *"
+  type LogicalIRQ -> "struct irq_data *"
+  type UInt -> "u32"
+  map dev.base -> "mmio"
+  map MmioRead(B4) -> "readl"
+  map MmioWrite(B4) -> "writel"
+  map MmioRead(B2) -> "readw"
+  map MmioWrite(B2) -> "writew"
+  map MmioRead(B1) -> "readb"
+  map MmioWrite(B1) -> "writeb"
+}

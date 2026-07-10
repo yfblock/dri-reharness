@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from . import tu as tu_mod
 from . import macros as macros_mod
-from .ast_model import target_functions
+from .ast_model import target_functions, target_mmio_globals
 from .call_graph import extract_with_inlining
 from .formalize import build_formal_ris
 from .dataflow import Op
@@ -53,8 +53,23 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     if not funcs:
         warnings.append("No function definitions found in target file")
 
+    mmio_globals = target_mmio_globals(tu, source)
+
+    # SVF-backed alias analysis: find local variables that alias MMIO globals
+    # (e.g., `p = mmio_global` → p is also a BasePtr). Falls back gracefully
+    # if SVF binary is unavailable or IR generation fails.
+    try:
+        from .alias import find_mmio_aliases
+        svf_aliases = find_mmio_aliases(source, tu, linux_root=config.linux_root)
+        if svf_aliases:
+            mmio_globals = list(set(mmio_globals) | svf_aliases)
+            warnings.append(f"SVF alias analysis: {svf_aliases} treated as MMIO bases")
+    except Exception as e:
+        warnings.append(f"SVF alias analysis skipped: {e}")
+
     extractions, inlined_names, callback_entries = extract_with_inlining(
-        funcs, macros, tu, source_lines, max_depth=config.max_inline_depth
+        funcs, macros, tu, source_lines, mmio_globals=mmio_globals,
+        max_depth=config.max_inline_depth
     )
 
     # stats — functions_analyzed / macros_resolved are raw counts; op counts

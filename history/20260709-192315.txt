@@ -1,0 +1,2 @@
+[2026-07-09 19:23:15] 启动 reharness 端到端
+目标: reharness 提取 edu 的 .ris/.dspec/.bind/.facts → opencode 合成 Linux PCI 驱动 → ~/Code/linux(7.1.0-rc7) 编译 → qemu-system-x86_64 -device edu 运行真设备 → 失败 opencode 迭代 → 成功停。基线: ./run.sh test 37 passed。
