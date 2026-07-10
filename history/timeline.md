@@ -43,3 +43,12 @@
   - QEMU: 尝试1 即通过(done=1 probe=2 dev_node=4 real_oops=0), probe 读 id + DMA + 注册 /dev/edu_drv + rmmod 干净
   生成的驱动本身正确, QEMU 直接运行通过。证据 history/e2e_success_log.txt + qemu_edu_success_log.txt。
 
+## [2026-07-10 15:40:18] ftgpio010: 合成尝试 (opencode)
+  真实驱动 gpio-ftgpio010 (platform gpio_chip, .driver.name=ftgpio010-gpio)。reharness 提取 .ris/.dspec/.bind/.facts (寄存器偏移: INT_EN 0x20/INT_MASK 0x2c/INT_CLR 0x30/DEBOUNCE_EN 0x40/DATA_OUT 0x0/DATA_IN 0x4/DIR 0x8)。opencode 合成 platform gpio 驱动 (probe 执行 RIS init 写入 + devm_gpiochip_add_data)。qemu_platform.sh 用 device-registrar 注册 platform 设备触发 probe。opencode 今天频繁超时(124), 正在重试。
+
+## [2026-07-10 15:44:08] ✅ 真实驱动 gpio-ftgpio010 翻译+运行成功
+  落地目标达成: 真实上游驱动 drivers/gpio/gpio-ftgpio010.c (Faraday GPIO, platform_driver + gpio_chip)。
+  流程: reharness 提取 .ris/.dspec/.bind/.facts (libclang+数据流) → opencode 合成 platform gpio 驱动 ftgpio010_gpio.c (268行, probe 执行 RIS init 写入 INT_EN/MASK/CLR/DEBOUNCE_EN + devm_gpiochip_add_data, ngpio=32, irq 回调+direction/get/set 按 .ris) → 修一处编译错(.set 返回 int 非 void, 7.1 API) → ~/Code/linux(7.1.0-rc7) 编译通过 → qemu-system-x86_64 + device-registrar 注册 platform 设备 'ftgpio010-gpio' (MMIO@0xF0000000) → insmod → probe → gpiochip0 注册成功 → rmmod 干净, 无 oops。
+  判定 done=1 probe=7 gpiochip=1 real_oops=0。证据 history/qemu_ftgpio010_success_log.txt。
+  与 edu(教学驱动) 不同, ftgpio010 是真实内核驱动, 证明 reharness 能翻译真实 Linux 驱动并在 Linux 上运行。
+

@@ -1,0 +1,40 @@
+driver gpio-ftgpio010 v0.1.0 {
+  module ftgpio_gpio_ack_irq {
+    W(B4, g->base.GPIO_INT_CLR) = (0x1 << irqd_to_hwirq(d)) -- Interrupt
+  }
+  module ftgpio_gpio_mask_irq {
+    val := R(B4, g->base.GPIO_INT_EN) -- Interrupt
+    RMW(B4, g->base.GPIO_INT_EN) = val -- Interrupt
+  }
+  module ftgpio_gpio_unmask_irq {
+    val := R(B4, g->base.GPIO_INT_EN) -- Interrupt
+    RMW(B4, g->base.GPIO_INT_EN) = val -- Interrupt
+  }
+  module ftgpio_gpio_set_irq_type {
+    reg_type := R(B4, g->base.GPIO_INT_TYPE) -- Interrupt
+    reg_level := R(B4, g->base.GPIO_INT_LEVEL) -- Interrupt
+    reg_both := R(B4, g->base.GPIO_INT_BOTH_EDGE) -- Interrupt
+    RMW(B4, g->base.GPIO_INT_TYPE) = reg_type -- Interrupt
+    RMW(B4, g->base.GPIO_INT_LEVEL) = reg_level -- Interrupt
+    RMW(B4, g->base.GPIO_INT_BOTH_EDGE) = reg_both -- Interrupt
+  }
+  module ftgpio_gpio_irq_handler {
+    stat := R(B4, g->base.GPIO_INT_STAT_RAW) -- Interrupt
+  }
+  module ftgpio_gpio_set_config {
+    val := R(B4, g->base.GPIO_DEBOUNCE_PRESCALE) -- Config
+    IF (val == deb_div) {
+      val := R(B4, g->base.GPIO_DEBOUNCE_EN) -- Config
+      RMW(B4, g->base.GPIO_DEBOUNCE_EN) = val -- Config
+    }
+    val := R(B4, g->base.GPIO_DEBOUNCE_EN) -- Config
+    W(B4, g->base.GPIO_DEBOUNCE_PRESCALE) = deb_div -- Config
+    RMW(B4, g->base.GPIO_DEBOUNCE_EN) = val -- Config
+  }
+  module ftgpio_gpio_probe {
+    W(B4, g->base.GPIO_INT_EN) = 0x0 -- Init
+    W(B4, g->base.GPIO_INT_MASK) = 0x0 -- Init
+    W(B4, g->base.GPIO_INT_CLR) = (0x0 ^ 0xffffffff) -- Interrupt
+    W(B4, g->base.GPIO_DEBOUNCE_EN) = 0x0 -- Init
+  }
+}

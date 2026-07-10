@@ -1,0 +1,5 @@
+[2026-07-10 15:44:08] ✅ 真实驱动 gpio-ftgpio010 翻译+运行成功
+落地目标达成: 真实上游驱动 drivers/gpio/gpio-ftgpio010.c (Faraday GPIO, platform_driver + gpio_chip)。
+流程: reharness 提取 .ris/.dspec/.bind/.facts (libclang+数据流) → opencode 合成 platform gpio 驱动 ftgpio010_gpio.c (268行, probe 执行 RIS init 写入 INT_EN/MASK/CLR/DEBOUNCE_EN + devm_gpiochip_add_data, ngpio=32, irq 回调+direction/get/set 按 .ris) → 修一处编译错(.set 返回 int 非 void, 7.1 API) → ~/Code/linux(7.1.0-rc7) 编译通过 → qemu-system-x86_64 + device-registrar 注册 platform 设备 'ftgpio010-gpio' (MMIO@0xF0000000) → insmod → probe → gpiochip0 注册成功 → rmmod 干净, 无 oops。
+判定 done=1 probe=7 gpiochip=1 real_oops=0。证据 history/qemu_ftgpio010_success_log.txt。
+与 edu(教学驱动) 不同, ftgpio010 是真实内核驱动, 证明 reharness 能翻译真实 Linux 驱动并在 Linux 上运行。

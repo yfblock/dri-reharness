@@ -1,0 +1,2 @@
+[2026-07-10 15:40:18] ftgpio010: 合成尝试 (opencode)
+真实驱动 gpio-ftgpio010 (platform gpio_chip, .driver.name=ftgpio010-gpio)。reharness 提取 .ris/.dspec/.bind/.facts (寄存器偏移: INT_EN 0x20/INT_MASK 0x2c/INT_CLR 0x30/DEBOUNCE_EN 0x40/DATA_OUT 0x0/DATA_IN 0x4/DIR 0x8)。opencode 合成 platform gpio 驱动 (probe 执行 RIS init 写入 + devm_gpiochip_add_data)。qemu_platform.sh 用 device-registrar 注册 platform 设备触发 probe。opencode 今天频繁超时(124), 正在重试。
