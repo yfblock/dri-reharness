@@ -38,6 +38,7 @@ cat > "$ROOTFS_DIR/init" <<INIT
 mount -t proc proc /proc 2>/dev/null
 mount -t sysfs sysfs /sys 2>/dev/null
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
+( sleep 15; echo o > /proc/sysrq-trigger 2>/dev/null; echo b > /proc/sysrq-trigger 2>/dev/null ) &
 echo "=== insmod device-registrar target=$REGISTRAR_TARGET ==="
 insmod /lib/modules/device-registrar.ko target="$REGISTRAR_TARGET" 2>&1
 sleep 0.3
@@ -61,7 +62,8 @@ chmod +x "$ROOTFS_DIR/init"
 rm -f "$OUT"
 timeout --kill-after=5 "$TIMEOUT" qemu-system-x86_64 \
     -kernel "$KERNEL_BZIMAGE" -initrd "$INITRAMFS" \
-    -append "console=ttyS0 nokaslr panic=1" -nographic -m 256M -smp 2 -no-reboot -monitor none > "$OUT" 2>&1
+    -append "console=ttyS0 nokaslr panic=1 earlyprintk=serial,ttyS0,115200" \
+    -nographic -m 256M -smp 2 -no-reboot -monitor none </dev/null > "$OUT" 2>&1
 RC=$?
 echo "=== QEMU 退出码: $RC ==="
 grep -aiE 'insmod|rmmod|device-registrar|probed|probe|gpiochip|gpio|QEMU_PLAT_DONE|/sys/bus/gpio' "$OUT" | tail -25
