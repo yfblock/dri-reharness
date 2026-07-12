@@ -26,6 +26,9 @@ echo ""; echo "[0] reharness 自测"
 echo ""; echo "[1] 提取 .ris/.dspec/.bind/.facts (bundle)"
 ./run.sh bundle "$SRC" linux "$BUNDLE" 2>&1 | tail -2
 
+# 清空上次 run 的迭代日志 (避免 stale 0字节残留混淆)
+rm -rf "$DRVDIR/iter_log"; mkdir -p "$DRVDIR/iter_log"
+
 # 2. LLM(Pi SDK) 合成 PCI 驱动
 if [ "$SKIP_SYNTH" != "1" ]; then
   echo ""; echo "[2] LLM(Pi SDK) 从 bundle 合成 edu_drv.c"
