@@ -1,0 +1,2 @@
+[2026-07-12 23:28:30] gpio-pl061 端到端成功
+真实 ARM PrimeCell GPIO (gpio-pl061) via run_gpio_e2e.sh: 提取→Pi合成→编译(LLM 修了一处 gc.irq 版本漂移, 7.1 gpio_chip 无 irq 成员)→QEMU 成功 (done=1 probe=9 gpiochip=3 real_oops=0, gpiochip 注册 + RIS 执行)。泛化 gpio 流程验证通过。

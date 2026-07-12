@@ -77,3 +77,14 @@
 ## [2026-07-12 17:37:10] 修 0字节(输出丢失): stdbuf 行缓冲
   iter_log 17:18 (sanitize之后) 仍 0字节: 测的 synth 驱动 probe 干净(无DMA/IRQ/死循环), 直接跑却 23KB。所以 0字节=间歇性 stdout block-buffer 在 QEMU 被 timeout SIGTERM 时全丢, 与驱动无关。修复: qemu_edu.sh + qemu_platform.sh 的 QEMU 调用加 stdbuf -oL -eL (行缓冲, 已打印的行不被杀丢)。验证 3x 23KB 成功。
 
+## [2026-07-12 23:28:30] gpio-pl061 端到端成功
+  真实 ARM PrimeCell GPIO (gpio-pl061) via run_gpio_e2e.sh: 提取→Pi合成→编译(LLM 修了一处 gc.irq 版本漂移, 7.1 gpio_chip 无 irq 成员)→QEMU 成功 (done=1 probe=9 gpiochip=3 real_oops=0, gpiochip 注册 + RIS 执行)。泛化 gpio 流程验证通过。
+
+## [2026-07-12 23:37:12] 扩展到 4 个真实 GPIO 驱动
+  run_gpio_e2e.sh 泛化后跑通 4 个真实上游 GPIO 驱动 (都 platform + gpio_chip):
+  - gpio-ftgpio010 (Faraday) ✓ 之前
+  - gpio-pl061 (ARM PrimeCell) ✓ 编译修 gc.irq 版本漂移
+  - gpio-mb86s7x (Fujitsu) ✓ QEMU iter2
+  - gpio-idt3243x (IDT) ✓ QEMU iter2
+  每个: reharness 提取 .ris → Pi 合成 → sanitize → 编译(迭代) → qemu_platform + device-registrar(迭代) → probe + gpiochip 注册 + RIS 执行。共性 LLM 问题: gpio_chip.irq 成员版本漂移(7.1 用 gpio_irq_chip)。
+

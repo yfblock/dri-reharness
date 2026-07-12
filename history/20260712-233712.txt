@@ -1,0 +1,7 @@
+[2026-07-12 23:37:12] 扩展到 4 个真实 GPIO 驱动
+run_gpio_e2e.sh 泛化后跑通 4 个真实上游 GPIO 驱动 (都 platform + gpio_chip):
+- gpio-ftgpio010 (Faraday) ✓ 之前
+- gpio-pl061 (ARM PrimeCell) ✓ 编译修 gc.irq 版本漂移
+- gpio-mb86s7x (Fujitsu) ✓ QEMU iter2
+- gpio-idt3243x (IDT) ✓ QEMU iter2
+每个: reharness 提取 .ris → Pi 合成 → sanitize → 编译(迭代) → qemu_platform + device-registrar(迭代) → probe + gpiochip 注册 + RIS 执行。共性 LLM 问题: gpio_chip.irq 成员版本漂移(7.1 用 gpio_irq_chip)。
