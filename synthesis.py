@@ -222,9 +222,38 @@ class ShellLLM:
         return candidate
 
 
+class PiSynthLLM:
+    """LLM 合成器: 调 reharness 的 TypeScript Pi-SDK 合成器 (tools/pi_synth.sh →
+    tools/synth.mjs → Pi createAgentSession)。合成层为 TS 实现; 前端 libclang
+    提取器仍为 Python。协议与 ShellLLM 一致: stdin=prompt, stdout=C 代码。"""
+    name = "pi"
+    def __init__(self, cmd: str):
+        self.cmd = cmd
+    def patch(self, system_prompt: str, candidate: str, feedback: str) -> str:
+        full = f"{system_prompt}\n\n# Verification feedback\n{feedback}\n\n" \
+               f"# Current candidate\n```c\n{candidate}\n```\n\n# Patched candidate (C only):\n"
+        try:
+            r = subprocess.run(self.cmd, shell=True, input=full,
+                               capture_output=True, text=True,
+                               timeout=int(os.environ.get("REHARNESS_LLM_TIMEOUT", "600")))
+            if r.returncode == 0 and r.stdout.strip():
+                return _extract_code(r.stdout)
+        except Exception:
+            pass
+        return candidate
+
+
 def make_llm() -> object:
     cmd = os.environ.get("REHARNESS_LLM_CMD")
-    return ShellLLM(cmd) if cmd else NullLLM()
+    if cmd:
+        return ShellLLM(cmd)
+    # 默认: Pi agent core SDK 合成器 (TS); 用 REHARNESS_LLM=none 显式禁用
+    if os.environ.get("REHARNESS_LLM", "pi") == "pi":
+        here = os.path.dirname(os.path.abspath(__file__))
+        pi_sh = os.path.join(here, "tools", "pi_synth.sh")
+        if os.path.exists(pi_sh):
+            return PiSynthLLM(f"bash {pi_sh}")
+    return NullLLM()
 
 
 def _extract_code(text: str) -> str:

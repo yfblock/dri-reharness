@@ -58,3 +58,6 @@
   修复: probe 去掉 DMA+IRQ, 只保留 ioremap+读id寄存器(0x010000ed)+misc_register+RIS read/write 文件操作。3/3 稳定通过(done=1 probe=2 dev_node=4 real_oops=0)。
   防御: ①合成 prompt/约束块加 'probe 禁 DMA/IRQ' ②qemu_edu.sh 识别 0输出/core dump 为稳定性失败(exit 3), 不再把空错误喂给 opencode。
 
+## [2026-07-12 15:37:37] 合成器改用 Pi agent core SDK (TS)
+  合成层 TS 化(tools/synth.mjs 用 Pi createAgentSession + pi_synth.sh), synthesis.py make_llm 默认走 PiSynthLLM, run_edu_e2e.sh 调 llm_write_c。前端 libclang 提取器保持 Python。验证: Pi 合成 edu_drv 编译+QEMU 通过; ./run.sh synth 走 pi。
+

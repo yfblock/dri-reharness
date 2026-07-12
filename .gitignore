@@ -26,3 +26,7 @@ plan.md
 # QEMU/build artifacts (regenerable)
 /initramfs_edu.cpio.gz
 /test_rootfs/
+
+# Node (Pi SDK synthesizer deps)
+node_modules/
+package-lock.json

@@ -1,0 +1,2 @@
+[2026-07-12 15:37:37] 合成器改用 Pi agent core SDK (TS)
+合成层 TS 化(tools/synth.mjs 用 Pi createAgentSession + pi_synth.sh), synthesis.py make_llm 默认走 PiSynthLLM, run_edu_e2e.sh 调 llm_write_c。前端 libclang 提取器保持 Python。验证: Pi 合成 edu_drv 编译+QEMU 通过; ./run.sh synth 走 pi。

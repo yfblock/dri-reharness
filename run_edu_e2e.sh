@@ -1,7 +1,7 @@
 #!/bin/bash
 # run_edu_e2e.sh — reharness edu 端到端复现脚本
-# 流程: bundle(.ris/.dspec/.bind/.facts) → opencode 合成 PCI 驱动 → ~/Code/linux 编译 → qemu-system-x86_64 -device edu 运行
-# 用法: ./run_edu_e2e.sh [skip_synth]   (skip_synth=1 时跳过 opencode 合成, 直接用已有 edu_drv.c)
+# 流程: bundle(.ris/.dspec/.bind/.facts) → LLM(Pi SDK) 合成 PCI 驱动 → ~/Code/linux 编译 → qemu-system-x86_64 -device edu 运行
+# 用法: ./run_edu_e2e.sh [skip_synth]   (skip_synth=1 时跳过 LLM(Pi SDK) 合成, 直接用已有 edu_drv.c)
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
@@ -26,9 +26,9 @@ echo ""; echo "[0] reharness 自测"
 echo ""; echo "[1] 提取 .ris/.dspec/.bind/.facts (bundle)"
 ./run.sh bundle "$SRC" linux "$BUNDLE" 2>&1 | tail -2
 
-# 2. opencode 合成 PCI 驱动
+# 2. LLM(Pi SDK) 合成 PCI 驱动
 if [ "$SKIP_SYNTH" != "1" ]; then
-  echo ""; echo "[2] opencode 从 bundle 合成 edu_drv.c"
+  echo ""; echo "[2] LLM(Pi SDK) 从 bundle 合成 edu_drv.c"
   mkdir -p "$DRVDIR"
   cat > /tmp/edu_prompt.txt <<'PROMPT_HEAD'
 你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的 .ris/.dspec/.bind/.facts 由 reharness 从 QEMU edu PCI 驱动源码提取。请合成一个完整、可作为内核模块编译的 Linux PCI 驱动 edu_drv.c。
@@ -70,12 +70,12 @@ static int edu_open(struct inode *inode, struct file *filp)
 7) edu_pci_remove: misc_deregister, free_irq, (dma_free_coherent), iounmap, pci_release_regions, pci_disable_device。成对释放。
 8) 只输出一个 ```c 代码块, 不要解释。
 PROMPT_TAIL
-  timeout 600 opencode run --model "$MODEL" "$(cat /tmp/edu_prompt.txt)" > /tmp/edu_synth_out.txt 2>&1
+  timeout 600 bash "$HERE/tools/pi_synth.sh" < /tmp/edu_prompt.txt > /tmp/edu_synth_out.txt 2>&1
   python3 - <<'PY'
 import re
 t=open('/tmp/edu_synth_out.txt').read()
 m=re.findall(r'```c\n(.*?)\n```', t, re.S)
-if not m: print('opencode 未返回代码块'); exit(1)
+if not m: print('LLM 未返回代码块'); exit(1)
 open('output/edu_drv/edu_drv.c','w').write(m[0]+'\n')
 print('  ✓ 合成 edu_drv.c')
 PY
@@ -85,17 +85,24 @@ else
 fi
 
 # ── 公共函数 ──────────────────────────────────────────────────
-# opencode 修复: 读 prompt 文件, 调 opencode, 提取 ```c 块写回 edu_drv.c
-opencode_write_c() {
+# LLM 合成: 读 prompt 文件, 调 Pi agent core SDK 合成器 (TS), 提取 ```c 块写回 edu_drv.c
+# 切换后端: REHARNESS_LLM=pi (默认, TS Pi SDK) | REHARNESS_LLM_CMD=<cmd> (任意 shell 后端)
+LLM_BACKEND="${REHARNESS_LLM:-pi}"
+llm_write_c() {
   local prompt_file="$1"
-  timeout 600 opencode run --model "$MODEL" "$(cat "$prompt_file")" > /tmp/edu_fix_out.txt 2>&1
+  if [ -n "${REHARNESS_LLM_CMD:-}" ]; then
+    timeout 600 bash -c "$(printf '%q' "$REHARNESS_LLM_CMD")" < "$prompt_file" > /tmp/edu_fix_out.txt 2>&1
+  else
+    # Pi agent core SDK (TypeScript): tools/pi_synth.sh → tools/synth.mjs
+    timeout 600 bash "$HERE/tools/pi_synth.sh" < "$prompt_file" > /tmp/edu_fix_out.txt 2>&1
+  fi
   python3 - "$DRVDIR/edu_drv.c" <<'PY'
 import re, sys
 t=open('/tmp/edu_fix_out.txt').read()
 m=re.findall(r'```c\n(.*?)\n```', t, re.S)
-if not m: print('  opencode 未返回代码块'); sys.exit(1)
+if not m: print('  LLM 未返回代码块'); sys.exit(1)
 open(sys.argv[1],'w').write(m[0]+'\n')
-print('  ✓ opencode 已写回 edu_drv.c')
+print('  ✓ LLM 已写回 edu_drv.c')
 PY
 }
 
@@ -105,7 +112,7 @@ compile_once() {
   [ -f "$DRVDIR/edu_drv.ko" ]
 }
 
-# 公共约束 (写进每次修复 prompt, 防止 opencode 重犯已知错)
+# 公共约束 (写进每次修复 prompt, 防止 LLM(Pi SDK) 重犯已知错)
 CONSTRAINTS_BLOCK='## 关键约束 (不要破坏)
 - PCI 驱动 0x1234:0x11e8 (QEMU edu 设备), 用 module_pci_driver
 - file_operations.open 必须用 container_of(file->private_data, struct edu_priv, mdev) 取回 priv (misc_open 已把 private_data 设为 miscdevice*); struct miscdevice **没有** cdev 成员, 不要用 container_of(inode->i_cdev, struct miscdevice, cdev)
@@ -114,7 +121,7 @@ CONSTRAINTS_BLOCK='## 关键约束 (不要破坏)
 - dma_alloc_coherent / request_irq(IRQF_SHARED) / pci_ioremap_bar(pdev,0) 等资源在 remove 里成对释放
 - **probe 禁止** DMA(request_irq/dma_alloc/writel DMA_CMD|DMA_IRQ) —— 触发 QEMU edu 中断风暴致 core dump; probe 只 ioremap+读id+misc_register'
 
-# 3. Makefile + 编译 (失败则 opencode 迭代修复, 最多 MAX_COMPILE_ITER 次)
+# 3. Makefile + 编译 (失败则 LLM(Pi SDK) 迭代修复, 最多 MAX_COMPILE_ITER 次)
 MAX_COMPILE_ITER="${MAX_COMPILE_ITER:-3}"
 echo ""; echo "[3] 编译 (~/Code/linux, 最多迭代 $MAX_COMPILE_ITER 次)"
 cat > "$DRVDIR/Makefile" <<EOF
@@ -131,7 +138,7 @@ for iter in $(seq 1 $MAX_COMPILE_ITER); do
   if compile_once; then
     echo "  ✓ edu_drv.ko 编译成功 (尝试 $iter)"; COMPILE_OK=1; break
   fi
-  echo "  ✗ 编译失败 (尝试 $iter), 喂给 opencode 修复..."
+  echo "  ✗ 编译失败 (尝试 $iter), 喂给 LLM(Pi SDK) 修复..."
   grep -iE 'error:|warning:' /tmp/edu_compile.log | head -15 | sed 's/^/    /'
   cat > /tmp/edu_compile_fix.txt <<FIXHEAD
 你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的驱动编译失败, 请修复。
@@ -143,11 +150,11 @@ $CONSTRAINTS_BLOCK
 FIXHEAD
   cat "$DRVDIR/edu_drv.c" >> /tmp/edu_compile_fix.txt
   echo -e "\n## 要求\n只输出修复后的完整 edu_drv.c (一个 \`\`\`c 代码块), 不要解释。" >> /tmp/edu_compile_fix.txt
-  opencode_write_c /tmp/edu_compile_fix.txt || { echo "  opencode 修复失败, 继续重试"; }
+  llm_write_c /tmp/edu_compile_fix.txt || { echo "  LLM(Pi SDK) 修复失败, 继续重试"; }
 done
 [ "$COMPILE_OK" -eq 1 ] || { echo "  ✗ 编译迭代用尽"; exit 1; }
 
-# 4. QEMU 运行 (失败则 opencode 迭代修复, 最多 MAX_QEMU_ITER 次)
+# 4. QEMU 运行 (失败则 LLM(Pi SDK) 迭代修复, 最多 MAX_QEMU_ITER 次)
 MAX_QEMU_ITER="${MAX_QEMU_ITER:-3}"
 echo ""; echo "[4] QEMU 运行 (-device edu, 最多迭代 $MAX_QEMU_ITER 次)"
 QEMU_OK=0
@@ -159,12 +166,12 @@ for iter in $(seq 1 $MAX_QEMU_ITER); do
   if [ $QRC -eq 0 ]; then
     echo "  ✓ QEMU 成功 (尝试 $iter)"; QEMU_OK=1; break
   fi
-  echo "  ✗ QEMU 失败 rc=$QRC (尝试 $iter), 提取错误喂给 opencode 修复..."
+  echo "  ✗ QEMU 失败 rc=$QRC (尝试 $iter), 提取错误喂给 LLM(Pi SDK) 修复..."
   # 从 QEMU 日志提取崩溃/错误信息
   QEMU_ERR=$(grep -aE 'RIP:|Call Trace|Oops:|BUG:|general protection|Unable to handle|probe .*failed|Kernel panic|edu_read|edu_write|edu_pci|Null pointer|null pointer|page fault' /tmp/reharness_qemu_edu.txt 2>/dev/null | head -20)
   [ -z "$QEMU_ERR" ] && QEMU_ERR="(无明确 oops; 可能超时/无输出 — 检查驱动是否导致内核启动/insmod 卡死, 例如 request_irq 死循环、probe 里阻塞、DMA 配置触发风暴)"
   cat > /tmp/edu_qemu_fix.txt <<FIXHEAD
-你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的 reharness+opencode 合成驱动在 QEMU(-device edu) 运行时出错, 请修复。
+你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的 reharness+LLM(Pi SDK) 合成驱动在 QEMU(-device edu) 运行时出错, 请修复。
 ## 运行时错误 (来自 QEMU 串口/dmesg)
 $QEMU_ERR
 
@@ -173,7 +180,7 @@ $CONSTRAINTS_BLOCK
 FIXHEAD
   cat "$DRVDIR/edu_drv.c" >> /tmp/edu_qemu_fix.txt
   echo -e "\n## 要求\n只修复运行时错误(不改寄存器交互语义), 输出完整 edu_drv.c (一个 \`\`\`c 代码块), 不要解释。" >> /tmp/edu_qemu_fix.txt
-  opencode_write_c /tmp/edu_qemu_fix.txt || { echo "  opencode 修复失败, 继续重试"; }
+  llm_write_c /tmp/edu_qemu_fix.txt || { echo "  LLM(Pi SDK) 修复失败, 继续重试"; }
   # 修复后必须重新编译; 编译不过就用编译循环再修一轮
   echo "  → 重新编译..."
   if ! compile_once; then
@@ -189,7 +196,7 @@ $CONSTRAINTS_BLOCK
 FIXHEAD2
       cat "$DRVDIR/edu_drv.c" >> /tmp/edu_compile_fix.txt
       echo -e "\n## 要求\n只输出完整 edu_drv.c (一个 \`\`\`c 代码块)。" >> /tmp/edu_compile_fix.txt
-      opencode_write_c /tmp/edu_compile_fix.txt || true
+      llm_write_c /tmp/edu_compile_fix.txt || true
       compile_once && break
     done
   fi
