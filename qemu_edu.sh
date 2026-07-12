@@ -24,6 +24,8 @@ for cmd in sh ls cat mount insmod dmesg rmmod sleep; do
 done
 mkdir -p "$ROOTFS_DIR/lib64"; cp /lib64/ld-linux-x86-64.so.2 "$ROOTFS_DIR/lib64/" 2>/dev/null || true
 cp "$OUTPUT_DIR/edu_drv.ko" "$ROOTFS_DIR/lib/modules/"
+# trace 一致性测试程序 (静态, 自包含)
+cp "$PROJECT_DIR/test/edu_trace_test" "$ROOTFS_DIR/bin/edu_trace_test" 2>/dev/null && chmod +x "$ROOTFS_DIR/bin/edu_trace_test" || echo "  (无 edu_trace_test, 跳过 trace 校验)"
 
 cat > "$ROOTFS_DIR/init" <<'INIT'
 #!/bin/sh
@@ -38,9 +40,8 @@ echo "=== dmesg edu ==="
 dmesg | grep -iE 'edu|probe' | tail -20
 echo "=== /dev/edu_drv ? ==="
 ls -l /dev/edu_drv 2>&1 | head -2
-echo "=== read /dev/edu_drv (offset 0 = id reg) ==="
-dd if=/dev/edu_drv of=/tmp/id bs=4 count=1 2>/dev/null && hexdump -C /tmp/id 2>/dev/null || od -A x -t x1 /tmp/id 2>/dev/null
-ls -l /dev/edu_drv 2>&1 | head -2
+echo "=== trace 一致性 (id / live_check / factorial) ==="
+/bin/edu_trace_test /dev/edu_drv 2>&1
 echo "=== rmmod edu_drv ==="
 rmmod edu_drv 2>&1
 sleep 0.2
@@ -63,11 +64,14 @@ echo ""; echo "=== 成功判定 ==="
 DONE=$(grep -ac 'QEMU_EDU_DONE' "$OUT")
 PROBE=$(grep -acE 'edu probed|edu device id|edu chip ID|chip ID =|edu PCI device' "$OUT")
 DEVNODE=$(grep -ac '/dev/edu_drv' "$OUT")
+TRACE_OK=$(grep -ac 'EDU_TRACE_OK' "$OUT")
+TRACE_FAIL=$(grep -ac 'EDU_TRACE_FAIL' "$OUT")
 REAL_OOPS=$(grep -aE 'Oops:|BUG:|Unable to handle|general protection|Kernel panic - not syncing' "$OUT" | grep -vacE 'Attempted to kill init')
-echo "  done=$DONE probe=$PROBE dev_node=$DEVNODE real_oops=$REAL_OOPS"
+echo "  done=$DONE probe=$PROBE dev_node=$DEVNODE trace_ok=$TRACE_OK trace_fail=$TRACE_FAIL real_oops=$REAL_OOPS"
 if [ "$REAL_OOPS" -gt 0 ]; then echo "  => 失败: 崩溃/oops"; exit 2; fi
-if [ "$DONE" -gt 0 ] && [ "$PROBE" -gt 0 ]; then
-    echo "  => 成功: edu_drv probe 真实 QEMU edu 设备, 完成寄存器交互"
+if [ "$TRACE_FAIL" -gt 0 ]; then echo "  => 失败: trace 一致性不通过 (寄存器值与 .ris/edu 语义不符)"; grep -aE 'EDU_TRACE_FAIL|TRACE ' "$OUT" | sed 's/^/    /'; exit 3; fi
+if [ "$DONE" -gt 0 ] && [ "$PROBE" -gt 0 ] && [ "$TRACE_OK" -gt 0 ]; then
+    echo "  => 成功: edu_drv probe + trace 一致性通过 (id/live_check/factorial 值校验)"
     exit 0
 fi
-echo "  => 失败: 未完成 probe"; exit 1
+echo "  => 失败: 未完成 probe 或 trace"; exit 1

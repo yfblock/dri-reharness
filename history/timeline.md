@@ -88,3 +88,6 @@
   - gpio-idt3243x (IDT) ✓ QEMU iter2
   每个: reharness 提取 .ris → Pi 合成 → sanitize → 编译(迭代) → qemu_platform + device-registrar(迭代) → probe + gpiochip 注册 + RIS 执行。共性 LLM 问题: gpio_chip.irq 成员版本漂移(7.1 用 gpio_irq_chip)。
 
+## [2026-07-12 23:45:08] edu trace 一致性验证 (值级 oracle)
+  qemu_edu.sh 接入 trace 一致性: test/edu_trace_test.c (静态) 通过 /dev/edu_drv 行使 .ris read/write 模块, 校验真实 edu 寄存器值: id@0x00=0x010000ed, live_check@0x04(写X读~X), factorial@0x08(5)=120。judge 要求 EDU_TRACE_OK。正向: 三项全过 EDU_TRACE_OK。反向(故意改坏 read 偏移+4): EDU_TRACE_FAIL:id reg 0x00000000。证明能抓 probe-ok-but-logic-wrong 的正确性 bug (旧 probe+no-crash 判据会漏)。edu 正确性从'存活'升级到'语义'。
+
