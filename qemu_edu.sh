@@ -50,10 +50,11 @@ chmod +x "$ROOTFS_DIR/init"
 ( cd "$ROOTFS_DIR" && find . -print0 | cpio --null -o --format=newc 2>/dev/null | gzip -9 > "$INITRAMFS" )
 
 rm -f "$OUT"
-# stdbuf -oL -eL: 行缓冲, 防止 QEMU 被 timeout 杀时 stdout block-buffer 全丢 (0字节)
-timeout "$TIMEOUT" stdbuf -oL -eL qemu-system-x86_64 \
-    -kernel "$KERNEL_BZIMAGE" -initrd "$INITRAMFS" -device edu \
-    -append "console=ttyS0 nokaslr panic=1" -nographic -m 256M -smp 2 -no-reboot -monitor none > "$OUT" 2>&1
+# 用 pty(script) 捕获 QEMU 串口: QEMU 的 serial 走 write() 不走 stdio, stdbuf 无效;
+# pty 实时捕获 write() 输出到日志, 即使 QEMU 被 timeout 杀也有挂死前全部内容 (不再 0 字节)。
+# timeout --kill-after: SIGTERM 后 5s 仍不死则 SIGKILL, 防残留。
+QEMU_CMD="qemu-system-x86_64 -kernel $KERNEL_BZIMAGE -initrd $INITRAMFS -device edu -append 'console=ttyS0 nokaslr panic=1' -nographic -m 256M -smp 2 -no-reboot -monitor none"
+timeout --kill-after=5 "$TIMEOUT" script -qfc "$QEMU_CMD" "$OUT" >/dev/null 2>&1
 RC=$?
 echo "=== QEMU 退出码: $RC ==="
 grep -aiE 'edu_drv|edu probed|edu device id|insmod|rmmod|/dev/edu_drv|QEMU_EDU_DONE' "$OUT" | tail -25
