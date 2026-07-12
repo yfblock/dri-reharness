@@ -3,18 +3,18 @@ mount -t proc proc /proc 2>/dev/null
 mount -t sysfs sysfs /sys 2>/dev/null
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
 ( sleep 15; echo o > /proc/sysrq-trigger 2>/dev/null; echo b > /proc/sysrq-trigger 2>/dev/null ) &
-echo "=== insmod device-registrar target=gpio_idt3243x ==="
-insmod /lib/modules/device-registrar.ko target="gpio_idt3243x" 2>&1
+echo "=== insmod device-registrar target=gpio_ftgpio010 ==="
+insmod /lib/modules/device-registrar.ko target="gpio_ftgpio010" 2>&1
 sleep 0.3
-echo "=== insmod gpio_idt3243x ==="
-insmod /lib/modules/gpio_idt3243x.ko 2>&1
+echo "=== insmod gpio_ftgpio010 ==="
+insmod /lib/modules/gpio_ftgpio010.ko 2>&1
 sleep 0.3
 echo "=== dmesg (driver+registrar) ==="
-dmesg | grep -iE 'gpio_idt3243x|gpio_idt3243x|ftgpio|gpiochip|probe|gpio' | tail -25
+dmesg | grep -iE 'gpio_ftgpio010|gpio_ftgpio010|ftgpio|gpiochip|probe|gpio' | tail -25
 echo "=== /sys/bus/gpio/devices ==="
 ls /sys/bus/gpio/devices/ 2>&1 | head
-echo "=== rmmod gpio_idt3243x ==="
-rmmod gpio_idt3243x 2>&1
+echo "=== rmmod gpio_ftgpio010 ==="
+rmmod gpio_ftgpio010 2>&1
 rmmod device-registrar 2>/dev/null
 sleep 0.2
 echo "=== QEMU_PLAT_DONE ==="

@@ -51,6 +51,7 @@ open(sys.argv[1],'w').write(code+'\n')
 print('  ✓ LLM 已写回')
 PY
   python3 "$HERE/tools/sanitize.py" "$DRVDIR/$MODULE.c" || true
+  python3 "$HERE/tools/instrument_mmio.py" "$DRVDIR/$MODULE.c" || true
 }
 compile_once() {
   (cd "$DRVDIR" && make clean >/dev/null 2>&1 && make KERNELDIR="$KERNELDIR" 2>&1) > /tmp/edu_compile.log 2>&1
@@ -111,6 +112,9 @@ PY
 else
   echo "[2] 跳过合成 (用已有 $DRVDIR/$MODULE.c)"
 fi
+# 总是 instrument (synth 或 skip 都要, 用于 trace 一致性; sanitize 也再跑一次保险)
+python3 "$HERE/tools/sanitize.py" "$DRVDIR/$MODULE.c" || true
+python3 "$HERE/tools/instrument_mmio.py" "$DRVDIR/$MODULE.c" || true
 
 # 3. Makefile + 编译 (迭代)
 MAX_COMPILE_ITER="${MAX_COMPILE_ITER:-3}"
@@ -178,5 +182,23 @@ FIXHEAD
   echo "  → 重编..."
   compile_once || echo "  重编失败"
 done
-[ "$QEMU_OK" -eq 1 ] && { echo ""; echo "############ $BASE 端到端成功 ############"; exit 0; }
+if [ "$QEMU_OK" -eq 1 ]; then
+  echo ""; echo "[5] trace 一致性 (.ris probe 模块 vs 实际 MMIO 访问)"
+  if [ -f /tmp/reharness_qemu_plat.txt ] && [ -f "$BUNDLE/$BASE.ris" ] && [ -f "$BUNDLE/$BASE.dspec" ]; then
+    python3 "$HERE/tools/trace_match.py" /tmp/reharness_qemu_plat.txt "$BUNDLE/$BASE.ris" "$BUNDLE/$BASE.dspec" > /tmp/trace_match.out 2>/tmp/trace_match.err
+    TRC=$?
+    cat /tmp/trace_match.err | sed 's/^/    /'
+    cat /tmp/trace_match.out
+    cp /tmp/trace_match.out "$ITER_LOG/trace_match.txt" 2>/dev/null
+    if [ $TRC -eq 0 ]; then
+      echo "############ $BASE 端到端成功 + trace 一致性通过 ############"
+      exit 0
+    else
+      echo "############ $BASE probe 通过但 trace 一致性失败 (见 $ITER_LOG/trace_match.txt) ############"
+      exit 4
+    fi
+  else
+    echo "  (缺 trace_match 输入, 跳过)"; echo "############ $BASE 端到端成功 ############"; exit 0
+  fi
+fi
 echo ""; echo "############ $BASE QEMU 迭代用尽 (见 $ITER_LOG/) ############"; exit 1

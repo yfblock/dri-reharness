@@ -91,3 +91,6 @@
 ## [2026-07-12 23:45:08] edu trace 一致性验证 (值级 oracle)
   qemu_edu.sh 接入 trace 一致性: test/edu_trace_test.c (静态) 通过 /dev/edu_drv 行使 .ris read/write 模块, 校验真实 edu 寄存器值: id@0x00=0x010000ed, live_check@0x04(写X读~X), factorial@0x08(5)=120。judge 要求 EDU_TRACE_OK。正向: 三项全过 EDU_TRACE_OK。反向(故意改坏 read 偏移+4): EDU_TRACE_FAIL:id reg 0x00000000。证明能抓 probe-ok-but-logic-wrong 的正确性 bug (旧 probe+no-crash 判据会漏)。edu 正确性从'存活'升级到'语义'。
 
+## [2026-07-13 00:14:12] gpio trace 一致性接入 (偏移级 oracle)
+  gpio 驱动 trace 一致性: tools/instrument_mmio.py 在合成驱动 #include 后注入 file-local 宏 (readl/writel/readb/writeb 等→printk [rh] R/W 0xOFF), 在 ioremap 后注入 RH_SET_BASE。tools/trace_match.py 解析 [rh] 行→traced ops, 解析 .ris probe 模块 + .dspec 寄存器映射→expected ops, 子序列匹配。run_gpio_e2e.sh: sanitize→instrument→编译→QEMU→trace_match, 成功需 TRACE_MATCH_OK。验证 ftgpio010: probe 4 个 W @ 0x20/0x2c/0x30/0x40 全匹配 .ris probe 模块, TRACE_MATCH_OK。gpio 正确性从'存活'升级到'偏移级语义'(假MMIO无值, 校op+offset; 写入值也匹配因为是驱动写的)。
+
