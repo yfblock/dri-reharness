@@ -1,0 +1,2 @@
+[2026-07-12 17:07:53] 诊断+修复: 0字节=LLM无视禁DMA约束致中断风暴
+查 iter_log qemu_serial.log: 3轮全 0字节。根因: LLM(glm-5.2)无视 prompt 里5遍'probe禁DMA'约束, iter1修复反而加回 dma_alloc+writel(DMA_CMD|DMA_IRQ) -> edu中断风暴 -> guest硬挂 -> QEMU被timeout杀+stdout缓冲全丢=0字节 -> 给LLM空反馈修不好。DMA驱动偶发oops恢复时才有输出(间歇)。修复: tools/sanitize.py 确定性后处理, 删 writel(...IO_DMA_CMD...) 这一行(风暴触发点), 其余DMA设置行无害。接入 llm_write_c + step2, 每次LLM写回后自动sanitize。验证: synth(DMA)驱动+sanitize -> 3/3 QEMU稳定成功。

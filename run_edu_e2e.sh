@@ -81,6 +81,7 @@ open('output/edu_drv/edu_drv.c','w').write(code+'\n')
 print('  ✓ 合成 edu_drv.c')
 PY
   [ -f "$DRVDIR/edu_drv.c" ] || { echo "  ✗ 合成失败"; exit 1; }
+  python3 "$HERE/tools/sanitize.py" "$DRVDIR/edu_drv.c" || true
   # 记录合成轮的 prompt + 回复 (供迭代用尽时复盘)
   mkdir -p "$DRVDIR/iter_log/synth"
   cp /tmp/edu_prompt.txt "$DRVDIR/iter_log/synth/prompt.txt" 2>/dev/null
@@ -111,6 +112,8 @@ if not code or len(code)<50: print('  LLM 未返回有效代码'); sys.exit(1)
 open(sys.argv[1],'w').write(code+'\n')
 print('  ✓ LLM 已写回 edu_drv.c')
 PY
+  # 确定性后处理: 删 DMA 启动写 (LLM 反复无视 'probe 禁 DMA' 约束, 这行触发 QEMU 中断风暴)
+  python3 "$HERE/tools/sanitize.py" "$DRVDIR/edu_drv.c" || true
 }
 
 # 单次编译: 成功返回 0, 失败返回 1 (错误留在 /tmp/edu_compile.log)
