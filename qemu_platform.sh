@@ -59,7 +59,7 @@ chmod +x "$ROOTFS_DIR/init"
 ( cd "$ROOTFS_DIR" && find . -print0 | cpio --null -o --format=newc 2>/dev/null | gzip -9 > "$INITRAMFS" )
 
 rm -f "$OUT"
-timeout "$TIMEOUT" qemu-system-x86_64 \
+timeout "$TIMEOUT" stdbuf -oL -eL qemu-system-x86_64 \
     -kernel "$KERNEL_BZIMAGE" -initrd "$INITRAMFS" \
     -append "console=ttyS0 nokaslr panic=1" -nographic -m 256M -smp 2 -no-reboot -monitor none > "$OUT" 2>&1
 RC=$?

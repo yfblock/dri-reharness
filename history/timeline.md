@@ -74,3 +74,6 @@
 ## [2026-07-12 17:11:05] 记录 LLM 问题与能力边界
   docs/llm-limitations.md: 实测归纳 8 类问题(无视约束/版本漂移API/跨函数不一致/无法从空反馈自修/输出格式不稳/漏样板/端点超时/非确定性) + 能力边界(擅长结构骨架与照抄模板,不擅长版本API/一致性/否定约束/运行时因果) + 应对策略(确定性sanitize/真目标在环/API Chronicle)。所有案例有 git/history/iter_log 可查。
 
+## [2026-07-12 17:37:10] 修 0字节(输出丢失): stdbuf 行缓冲
+  iter_log 17:18 (sanitize之后) 仍 0字节: 测的 synth 驱动 probe 干净(无DMA/IRQ/死循环), 直接跑却 23KB。所以 0字节=间歇性 stdout block-buffer 在 QEMU 被 timeout SIGTERM 时全丢, 与驱动无关。修复: qemu_edu.sh + qemu_platform.sh 的 QEMU 调用加 stdbuf -oL -eL (行缓冲, 已打印的行不被杀丢)。验证 3x 23KB 成功。
+

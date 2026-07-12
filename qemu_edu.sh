@@ -50,7 +50,8 @@ chmod +x "$ROOTFS_DIR/init"
 ( cd "$ROOTFS_DIR" && find . -print0 | cpio --null -o --format=newc 2>/dev/null | gzip -9 > "$INITRAMFS" )
 
 rm -f "$OUT"
-timeout "$TIMEOUT" qemu-system-x86_64 \
+# stdbuf -oL -eL: 行缓冲, 防止 QEMU 被 timeout 杀时 stdout block-buffer 全丢 (0字节)
+timeout "$TIMEOUT" stdbuf -oL -eL qemu-system-x86_64 \
     -kernel "$KERNEL_BZIMAGE" -initrd "$INITRAMFS" -device edu \
     -append "console=ttyS0 nokaslr panic=1" -nographic -m 256M -smp 2 -no-reboot -monitor none > "$OUT" 2>&1
 RC=$?

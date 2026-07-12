@@ -34,7 +34,15 @@ struct edu_priv {
 	/* DMA fields (optional; not allocated in probe to avoid IRQ storm) */
 	void *dma_buf;
 	dma_addr_t dma_handle;
+	bool irq_requested;
+	bool dma_allocated;
 };
+
+static const struct pci_device_id edu_ids[] = {
+	{ PCI_DEVICE(EDU_VENDOR_ID, EDU_DEVICE_ID) },
+	{ 0, }
+};
+MODULE_DEVICE_TABLE(pci, edu_ids);
 
 static irqreturn_t edu_irq_handler(int irq, void *data)
 {
@@ -103,7 +111,7 @@ static const struct file_operations edu_fops = {
 static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct edu_priv *priv;
-	u32 dev_id;
+	u32 devid;
 	int ret;
 
 	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
@@ -112,6 +120,8 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	priv->pdev = pdev;
 	priv->dma_buf = NULL;
+	priv->irq_requested = false;
+	priv->dma_allocated = false;
 
 	ret = pci_enable_device_mem(pdev);
 	if (ret) {
@@ -127,21 +137,21 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	priv->mmio = pci_ioremap_bar(pdev, 0);
 	if (!priv->mmio) {
-		dev_err(&pdev->dev, "cannot ioremap BAR0\n");
+		dev_err(&pdev->dev, "cannot ioremap bar 0\n");
 		ret = -ENOMEM;
-		goto err_regions;
+		goto err_release;
 	}
 
 	/* Read device identification register (edu id at offset 0) */
-	dev_id = readl(priv->mmio + 0x0);
-	dev_info(&pdev->dev, "edu device id = 0x%08x\n", dev_id);
+	devid = readl(priv->mmio + 0x0);
+	dev_info(&pdev->dev, "edu device id = 0x%08x\n", devid);
 
 	/*
-	 * DMA setup intentionally omitted here: triggering DMA_CMD|DMA_IRQ
-	 * in probe causes a QEMU edu interrupt storm / core dump.
-	 * request_irq / dma_alloc_coherent / DMA registers are kept out of
-	 * probe per .ris constraints. priv->irq is recorded so an upper
-	 * layer (or a later ioctl) can request_irq(IRQF_SHARED) on demand.
+	 * DMA / IRQ setup intentionally omitted here: triggering
+	 * DMA_CMD|DMA_IRQ in probe causes a QEMU edu interrupt storm /
+	 * core dump. request_irq(IRQF_SHARED), dma_alloc_coherent and DMA
+	 * register writes are kept out of probe per .ris constraints.
+	 * priv->irq is recorded so it can be request_irq()'d on demand.
 	 */
 	priv->irq = pdev->irq;
 
@@ -162,7 +172,7 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 err_iounmap:
 	iounmap(priv->mmio);
-err_regions:
+err_release:
 	pci_release_regions(pdev);
 err_disable:
 	pci_disable_device(pdev);
@@ -176,14 +186,22 @@ static void edu_pci_remove(struct pci_dev *pdev)
 	misc_deregister(&priv->mdev);
 
 	/*
-	 * Nothing was request_irq()'d or DMA-triggered in probe, so there is
-	 * no free_irq() and (normally) no dma_free_coherent() to do here.
-	 * Keep the dma_buf free defensive in case an upper layer allocated it
-	 * later via an ioctl path.
+	 * Only free what was actually allocated. probe deliberately did
+	 * not request_irq() or dma_alloc_coherent() (to avoid the QEMU edu
+	 * interrupt storm), so we must not free_irq()/dma_free_coherent()
+	 * unconditionally here -- freeing an IRQ we never requested trips
+	 * the kernel/irq/manage.c warning and is not a paired release.
 	 */
-	if (priv->dma_buf)
+	if (priv->irq_requested) {
+		free_irq(priv->irq, priv);
+		priv->irq_requested = false;
+	}
+
+	if (priv->dma_allocated) {
 		dma_free_coherent(&pdev->dev, DMA_SIZE, priv->dma_buf,
 				  priv->dma_handle);
+		priv->dma_allocated = false;
+	}
 
 	iounmap(priv->mmio);
 	pci_release_regions(pdev);
@@ -192,20 +210,14 @@ static void edu_pci_remove(struct pci_dev *pdev)
 	dev_info(&pdev->dev, "edu removed\n");
 }
 
-static const struct pci_device_id edu_pci_ids[] = {
-	{ PCI_DEVICE(EDU_VENDOR_ID, EDU_DEVICE_ID) },
-	{ 0, }
-};
-MODULE_DEVICE_TABLE(pci, edu_pci_ids);
-
-static struct pci_driver edu_pci_driver = {
+static struct pci_driver edu_driver = {
 	.name		= KBUILD_MODNAME,
-	.id_table	= edu_pci_ids,
+	.id_table	= edu_ids,
 	.probe		= edu_pci_probe,
 	.remove		= edu_pci_remove,
 };
 
-module_pci_driver(edu_pci_driver);
+module_pci_driver(edu_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("QEMU edu PCI driver");

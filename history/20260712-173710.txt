@@ -1,0 +1,2 @@
+[2026-07-12 17:37:10] 修 0字节(输出丢失): stdbuf 行缓冲
+iter_log 17:18 (sanitize之后) 仍 0字节: 测的 synth 驱动 probe 干净(无DMA/IRQ/死循环), 直接跑却 23KB。所以 0字节=间歇性 stdout block-buffer 在 QEMU 被 timeout SIGTERM 时全丢, 与驱动无关。修复: qemu_edu.sh + qemu_platform.sh 的 QEMU 调用加 stdbuf -oL -eL (行缓冲, 已打印的行不被杀丢)。验证 3x 23KB 成功。
