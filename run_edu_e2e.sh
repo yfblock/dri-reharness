@@ -81,6 +81,11 @@ open('output/edu_drv/edu_drv.c','w').write(code+'\n')
 print('  ✓ 合成 edu_drv.c')
 PY
   [ -f "$DRVDIR/edu_drv.c" ] || { echo "  ✗ 合成失败"; exit 1; }
+  # 记录合成轮的 prompt + 回复 (供迭代用尽时复盘)
+  mkdir -p "$DRVDIR/iter_log/synth"
+  cp /tmp/edu_prompt.txt "$DRVDIR/iter_log/synth/prompt.txt" 2>/dev/null
+  cp /tmp/edu_synth_out.txt "$DRVDIR/iter_log/synth/reply.txt" 2>/dev/null
+  cp "$DRVDIR/edu_drv.c" "$DRVDIR/iter_log/synth/edu_drv.c" 2>/dev/null
 else
   echo "[2] 跳过合成 (使用已有 $DRVDIR/edu_drv.c)"
 fi
@@ -135,6 +140,21 @@ clean:
 	\$(MAKE) -C \$(KERNELDIR) M=\$(PWD) clean
 EOF
 COMPILE_OK=0
+ITER_LOG="$DRVDIR/iter_log"
+mkdir -p "$ITER_LOG"
+echo "  (迭代日志 → $ITER_LOG/)"
+
+# 逐轮日志辅助: save_iter <kind> <iter> <prompt_file> <error_file>
+# 记录 prompt + 错误原因 + LLM 回复(/tmp/edu_fix_out.txt) + 写回的 edu_drv.c
+save_iter() {
+  local kind="$1" n="$2" pf="$3" ef="$4"
+  local d="$ITER_LOG/${kind}_iter${n}"
+  mkdir -p "$d"
+  [ -f "$pf" ] && cp "$pf" "$d/prompt.txt"
+  [ -f "$ef" ] && cp "$ef" "$d/error.txt"
+  [ -f /tmp/edu_fix_out.txt ] && cp /tmp/edu_fix_out.txt "$d/reply.txt"
+  [ -f "$DRVDIR/edu_drv.c" ] && cp "$DRVDIR/edu_drv.c" "$d/edu_drv.c"
+}
 for iter in $(seq 1 $MAX_COMPILE_ITER); do
   echo "  --- 编译尝试 $iter/$MAX_COMPILE_ITER ---"
   if compile_once; then
@@ -142,6 +162,8 @@ for iter in $(seq 1 $MAX_COMPILE_ITER); do
   fi
   echo "  ✗ 编译失败 (尝试 $iter), 喂给 LLM(Pi SDK) 修复..."
   grep -iE 'error:|warning:' /tmp/edu_compile.log | head -15 | sed 's/^/    /'
+  # 保存本轮编译错误
+  grep -iE 'error:|warning:' /tmp/edu_compile.log | head -40 > /tmp/edu_compile_err.txt
   cat > /tmp/edu_compile_fix.txt <<FIXHEAD
 你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的驱动编译失败, 请修复。
 ## 编译错误
@@ -153,8 +175,9 @@ FIXHEAD
   cat "$DRVDIR/edu_drv.c" >> /tmp/edu_compile_fix.txt
   echo -e "\n## 要求\n只输出修复后的完整 edu_drv.c (一个 \`\`\`c 代码块), 不要解释。" >> /tmp/edu_compile_fix.txt
   llm_write_c /tmp/edu_compile_fix.txt || { echo "  LLM(Pi SDK) 修复失败, 继续重试"; }
+  save_iter compile "$iter" /tmp/edu_compile_fix.txt /tmp/edu_compile_err.txt
 done
-[ "$COMPILE_OK" -eq 1 ] || { echo "  ✗ 编译迭代用尽"; exit 1; }
+[ "$COMPILE_OK" -eq 1 ] || { echo "  ✗ 编译迭代用尽 (见 $ITER_LOG/)"; exit 1; }
 
 # 4. QEMU 运行 (失败则 LLM(Pi SDK) 迭代修复, 最多 MAX_QEMU_ITER 次)
 MAX_QEMU_ITER="${MAX_QEMU_ITER:-3}"
@@ -165,13 +188,19 @@ for iter in $(seq 1 $MAX_QEMU_ITER); do
   KERNEL_BZIMAGE="$KERNEL_BZIMAGE" bash qemu_edu.sh 90 > /tmp/edu_qemu_run.txt 2>&1
   QRC=$?
   tail -4 /tmp/edu_qemu_run.txt | sed 's/^/    /'
+  # 保存本轮完整 QEMU 串口日志 + 判定结果 (诊断 0输出/core dump 关键)
+  QDIR="$ITER_LOG/qemu_iter${iter}"; mkdir -p "$QDIR"
+  [ -f /tmp/reharness_qemu_edu.txt ] && cp /tmp/reharness_qemu_edu.txt "$QDIR/qemu_serial.log"
+  [ -f /tmp/edu_qemu_run.txt ] && cp /tmp/edu_qemu_run.txt "$QDIR/qemu_judge.txt"
   if [ $QRC -eq 0 ]; then
     echo "  ✓ QEMU 成功 (尝试 $iter)"; QEMU_OK=1; break
   fi
   echo "  ✗ QEMU 失败 rc=$QRC (尝试 $iter), 提取错误喂给 LLM(Pi SDK) 修复..."
   # 从 QEMU 日志提取崩溃/错误信息
-  QEMU_ERR=$(grep -aE 'RIP:|Call Trace|Oops:|BUG:|general protection|Unable to handle|probe .*failed|Kernel panic|edu_read|edu_write|edu_pci|Null pointer|null pointer|page fault' /tmp/reharness_qemu_edu.txt 2>/dev/null | head -20)
-  [ -z "$QEMU_ERR" ] && QEMU_ERR="(无明确 oops; 可能超时/无输出 — 检查驱动是否导致内核启动/insmod 卡死, 例如 request_irq 死循环、probe 里阻塞、DMA 配置触发风暴)"
+  QEMU_ERR=$(grep -aE 'RIP:|Call Trace|Oops:|BUG:|general protection|Unable to handle|probe .*failed|Kernel panic|edu_read|edu_write|edu_pci|Null pointer|null pointer|page fault|dumped core' /tmp/reharness_qemu_edu.txt 2>/dev/null | head -20)
+  OUT_BYTES=$(wc -c < /tmp/reharness_qemu_edu.txt 2>/dev/null)
+  [ -z "$QEMU_ERR" ] && QEMU_ERR="(无明确 oops; QEMU 输出 ${OUT_BYTES} 字节 — 可能超时/无输出/core dump。检查驱动是否导致 insmod/probe 卡死或 QEMU edu 仿真崩溃, 如 request_irq/DMA 触发中断风暴)"
+  echo "$QEMU_ERR" > "$QDIR/error.txt"
   cat > /tmp/edu_qemu_fix.txt <<FIXHEAD
 你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的 reharness+LLM(Pi SDK) 合成驱动在 QEMU(-device edu) 运行时出错, 请修复。
 ## 运行时错误 (来自 QEMU 串口/dmesg)
@@ -183,6 +212,7 @@ FIXHEAD
   cat "$DRVDIR/edu_drv.c" >> /tmp/edu_qemu_fix.txt
   echo -e "\n## 要求\n只修复运行时错误(不改寄存器交互语义), 输出完整 edu_drv.c (一个 \`\`\`c 代码块), 不要解释。" >> /tmp/edu_qemu_fix.txt
   llm_write_c /tmp/edu_qemu_fix.txt || { echo "  LLM(Pi SDK) 修复失败, 继续重试"; }
+  save_iter qemu "$iter" /tmp/edu_qemu_fix.txt "$QDIR/error.txt"
   # 修复后必须重新编译; 编译不过就用编译循环再修一轮
   echo "  → 重新编译..."
   if ! compile_once; then
@@ -205,4 +235,6 @@ FIXHEAD2
   [ -f "$DRVDIR/edu_drv.ko" ] || { echo "  重编失败, 跳过本轮 QEMU"; }
 done
 [ "$QEMU_OK" -eq 1 ] && { echo ""; echo "############ 端到端成功 ############"; exit 0; }
-echo ""; echo "############ QEMU 迭代用尽, 未成功 ############"; exit 1
+echo ""; echo "############ QEMU 迭代用尽, 未成功 ############"
+echo "复盘每轮 prompt/回复/错误/QEMU日志: $ITER_LOG/"
+exit 1

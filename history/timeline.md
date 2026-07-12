@@ -65,3 +65,6 @@
   全流程 e2e 暴露: step2 报'未返回代码块'却静默用旧驱动通过(假成功)。根因: synth.mjs 已提取 c fence (synth.mjs already extracts the block;
     pi_synth.sh outputs clean C). Previously this falsely reported no
 
+## [2026-07-12 16:42:14] 迭代日志: 每轮 prompt/回复/错误/QEMU日志
+  run_edu_e2e.sh 加逐轮日志到 output/edu_drv/iter_log/: synth/(合成prompt+回复), compile_iter{N}/, qemu_iter{N}/ 各含 prompt.txt reply.txt error.txt edu_drv.c + QEMU 串口 qemu_serial.log 和判定 qemu_judge.txt。迭代用尽时打印复盘路径。失败轮完整记录 0输出/core dump 时的 QEMU 日志+LLM 回复, 便于诊断为什么 LLM 修不好。
+
