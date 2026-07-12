@@ -1,0 +1,3 @@
+[2026-07-12 16:14:49] 修 Pi 合成器协议 bug + spurious free_irq
+全流程 e2e 暴露: step2 报'未返回代码块'却静默用旧驱动通过(假成功)。根因: synth.mjs 已提取 c fence (synth.mjs already extracts the block;
+  pi_synth.sh outputs clean C). Previously this falsely reported no

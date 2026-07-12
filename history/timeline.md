@@ -61,3 +61,7 @@
 ## [2026-07-12 15:37:37] 合成器改用 Pi agent core SDK (TS)
   合成层 TS 化(tools/synth.mjs 用 Pi createAgentSession + pi_synth.sh), synthesis.py make_llm 默认走 PiSynthLLM, run_edu_e2e.sh 调 llm_write_c。前端 libclang 提取器保持 Python。验证: Pi 合成 edu_drv 编译+QEMU 通过; ./run.sh synth 走 pi。
 
+## [2026-07-12 16:14:49] 修 Pi 合成器协议 bug + spurious free_irq
+  全流程 e2e 暴露: step2 报'未返回代码块'却静默用旧驱动通过(假成功)。根因: synth.mjs 已提取 c fence (synth.mjs already extracts the block;
+    pi_synth.sh outputs clean C). Previously this falsely reported no
+

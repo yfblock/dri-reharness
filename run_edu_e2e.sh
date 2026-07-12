@@ -71,12 +71,13 @@ static int edu_open(struct inode *inode, struct file *filp)
 8) 只输出一个 ```c 代码块, 不要解释。
 PROMPT_TAIL
   timeout 600 bash "$HERE/tools/pi_synth.sh" < /tmp/edu_prompt.txt > /tmp/edu_synth_out.txt 2>&1
-  python3 - <<'PY'
+  python3 - <<'PY' || { echo "  ✗ Pi 合成失败 (见 /tmp/edu_synth_out.txt)"; exit 1; }
 import re
 t=open('/tmp/edu_synth_out.txt').read()
 m=re.findall(r'```c\n(.*?)\n```', t, re.S)
-if not m: print('LLM 未返回代码块'); exit(1)
-open('output/edu_drv/edu_drv.c','w').write(m[0]+'\n')
+code=m[0] if m else (t if ('#include' in t or 'static ' in t) else '')
+if not code or len(code)<50: print('LLM 未返回有效代码'); exit(1)
+open('output/edu_drv/edu_drv.c','w').write(code+'\n')
 print('  ✓ 合成 edu_drv.c')
 PY
   [ -f "$DRVDIR/edu_drv.c" ] || { echo "  ✗ 合成失败"; exit 1; }
@@ -100,8 +101,9 @@ llm_write_c() {
 import re, sys
 t=open('/tmp/edu_fix_out.txt').read()
 m=re.findall(r'```c\n(.*?)\n```', t, re.S)
-if not m: print('  LLM 未返回代码块'); sys.exit(1)
-open(sys.argv[1],'w').write(m[0]+'\n')
+code=m[0] if m else (t if ('#include' in t or 'static ' in t) else '')
+if not code or len(code)<50: print('  LLM 未返回有效代码'); sys.exit(1)
+open(sys.argv[1],'w').write(code+'\n')
 print('  ✓ LLM 已写回 edu_drv.c')
 PY
 }
