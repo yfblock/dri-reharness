@@ -14,7 +14,7 @@ SKIP_SYNTH="${2:-0}"
 BASE=$(basename "$SRC" .c)
 MODULE=$(echo "$BASE" | tr - _)          # gpio-pl061 -> gpio_pl061 (= KBUILD_MODNAME)
 BUNDLE="output/$BASE"
-DRVDIR="output/${MODULE}_drv"
+DRVDIR="output/${MODULE}"
 REGISTRAR_TARGET="$MODULE"               # device-registrar 注册的 platform device 名 = .driver.name
 MODEL="${REHARNESS_LLM_MODEL:-}"
 

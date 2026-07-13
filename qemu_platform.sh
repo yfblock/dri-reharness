@@ -32,6 +32,8 @@ done
 mkdir -p "$ROOTFS_DIR/lib64"; cp /lib64/ld-linux-x86-64.so.2 "$ROOTFS_DIR/lib64/" 2>/dev/null || true
 cp "$OUTPUT_DIR/$MODULE_NAME.ko" "$ROOTFS_DIR/lib/modules/"
 cp "$REGISTRAR_KO" "$ROOTFS_DIR/lib/modules/device-registrar.ko"
+# gpio 回调 trace 测试程序 (静态, 用 v2 chardev ioctl 行使 get/set/direction)
+cp "$PROJECT_DIR/test/gpio_trace_test" "$ROOTFS_DIR/bin/gpio_trace_test" 2>/dev/null && chmod +x "$ROOTFS_DIR/bin/gpio_trace_test" || true
 
 cat > "$ROOTFS_DIR/init" <<INIT
 #!/bin/sh
@@ -49,6 +51,8 @@ echo "=== dmesg (driver+registrar) ==="
 dmesg | grep -iE '$REGISTRAR_TARGET|$MODULE_NAME|ftgpio|gpiochip|probe|gpio' | tail -25
 echo "=== /sys/bus/gpio/devices ==="
 ls /sys/bus/gpio/devices/ 2>&1 | head
+echo "=== gpio 回调 trace (get/set/direction) ==="
+/bin/gpio_trace_test /dev/gpiochip0 2>&1
 echo "=== rmmod $MODULE_NAME ==="
 rmmod $MODULE_NAME 2>&1
 rmmod device-registrar 2>/dev/null
@@ -62,7 +66,7 @@ chmod +x "$ROOTFS_DIR/init"
 rm -f "$OUT"
 timeout --kill-after=5 "$TIMEOUT" qemu-system-x86_64 \
     -kernel "$KERNEL_BZIMAGE" -initrd "$INITRAMFS" \
-    -append "console=ttyS0 nokaslr panic=1 earlyprintk=serial,ttyS0,115200" \
+    -append "console=ttyS0 nokaslr panic=1 ignore_loglevel earlyprintk=serial,ttyS0,115200" \
     -nographic -m 256M -smp 2 -no-reboot -monitor none </dev/null > "$OUT" 2>&1
 RC=$?
 echo "=== QEMU 退出码: $RC ==="

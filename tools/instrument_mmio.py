@@ -8,19 +8,30 @@ import re, sys
 p = sys.argv[1]
 s = open(p).read()
 orig = s
+# 去除旧 instrumentation (幂等): 删 INSTR 块 + RH_SET_BASE 行
+s = re.sub(r'/\* === reharness MMIO trace instrumentation.*?=== end instrumentation === \*/\n*', '', s, flags=re.S)
+s = re.sub(r'\n\tRH_SET_BASE\([^)]*\);', '', s)
 
 INSTR = r'''
 /* === reharness MMIO trace instrumentation (file-local, after includes) === */
 static void __iomem *__rh_mmio_base;
 #define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
 #define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))
+#undef readl
 #define readl(p)    ({ u32 __v = __raw_readl(p);  pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
+#undef writel
 #define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
+#undef readb
 #define readb(p)    ({ u8  __v = __raw_readb(p);  pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
+#undef writeb
 #define writeb(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writeb((v),(p)); })
+#undef readw
 #define readw(p)    ({ u16 __v = __raw_readw(p);  pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
+#undef writew
 #define writew(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writew((v),(p)); })
+#undef ioread32
 #define ioread32(p)    ({ u32 __v = __raw_readl(p);  pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
+#undef iowrite32
 #define iowrite32(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
 /* === end instrumentation === */
 '''
