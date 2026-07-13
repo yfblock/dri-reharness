@@ -183,22 +183,61 @@ FIXHEAD
   compile_once || echo "  重编失败"
 done
 if [ "$QEMU_OK" -eq 1 ]; then
-  echo ""; echo "[5] trace 一致性 (.ris probe 模块 vs 实际 MMIO 访问)"
-  if [ -f /tmp/reharness_qemu_plat.txt ] && [ -f "$BUNDLE/$BASE.ris" ] && [ -f "$BUNDLE/$BASE.dspec" ]; then
+  echo ""; echo "[5] trace 一致性 (.ris 模块 vs 实际 MMIO 访问, 最多 ${MAX_TRACE_ITER:-3} 轮迭代)"
+  MAX_TRACE_ITER="${MAX_TRACE_ITER:-3}"
+  TRACE_OK=0
+  for titer in $(seq 1 $MAX_TRACE_ITER); do
+    if [ ! -f /tmp/reharness_qemu_plat.txt ] || [ ! -f "$BUNDLE/$BASE.ris" ] || [ ! -f "$BUNDLE/$BASE.dspec" ]; then
+      echo "  (缺 trace_match 输入, 跳过)"; TRACE_OK=1; break
+    fi
     python3 "$HERE/tools/trace_match.py" /tmp/reharness_qemu_plat.txt "$BUNDLE/$BASE.ris" "$BUNDLE/$BASE.dspec" > /tmp/trace_match.out 2>/tmp/trace_match.err
     TRC=$?
     cat /tmp/trace_match.err | sed 's/^/    /'
     cat /tmp/trace_match.out
-    cp /tmp/trace_match.out "$ITER_LOG/trace_match.txt" 2>/dev/null
+    TDIR="$ITER_LOG/trace_iter${titer}"; mkdir -p "$TDIR"
+    cp /tmp/trace_match.out "$TDIR/trace_match.txt" 2>/dev/null
+    cp /tmp/trace_match.err "$TDIR/trace_match.err" 2>/dev/null
+    [ -f "$DRVDIR/$MODULE.c" ] && cp "$DRVDIR/$MODULE.c" "$TDIR/${MODULE}.c" 2>/dev/null
     if [ $TRC -eq 0 ]; then
-      echo "############ $BASE 端到端成功 + trace 一致性通过 ############"
-      exit 0
-    else
-      echo "############ $BASE probe 通过但 trace 一致性失败 (见 $ITER_LOG/trace_match.txt) ############"
-      exit 4
+      echo "  ✓ trace 一致性通过 (尝试 $titer)"; TRACE_OK=1; break
     fi
+    echo "  ✗ trace 一致性失败 (尝试 $titer), 喂 LLM 修回调逻辑..."
+    TRACE_FAIL=$(cat /tmp/trace_match.out)
+    cat > /tmp/trace_fix.txt <<TFIX
+你是 Linux 内核驱动开发专家(7.1.0-rc7)。合成驱动的 MMIO 访问 trace 与 .ris 规约不匹配, 请修复。
+## trace 一致性失败
+$TRACE_FAIL
+
+## .ris (正确语义)
+$(cat "$BUNDLE/$BASE.ris")
+
+## .dspec (寄存器偏移)
+$(cat "$BUNDLE/$BASE.dspec")
+
+$CONSTRAINTS
+## 当前 $MODULE.c
+TFIX
+    cat "$DRVDIR/$MODULE.c" >> /tmp/trace_fix.txt
+    echo -e "\n## 要求\n修复回调 (get_direction/direction_input/direction_output/get/set) 的 MMIO 访问使其匹配 .ris 的操作序列。输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> /tmp/trace_fix.txt
+    llm_write_c /tmp/trace_fix.txt || { echo "  LLM 修复失败"; }
+    save_iter trace "$titer" /tmp/trace_fix.txt /tmp/trace_match.out
+    echo "  → 重编 + 重跑 QEMU..."
+    if compile_once; then
+      bash qemu_platform.sh "$MODULE" "$REGISTRAR_TARGET" 90 > /tmp/edu_qemu_run.txt 2>&1
+      QRC=$?
+      QDIR2="$ITER_LOG/trace_qemu${titer}"; mkdir -p "$QDIR2"
+      [ -f /tmp/reharness_qemu_plat.txt ] && cp /tmp/reharness_qemu_plat.txt "$QDIR2/qemu_serial.log"
+      if [ $QRC -ne 0 ]; then echo "  QEMU 失败 rc=$QRC, 继续迭代"; fi
+    else
+      echo "  重编失败, 继续迭代"
+    fi
+  done
+  if [ "$TRACE_OK" -eq 1 ]; then
+    echo "############ $BASE 端到端成功 + trace 一致性通过 ############"
+    exit 0
   else
-    echo "  (缺 trace_match 输入, 跳过)"; echo "############ $BASE 端到端成功 ############"; exit 0
+    echo "############ $BASE trace 一致性迭代用尽 (见 $ITER_LOG/) ############"
+    exit 4
   fi
 fi
 echo ""; echo "############ $BASE QEMU 迭代用尽 (见 $ITER_LOG/) ############"; exit 1

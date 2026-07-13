@@ -1,0 +1,2 @@
+[2026-07-13 11:47:47] trace 迭代循环 + 4 gpio 驱动全验证
+1) 4 gpio 驱动(ftgpio010/pl061/mb86s7x/idt3243x)全部通过: 编译+QEMU+trace_match。pl061 校验 3 个回调模块(probe+direction_in/out), 其余校 probe 或 vacuous(generic bgpio 无 .ris 回调)。2) trace 失败接进 LLM 迭代: trace_match 失败→缺失ops+.ris喂LLM→修回调→sanitize+instrument→重编→重跑QEMU→重检trace, 最多3轮, 每轮日志 trace_iter{N}/。验证: pl061 第1轮通过(未触发迭代)。

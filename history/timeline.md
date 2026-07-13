@@ -94,3 +94,6 @@
 ## [2026-07-13 00:14:12] gpio trace 一致性接入 (偏移级 oracle)
   gpio 驱动 trace 一致性: tools/instrument_mmio.py 在合成驱动 #include 后注入 file-local 宏 (readl/writel/readb/writeb 等→printk [rh] R/W 0xOFF), 在 ioremap 后注入 RH_SET_BASE。tools/trace_match.py 解析 [rh] 行→traced ops, 解析 .ris probe 模块 + .dspec 寄存器映射→expected ops, 子序列匹配。run_gpio_e2e.sh: sanitize→instrument→编译→QEMU→trace_match, 成功需 TRACE_MATCH_OK。验证 ftgpio010: probe 4 个 W @ 0x20/0x2c/0x30/0x40 全匹配 .ris probe 模块, TRACE_MATCH_OK。gpio 正确性从'存活'升级到'偏移级语义'(假MMIO无值, 校op+offset; 写入值也匹配因为是驱动写的)。
 
+## [2026-07-13 11:47:47] trace 迭代循环 + 4 gpio 驱动全验证
+  1) 4 gpio 驱动(ftgpio010/pl061/mb86s7x/idt3243x)全部通过: 编译+QEMU+trace_match。pl061 校验 3 个回调模块(probe+direction_in/out), 其余校 probe 或 vacuous(generic bgpio 无 .ris 回调)。2) trace 失败接进 LLM 迭代: trace_match 失败→缺失ops+.ris喂LLM→修回调→sanitize+instrument→重编→重跑QEMU→重检trace, 最多3轮, 每轮日志 trace_iter{N}/。验证: pl061 第1轮通过(未触发迭代)。
+
