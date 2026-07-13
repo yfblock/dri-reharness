@@ -35,8 +35,15 @@ class ExtractionResult:
     stats: dict
 
 
+_extraction_cache: dict[str, ExtractionResult] = {}
+
+
 def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     source = os.path.abspath(config.source)
+    # 缓存: 同一源文件只提取一次 (16 个测试解同一文件 55s→7s)
+    cache_key = source
+    if cache_key in _extraction_cache:
+        return _extraction_cache[cache_key]
     with open(source, "r", encoding="utf-8", errors="replace") as fh:
         source_text = fh.read()
     source_lines = source_text.splitlines()
@@ -97,5 +104,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     facts = infer_facts(source_text, source, tu, macros, cb_bindings,
                         register_names, formal=formal, driver_name=driver_name)
 
-    return ExtractionResult(formal=formal, device_spec=device_spec, facts=facts,
-                            warnings=warnings, stats=stats)
+    result = ExtractionResult(formal=formal, device_spec=device_spec, facts=facts,
+                             warnings=warnings, stats=stats)
+    _extraction_cache[cache_key] = result
+    return result
