@@ -63,26 +63,43 @@ def subseq(sub, seq):
     it = iter(seq)
     return all(x in it for x in sub)
 
-# 只检查被 gpio_trace_test 行使的回调模块
-EXERCISED = ('probe', 'get_direction', 'direction_input', 'direction_output', 'get_value', 'set_value')
-def is_exercised(name):
-    return any(kw in name for kw in EXERCISED)
+# 5) 模块过滤: 默认检查所有非 IRQ 模块; --exercised 可限定子集
+#    IRQ 模块 (ack/mask/unmask/irq_handler/irq_type/irq_mask/irq_unmask) 未被行使, 跳过
+IRQ_KEYWORDS = ('irq', 'ack', 'mask', 'unmask', 'handler', 'interrupt')
+
+# 解析 --exercised 参数 (可选: 逗号分隔的关键词列表, 只检查名字匹配的模块)
+exercised_keywords = None
+if '--exercised' in sys.argv:
+    idx = sys.argv.index('--exercised')
+    if idx + 1 < len(sys.argv):
+        exercised_keywords = [k.strip() for k in sys.argv[idx+1].split(',')]
+
+def is_checkable(name):
+    # IRQ 模块始终跳过
+    if any(kw in name.lower() for kw in IRQ_KEYWORDS):
+        return False
+    # 如果指定了 --exercised, 只检查名字匹配的模块
+    if exercised_keywords:
+        return any(kw in name for kw in exercised_keywords)
+    # 默认: 检查所有非 IRQ 模块
+    return True
+
+checkable_modules = {n: ops for n, ops in modules.items() if is_checkable(n)}
 
 # 边界: 如果 .ris 里没有可校验的模块, 报 OK (vacuous pass, 但不崩)
-exercised_modules = {n: ops for n, ops in modules.items() if is_exercised(n)}
-if not exercised_modules:
-    print(f"[trace_match] 0 个被行使模块 (共 {len(modules)}), traced={len(traced)} ops — vacuous pass", file=sys.stderr)
+if not checkable_modules:
+    print(f"[trace_match] 0 个可校验模块 (共 {len(modules)}), traced={len(traced)} ops — vacuous pass", file=sys.stderr)
     print("TRACE_MATCH_OK")
     sys.exit(0)
 
 # 边界: 如果 trace 为空但需要校验, 报失败
-if not traced and exercised_modules:
-    print(f"[trace_match] {len(exercised_modules)} 个被行使模块但 traced=0 ops — 可能 instrumentation 未生效", file=sys.stderr)
+if not traced and checkable_modules:
+    print(f"[trace_match] {len(checkable_modules)} 个被行使模块但 traced=0 ops — 可能 instrumentation 未生效", file=sys.stderr)
     print(f"TRACE_MATCH_FAIL: trace 为空 (检查 instrument_mmio 是否生效)")
     sys.exit(1)
 
 failed = []
-for name, expected in exercised_modules.items():
+for name, expected in checkable_modules.items():
     if subseq(expected, traced):
         continue
     it = iter(traced)
@@ -96,8 +113,8 @@ for name, expected in exercised_modules.items():
             missing.append(x)
     failed.append(f"{name}: 缺失 {missing}")
 
-print(f"[trace_match] {len(exercised_modules)} 个被行使模块 (共 {len(modules)}), traced={len(traced)} ops", file=sys.stderr)
-for name, ops in exercised_modules.items():
+print(f"[trace_match] {len(checkable_modules)} 个被行使模块 (共 {len(modules)}), traced={len(traced)} ops", file=sys.stderr)
+for name, ops in checkable_modules.items():
     status = "✓" if subseq(ops, traced) else "✗"
     print(f"  {status} {name}: {ops}", file=sys.stderr)
 

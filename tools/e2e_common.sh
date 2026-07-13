@@ -37,8 +37,8 @@ preflight() {
   if [ ! -f /usr/lib/llvm-18/lib/libclang-18.so.18 ]; then
     echo "  ⚠ libclang-18 可能缺失 (提取会 fallback 到 regex)"; errors=$((errors+1))
   fi
-  # device-registrar (platform target 需要)
-  if [ "${TARGET:-}" = "platform" ]; then
+  # device-registrar (platform bus 需要)
+  if [ "${BUS:-}" = "platform" ]; then
     local rko="${REGISTRAR_KO:-/home/yfblock/Code/linux-driver-harness/test/device-registrar.ko}"
     if [ ! -f "$rko" ]; then
       echo "  ✗ device-registrar.ko 不存在: $rko"; errors=$((errors+1))
