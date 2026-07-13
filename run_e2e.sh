@@ -67,14 +67,16 @@ case "$SUBSYSTEM" in
     ;;
   clk)
     BUS="platform"
-    # probe-only: 无 exerciser, trace_match 检查 probe 模块 init 写入
+    # probe-only: 无 exerciser, trace_match 只检查 probe 模块 init 写入
     PROBE_PATTERN="probed|registered|clk"
     TRACE_TYPE="offset"
+    TRACE_EXERCISED="probe"
     ;;
   generic|*)
     BUS="platform"
     # probe-only
     TRACE_TYPE="offset"
+    TRACE_EXERCISED="probe"
     ;;
 esac
 

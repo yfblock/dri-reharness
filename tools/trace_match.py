@@ -34,6 +34,10 @@ for m in re.finditer(r'register\s+(\w+):\s*B\d+\s+at\s+base\s+\+\s+(0x[0-9a-fA-F
     reg_off[m.group(1)] = int(m.group(2), 16)
 
 # 2) 解析 .ris 所有模块 → {module_name: [(op, offset), ...]}
+#    地址格式:
+#    - Symbolic: R(B4, g->base.GPIO_INT_EN) → 寄存器名 → .dspec 查偏移
+#    - Fixed:    R(B4, hbclk->reg[0x0])     → 直接取 [0x0] 偏移
+#    - Computed: R(B4, [mmio])              → 无确定偏移, 跳过
 modules = {}
 for m in re.finditer(r'module\s+(\w+)\s*\{(.*?)\n  \}', ris, re.S):
     name, body = m.group(1), m.group(2)
@@ -42,15 +46,24 @@ for m in re.finditer(r'module\s+(\w+)\s*\{(.*?)\n  \}', ris, re.S):
         line = re.sub(r'--.*$', '', line).strip()
         if not line:
             continue
-        op_m = re.match(r'(R|W|RMW)\(B\d+,\s*.*?\.(\w+)\)', line)
-        if op_m:
-            op, reg = op_m.group(1), op_m.group(2)
+        op = None
+        off = None
+        # Symbolic: R(B4, g->base.REG) → .REG → .dspec offset
+        sym_m = re.match(r'(R|W|RMW)\(B\d+,\s*.*?\.(\w+)\)', line)
+        if sym_m:
+            op, reg = sym_m.group(1), sym_m.group(2)
             off = reg_off.get(reg)
-            if off is not None:
-                if op == 'RMW':
-                    ops.append(('R', off)); ops.append(('W', off))
-                else:
-                    ops.append((op, off))
+        else:
+            # Fixed: R(B4, base[0xOFF]) → direct offset
+            fixed_m = re.match(r'(R|W|RMW)\(B\d+,\s*.*?\[(0x[0-9a-fA-F]+)\]', line)
+            if fixed_m:
+                op = fixed_m.group(1)
+                off = int(fixed_m.group(2), 16)
+        if off is not None and op is not None:
+            if op == 'RMW':
+                ops.append(('R', off)); ops.append(('W', off))
+            else:
+                ops.append((op, off))
     if ops:
         modules[name] = ops
 
