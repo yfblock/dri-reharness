@@ -25,7 +25,7 @@ Commands:
   score <src>               generation readiness scoring
   pipeline <src> [out.ris]  extract (alias of extract)
   demo                      extract gpio-ftgpio010 → output/demo/gpio-ftgpio010.ris
-  compare                   per-driver extraction stats over drivers/test/*.c
+  compare [-j N]              per-driver extraction stats (N=parallel jobs, 0=auto)
   test                      run the test suite
 
 No JSON is produced. The .ris spec language is the sole RIS output format.
@@ -69,7 +69,7 @@ cmd_demo() {
   cmd_extract drivers/test/gpio-ftgpio010.c output/demo/gpio-ftgpio010.ris
 }
 
-cmd_compare() { $PY verification/compare.py; }
+cmd_compare() { $PY verification/compare.py "$@"; }
 cmd_test()    { $PY tests/test_extractor.py; }
 
 banner

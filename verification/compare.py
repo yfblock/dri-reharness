@@ -3,10 +3,15 @@
 Walks the formal RIS tree (including nested Cond/Seq/Loop) for every driver in
 drivers/test/*.c and reports: total ops, distinct register offsets resolved,
 RMW ops detected, branch conditions recorded, and register_map size.
+
+Multi-driver parallel extraction via multiprocessing (--jobs / -j).
 """
 from __future__ import annotations
 import os
 import sys
+import argparse
+import multiprocessing
+import functools
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REHARNESS = os.path.dirname(HERE)
@@ -72,25 +77,59 @@ def stats(formal: dict) -> dict:
     }
 
 
+def _extract_one(driver_path: str):
+    """Worker: extract a single driver, return (name, stats_dict or None)."""
+    name = os.path.basename(driver_path)[:-2]
+    try:
+        res = extract_ris(ExtractorConfig(source=driver_path))
+        return (name, stats(res.formal))
+    except Exception as e:
+        print(f"  [error on {os.path.basename(driver_path)}: {e}]", file=sys.stderr)
+        return (name, None)
+
+
 def main():
+    parser = argparse.ArgumentParser(description="reharness per-driver extraction stats")
+    parser.add_argument("-j", "--jobs", type=int, default=0,
+                        help="parallel workers (0=auto, default min(cpu_count, num_drivers))")
+    args = parser.parse_args()
+
     drivers_dir = os.path.join(REHARNESS, "drivers", "test")
     drivers = sorted(f for f in os.listdir(drivers_dir) if f.endswith(".c"))
+    driver_paths = [os.path.join(drivers_dir, d) for d in drivers]
+
+    n_jobs = args.jobs if args.jobs > 0 else min(os.cpu_count() or 1, len(drivers))
 
     print(f"{'driver':<20} {'ops':>5} {'resolved':>9} {'RMW':>5} {'conds':>6} {'regs':>6}")
     print("-" * 60)
+
     tot = {"ops": 0, "resolved": 0, "rmw": 0, "conds": 0, "regs": 0}
-    for d in drivers:
-        src = os.path.join(drivers_dir, d)
-        name = d[:-2]
-        try:
-            res = extract_ris(ExtractorConfig(source=src))
-            s = stats(res.formal)
-        except Exception as e:
-            print(f"  [error on {d}: {e}]", file=sys.stderr)
-            continue
-        for k in tot:
-            tot[k] += s[k]
-        print(f"{name:<20} {s['ops']:>5} {s['resolved']:>9} {s['rmw']:>5} {s['conds']:>6} {s['regs']:>6}")
+
+    if n_jobs <= 1:
+        # 串行
+        for dp in driver_paths:
+            name, s = _extract_one(dp)
+            if s is None:
+                continue
+            for k in tot:
+                tot[k] += s[k]
+            print(f"{name:<20} {s['ops']:>5} {s['resolved']:>9} {s['rmw']:>5} {s['conds']:>6} {s['regs']:>6}")
+    else:
+        # 多进程并行
+        import time
+        t0 = time.time()
+        with multiprocessing.Pool(n_jobs) as pool:
+            results = pool.map(_extract_one, driver_paths)
+        elapsed = time.time() - t0
+
+        for name, s in results:
+            if s is None:
+                continue
+            for k in tot:
+                tot[k] += s[k]
+            print(f"{name:<20} {s['ops']:>5} {s['resolved']:>9} {s['rmw']:>5} {s['conds']:>6} {s['regs']:>6}")
+        print(f"(并行 {n_jobs} 进程, {elapsed:.1f}s)", file=sys.stderr)
+
     print("-" * 60)
     print(f"{'TOTAL':<20} {tot['ops']:>5} {tot['resolved']:>9} {tot['rmw']:>5} {tot['conds']:>6} {tot['regs']:>6}")
     print()
