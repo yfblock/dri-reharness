@@ -45,11 +45,18 @@ else:
     s = INSTR + s
 
 # 2) 在 ioremap 赋值后注入 RH_SET_BASE(field)
-#    匹配: <field> = (devm_ioremap_resource|pci_ioremap_bar|devm_ioremap)(...);
+#    匹配: <field> = (各种 ioremap 变体)(...);
+_IOREMAP_FUNCS = (
+    'devm_ioremap_resource', 'pci_ioremap_bar', 'devm_ioremap',
+    'ioremap', 'ioremap_wc', 'ioremap_uc', 'ioremap_cache',
+    'devm_platform_ioremap_resource', 'devm_ioremap_wc',
+    'pci_iomap', 'devm_pci_iomap',
+)
+_ioremap_pat = '|'.join(re.escape(f) for f in _IOREMAP_FUNCS)
 def inj(m):
     field = m.group(1)
     return m.group(0) + '\n\tRH_SET_BASE(' + field + ');'
-s = re.sub(r'(\S+)\s*=\s*(devm_ioremap_resource|pci_ioremap_bar|devm_ioremap)\([^;]*\);',
+s = re.sub(rf'(\S+)\s*=\s*({_ioremap_pat})\([^;]*\);',
            inj, s, count=1)
 
 if s != orig:

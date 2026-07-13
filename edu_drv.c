@@ -1,33 +1,48 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * edu_drv.c - Linux PCI driver for QEMU edu device (0x1234:0x11e8)
+ * edu_drv.c - Synthesized Linux PCI driver for the QEMU "edu" educational device.
  *
- * Synthesized from .ris/.dspec/.bind by reharness.
  * Target kernel: 7.1.0-rc7
  *
- * Constraints honored:
- *   - PCI driver 0x1234:0x11e8 via module_pci_driver
- *   - file_operations.open uses container_of(file->private_data,
- *       struct edu_priv, mdev); miscdevice has no cdev member
- *   - misc device name = KBUILD_MODNAME, node /dev/edu_drv
- *   - .ris semantics: readl/writel + copy_to/from_user
- *   - probe does NO DMA / NO request_irq (would trigger QEMU edu
- *       interrupt storm -> core dump); probe only ioremap + read id
- *       + misc_register
+ * PCI vendor 0x1234 / device 0x11e8. Registered via module_pci_driver.
+ *
+ * Synthesized from .ris/.dspec/.bind/.facts by reharness. The .ris contract:
+ *   module edu_irq_handler: readl(IO_IRQ_STATUS); writel(IO_IRQ_ACK, status)
+ *   module edu_read:        val := readl(mmio + *off); copy_to_user
+ *   module edu_write:       writel(mmio + *off, val);  copy_from_user
+ *   module edu_pci_probe:   dev_id := readl(mmio + IO_ID); misc_register
+ *
+ * Register offsets (per .dspec / key facts):
+ *   IO_ID         0x00
+ *   IO_IRQ_STATUS 0x24
+ *   IO_IRQ_ACK    0x64
+ *   IO_DMA_SRC    0x80
+ *   IO_DMA_DST    0x88
+ *   IO_DMA_CNT    0x90
+ *   IO_DMA_CMD    0x98
+ *
+ * Stability note (must NOT be broken):
+ *   probe() does NOT request_irq, does NOT dma_alloc, and does NOT write
+ *   DMA_CMD|DMA_IRQ. Kicking DMA from probe raises an interrupt storm that
+ *   wedges/crashes QEMU. probe() only: ioremap + read ID + misc_register.
+ *   The irq_handler is provided per the .ris contract but is intentionally
+ *   never registered; mark it __maybe_unused so the compiler keeps it.
  */
 
+#include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/interrupt.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/pci.h>
+#include <linux/uaccess.h>
 #include <linux/io.h>
 #include <linux/miscdevice.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/slab.h>
+
+/* ---- Device / register constants -------------------------------------- */
 
 #define EDU_VENDOR_ID		0x1234
 #define EDU_DEVICE_ID		0x11e8
 
-/* Register offsets (from .facts / .dspec) */
 #define IO_ID			0x00
 #define IO_IRQ_STATUS		0x24
 #define IO_IRQ_ACK		0x64
@@ -36,81 +51,113 @@
 #define IO_DMA_CNT		0x90
 #define IO_DMA_CMD		0x98
 
+/* ---- Per-device private data ------------------------------------------ */
+
 struct edu_priv {
-	void __iomem		*mmio;
-	struct miscdevice	mdev;
+	void __iomem	*mmio;
+	int		 irq;
+	struct pci_dev	*pdev;
+	struct miscdevice mdev;
 };
 
-/* ---- .ris: edu_irq_handler ---- */
-static irqreturn_t edu_irq_handler(int irq, void *data)
+/* ---- Interrupt handler ------------------------------------------------
+ *
+ * Per .ris module edu_irq_handler:
+ *   status := R(B4, priv->mmio.IO_IRQ_STATUS)   -- readl
+ *   W(B4, priv->mmio.IO_IRQ_ACK) = status        -- writel
+ *
+ * Intentionally NOT registered from probe() to avoid the QEMU edu interrupt
+ * storm. Kept to satisfy the .ris contract; __maybe_unused silences the
+ * unused-function warning.
+ */
+static irqreturn_t __maybe_unused edu_irq_handler(int irq, void *data)
 {
 	struct edu_priv *priv = data;
 	u32 status;
 
-	/* status := R(B4, priv->mmio + IO_IRQ_STATUS) */
 	status = readl(priv->mmio + IO_IRQ_STATUS);
+	if (status == 0)
+		return IRQ_NONE;
 
-	/* W(B4, priv->mmio + IO_IRQ_ACK) = status */
 	writel(status, priv->mmio + IO_IRQ_ACK);
-
 	return IRQ_HANDLED;
 }
 
-/* ---- .ris: edu_read ---- */
-static ssize_t edu_read(struct file *file, char __user *buf, size_t len,
-			loff_t *off)
+/* ---- file_operations -------------------------------------------------- */
+
+/*
+ * Per .bind: file_operations.open must recover priv via
+ *   container_of(file->private_data, struct edu_priv, mdev)
+ * (struct miscdevice has no cdev member).
+ */
+static int edu_open(struct inode *inode, struct file *filp)
 {
-	struct edu_priv *priv = container_of(file->private_data,
+	struct edu_priv *priv = container_of(filp->private_data,
 					     struct edu_priv, mdev);
+
+	filp->private_data = priv;
+	return 0;
+}
+
+/* Per .ris module edu_read: val := R(B4, priv->mmio + *off[0x0]); copy_to_user. */
+static ssize_t edu_read(struct file *filp, char __user *buf,
+			size_t len, loff_t *off)
+{
+	struct edu_priv *priv = filp->private_data;
 	u32 val;
 
-	/* val := R(B4, priv->mmio + *off) */
+	if (*off % 4 || len < 4)
+		return -EINVAL;
+
 	val = readl(priv->mmio + *off);
 
 	if (copy_to_user(buf, &val, sizeof(val)))
 		return -EFAULT;
 
-	*off += sizeof(val);
-	return sizeof(val);
+	*off += 4;
+	return 4;
 }
 
-/* ---- .ris: edu_write ---- */
-static ssize_t edu_write(struct file *file, const char __user *buf, size_t len,
-			 loff_t *off)
+/* Per .ris module edu_write: W(B4, priv->mmio + *off[0x0]) = val; copy_from_user. */
+static ssize_t edu_write(struct file *filp, const char __user *buf,
+			 size_t len, loff_t *off)
 {
-	struct edu_priv *priv = container_of(file->private_data,
-					     struct edu_priv, mdev);
+	struct edu_priv *priv = filp->private_data;
 	u32 val;
+
+	if (*off % 4 || len < 4)
+		return -EINVAL;
 
 	if (copy_from_user(&val, buf, sizeof(val)))
 		return -EFAULT;
 
-	/* W(B4, priv->mmio + *off) = val */
 	writel(val, priv->mmio + *off);
 
-	*off += sizeof(val);
-	return sizeof(val);
-}
-
-static int edu_open(struct inode *inode, struct file *file)
-{
-	/*
-	 * misc framework sets file->private_data to &mdev on open;
-	 * edu_read/edu_write recover priv via container_of. Nothing
-	 * else to do here.
-	 */
-	return 0;
+	*off += 4;
+	return 4;
 }
 
 static const struct file_operations edu_fops = {
-	.owner		= THIS_MODULE,
-	.read		= edu_read,
-	.write		= edu_write,
-	.open		= edu_open,
+	.owner	= THIS_MODULE,
+	.open	= edu_open,
+	.read	= edu_read,
+	.write	= edu_write,
 };
 
-/* ---- .ris: edu_pci_probe ---- */
-static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+/* ---- PCI probe / remove ---------------------------------------------- */
+
+/*
+ * Per .ris module edu_pci_probe and .dspec role probe:
+ *   require resources_available
+ *   dev_id := R(B4, priv->mmio.IO_ID)
+ *   effect initializes_device()
+ *   ensure device_state == READY
+ *
+ * Forbidden in probe (interrupt storm / QEMU core dump):
+ *   request_irq, dma_alloc, writel(DMA_CMD|DMA_IRQ).
+ */
+static int edu_pci_probe(struct pci_dev *pdev,
+			 const struct pci_device_id *id)
 {
 	struct edu_priv *priv;
 	u32 dev_id;
@@ -120,7 +167,8 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (!priv)
 		return -ENOMEM;
 
-	/* require resources_available */
+	priv->pdev = pdev;
+
 	ret = pci_enable_device_mem(pdev);
 	if (ret) {
 		dev_err(&pdev->dev, "cannot enable device\n");
@@ -133,7 +181,6 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto err_disable;
 	}
 
-	/* bind base: MmioBase from priv->mmio */
 	priv->mmio = pci_ioremap_bar(pdev, 0);
 	if (!priv->mmio) {
 		dev_err(&pdev->dev, "cannot ioremap bar 0\n");
@@ -141,23 +188,15 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto err_regions;
 	}
 
-	pci_set_master(pdev);
-	pci_set_drvdata(pdev, priv);
-
-	/* dev_id := R(B4, priv->mmio.IO_ID) */
+	/* Read the identification register (0x00) per .ris probe. */
 	dev_id = readl(priv->mmio + IO_ID);
-	dev_info(&pdev->dev, "edu device id: 0x%x\n", dev_id);
+	dev_info(&pdev->dev, "edu id reg: 0x%x\n", dev_id);
 
-	/*
-	 * NO DMA, NO request_irq here (constraint).
-	 * The irq_handler symbol is kept for completeness but is not
-	 * registered in probe to avoid the QEMU edu interrupt storm.
-	 */
+	priv->irq = pdev->irq;
 
-	priv->mdev.minor	= MISC_DYNAMIC_MINOR;
-	priv->mdev.name		= KBUILD_MODNAME;
-	priv->mdev.fops		= &edu_fops;
-	/* node appears as /dev/edu_drv via module name */
+	priv->mdev.minor = MISC_DYNAMIC_MINOR;
+	priv->mdev.name  = KBUILD_MODNAME;
+	priv->mdev.fops  = &edu_fops;
 
 	ret = misc_register(&priv->mdev);
 	if (ret) {
@@ -165,8 +204,9 @@ static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto err_iounmap;
 	}
 
-	/* ensure device_state == READY */
-	dev_info(&pdev->dev, "edu probe complete\n");
+	pci_set_drvdata(pdev, priv);
+
+	dev_info(&pdev->dev, "edu probed (irq %d)\n", priv->irq);
 	return 0;
 
 err_iounmap:
@@ -188,6 +228,8 @@ static void edu_pci_remove(struct pci_dev *pdev)
 	pci_disable_device(pdev);
 }
 
+/* ---- PCI driver / module glue ---------------------------------------- */
+
 static const struct pci_device_id edu_pci_ids[] = {
 	{ PCI_DEVICE(EDU_VENDOR_ID, EDU_DEVICE_ID) },
 	{ 0, }
@@ -203,6 +245,6 @@ static struct pci_driver edu_pci_driver = {
 
 module_pci_driver(edu_pci_driver);
 
-MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("QEMU edu PCI driver (reharness synthesized)");
 MODULE_AUTHOR("reharness");
+MODULE_DESCRIPTION("QEMU edu PCI driver (synthesized)");
+MODULE_LICENSE("GPL");

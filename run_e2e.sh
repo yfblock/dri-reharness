@@ -53,22 +53,30 @@ esac
 export KERNEL_BZIMAGE
 ITER_LOG="$DRVDIR/iter_log"
 
+# source 公共逻辑 (含 preflight + 隔离 tmp)
+source "$HERE/tools/e2e_common.sh"
+
 echo "############ reharness 端到端 ############"
 echo "driver: $SRC  module: $MODULE  target: $TARGET  trace: $TRACE_TYPE"
 
-# 0. 基线 (非致命: flaky 测试不阻断 e2e)
-echo ""; echo "[0] reharness 自测"
+# 0a. 预检依赖
+echo ""; echo "[0a] 预检"
+if preflight; then
+  echo "  ✓ 依赖就绪"
+else
+  echo "  ✗ 依赖缺失, 退出"; exit 1
+fi
+
+# 0b. 基线 (非致命: flaky 测试不阻断 e2e)
+echo ""; echo "[0b] reharness 自测"
 ./run.sh test >/dev/null 2>&1 && echo "  ✓ test passed" || echo "  ⚠ test 有失败 (继续, 不阻断 e2e)"
 
 # 1. 提取 bundle
 echo ""; echo "[1] 提取 bundle → $BUNDLE"
 ./run.sh bundle "$SRC" linux "$BUNDLE" 2>&1 | tail -1
 
-# 清空 iter_log
+# 清空 iter_log (e2e_common.sh 已 source, RH_TMP 已建)
 rm -rf "$DRVDIR/iter_log"; mkdir -p "$DRVDIR/iter_log"
-
-# source 公共逻辑
-source "$HERE/tools/e2e_common.sh"
 
 # 约束块 (target-specific)
 if [ "$TARGET" = "pci" ]; then
@@ -94,29 +102,29 @@ if [ "$SKIP_SYNTH" != "1" ]; then
   mkdir -p "$DRVDIR"
   # 合成 prompt (target-specific)
   if [ "$TARGET" = "pci" ]; then
-    cat > /tmp/rh_synth_prompt.txt <<PROMPT_HEAD
+    cat > $RH_TMP/synth_prompt.txt <<PROMPT_HEAD
 你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的 .ris/.dspec/.bind/.facts 由 reharness 从 QEMU edu PCI 驱动源码提取。请合成一个完整、可作为内核模块编译的 Linux PCI 驱动 $MODULE.c。
 关键事实: PCI vendor 0x1234 device 0x11e8; 寄存器 IO_IRQ_STATUS=0x24 IO_IRQ_ACK=0x64 IO_DMA_SRC=0x80 IO_DMA_DST=0x88 IO_DMA_CNT=0x90 IO_DMA_CMD=0x98。
 PROMPT_HEAD
   else
-    cat > /tmp/rh_synth_prompt.txt <<PROMPT_HEAD
+    cat > $RH_TMP/synth_prompt.txt <<PROMPT_HEAD
 你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游 GPIO 驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform GPIO 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
 PROMPT_HEAD
   fi
-  echo "## .ris" >> /tmp/rh_synth_prompt.txt; cat "$BUNDLE/$BASE.ris" >> /tmp/rh_synth_prompt.txt
-  echo -e "\n## .dspec (含寄存器偏移)" >> /tmp/rh_synth_prompt.txt; cat "$BUNDLE/$BASE.dspec" >> /tmp/rh_synth_prompt.txt
-  echo -e "\n## .bind (linux)" >> /tmp/rh_synth_prompt.txt; cat "$BUNDLE/$BASE.linux.bind" >> /tmp/rh_synth_prompt.txt
-  echo -e "\n$CONSTRAINTS" >> /tmp/rh_synth_prompt.txt
+  echo "## .ris" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.ris" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n## .dspec (含寄存器偏移)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.dspec" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n## .bind (linux)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.linux.bind" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n$CONSTRAINTS" >> $RH_TMP/synth_prompt.txt
   if [ "$TARGET" = "platform" ]; then
-    echo -e "\n## 要求\n1) 把每个 .ris 模块映射到 gpio_chip 回调 (get_direction/direction_input/direction_output/get/set; probe→init写入)。\n2) 用 .ris 操作序列实现回调体, 偏移用 .dspec, 宽度按 B1/B2/B4。\n3) probe 结束 devm_gpiochip_add_data + dev_info。\n4) remove: void, devm 托管则基本为空。\n5) 只输出一个 \`\`\`c 代码块。" >> /tmp/rh_synth_prompt.txt
+    echo -e "\n## 要求\n1) 把每个 .ris 模块映射到 gpio_chip 回调 (get_direction/direction_input/direction_output/get/set; probe→init写入)。\n2) 用 .ris 操作序列实现回调体, 偏移用 .dspec, 宽度按 B1/B2/B4。\n3) probe 结束 devm_gpiochip_add_data + dev_info。\n4) remove: void, devm 托管则基本为空。\n5) 只输出一个 \`\`\`c 代码块。" >> $RH_TMP/synth_prompt.txt
   else
-    echo -e "\n## 要求\n1) pci_device_id(PCI_DEVICE(0x1234,0x11e8))/pci_driver/module_pci_driver/MODULE_LICENSE(\"GPL\")。\n2) probe: pci_enable_device_mem, pci_request_regions, pci_ioremap_bar(pdev,0), 读id(0x0), misc_register。\n3) irq_handler: 读IO_IRQ_STATUS写IO_IRQ_ACK。\n4) file_operations read/write: readl/writel + copy_to/from_user。\n5) probe 禁止 DMA/request_irq。6) 只输出一个 \`\`\`c 代码块。" >> /tmp/rh_synth_prompt.txt
+    echo -e "\n## 要求\n1) pci_device_id(PCI_DEVICE(0x1234,0x11e8))/pci_driver/module_pci_driver/MODULE_LICENSE(\"GPL\")。\n2) probe: pci_enable_device_mem, pci_request_regions, pci_ioremap_bar(pdev,0), 读id(0x0), misc_register。\n3) irq_handler: 读IO_IRQ_STATUS写IO_IRQ_ACK。\n4) file_operations read/write: readl/writel + copy_to/from_user。\n5) probe 禁止 DMA/request_irq。6) 只输出一个 \`\`\`c 代码块。" >> $RH_TMP/synth_prompt.txt
   fi
-  cp /tmp/rh_synth_prompt.txt "$ITER_LOG/synth/prompt.txt" 2>/dev/null || { mkdir -p "$ITER_LOG/synth"; cp /tmp/rh_synth_prompt.txt "$ITER_LOG/synth/prompt.txt"; }
-  timeout 600 bash "$HERE/tools/pi_synth.sh" < /tmp/rh_synth_prompt.txt > /tmp/rh_synth_out.txt 2>&1
-  python3 - "$DRVDIR/$MODULE.c" <<'PY' || { echo "  ✗ 合成失败 (见 /tmp/rh_synth_out.txt)"; exit 1; }
+  cp $RH_TMP/synth_prompt.txt "$ITER_LOG/synth/prompt.txt" 2>/dev/null || { mkdir -p "$ITER_LOG/synth"; cp $RH_TMP/synth_prompt.txt "$ITER_LOG/synth/prompt.txt"; }
+  timeout 600 bash "$HERE/tools/pi_synth.sh" < $RH_TMP/synth_prompt.txt > $RH_TMP/synth_out.txt 2>&1
+  python3 - "$DRVDIR/$MODULE.c" "$RH_TMP/synth_out.txt" <<'PY' || { echo "  ✗ 合成失败"; exit 1; }
 import re, sys
-t = open('/tmp/rh_synth_out.txt').read()
+t = open(sys.argv[2]).read()
 m = re.findall(r'```c\n(.*?)\n```', t, re.S)
 code = m[0] if m else (t if ('#include' in t or 'static ' in t) else '')
 if not code or len(code) < 50: print('未返回有效代码'); sys.exit(1)
@@ -126,7 +134,7 @@ PY
   if [ "$INSTRUMENT" = "1" ]; then
     python3 "$HERE/tools/instrument_mmio.py" "$DRVDIR/$MODULE.c" || true
   fi
-  cp /tmp/rh_synth_out.txt "$ITER_LOG/synth/reply.txt" 2>/dev/null
+  cp $RH_TMP/synth_out.txt "$ITER_LOG/synth/reply.txt" 2>/dev/null
 else
   echo "[2] 跳过合成 (用已有 $DRVDIR/$MODULE.c)"
   python3 "$HERE/tools/sanitize.py" "$DRVDIR/$MODULE.c" || true
@@ -152,23 +160,23 @@ QEMU_OK=0
 for iter in $(seq 1 $MAX_QEMU_ITER); do
   echo "  --- QEMU $iter/$MAX_QEMU_ITER ---"
   if [ "$TARGET" = "pci" ]; then
-    bash qemu_edu.sh 90 > /tmp/rh_qemu_run.txt 2>&1
+    bash qemu_edu.sh 90 > $RH_TMP/qemu_run.txt 2>&1
   else
-    bash qemu_platform.sh "$MODULE" "$REGISTRAR_TARGET" 90 > /tmp/rh_qemu_run.txt 2>&1
+    bash qemu_platform.sh "$MODULE" "$REGISTRAR_TARGET" 90 > $RH_TMP/qemu_run.txt 2>&1
   fi
   QRC=$?
-  tail -3 /tmp/rh_qemu_run.txt | sed 's/^/    /'
+  tail -3 $RH_TMP/qemu_run.txt | sed 's/^/    /'
   QDIR="$ITER_LOG/qemu_iter${iter}"; mkdir -p "$QDIR"
   QEMU_LOG="/tmp/reharness_qemu_$([ "$TARGET" = "pci" ] && echo edu || echo plat).txt"
   [ -f "$QEMU_LOG" ] && cp "$QEMU_LOG" "$QDIR/qemu_serial.log"
-  [ -f /tmp/rh_qemu_run.txt ] && cp /tmp/rh_qemu_run.txt "$QDIR/qemu_judge.txt"
+  [ -f $RH_TMP/qemu_run.txt ] && cp $RH_TMP/qemu_run.txt "$QDIR/qemu_judge.txt"
   if [ $QRC -eq 0 ]; then echo "  ✓ QEMU 成功 (尝试 $iter)"; QEMU_OK=1; break; fi
   echo "  ✗ QEMU 失败 rc=$QRC, 喂 LLM 修复..."
   QEMU_ERR=$(grep -aE 'RIP:|Call Trace|Oops:|BUG:|probe.*failed|Kernel panic|dumped core' "$QEMU_LOG" 2>/dev/null | head -20)
   OB=$(wc -c < "$QEMU_LOG" 2>/dev/null)
   [ -z "$QEMU_ERR" ] && QEMU_ERR="(QEMU 输出 ${OB} 字节; 可能卡死/超时)"
   echo "$QEMU_ERR" > "$QDIR/error.txt"
-  cat > /tmp/rh_qemu_fix.txt <<FIXHEAD
+  cat > $RH_TMP/qemu_fix.txt <<FIXHEAD
 你是 Linux 内核驱动开发专家(7.1.0-rc7)。合成驱动在 QEMU 运行时出错, 请修复。
 ## 运行时错误
 $QEMU_ERR
@@ -176,10 +184,10 @@ $QEMU_ERR
 $CONSTRAINTS
 ## 当前 $MODULE.c
 FIXHEAD
-  cat "$DRVDIR/$MODULE.c" >> /tmp/rh_qemu_fix.txt
-  echo -e "\n## 要求\n只修运行时错误, 输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> /tmp/rh_qemu_fix.txt
-  llm_write_c /tmp/rh_qemu_fix.txt || true
-  save_iter qemu "$iter" /tmp/rh_qemu_fix.txt "$QDIR/error.txt"
+  cat "$DRVDIR/$MODULE.c" >> $RH_TMP/qemu_fix.txt
+  echo -e "\n## 要求\n只修运行时错误, 输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> $RH_TMP/qemu_fix.txt
+  llm_write_c $RH_TMP/qemu_fix.txt || true
+  save_iter qemu "$iter" $RH_TMP/qemu_fix.txt "$QDIR/error.txt"
   echo "  → 重编..."
   compile_once || echo "  重编失败"
 done
@@ -203,20 +211,20 @@ for titer in $(seq 1 $MAX_TRACE_ITER); do
   if [ ! -f "$QEMU_LOG" ] || [ ! -f "$BUNDLE/$BASE.ris" ] || [ ! -f "$BUNDLE/$BASE.dspec" ]; then
     echo "  (缺 trace_match 输入, 跳过)"; TRACE_OK=1; break
   fi
-  python3 "$HERE/tools/trace_match.py" "$QEMU_LOG" "$BUNDLE/$BASE.ris" "$BUNDLE/$BASE.dspec" > /tmp/trace_match.out 2>/tmp/trace_match.err
+  python3 "$HERE/tools/trace_match.py" "$QEMU_LOG" "$BUNDLE/$BASE.ris" "$BUNDLE/$BASE.dspec" > $RH_TMP/trace_match.out 2>$RH_TMP/trace_match.err
   TRC=$?
-  cat /tmp/trace_match.err | sed 's/^/    /'
-  cat /tmp/trace_match.out
+  cat $RH_TMP/trace_match.err | sed 's/^/    /'
+  cat $RH_TMP/trace_match.out
   TDIR="$ITER_LOG/trace_iter${titer}"; mkdir -p "$TDIR"
-  cp /tmp/trace_match.out "$TDIR/trace_match.txt" 2>/dev/null
-  cp /tmp/trace_match.err "$TDIR/trace_match.err" 2>/dev/null
+  cp $RH_TMP/trace_match.out "$TDIR/trace_match.txt" 2>/dev/null
+  cp $RH_TMP/trace_match.err "$TDIR/trace_match.err" 2>/dev/null
   [ -f "$DRVDIR/$MODULE.c" ] && cp "$DRVDIR/$MODULE.c" "$TDIR/${MODULE}.c" 2>/dev/null
   if [ $TRC -eq 0 ]; then
     echo "  ✓ trace 一致性通过 (尝试 $titer)"; TRACE_OK=1; break
   fi
   echo "  ✗ trace 一致性失败 (尝试 $titer), 喂 LLM 修回调逻辑..."
-  TRACE_FAIL=$(cat /tmp/trace_match.out)
-  cat > /tmp/rh_trace_fix.txt <<TFIX
+  TRACE_FAIL=$(cat $RH_TMP/trace_match.out)
+  cat > $RH_TMP/trace_fix.txt <<TFIX
 你是 Linux 内核驱动开发专家(7.1.0-rc7)。合成驱动的 MMIO 访问 trace 与 .ris 规约不匹配, 请修复。
 ## trace 一致性失败
 $TRACE_FAIL
@@ -230,13 +238,13 @@ $(cat "$BUNDLE/$BASE.dspec")
 $CONSTRAINTS
 ## 当前 $MODULE.c
 TFIX
-  cat "$DRVDIR/$MODULE.c" >> /tmp/rh_trace_fix.txt
-  echo -e "\n## 要求\n修复回调的 MMIO 访问使其匹配 .ris。输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> /tmp/rh_trace_fix.txt
-  llm_write_c /tmp/rh_trace_fix.txt || { echo "  LLM 修复失败"; }
-  save_iter trace "$titer" /tmp/rh_trace_fix.txt /tmp/trace_match.out
+  cat "$DRVDIR/$MODULE.c" >> $RH_TMP/trace_fix.txt
+  echo -e "\n## 要求\n修复回调的 MMIO 访问使其匹配 .ris。输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> $RH_TMP/trace_fix.txt
+  llm_write_c $RH_TMP/trace_fix.txt || { echo "  LLM 修复失败"; }
+  save_iter trace "$titer" $RH_TMP/trace_fix.txt $RH_TMP/trace_match.out
   echo "  → 重编 + 重跑 QEMU..."
   if compile_once; then
-    bash qemu_platform.sh "$MODULE" "$REGISTRAR_TARGET" 90 > /tmp/rh_qemu_run.txt 2>&1
+    bash qemu_platform.sh "$MODULE" "$REGISTRAR_TARGET" 90 > $RH_TMP/qemu_run.txt 2>&1
     QRC=$?
     QDIR2="$ITER_LOG/trace_qemu${titer}"; mkdir -p "$QDIR2"
     [ -f "$QEMU_LOG" ] && cp "$QEMU_LOG" "$QDIR2/qemu_serial.log"

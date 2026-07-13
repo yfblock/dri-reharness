@@ -6,9 +6,26 @@
 输出: TRACE_MATCH_OK 或 TRACE_MATCH_FAIL:<缺失的模块/ops>"""
 import re, sys
 
-log = open(sys.argv[1]).read()
-ris = open(sys.argv[2]).read()
-dspec = open(sys.argv[3]).read()
+# ── 健壮的错误处理 ──
+if len(sys.argv) < 4:
+    print("用法: trace_match.py <serial_log> <ris_file> <dspec_file>", file=sys.stderr)
+    sys.exit(2)
+
+try:
+    log = open(sys.argv[1]).read()
+except (IOError, OSError) as e:
+    print(f"TRACE_MATCH_FAIL: 无法读 serial_log: {e}")
+    sys.exit(1)
+try:
+    ris = open(sys.argv[2]).read()
+except (IOError, OSError) as e:
+    print(f"TRACE_MATCH_FAIL: 无法读 .ris: {e}")
+    sys.exit(1)
+try:
+    dspec = open(sys.argv[3]).read()
+except (IOError, OSError) as e:
+    print(f"TRACE_MATCH_FAIL: 无法读 .dspec: {e}")
+    sys.exit(1)
 
 # 1) 寄存器名 → 偏移
 reg_off = {}
@@ -46,22 +63,28 @@ def subseq(sub, seq):
     it = iter(seq)
     return all(x in it for x in sub)
 
-# 4) 子序列匹配 — 只检查被 gpio_trace_test 行使的回调模块
-#    (probe + get_direction/direction_input/direction_output/get_value/set_value)
-#    跳过 irq/set_config 等未行使的模块
+# 只检查被 gpio_trace_test 行使的回调模块
 EXERCISED = ('probe', 'get_direction', 'direction_input', 'direction_output', 'get_value', 'set_value')
 def is_exercised(name):
     return any(kw in name for kw in EXERCISED)
 
+# 边界: 如果 .ris 里没有可校验的模块, 报 OK (vacuous pass, 但不崩)
+exercised_modules = {n: ops for n, ops in modules.items() if is_exercised(n)}
+if not exercised_modules:
+    print(f"[trace_match] 0 个被行使模块 (共 {len(modules)}), traced={len(traced)} ops — vacuous pass", file=sys.stderr)
+    print("TRACE_MATCH_OK")
+    sys.exit(0)
+
+# 边界: 如果 trace 为空但需要校验, 报失败
+if not traced and exercised_modules:
+    print(f"[trace_match] {len(exercised_modules)} 个被行使模块但 traced=0 ops — 可能 instrumentation 未生效", file=sys.stderr)
+    print(f"TRACE_MATCH_FAIL: trace 为空 (检查 instrument_mmio 是否生效)")
+    sys.exit(1)
+
 failed = []
-checked = 0
-for name, expected in modules.items():
-    if not is_exercised(name):
-        continue  # 跳过未行使的模块 (irq/set_config 等)
-    checked += 1
+for name, expected in exercised_modules.items():
     if subseq(expected, traced):
         continue
-    # 找缺失
     it = iter(traced)
     missing = []
     for x in expected:
@@ -73,10 +96,8 @@ for name, expected in modules.items():
             missing.append(x)
     failed.append(f"{name}: 缺失 {missing}")
 
-print(f"[trace_match] {checked} 个被行使模块 (共 {len(modules)}), traced={len(traced)} ops", file=sys.stderr)
-for name, ops in modules.items():
-    if not is_exercised(name):
-        continue
+print(f"[trace_match] {len(exercised_modules)} 个被行使模块 (共 {len(modules)}), traced={len(traced)} ops", file=sys.stderr)
+for name, ops in exercised_modules.items():
     status = "✓" if subseq(ops, traced) else "✗"
     print(f"  {status} {name}: {ops}", file=sys.stderr)
 

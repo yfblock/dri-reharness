@@ -35,15 +35,22 @@ class ExtractionResult:
     stats: dict
 
 
-_extraction_cache: dict[str, ExtractionResult] = {}
+_extraction_cache: dict[str, tuple[float, ExtractionResult]] = {}
 
 
 def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     source = os.path.abspath(config.source)
     # 缓存: 同一源文件只提取一次 (16 个测试解同一文件 55s→7s)
+    # 按 (路径, mtime) 缓存 — 源文件修改后自动失效
+    try:
+        mtime = os.path.getmtime(source)
+    except OSError:
+        mtime = 0
     cache_key = source
     if cache_key in _extraction_cache:
-        return _extraction_cache[cache_key]
+        cached_mtime, cached_result = _extraction_cache[cache_key]
+        if cached_mtime == mtime:
+            return cached_result
     with open(source, "r", encoding="utf-8", errors="replace") as fh:
         source_text = fh.read()
     source_lines = source_text.splitlines()
@@ -106,5 +113,5 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
 
     result = ExtractionResult(formal=formal, device_spec=device_spec, facts=facts,
                              warnings=warnings, stats=stats)
-    _extraction_cache[cache_key] = result
+    _extraction_cache[cache_key] = (mtime, result)
     return result
