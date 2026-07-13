@@ -519,35 +519,8 @@ def test_bundle_assembly():
     files = set(os.listdir(bdir))
     name = res.formal["driver"]
     for need in (f"{name}.ris", f"{name}.dspec", f"{name}.facts",
-                 f"{name}.harness.bind", f"{name}.scaffold.c",
-                 "constraints.md", "verification.md"):
+                 f"{name}.harness.bind", "score.txt"):
         assert need in files, f"missing {need}"
-
-
-def test_repair_loop_offline():
-    import tempfile, os
-    from extractor.extractor import extract_ris
-    import synthesis
-    res = extract_ris(ExtractorConfig(source=FTGPIO))
-    result = synthesis.run_repair_loop(res, "harness", tempfile.mkdtemp(),
-                                       llm=synthesis.NullLLM(), max_iters=2)
-    assert result["llm"] == "null" and result["iters"] >= 1
-    assert os.path.exists(result["candidate"])
-    assert any(f.startswith("feedback.iter") for f in os.listdir(result["bundle"]))
-
-
-def test_verify_feedback_trace_match():
-    import tempfile, os, shutil
-    from extractor.extractor import extract_ris
-    import synthesis
-    res = extract_ris(ExtractorConfig(source=FTGPIO))
-    bdir = synthesis.build_bundle(res, "harness", tempfile.mkdtemp())
-    name = res.formal["driver"]
-    shutil.copy(os.path.join(bdir, f"{name}.scaffold.c"),
-                os.path.join(bdir, f"{name}.candidate.c"))
-    fb = synthesis.verify_candidate(os.path.join(bdir, f"{name}.candidate.c"), res, "harness")
-    assert fb["compile"]["status"] == "passed"
-    assert fb["trace"]["status"] == "passed"
 
 
 # ── standalone runner (no pytest required) ───────────────────────────

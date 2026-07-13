@@ -58,16 +58,10 @@ def main(argv: list[str] | None = None) -> int:
     fa.add_argument("-s", "--source", required=True)
     fa.add_argument("-o", "--output", default=None)
 
-    bu = sub.add_parser("bundle", help="Build LLM input bundle (RIS+dspec+bind+facts+scaffold)")
+    bu = sub.add_parser("bundle", help="Build LLM input bundle (RIS+dspec+bind+facts)")
     bu.add_argument("-s", "--source", required=True)
     bu.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
     bu.add_argument("-o", "--outdir", default=None)
-
-    sy = sub.add_parser("synth", help="LLM-assisted repair loop (scaffold -> verify -> patch)")
-    sy.add_argument("-s", "--source", required=True)
-    sy.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
-    sy.add_argument("-o", "--outdir", default=None)
-    sy.add_argument("--max-iters", type=int, default=3)
 
     args = p.parse_args(argv)
 
@@ -291,21 +285,6 @@ def main(argv: list[str] | None = None) -> int:
             print(f"✅ facts saved to {args.output}")
         else:
             print(text)
-        return 0
-
-    if args.command == "synth":
-        import synthesis
-        res = extract_ris(ExtractorConfig(source=args.source))
-        outdir = args.outdir or f"output/{res.formal['driver']}.synth-{args.backend}"
-        print(f"🔬 LLM repair loop ({args.backend}) → {outdir}/")
-        result = synthesis.run_repair_loop(res, args.backend, outdir,
-                                           max_iters=args.max_iters)
-        print(f"   llm: {result['llm']}  iters: {result['iters']}  "
-              f"accepted: {result['accepted']}")
-        print(synthesis.format_feedback(result["final_feedback"]))
-        if not result["accepted"] and result["llm"] == "null":
-            print("\n(set REHARNESS_LLM_CMD='<cmd>' to enable LLM repair)")
-        print(f"   bundle: {result['bundle']}")
         return 0
 
     return 1

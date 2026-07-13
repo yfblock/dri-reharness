@@ -19,8 +19,8 @@ Commands:
   gen <src> <backend> [out.c]   generate C (backend: harness|baremetal|linux)
   driver <src> [outdir]         one-shot full pipeline (RIS+dspec+bind+backends+trace)
   facts <src>                  source facts (.facts) for LLM synthesis
-  bundle <src> [backend] [outdir]   build LLM input bundle
-  synth <src> [backend] [outdir]    LLM repair loop (scaffold -> verify -> patch)
+  bundle <src> [backend] [outdir]   build LLM input bundle (RIS+dspec+bind+facts)
+  e2e <src> [target] [skip_synth]   end-to-end: extract → Pi synth → compile → QEMU → trace
   metrics <src>             per-module extraction quality metrics
   score <src>               generation readiness scoring
   pipeline <src> [out.ris]  extract (alias of extract)
@@ -56,9 +56,9 @@ cmd_gen() {
 cmd_metrics() { $PY -m extractor metrics -s "${1:?need src}"; }
 cmd_facts()   { $PY -m extractor facts   -s "${1:?need src}" ${2:+-o "$2"}; }
 cmd_bundle()  { $PY -m extractor bundle  -s "${1:?need src}" -b "${2:-harness}" ${3:+-o "$3"}; }
-cmd_synth()   { $PY -m extractor synth   -s "${1:?need src}" -b "${2:-harness}" ${3:+-o "$3"}; }
 cmd_score()   { $PY -m extractor score   -s "${1:?need src}"; }
 cmd_driver()  { $PY -m extractor driver  -s "${1:?need src}" ${2:+-o "$2"}; }
+cmd_e2e()     { bash "$HERE/run_e2e.sh" "$@"; }
 
 cmd_pipeline() {
   local src="${1:?need src}" out="${2:-output/ris.ris}"
@@ -81,7 +81,7 @@ case "${1:-help}" in
   driver)    shift; cmd_driver "$@";;
   facts)     shift; cmd_facts "$@";;
   bundle)    shift; cmd_bundle "$@";;
-  synth)     shift; cmd_synth "$@";;
+  e2e)       shift; cmd_e2e "$@";;
   metrics)   shift; cmd_metrics "$@";;
   score)     shift; cmd_score "$@";;
   pipeline)  shift; cmd_pipeline "$@";;
