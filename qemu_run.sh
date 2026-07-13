@@ -15,7 +15,7 @@ cd "$PROJECT_DIR"
 KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-/home/yfblock/Code/linux/arch/x86/boot/bzImage}"
 KERNEL_VERSION="${KERNEL_VERSION:-7.1.0-rc7-gacb7500801e9-dirty}"
 REGISTRAR_KO="${REGISTRAR_KO:-/home/yfblock/Code/linux-driver-harness/test/device-registrar.ko}"
-OUT=/tmp/reharness_qemu_run.txt
+OUT="${RH_QEMU_OUT:-/tmp/reharness_qemu_run.txt}"
 
 # 默认值
 MODULE_NAME=""

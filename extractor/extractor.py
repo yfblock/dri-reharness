@@ -74,7 +74,8 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     # if SVF binary is unavailable or IR generation fails.
     try:
         from .alias import find_mmio_aliases
-        svf_aliases = find_mmio_aliases(source, tu, linux_root=config.linux_root)
+        svf_aliases = find_mmio_aliases(source, tu, linux_root=config.linux_root,
+                                      mmio_globals=set(mmio_globals))
         if svf_aliases:
             mmio_globals = list(set(mmio_globals) | svf_aliases)
             warnings.append(f"SVF alias analysis: {svf_aliases} treated as MMIO bases")
