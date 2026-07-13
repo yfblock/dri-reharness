@@ -3,15 +3,13 @@ mount -t proc proc /proc 2>/dev/null
 mount -t sysfs sysfs /sys 2>/dev/null
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
 ( sleep 15; echo o > /proc/sysrq-trigger 2>/dev/null; echo b > /proc/sysrq-trigger 2>/dev/null ) &
-echo "=== insmod edu_drv ==="
-insmod /lib/modules/edu_drv.ko 2>&1
+echo "=== insmod ahci_drv ==="
+insmod /lib/modules/ahci_drv.ko 2>&1
 sleep 0.3
 echo "=== dmesg ==="
-dmesg | grep -iE '|edu_drv|probed|registered|probe|gpiochip|clk|ahci|mmc' | tail -25
-echo "=== exerciser ==="
-/bin/exerciser /dev/edu_drv 2>&1
-echo "=== rmmod edu_drv ==="
-rmmod edu_drv 2>&1
+dmesg | grep -iE '|ahci_drv|probed|registered|probe|gpiochip|clk|ahci|mmc' | tail -25
+echo "=== rmmod ahci_drv ==="
+rmmod ahci_drv 2>&1
 rmmod device-registrar 2>/dev/null
 sleep 0.2
 echo "=== QEMU_RUN_DONE ==="

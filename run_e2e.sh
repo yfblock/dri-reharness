@@ -65,6 +65,15 @@ case "$SUBSYSTEM" in
     TRACE_TYPE="value"
     INSTRUMENT=0
     ;;
+  ahci)
+    BUS="pci"
+    QEMU_DEVICE="ahci"
+    MODULE="${MODULE}_drv"
+    DRVDIR="output/${MODULE}"
+    PROBE_PATTERN="probed|registered|ahci|HOST_CTL"
+    TRACE_TYPE="offset"
+    INSTRUMENT=1
+    ;;
   clk)
     BUS="platform"
     # probe-only: 无 exerciser, trace_match 只检查 probe 模块 init 写入
