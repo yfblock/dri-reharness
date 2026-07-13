@@ -3,18 +3,15 @@ mount -t proc proc /proc 2>/dev/null
 mount -t sysfs sysfs /sys 2>/dev/null
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
 ( sleep 15; echo o > /proc/sysrq-trigger 2>/dev/null; echo b > /proc/sysrq-trigger 2>/dev/null ) &
-echo "=== insmod device-registrar target= ==="
-insmod /lib/modules/device-registrar.ko target="" 2>&1
-sleep 0.3
-echo "=== insmod gpio_pl061 ==="
-insmod /lib/modules/gpio_pl061.ko 2>&1
+echo "=== insmod edu_drv ==="
+insmod /lib/modules/edu_drv.ko 2>&1
 sleep 0.3
 echo "=== dmesg ==="
-dmesg | grep -iE '|gpio_pl061|probed|registered|probe|gpiochip|clk|ahci|mmc' | tail -25
+dmesg | grep -iE '|edu_drv|probed|registered|probe|gpiochip|clk|ahci|mmc' | tail -25
 echo "=== exerciser ==="
-/bin/exerciser /dev/gpiochip0 2>&1
-echo "=== rmmod gpio_pl061 ==="
-rmmod gpio_pl061 2>&1
+/bin/exerciser /dev/edu_drv 2>&1
+echo "=== rmmod edu_drv ==="
+rmmod edu_drv 2>&1
 rmmod device-registrar 2>/dev/null
 sleep 0.2
 echo "=== QEMU_RUN_DONE ==="
