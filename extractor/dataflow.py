@@ -237,7 +237,7 @@ def _combine_add(vals: list[AbsVal]) -> AbsVal:
         elif isinstance(v, SymExpr):
             # a bare identifier in an additive address expression is the
             # MMIO base (e.g. `mmio + REG`). Treat it as BasePtr.
-            if not have_base and _IDENT_RE.match(v.text):
+            if not have_base and (_IDENT_RE.match(v.text) or _MEMBER_RE.match(v.text)):
                 base = v.text
                 have_base = True
             else:
