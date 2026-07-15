@@ -12,9 +12,9 @@
       "trace_oracle": "TRACE_MATCH_OK"
     }
   },
-  "generated_at": "2026-07-15T09:32:20.817121+00:00",
+  "generated_at": "2026-07-15T11:07:41.177890+00:00",
   "kernel_release": "7.1.0-rc7-gacb7500801e9",
   "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-  "reharness_commit": "67887a15952f76fe888894adcf9414c2a346853d",
+  "reharness_commit": "ed63cae0c3aae0f7c8b35d00b22de3948b7ff25c",
   "schema": 1
 }

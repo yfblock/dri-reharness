@@ -1,11 +1,18 @@
 {
   "aggregate": {
-    "drivers": 2,
-    "ops": 166,
-    "registers": 22,
-    "rmw": 14,
-    "source_lines": 5779,
-    "translation_units": 9
+    "call_edges": 974,
+    "cross_tu_call_edges": 223,
+    "direct_mmio_ops": 927,
+    "drivers": 3,
+    "ops": 4121,
+    "propagated_mmio_edges": 568,
+    "registers": 68,
+    "resolved_cross_tu_call_edges": 223,
+    "ris_mmio_ops": 3469,
+    "rmw": 858,
+    "source_lines": 27447,
+    "source_mmio_primitives": 907,
+    "translation_units": 19
   },
   "drivers": [
     {
@@ -15,8 +22,13 @@
         "harness_trace": true,
         "linux_compile": true
       },
+      "call_edges": 120,
+      "cross_tu_call_edges": 53,
       "description": "Pinned Linux ASPEED virtual USB hub controller module",
+      "direct_mmio_delta": 0,
+      "direct_mmio_ops": 101,
       "driver": "aspeed-vhub",
+      "duplicate_static_symbols": 0,
       "functions_analyzed": 92,
       "kbuild": "linux/drivers/usb/gadget/udc/aspeed-vhub/Makefile",
       "kbuild_verified": true,
@@ -35,42 +47,100 @@
         "symbolic": 114,
         "unknown_value": 0
       },
+      "mmio_primitive_coverage": 1.0,
+      "original_kbuild": {
+        "attempted": true,
+        "exit": 0,
+        "log": "output/experiment-multisource/aspeed-vhub/verify/original-kbuild.log",
+        "modpost_warning_retry": true,
+        "strict_success": false,
+        "success": true,
+        "target": "aspeed-vhub.ko",
+        "unresolved_external_symbols": [
+          "usb_add_gadget_udc",
+          "usb_del_gadget_udc",
+          "usb_gadget_ep_match_desc",
+          "usb_gadget_get_string",
+          "usb_gadget_giveback_request",
+          "usb_gadget_map_request_by_dev",
+          "usb_gadget_udc_reset",
+          "usb_gadget_unmap_request_by_dev",
+          "usb_get_maximum_speed"
+        ]
+      },
       "pipeline_exit": 0,
+      "propagated_mmio_edges": 54,
+      "propagation_amplification": 1.4851,
+      "propagation_by_depth": [
+        {
+          "depth": 0,
+          "new_mmio_ops": 101,
+          "total_mmio_ops": 101
+        },
+        {
+          "depth": 1,
+          "new_mmio_ops": 126,
+          "total_mmio_ops": 227
+        },
+        {
+          "depth": 2,
+          "new_mmio_ops": 103,
+          "total_mmio_ops": 330
+        },
+        {
+          "depth": 3,
+          "new_mmio_ops": 91,
+          "total_mmio_ops": 421
+        }
+      ],
       "readiness": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "missing role for: ast_vhub_ep0_queue, ast_vhub_ep0_dequeue, ast_vhub_epn_queue, ast_vhub_epn_dequeue, ast_vhub_epn_set_halt, ast_vhub_epn_set_wedge, ast_vhub_udc_get_frame, ast_vhub_udc_pullup, ast_vhub_udc_stop, ast_vhub_wake_work",
-          "callback entry without table binding: ast_vhub_ep0_queue, ast_vhub_ep0_dequeue, ast_vhub_epn_queue, ast_vhub_epn_dequeue, ast_vhub_epn_set_halt, ast_vhub_epn_set_wedge, ast_vhub_udc_get_frame, ast_vhub_udc_pullup, ast_vhub_udc_stop, ast_vhub_wake_work",
+          "missing role for: ast_vhub_wake_work",
+          "callback entry without table binding: ast_vhub_wake_work",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
-        "function_spec_quality": 0.333,
-        "llm_synthesis_ready": false,
+        "function_spec_quality": 0.933,
+        "llm_synthesis_ready": true,
         "ris_quality": 0.832
       },
-      "seconds": 25.139,
+      "resolved_cross_tu_call_edges": 53,
+      "ris_mmio_ops": 150,
+      "seconds": 26.904,
       "source_count": 5,
       "source_lines": 3540,
+      "source_mmio_primitives": {
+        "reads": 24,
+        "total": 101,
+        "writes": 77
+      },
       "source_sha256": {
         "linux/drivers/usb/gadget/udc/aspeed-vhub/core.c": "a014b560d11ee4d55c8eb2c8da8e5c8db542b338f5eeb7146a4663c6d3c08525",
         "linux/drivers/usb/gadget/udc/aspeed-vhub/dev.c": "a6ac828891230ab4a850226a1b40f4fc9570ffd62b9d65173e962a0c3b4c3d07",
         "linux/drivers/usb/gadget/udc/aspeed-vhub/ep0.c": "23dcac9fec0433e9b60217937ddcbcdf9a692554c7eb1929cea520ed04a9af08",
         "linux/drivers/usb/gadget/udc/aspeed-vhub/epn.c": "4e848e00ceb063a2465a030001d276610f5a99fdf49c643d76c322705172727d",
         "linux/drivers/usb/gadget/udc/aspeed-vhub/hub.c": "ec50f18e4c26f94e6dfeef6b8c7702a1b50e8fe02db69413105cb109b97fe8e2"
-      }
+      },
+      "unresolved_internal_calls": 0
     },
     {
       "backends": {
         "baremetal_compile": true,
         "harness_compile": true,
-        "harness_trace": true,
+        "harness_trace": false,
         "linux_compile": true
       },
+      "call_edges": 128,
+      "cross_tu_call_edges": 30,
       "description": "Pinned Linux Cypress C67X00 USB host-controller module",
+      "direct_mmio_delta": 2,
+      "direct_mmio_ops": 4,
       "driver": "c67x00",
+      "duplicate_static_symbols": 0,
       "functions_analyzed": 89,
       "kbuild": "linux/drivers/usb/c67x00/Makefile",
       "kbuild_verified": true,
@@ -89,7 +159,53 @@
         "symbolic": 0,
         "unknown_value": 0
       },
+      "mmio_primitive_coverage": 1.0,
+      "original_kbuild": {
+        "attempted": true,
+        "exit": 0,
+        "log": "output/experiment-multisource/c67x00/verify/original-kbuild.log",
+        "modpost_warning_retry": true,
+        "strict_success": false,
+        "success": true,
+        "target": "c67x00.ko",
+        "unresolved_external_symbols": [
+          "usb_add_hcd",
+          "usb_create_hcd",
+          "usb_disabled",
+          "usb_get_dev",
+          "usb_hcd_check_unlink_urb",
+          "usb_hcd_giveback_urb",
+          "usb_hcd_link_urb_to_ep",
+          "usb_put_dev",
+          "usb_put_hcd",
+          "usb_remove_hcd"
+        ]
+      },
       "pipeline_exit": 0,
+      "propagated_mmio_edges": 71,
+      "propagation_amplification": 1.5,
+      "propagation_by_depth": [
+        {
+          "depth": 0,
+          "new_mmio_ops": 4,
+          "total_mmio_ops": 4
+        },
+        {
+          "depth": 1,
+          "new_mmio_ops": 22,
+          "total_mmio_ops": 26
+        },
+        {
+          "depth": 2,
+          "new_mmio_ops": 46,
+          "total_mmio_ops": 72
+        },
+        {
+          "depth": 3,
+          "new_mmio_ops": 160,
+          "total_mmio_ops": 232
+        }
+      ],
       "readiness": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
@@ -104,22 +220,150 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.25
       },
-      "seconds": 17.45,
+      "resolved_cross_tu_call_edges": 30,
+      "ris_mmio_ops": 6,
+      "seconds": 18.845,
       "source_count": 4,
       "source_lines": 2239,
+      "source_mmio_primitives": {
+        "reads": 1,
+        "total": 2,
+        "writes": 1
+      },
       "source_sha256": {
         "linux/drivers/usb/c67x00/c67x00-drv.c": "9ec73baea89217d558094a4c8691e0271346cc8c3618bdfadc7e9b6699de855b",
         "linux/drivers/usb/c67x00/c67x00-hcd.c": "deb8ee1c7341bbbfd143d4ebfa1206a5d2d786e61b1278673fb9d04af06a969f",
         "linux/drivers/usb/c67x00/c67x00-ll-hpi.c": "d3603eef5554dfdf63d77e120141062c4ac888bb36770020a909e6da269f316d",
         "linux/drivers/usb/c67x00/c67x00-sched.c": "c7d461b75fd82aa667115caa5500c6173408a4644d189a53a46d7a8da0ac35cf"
-      }
+      },
+      "unresolved_internal_calls": 0
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "call_edges": 726,
+      "cross_tu_call_edges": 140,
+      "description": "Pinned Linux Synopsys DesignWare USB2 dual-role controller module",
+      "direct_mmio_delta": 18,
+      "direct_mmio_ops": 822,
+      "driver": "dwc2",
+      "duplicate_static_symbols": 0,
+      "functions_analyzed": 445,
+      "kbuild": "linux/drivers/usb/dwc2/Makefile",
+      "kbuild_verified": true,
+      "manifest": "drivers/multisource/dwc2.json",
+      "metrics": {
+        "clang_diagnostics": 85,
+        "computed": 379,
+        "conditions": 284,
+        "fixed": 133,
+        "loops": 0,
+        "ops": 3955,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.845,
+        "registers": 46,
+        "rmw": 844,
+        "symbolic": 2801,
+        "unknown_value": 0
+      },
+      "mmio_primitive_coverage": 1.0,
+      "original_kbuild": {
+        "attempted": true,
+        "exit": 0,
+        "log": "output/experiment-multisource/dwc2/verify/original-kbuild.log",
+        "modpost_warning_retry": true,
+        "strict_success": false,
+        "success": true,
+        "target": "dwc2.ko",
+        "unresolved_external_symbols": [
+          "usb_add_hcd",
+          "usb_create_hcd",
+          "usb_del_gadget_udc",
+          "usb_gadget_giveback_request",
+          "usb_gadget_set_state",
+          "usb_hcd_giveback_urb",
+          "usb_hcd_unmap_urb_for_dma",
+          "usb_hub_clear_tt_buffer",
+          "usb_put_hcd",
+          "usb_remove_hcd"
+        ]
+      },
+      "pipeline_exit": 0,
+      "propagated_mmio_edges": 443,
+      "propagation_amplification": 4.0304,
+      "propagation_by_depth": [
+        {
+          "depth": 0,
+          "new_mmio_ops": 822,
+          "total_mmio_ops": 822
+        },
+        {
+          "depth": 1,
+          "new_mmio_ops": 1618,
+          "total_mmio_ops": 2440
+        },
+        {
+          "depth": 2,
+          "new_mmio_ops": 3557,
+          "total_mmio_ops": 5997
+        },
+        {
+          "depth": 3,
+          "new_mmio_ops": 4556,
+          "total_mmio_ops": 10553
+        }
+      ],
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "199 unsafe dynamic register address(es) (379 computed total)",
+          "85 clang error diagnostic(s)",
+          "missing role for: dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
+          "callback entry without table binding: dwc2_suspend, dwc2_resume, dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_hcd_reset_func, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 0.562,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.642
+      },
+      "resolved_cross_tu_call_edges": 140,
+      "ris_mmio_ops": 3313,
+      "seconds": 71.442,
+      "source_count": 10,
+      "source_lines": 21668,
+      "source_mmio_primitives": {
+        "reads": 442,
+        "total": 804,
+        "writes": 362
+      },
+      "source_sha256": {
+        "linux/drivers/usb/dwc2/core.c": "2f075597eb34c6c09e02beee4f6682372129636248ace9e71797309dd12cf30f",
+        "linux/drivers/usb/dwc2/core_intr.c": "bb0f0b032bf0d87dd8f710e1a7a9ba47ffc9c8fbf9a3cf81d007dba6531ab8e4",
+        "linux/drivers/usb/dwc2/drd.c": "1d94fb8e1c81e97163459387e97e558face944dd15283003d46445a119727152",
+        "linux/drivers/usb/dwc2/gadget.c": "baf17cb89e78c8a63f0a9688af7697875018f162923118f72f1092df703f6d8d",
+        "linux/drivers/usb/dwc2/hcd.c": "56a91a8ff69fe8001100524d0df105ec491019fdbec6c13613da3bab7fdc45bb",
+        "linux/drivers/usb/dwc2/hcd_ddma.c": "0a9603f4a9cd2f6ff46e63b49db5dfe38e7b7203c457d1a39e301b09fd953c79",
+        "linux/drivers/usb/dwc2/hcd_intr.c": "cc998509cc806c4ea7beb6b5228a963158329643677d94436d1fac7aa3261f35",
+        "linux/drivers/usb/dwc2/hcd_queue.c": "92f2c031087447ef7c4aaf22563021e52271ca0c7c91697f092e9dc391855f9e",
+        "linux/drivers/usb/dwc2/params.c": "75c8a6f2e53ebf8c519ba0c3d44663de4fb71431e03c3865c557ddaedd24df04",
+        "linux/drivers/usb/dwc2/platform.c": "4e58907a9bf6f4e2b2cec4b87e4b4c269b284e0e792cdb6f14328459807eadc9"
+      },
+      "unresolved_internal_calls": 68
     }
   ],
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "67887a15952f76fe888894adcf9414c2a346853d"
+    "reharness_commit": "ed63cae0c3aae0f7c8b35d00b22de3948b7ff25c"
   },
-  "generated_at": "2026-07-15T09:31:31.564973+00:00",
+  "generated_at": "2026-07-15T11:06:46.300914+00:00",
   "schema": 1
 }

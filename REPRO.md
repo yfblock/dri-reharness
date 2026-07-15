@@ -2,6 +2,8 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
+论文制品的 v4 冻结入口为 annotated tag `paper-artifact-v4`。结果 JSON 中的 `reharness_commit` 固定为 `ed63cae0c3aae0f7c8b35d00b22de3948b7ff25c`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
+
 ## 环境
 
 需要：
@@ -45,7 +47,7 @@ python3 verification/run_matrix.py
 drivers=19 ops=425 symbolic=314 fixed=64 computed=33
 rmw=71 conditions=58 registers=141 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
-strict_ready: harness=7 baremetal=7 linux=5
+strict_ready: harness=6 baremetal=6 linux=4
 llm_synthesis_ready=12
 ~~~
 

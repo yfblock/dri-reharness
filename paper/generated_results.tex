@@ -13,21 +13,28 @@
 \newcommand{\HarnessCompileCount}{19}
 \newcommand{\BaremetalCompileCount}{19}
 \newcommand{\LinuxCompileCount}{19}
-\newcommand{\HarnessReadyCount}{7}
-\newcommand{\BaremetalReadyCount}{7}
-\newcommand{\LinuxReadyCount}{5}
+\newcommand{\HarnessReadyCount}{6}
+\newcommand{\BaremetalReadyCount}{6}
+\newcommand{\LinuxReadyCount}{4}
 \newcommand{\LLMReadyCount}{12}
 \newcommand{\EduQEMUOracle}{EDU\_TRACE\_OK}
 \newcommand{\FTQEMUOracle}{TRACE\_MATCH\_OK}
 \newcommand{\FTQEMUModuleCoverage}{1/1}
 \newcommand{\FTQEMUOpCoverage}{4/4}
 \newcommand{\FTQEMURegisterCoverage}{4/4}
-\newcommand{\MultiSourceDrivers}{2}
-\newcommand{\MultiSourceTUs}{9}
-\newcommand{\MultiSourceLines}{5779}
-\newcommand{\MultiSourceOps}{166}
-\newcommand{\MultiSourceRMW}{14}
-\newcommand{\MultiSourceRegisters}{22}
+\newcommand{\MultiSourceDrivers}{3}
+\newcommand{\MultiSourceTUs}{19}
+\newcommand{\MultiSourceLines}{27447}
+\newcommand{\MultiSourceOps}{4121}
+\newcommand{\MultiSourceRMW}{858}
+\newcommand{\MultiSourceRegisters}{68}
+\newcommand{\MultiSourceFunctions}{626}
+\newcommand{\MultiSourceCallEdges}{974}
+\newcommand{\MultiSourceCrossTUEdges}{223}
+\newcommand{\MultiSourceResolvedCrossTUEdges}{223}
+\newcommand{\MultiSourcePropagatedEdges}{568}
+\newcommand{\MultiSourceSourceMMIO}{907}
+\newcommand{\MultiSourceRISMMIO}{3469}
 
 \newcommand{\ExtractionResultsTable}{%
 \begin{tabular}{lrrrrrrrr}
@@ -60,12 +67,13 @@ edu & 0.720 & 1.000 & 0.688 & \checkmark/\checkmark/\checkmark & \checkmark & \c
 }
 
 \newcommand{\MultiSourceResultsTable}{%
-\begin{tabular}{lrrrrrrc}
+\begin{tabular}{lrrrrrrrrcc}
 \hline
-\textbf{Driver module} & \textbf{TUs} & \textbf{LoC} & \textbf{Funcs} & \textbf{Ops} & \textbf{RMW} & \textbf{Regs} & \textbf{H/B/L}\\
+\textbf{Driver module} & \textbf{TUs} & \textbf{LoC} & \textbf{Funcs} & \textbf{X-TU} & \textbf{Prop} & \textbf{Src MMIO} & \textbf{RIS MMIO} & \textbf{Ops} & \textbf{H/B/L} & \textbf{Orig. Kbuild}\\
 \hline
-aspeed-vhub & 5 & 3540 & 92 & 154 & 14 & 22 & \checkmark/\checkmark/\checkmark\\
-c67x00 & 4 & 2239 & 89 & 12 & 0 & 0 & \checkmark/\checkmark/\checkmark\\
+aspeed-vhub & 5 & 3540 & 92 & 53 & 54 & 101 & 150 & 154 & \checkmark/\checkmark/\checkmark & \checkmark$^\dagger$\\
+c67x00 & 4 & 2239 & 89 & 30 & 71 & 2 & 6 & 12 & \checkmark/\checkmark/\checkmark & \checkmark$^\dagger$\\
+dwc2 & 10 & 21668 & 445 & 140 & 443 & 804 & 3313 & 3955 & \checkmark/\checkmark/\checkmark & \checkmark$^\dagger$\\
 \hline
 \end{tabular}
 }
