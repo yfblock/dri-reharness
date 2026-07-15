@@ -14,6 +14,7 @@ from . import tu as tu_mod
 from . import macros as macros_mod
 from .ast_model import target_functions, target_mmio_globals
 from .call_graph import extract_with_inlining
+from .compile_context import compile_context_identity
 from .formalize import build_formal_ris
 from .dataflow import Op
 
@@ -28,6 +29,8 @@ class ExtractorConfig:
     max_inline_depth: int = 3
     alias_mode: str = "off"                # off | auto | required
     driver_name: str | None = None          # required only for direct multi-source API use
+    compile_commands: str | None = None      # optional Linux compile_commands.json
+    compile_context_mode: str = "auto"       # off | auto | required
 
 
 @dataclass
@@ -211,7 +214,11 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
             raise ValueError(f"multi-source entry is not a C file: {source}")
         with open(source, "r", encoding="utf-8", errors="replace") as fh:
             source_text = fh.read()
-        tu, diag = tu_mod.parse_translation_unit(source, config.linux_root)
+        tu, diag, compile_context = tu_mod.parse_translation_unit(
+            source, config.linux_root,
+            compile_commands=config.compile_commands,
+            compile_context_mode=config.compile_context_mode,
+            return_context=True)
         warnings.extend(diag)
         macros = macros_mod.build(tu, source, source_text)
         conflicts = combined_macros.merge(macros)
@@ -222,7 +229,7 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
             "source": source, "source_text": source_text,
             "source_lines": source_text.splitlines(), "tu": tu,
             "macros": macros, "funcs": funcs, "mmio_globals": mmio_globals,
-            "mmio_alias_facts": {},
+            "mmio_alias_facts": {}, "compile_context": compile_context,
         })
 
     if config.alias_mode != "off":
@@ -230,6 +237,8 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
             from .alias import find_mmio_aliases_multi
             linked_svf = find_mmio_aliases_multi(
                 units, linux_root=config.linux_root,
+                compile_commands=config.compile_commands,
+                compile_context_mode=config.compile_context_mode,
                 required=config.alias_mode == "required")
             for unit in units:
                 source = os.path.abspath(unit["source"])
@@ -311,6 +320,7 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         },
         "translation_units": len(units),
         "source_files": list(sources),
+        "compile_contexts": [unit["compile_context"] for unit in units],
         "source_lines": sum(len(unit["source_lines"]) for unit in units),
         **symbol_stats,
         **call_stats,
@@ -414,6 +424,9 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
 def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     if config.alias_mode not in {"off", "auto", "required"}:
         raise ValueError(f"invalid alias_mode: {config.alias_mode}")
+    if config.compile_context_mode not in {"off", "auto", "required"}:
+        raise ValueError(
+            f"invalid compile_context_mode: {config.compile_context_mode}")
     sources, driver_name, descriptor = _resolve_sources(config)
     if len(sources) > 1:
         source_state = []
@@ -430,9 +443,15 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
             "multi", tuple(source_state), descriptor, descriptor_mtime,
             driver_name,
             os.path.abspath(config.linux_root) if config.linux_root else None,
+            os.path.abspath(config.compile_commands) if config.compile_commands else None,
+            config.compile_context_mode,
             config.max_inline_depth, config.include_framework,
             tuple(sorted(config.extra_blacklist)), config.alias_mode,
             _alias_cache_identity(config.alias_mode),
+            tuple(compile_context_identity(source, config.linux_root,
+                                           config.compile_commands,
+                                           config.compile_context_mode)
+                  for source in sources),
         )
         if cache_key not in _extraction_cache:
             _extraction_cache[cache_key] = _extract_multi(
@@ -450,9 +469,14 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     cache_key = (
         source, mtime, driver_name,
         os.path.abspath(config.linux_root) if config.linux_root else None,
+        os.path.abspath(config.compile_commands) if config.compile_commands else None,
+        config.compile_context_mode,
         config.max_inline_depth, config.include_framework,
         tuple(sorted(config.extra_blacklist)), config.alias_mode,
         _alias_cache_identity(config.alias_mode),
+        compile_context_identity(source, config.linux_root,
+                                 config.compile_commands,
+                                 config.compile_context_mode),
     )
     if cache_key in _extraction_cache:
         return _extraction_cache[cache_key]
@@ -461,7 +485,11 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     source_lines = source_text.splitlines()
 
     warnings: list[str] = []
-    tu, diag = tu_mod.parse_translation_unit(source, config.linux_root)
+    tu, diag, compile_context = tu_mod.parse_translation_unit(
+        source, config.linux_root,
+        compile_commands=config.compile_commands,
+        compile_context_mode=config.compile_context_mode,
+        return_context=True)
     warnings.extend(diag)
 
     # macros (TU + regex fallback)
@@ -488,6 +516,8 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
             from .alias import find_mmio_aliases
             alias_result = find_mmio_aliases(
                 source, tu, linux_root=config.linux_root,
+                compile_commands=config.compile_commands,
+                compile_context_mode=config.compile_context_mode,
                 mmio_globals=set(mmio_globals),
                 required=config.alias_mode == "required",
             )
@@ -529,6 +559,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         "function_macros": macros.function_macros(),
         "svf_aliases": sorted(svf_aliases),
         "alias_analysis": alias_analysis,
+        "compile_context": compile_context,
         **wrapper_stats,
     }
 

@@ -16,12 +16,118 @@ sys.path.insert(0, REHARNESS)
 
 from extractor import macros as M  # noqa: E402
 from extractor import taint as T  # noqa: E402
+from extractor.compile_context import resolve_compile_context  # noqa: E402
 from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
 from extractor.formal import expr_to_c, formal_display, parse_expr  # noqa: E402
+from verification.check_generalization_guard import check_guard  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────
+
+
+def test_zero_shot_holdout_is_frozen_and_not_special_cased():
+    report = check_guard()
+    assert report["cases"] == 12
+    assert report["first_run"] == "gpio-altera"
+    assert report["passed"], report["issues"]
+
+
+def test_kbuild_cmd_compile_context_imports_only_parser_relevant_flags():
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        linux = root / "linux"
+        build = root / "build"
+        source = linux / "drivers" / "demo" / "demo.c"
+        source.parent.mkdir(parents=True)
+        source.write_text("int demo(void) { return DEMO_VALUE; }\n", encoding="utf-8")
+        command_file = build / "drivers" / "demo" / ".demo.o.cmd"
+        command_file.parent.mkdir(parents=True)
+        command_file.write_text(
+            "savedcmd_drivers/demo/demo.o := gcc -nostdinc -I./include "
+            f"-I{linux}/include -include {linux}/include/demo.h "
+            "-DDEMO_VALUE=7 -std=gnu11 -Wall -O2 -c -o "
+            f"drivers/demo/demo.o {source} ; objtool demo.o\n",
+            encoding="utf-8")
+        context = resolve_compile_context(
+            str(source), linux_root=str(linux), build_root=str(build),
+            mode="required")
+        assert context is not None
+        assert context.origin == "kbuild-cmd"
+        assert "-DDEMO_VALUE=7" in context.arguments
+        assert "-Wall" not in context.arguments
+        assert "-O2" not in context.arguments
+        assert "-I" + str(build / "include") in context.arguments
+        assert context.provenance == str(command_file)
+
+
+def test_compile_commands_precedes_kbuild_cmd_and_resolves_relative_paths():
+    import json
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        linux = root / "linux"
+        build = root / "build"
+        source = linux / "drivers" / "demo.c"
+        source.parent.mkdir(parents=True)
+        source.write_text("int demo(void);\n", encoding="utf-8")
+        database = root / "compile_commands.json"
+        database.write_text(json.dumps([{
+            "directory": str(build),
+            "file": str(source),
+            "arguments": ["clang", "-I./generated", "-DCOMPILE_DB=1",
+                          "-c", str(source), "-o", "demo.o"],
+        }]), encoding="utf-8")
+        context = resolve_compile_context(
+            str(source), linux_root=str(linux), build_root=str(build),
+            compile_commands=str(database), mode="required")
+        assert context is not None
+        assert context.origin == "compile-commands"
+        assert "-DCOMPILE_DB=1" in context.arguments
+        assert "-I" + str(build / "generated") in context.arguments
+
+
+def test_required_compile_context_does_not_silently_fallback():
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        source = root / "linux" / "drivers" / "missing.c"
+        source.parent.mkdir(parents=True)
+        source.write_text("int missing(void);\n", encoding="utf-8")
+        try:
+            resolve_compile_context(
+                str(source), linux_root=str(root / "linux"),
+                build_root=str(root / "build"), mode="required")
+        except RuntimeError as exc:
+            assert "no Kbuild compile context found" in str(exc)
+        else:
+            raise AssertionError("required compile context silently fell back")
+
+
+def test_frozen_first_holdout_uses_kbuild_context_without_core_special_case():
+    import json
+    from pathlib import Path
+
+    manifest_path = Path(REHARNESS) / "drivers" / "holdout" / "zero-shot-v1.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    case = next(case for case in manifest["cases"]
+                if case["id"] == manifest["first_run"])
+    source = (manifest_path.parent / case["source"]).resolve()
+    result = extract_ris(ExtractorConfig(
+        source=str(source), compile_context_mode="required"))
+    assert result.stats["compile_context"]["origin"] == "kbuild-cmd"
+    assert result.stats["functions_analyzed"] == 13
+    assert result.stats["access_accounting"]["strict_complete"] is True
+    assert result.stats["total_ops"] == 18
+    assert not any("clang diag[3]" in warning or "clang diag[4]" in warning
+                   for warning in result.warnings)
 
 def _leaf_ops(ops, acc):
     """Recurse Cond/Seq/Loop, collecting leaf RISOp dicts."""

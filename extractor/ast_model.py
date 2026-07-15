@@ -148,10 +148,16 @@ def function_calls(func_cursor) -> list[CallSite]:
 
 def target_functions(tu, target_file: str) -> list[Func]:
     """FUNCTION_DECLs defined in `target_file`."""
+    # module_init/module_exit expand to compiler-visible helper definitions in
+    # a MODULE Kbuild context.  They are registration metadata, not driver
+    # functions, and would otherwise make the analyzed inventory depend on
+    # whether the exact Kbuild command was imported.
+    synthetic_registration_helpers = {"__inittest", "__exittest"}
     funcs: list[Func] = []
     for c in tu.cursor.walk_preorder():
         if (c.kind == cx.CursorKind.FUNCTION_DECL and c.is_definition()
-                and in_file(c, target_file)):
+                and in_file(c, target_file)
+                and c.spelling not in synthetic_registration_helpers):
             params = []
             for p in c.get_children():
                 if p.kind == cx.CursorKind.PARM_DECL:

@@ -28,6 +28,8 @@ def _config_from_args(args) -> ExtractorConfig:
         max_inline_depth=getattr(args, "max_inline_depth", 3),
         alias_mode=getattr(args, "alias_mode", "off"),
         driver_name=getattr(args, "driver_name", None),
+        compile_commands=getattr(args, "compile_commands", None),
+        compile_context_mode=getattr(args, "compile_context", "auto"),
     )
 
 
@@ -38,6 +40,11 @@ def _add_analysis_options(parser, *, extended: bool = False) -> None:
                         help="Linux tree (default: repository linux/ submodule)")
     parser.add_argument("--alias-mode", choices=["off", "auto", "required"], default="off",
                         help="SVF alias analysis: off (fast default), auto, or required")
+    parser.add_argument("--compile-commands", default=None,
+                        help="optional Linux compile_commands.json (Kbuild .cmd is auto-discovered)")
+    parser.add_argument("--compile-context", choices=["off", "auto", "required"],
+                        default="auto",
+                        help="Kbuild context importer mode (default: auto)")
     if extended:
         parser.add_argument("--include-framework", action="store_true")
         parser.add_argument("--blacklist", default="",

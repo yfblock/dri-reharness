@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "name": "zero-shot-v1",
+  "frozen_against": {
+    "reharness_commit": "26a971c19d359bcd7e1845c45f6d95223ec70b63",
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a"
+  },
+  "policy": {
+    "selection_locked": true,
+    "protected_roots": [
+      "extractor",
+      "generator"
+    ],
+    "specialization_allowlist": {
+      "source_basename_equals": ["sdhci-esdhc-mcf.c"],
+      "device_name_equals": ["edu"],
+      "private_mmio_layouts": ["dwc2_readl", "dwc2_writel"]
+    },
+    "rule": "Holdout driver identifiers must not appear in extractor or generator implementation files. Generalization changes must be driver-name agnostic."
+  },
+  "first_run": "gpio-altera",
+  "cases": [
+    {
+      "id": "gpio-altera",
+      "source": "../../linux/drivers/gpio/gpio-altera.c",
+      "subsystem": "gpio",
+      "difficulty": "near",
+      "source_sha256": "23f36f26c9c10ffcbeb11f2c06d142ab4876a3d38cd09ddd37bbabdc5bfc670a",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["gpio-altera", "gpio_altera", "altera_gpio"]
+    },
+    {
+      "id": "gpio-ts4800",
+      "source": "../../linux/drivers/gpio/gpio-ts4800.c",
+      "subsystem": "gpio",
+      "difficulty": "near",
+      "source_sha256": "790ca27597cabc7fce8a4a77064ceef1ab42c583d49c0c91cf6a950a5bccdfe9",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["gpio-ts4800", "gpio_ts4800", "ts4800_gpio"]
+    },
+    {
+      "id": "gpio-clps711x",
+      "source": "../../linux/drivers/gpio/gpio-clps711x.c",
+      "subsystem": "gpio",
+      "difficulty": "near",
+      "source_sha256": "1ff3cd5ad47d9d72d5d4c8c74aa23458ee3e5d53d92a2e49ee87f8ccd15ed731",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["gpio-clps711x", "gpio_clps711x", "clps711x_gpio"]
+    },
+    {
+      "id": "clk-fixed-mmio",
+      "source": "../../linux/drivers/clk/clk-fixed-mmio.c",
+      "subsystem": "clock",
+      "difficulty": "near",
+      "source_sha256": "31817c354ab7ff566159177eb15461ffdb160b72c2e2fe5d9e328a8339669785",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["clk-fixed-mmio", "clk_fixed_mmio", "fixed_mmio"]
+    },
+    {
+      "id": "clk-moxart",
+      "source": "../../linux/drivers/clk/clk-moxart.c",
+      "subsystem": "clock",
+      "difficulty": "near",
+      "source_sha256": "5fd9cee20d655e277c7a4f8f0c5f99a6d68f924d3d1312dc1d3c9da45810f6fe",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["clk-moxart", "clk_moxart", "moxart_clk"]
+    },
+    {
+      "id": "gpio-dwapb",
+      "source": "../../linux/drivers/gpio/gpio-dwapb.c",
+      "subsystem": "gpio-irq",
+      "difficulty": "medium",
+      "source_sha256": "9179790f3067c4245f12896d6c0e38ee4790d99b08562a02e51f93771904c8ee",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["gpio-dwapb", "gpio_dwapb", "dwapb_gpio"]
+    },
+    {
+      "id": "gpio-ge",
+      "source": "../../linux/drivers/gpio/gpio-ge.c",
+      "subsystem": "gpio",
+      "difficulty": "medium",
+      "source_sha256": "8c940be2699e07b48aaa952c65c7261184819beefcbbc6c99da4f3bb2ed289b2",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["gpio-ge", "gpio_ge", "ge_gpio"]
+    },
+    {
+      "id": "clk-nspire",
+      "source": "../../linux/drivers/clk/clk-nspire.c",
+      "subsystem": "clock",
+      "difficulty": "medium",
+      "source_sha256": "74b521bfd437fc4432501873fe462241c248253a19a77a87e2ef6a97cc608ab9",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["clk-nspire", "clk_nspire", "nspire_clk"]
+    },
+    {
+      "id": "sdhci-npcm",
+      "source": "../../linux/drivers/mmc/host/sdhci-npcm.c",
+      "subsystem": "sdhci",
+      "difficulty": "medium",
+      "source_sha256": "a76af224a9de3c800dc243eee7d2af21b8ad2c1b4f1510eaecb3564bfebea3d1",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["sdhci-npcm", "sdhci_npcm", "npcm_sdhci"]
+    },
+    {
+      "id": "sdhci-of-hlwd",
+      "source": "../../linux/drivers/mmc/host/sdhci-of-hlwd.c",
+      "subsystem": "sdhci",
+      "difficulty": "medium",
+      "source_sha256": "7d784f1fa53c7377a42000710f27e79a9abb67c42fa467c4b9282c0d86bd8b7c",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["sdhci-of-hlwd", "sdhci_of_hlwd", "hlwd_sdhci"]
+    },
+    {
+      "id": "sdhci-dove",
+      "source": "../../linux/drivers/mmc/host/sdhci-dove.c",
+      "subsystem": "sdhci",
+      "difficulty": "far",
+      "source_sha256": "6321f42a6ebbb5c2ab211745774949aad0ccf943d2d164abdef33416f8fb72c4",
+      "compile_context": "discover",
+      "forbidden_identifiers": ["sdhci-dove", "sdhci_dove", "dove_sdhci"]
+    },
+    {
+      "id": "virtio-input",
+      "source": "../../linux/drivers/virtio/virtio_input.c",
+      "subsystem": "virtio",
+      "difficulty": "far",
+      "source_sha256": "302e4f073e16dfd902ee06224c72872b5d7f888ed3bedb59dd54de7965353b96",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["virtio-input", "virtio_input"]
+    }
+  ]
+}

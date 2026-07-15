@@ -128,7 +128,9 @@ def _source_svf_env(setup: str) -> dict:
 def _generate_stubbed_bc(source: str, linux_root: str | None = None,
                         env: dict | None = None, *, workdir: str,
                         clang: str, llvm_as: str, stem: str = "source",
-                        apply_stub: bool = True) -> str | None:
+                        apply_stub: bool = True,
+                        compile_commands: str | None = None,
+                        compile_context_mode: str = "auto") -> str | None:
     """Compile C → .ll → IR stub → .bc for SVF analysis.
 
     Strips MODULE_* macros, strips __maybe_unused (prevents function
@@ -157,17 +159,28 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
     ll_path = os.path.join(workdir, f"{stem}.ll")
     bc_path = os.path.join(workdir, f"{stem}.bc")
 
-    # 1. clang → .ll
+    # 1. clang → .ll.  Use the same imported Kbuild context as libclang so
+    # alias analysis does not silently analyze another preprocessor program.
+    from .compile_context import resolve_compile_context
     from .tu import default_include_args
+    context = resolve_compile_context(
+        source, linux_root=linux, compile_commands=compile_commands,
+        build_root=build, mode=compile_context_mode)
+    context_args = (list(context.arguments) if context
+                    else default_include_args(linux, build))
+    parser_defines = []
+    if not any(arg.startswith("-DKBUILD_MODNAME=") for arg in context_args):
+        parser_defines.append(f"-DKBUILD_MODNAME=\"{modname}\"")
+    if not any(arg.startswith("-DKBUILD_MODFILE=") for arg in context_args):
+        parser_defines.append(f"-DKBUILD_MODFILE=\"{modname}\"")
     args = [
         clang, "-S", "-emit-llvm", "-g", "-O0", "-c", "-w",
         "-fdebug-compilation-dir=.",
         f"-fdebug-prefix-map={workdir}=.",
         f"-ffile-prefix-map={workdir}=.",
         "-I", os.path.dirname(os.path.abspath(source)),
-        *default_include_args(linux, build),
-        f"-DKBUILD_MODNAME=\"{modname}\"",
-        f"-DKBUILD_MODFILE=\"{modname}\"",
+        *context_args,
+        *parser_defines,
         "-D_Static_assert(x,y)=",
         c_path,
         "-o", ll_path,
@@ -499,6 +512,8 @@ def _parse_wpa_aliases_multi(
 # ── 主接口 ──
 
 def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
+                      compile_commands: str | None = None,
+                      compile_context_mode: str = "auto",
                       mmio_globals: set[str] | None = None,
                       required: bool = False) -> AliasAnalysisResult:
     """Find C variable names that alias MMIO base pointers using SVF.
@@ -533,7 +548,8 @@ def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
         with tempfile.TemporaryDirectory(prefix="rh_svf_") as tmp:
             bc_path = _generate_stubbed_bc(
                 source, linux_root, env, workdir=tmp, clang=clang,
-                llvm_as=llvm_as)
+                llvm_as=llvm_as, compile_commands=compile_commands,
+                compile_context_mode=compile_context_mode)
             # 2. 运行 wpa
             stdout = _run_wpa(bc_path, env, wpa)
 
@@ -564,6 +580,8 @@ def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
 
 
 def find_mmio_aliases_multi(units: list[dict], linux_root: str | None = None,
+                            compile_commands: str | None = None,
+                            compile_context_mode: str = "auto",
                             required: bool = False
                             ) -> LinkedAliasAnalysisResult:
     """Run one Andersen analysis over every TU in a source manifest.
@@ -606,7 +624,9 @@ def find_mmio_aliases_multi(units: list[dict], linux_root: str | None = None,
                 stem = f"tu_{index:03d}"
                 bc_path = _generate_stubbed_bc(
                     source, linux_root, env, workdir=tmp, clang=clang,
-                    llvm_as=llvm_as, stem=stem, apply_stub=False)
+                    llvm_as=llvm_as, stem=stem, apply_stub=False,
+                    compile_commands=compile_commands,
+                    compile_context_mode=compile_context_mode)
                 raw_modules.append(bc_path)
                 temp_source = os.path.join(tmp, stem + ".c")
                 for key in (temp_source, os.path.abspath(temp_source),

@@ -1,5 +1,6 @@
 """libclang Translation Unit construction (fault-tolerant)."""
 from __future__ import annotations
+import hashlib
 import os
 import clang.cindex as cx
 
@@ -63,7 +64,10 @@ def default_include_args(linux_root: str, build_root: str | None = None) -> list
 
 
 def parse_translation_unit(source: str, linux_root: str | None = None,
-                           extra_args: list[str] | None = None):
+                           extra_args: list[str] | None = None,
+                           compile_commands: str | None = None,
+                           compile_context_mode: str = "auto",
+                           *, return_context: bool = False):
     """Parse a C source file with detailed preprocessing records.
 
     Returns (tu, warnings). Parse diagnostics are downgraded to warnings —
@@ -76,26 +80,31 @@ def parse_translation_unit(source: str, linux_root: str | None = None,
         cand = os.path.normpath(os.path.join(here, "..", "linux"))
         linux_root = cand if os.path.isdir(cand) else None
 
-    args = []
-    if linux_root:
+    from .compile_context import resolve_compile_context
+    context = resolve_compile_context(
+        source, linux_root=linux_root, compile_commands=compile_commands,
+        mode=compile_context_mode)
+    args = list(context.arguments) if context else []
+    if not context and linux_root:
         here = os.path.dirname(os.path.abspath(__file__))
         default_build = os.path.normpath(os.path.join(here, "..", "kernel", "build"))
         build_root = os.environ.get("REHARNESS_KERNEL_BUILD")
         if not build_root and os.path.isdir(default_build):
             build_root = default_build
         args += default_include_args(linux_root, build_root)
-    else:
+    elif not context:
         args += ["-x", "c"]
     modname = os.path.splitext(os.path.basename(source))[0].replace("-", "_")
-    args += [f'-DKBUILD_MODNAME="{modname}"',
-             f'-DKBUILD_MODFILE="{modname}"',
-             '-D_Static_assert(x,y)=',
-             '-Wno-ignored-attributes']
+    if not any(arg.startswith("-DKBUILD_MODNAME=") for arg in args):
+        args.append(f'-DKBUILD_MODNAME="{modname}"')
+    if not any(arg.startswith("-DKBUILD_MODFILE=") for arg in args):
+        args.append(f'-DKBUILD_MODFILE="{modname}"')
+    args += ['-D_Static_assert(x,y)=', '-Wno-ignored-attributes']
     # The artifact is parsed against one pinned x86 kernel build, while a few
     # corpus drivers are for other architectures.  Preserve the target
     # driver's Kconfig-selected API surface and exact SoC constant when those
     # definitions cannot come from the x86 autoconf/asm headers.
-    if os.path.basename(source) == "sdhci-esdhc-mcf.c":
+    if not context and os.path.basename(source) == "sdhci-esdhc-mcf.c":
         args += ["-DCONFIG_MMC_SDHCI_IO_ACCESSORS=1",
                  "-DMCF_PLL_DR=0xFC0C0004"]
     if extra_args:
@@ -117,4 +126,21 @@ def parse_translation_unit(source: str, linux_root: str | None = None,
         kind = ("clang diag" if path == "?" or os.path.abspath(path) == target
                 else "clang header diag")
         warnings.append(f"{kind}[{d.severity}] {path}:{line}: {d.spelling}")
+    if return_context:
+        metadata = context.display() if context else {
+            "source": os.path.abspath(source),
+            "origin": ("fallback-disabled" if compile_context_mode == "off"
+                       else "fallback"),
+            "provenance": "extractor.tu.default_include_args",
+            "directory": os.getcwd(),
+            "arguments": list(args),
+        }
+        encoded = "\0".join(args).encode("utf-8")
+        metadata["effective_argument_count"] = len(args)
+        metadata["effective_arguments_sha256"] = hashlib.sha256(encoded).hexdigest()
+        metadata["parser_overrides"] = [
+            value for value in ('-D_Static_assert(x,y)=',
+                                '-Wno-ignored-attributes')
+            if value in args]
+        return tu, warnings, metadata
     return tu, warnings

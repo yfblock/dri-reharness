@@ -73,7 +73,10 @@ cmd_demo() {
 }
 
 cmd_compare() { $PY verification/compare.py "$@"; }
-cmd_test()    { $PY tests/test_extractor.py; }
+cmd_test()    {
+  $PY verification/check_generalization_guard.py
+  $PY tests/test_extractor.py
+}
 
 banner
 case "${1:-help}" in
