@@ -84,6 +84,11 @@ python3 tools/generate_paper_results.py
 
 详细环境和判定标准见 [REPRO.md](REPRO.md)。
 
+实测复盘：
+
+- [LLM 直接合成驱动时的问题与能力边界](docs/llm-limitations.md)
+- [Codex 作为工程代理完成 v4→v5 时的问题与能力边界](docs/engineering-agent-retrospective-v5.md)
+
 ## 依赖
 
 - Python 3

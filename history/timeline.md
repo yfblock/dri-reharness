@@ -97,3 +97,5 @@
 ## [2026-07-13 11:47:47] trace 迭代循环 + 4 gpio 驱动全验证
   1) 4 gpio 驱动(ftgpio010/pl061/mb86s7x/idt3243x)全部通过: 编译+QEMU+trace_match。pl061 校验 3 个回调模块(probe+direction_in/out), 其余校 probe 或 vacuous(generic bgpio 无 .ris 回调)。2) trace 失败接进 LLM 迭代: trace_match 失败→缺失ops+.ris喂LLM→修回调→sanitize+instrument→重编→重跑QEMU→重检trace, 最多3轮, 每轮日志 trace_iter{N}/。验证: pl061 第1轮通过(未触发迭代)。
 
+## [2026-07-15 19:42:10] v5 strict readiness + 工程代理能力边界复盘
+  Codex 作为仓库工程代理从 v4 的 Linux strict readiness 4/19 推进到 v5 的 6/19：修复 gpio-idt3243x 动态 gpio_irq_chip.init_hw 分类，保守保留 clk-highbank 四套 clk_ops、rate 算术、纯 helper 和 provider/OF 变体。55/55 tests、19-driver matrix、三案例多源矩阵、EDU_TRACE_OK、TRACE_MATCH_OK 和论文构建全部通过。实现提交 2d3736a，冻结提交 11e3564，tag paper-artifact-v5 已推送。过程中出现真实仓库根与摘要不一致、JSON schema 误判、pytest 工具假设错误、文档数字漂移、异步工具状态复杂和 GitHub 网络阶段性失败。完整分析见 docs/engineering-agent-retrospective-v5.md。

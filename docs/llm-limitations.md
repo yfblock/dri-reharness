@@ -2,6 +2,8 @@
 
 > 基于 reharness 用 opencode(deepseek-v4-flash) 和 Pi SDK(glm-5.2) 合成 Linux 驱动（edu / gpio-ftgpio010）的实测观察。所有案例均有 git 提交 / history / iter_log 可查。
 
+本文聚焦“大模型直接作为驱动代码合成器”。Codex 作为长期仓库工程代理完成 v4→v5 时的错误假设、验证依赖、长任务状态漂移和能力边界，见 [engineering-agent-retrospective-v5.md](engineering-agent-retrospective-v5.md)。
+
 ## 一、观察到的问题（按危害排序）
 
 ### P1. 无视显式约束（最致命）
