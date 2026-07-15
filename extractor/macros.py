@@ -67,6 +67,7 @@ class MacroTable:
 
     def __init__(self):
         self._tab: dict[str, tuple[int | None, str]] = {}
+        self._functions: dict[str, tuple[list[str], str]] = {}
 
     def add(self, name: str, raw_expr: str):
         if not name or name in self._tab:
@@ -91,6 +92,16 @@ class MacroTable:
     def __len__(self):
         return len(self._tab)
 
+    def add_function(self, name: str, params: list[str], raw_expr: str):
+        if name and name not in self._functions and raw_expr.strip():
+            self._functions[name] = (list(params), raw_expr.strip())
+
+    def function_macros(self) -> dict[str, dict]:
+        return {
+            name: {"params": list(params), "body": body}
+            for name, (params, body) in self._functions.items()
+        }
+
     def merge(self, other: "MacroTable") -> list[str]:
         """Merge another translation unit's integer macros.
 
@@ -105,11 +116,21 @@ class MacroTable:
                     conflicts.append(name)
                 continue
             self.add(name, other.raw(name) or "")
+        for name, definition in other.function_macros().items():
+            current = self._functions.get(name)
+            incoming = (definition["params"], definition["body"])
+            if current is not None and current != incoming:
+                conflicts.append(name)
+                continue
+            self.add_function(name, *incoming)
         return conflicts
 
 
 _DEFINE_RE = re.compile(
     r"^\s*#\s*define\s+([A-Za-z_]\w*)\s+(.+?)\s*(?:/\*.*)?$"
+)
+_FUNCTION_DEFINE_RE = re.compile(
+    r"^\s*#\s*define\s+([A-Za-z_]\w*)\(([^)]*)\)\s+(.+?)\s*(?:/\*.*)?$"
 )
 
 
@@ -117,6 +138,12 @@ def collect_from_source(source_text: str) -> MacroTable:
     """Regex fallback: parse #define NAME <int-expr> from raw source text."""
     tab = MacroTable()
     for line in source_text.splitlines():
+        function = _FUNCTION_DEFINE_RE.match(line)
+        if function:
+            params = [item.strip() for item in function.group(2).split(",")
+                      if item.strip()]
+            tab.add_function(function.group(1), params, function.group(3))
+            continue
         m = _DEFINE_RE.match(line)
         if m:
             name, expr = m.group(1), m.group(2)
@@ -164,6 +191,27 @@ def collect_from_tu(tu, target_file: str | None = None) -> MacroTable:
             except (OSError, IndexError):
                 pass
         if function_like:
+            source_dir = os.path.dirname(tgt) if tgt else None
+            macro_file = os.path.abspath(loc_file.name) if loc_file else ""
+            if source_dir and os.path.dirname(macro_file) != source_dir:
+                continue
+            if len(toks) < 5 or toks[1] != "(":
+                continue
+            depth = 0
+            close = None
+            for index, token in enumerate(toks[1:], start=1):
+                if token == "(":
+                    depth += 1
+                elif token == ")":
+                    depth -= 1
+                    if depth == 0:
+                        close = index
+                        break
+            if close is None:
+                continue
+            params = [token for token in toks[2:close] if token != ","]
+            body = " ".join(toks[close + 1:])
+            tab.add_function(name, params, body)
             continue
         expr = " ".join(expr_toks)
         # only keep if it evaluates to an int (filter config/feature flags noise too)
@@ -184,4 +232,6 @@ def build(tu, source_path: str, source_text: str) -> MacroTable:
         if name not in tab:
             off = src_tab.offset(name)
             tab.add(name, src_tab.raw(name) or "")
+    for name, definition in src_tab.function_macros().items():
+        tab.add_function(name, definition["params"], definition["body"])
     return tab

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "name": "svf-linked-alias",
+  "sources": [
+    "svf_linked_provider.c",
+    "svf_linked_user.c"
+  ]
+}

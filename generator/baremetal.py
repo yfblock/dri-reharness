@@ -8,7 +8,8 @@ from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops
 from .common import ops_to_c, local_decls, value_var_names
-from .linux import _normalize_ops
+from .linux import (_bound_resource_probe_ops, _normalize_ops,
+                    _portable_function_macros)
 
 
 def generate(formal: dict, device_spec, bind) -> str:
@@ -50,18 +51,27 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("")
     for name, off in regs.items():
         L.append(f"#define {name} 0x{off:x}")
+    function_macros = _portable_function_macros(formal)
+    safe_function_calls = set(function_macros)
+    probe_refs = {fn.ris_ref for fn in device_spec.functions if fn.role == "probe"}
+    for name, definition in sorted(function_macros.items()):
+        params = ", ".join(definition.get("params", []))
+        L.append(f"#define {name}({params}) {definition.get('body', '0')}")
     normalized_any = False
     upper_refs = set()
     upper_calls = set()
     portable_skip = device_spec.cls in {"ahci", "sdhci", "virtio_mmio"}
     for module in formal["modules"]:
-        safe_ops, changed = _normalize_ops(module["ops"])
+        raw_ops = (_bound_resource_probe_ops(module["ops"])
+                   if module["name"] in probe_refs else module["ops"])
+        safe_ops, changed = _normalize_ops(
+            raw_ops, safe_function_calls=safe_function_calls)
         normalized_any |= changed
         upper_refs |= {v for v in value_var_names(safe_ops)
                        if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v)}
         upper_refs |= set(re.findall(r"\b[A-Z][A-Za-z0-9_]{2,}\b", repr(safe_ops)))
         upper_calls |= set(re.findall(r"\b([A-Z][A-Za-z0-9_]{2,})\s*\(", repr(safe_ops)))
-    for name in sorted(upper_calls - set(regs)):
+    for name in sorted(upper_calls - set(regs) - set(function_macros)):
         L.append(f"#ifndef {name}\n#define {name}(...) 0\n#endif")
     for name in sorted(upper_refs - upper_calls - set(regs) - {"MMIO", "TODO"}):
         L.append(f"#ifndef {name}\n#define {name} 0\n#endif")
@@ -85,7 +95,10 @@ def generate(formal: dict, device_spec, bind) -> str:
         m = func_by_name.get(fn.ris_ref)
         if not m:
             continue
-        safe_ops, _ = _normalize_ops(m["ops"], "dev")
+        raw_ops = (_bound_resource_probe_ops(m["ops"])
+                   if fn.role == "probe" else m["ops"])
+        safe_ops, _ = _normalize_ops(
+            raw_ops, "dev", safe_function_calls)
         if portable_skip:
             safe_ops = []
         keep = [p for p in fn.signature.params if p.type != "DeviceState"]

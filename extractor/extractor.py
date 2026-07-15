@@ -201,7 +201,10 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     combined_macros = macros_mod.MacroTable()
     all_svf_aliases: set[str] = set()
     all_svf_facts: dict[str, dict] = {}
+    svf_aliases_by_source: dict[str, set[str]] = {}
+    svf_facts_by_source: dict[str, dict[str, dict]] = {}
     svf_runs: list[dict] = []
+    linked_svf = None
 
     for source in sources:
         if not source.endswith(".c"):
@@ -215,43 +218,54 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         warnings.extend(f"multi-source macro conflict: {name}" for name in conflicts)
         funcs = target_functions(tu, source)
         mmio_globals = target_mmio_globals(tu, source)
-        svf_aliases: set[str] = set()
-        svf_facts: dict[str, dict] = {}
-        if config.alias_mode != "off":
-            try:
-                from .alias import find_mmio_aliases
-                alias_result = find_mmio_aliases(
-                    source, tu, linux_root=config.linux_root,
-                    mmio_globals=set(mmio_globals),
-                    required=config.alias_mode == "required",
-                )
-                svf_aliases = alias_result.aliases
-                svf_facts = alias_result.facts
-                svf_runs.append({
-                    "source": source, "status": alias_result.status,
-                    "aliases": sorted(alias_result.aliases),
-                    "diagnostics": alias_result.diagnostics,
-                    "engine": alias_result.engine,
-                    "candidates": alias_result.candidates,
-                    "toolchain": alias_result.toolchain,
-                })
-                if alias_result.status != "success":
-                    warnings.append(
-                        f"SVF alias analysis {alias_result.status} for {source}: "
-                        + "; ".join(alias_result.diagnostics))
-                mmio_globals = list(set(mmio_globals) | svf_aliases)
-            except Exception as e:
-                if config.alias_mode == "required":
-                    raise
-                warnings.append(f"SVF alias analysis skipped for {source}: {e}")
-        all_svf_aliases |= svf_aliases
-        all_svf_facts.update(svf_facts)
         units.append({
             "source": source, "source_text": source_text,
             "source_lines": source_text.splitlines(), "tu": tu,
             "macros": macros, "funcs": funcs, "mmio_globals": mmio_globals,
-            "mmio_alias_facts": svf_facts,
+            "mmio_alias_facts": {},
         })
+
+    if config.alias_mode != "off":
+        try:
+            from .alias import find_mmio_aliases_multi
+            linked_svf = find_mmio_aliases_multi(
+                units, linux_root=config.linux_root,
+                required=config.alias_mode == "required")
+            for unit in units:
+                source = os.path.abspath(unit["source"])
+                aliases = set(linked_svf.aliases_by_source.get(source, set()))
+                facts = dict(linked_svf.facts_by_source.get(source, {}))
+                svf_aliases_by_source[source] = aliases
+                svf_facts_by_source[source] = facts
+                unit["mmio_globals"] = list(
+                    set(unit["mmio_globals"]) | aliases)
+                unit["mmio_alias_facts"] = facts
+                all_svf_aliases |= aliases
+                for name, fact in facts.items():
+                    key = name if name not in all_svf_facts else f"{source}:{name}"
+                    all_svf_facts[key] = fact
+            svf_runs.append({
+                "scope": linked_svf.scope,
+                "sources": list(sources),
+                "translation_units": linked_svf.translation_units,
+                "linked_bitcode_sha256": linked_svf.linked_bitcode_sha256,
+                "status": linked_svf.status,
+                "aliases_by_source": {
+                    source: sorted(names)
+                    for source, names in linked_svf.aliases_by_source.items()},
+                "diagnostics": linked_svf.diagnostics,
+                "engine": linked_svf.engine,
+                "candidates": linked_svf.candidates,
+                "toolchain": linked_svf.toolchain,
+            })
+            if linked_svf.status != "success":
+                warnings.append(
+                    f"SVF linked alias analysis {linked_svf.status}: "
+                    + "; ".join(linked_svf.diagnostics))
+        except Exception as e:
+            if config.alias_mode == "required":
+                raise
+            warnings.append(f"SVF linked alias analysis skipped: {e}")
 
     funcs = [f for unit in units for f in unit["funcs"]]
     symbol_stats = _assign_multi_module_names(funcs)
@@ -269,14 +283,30 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         "functions_analyzed": len(funcs),
         "macros_resolved": sum(1 for n in combined_macros.names()
                                if combined_macros.offset(n) is not None),
+        "function_macros": combined_macros.function_macros(),
         "svf_aliases": sorted(all_svf_aliases),
         "alias_analysis": {
             "mode": config.alias_mode,
             "status": ("off" if config.alias_mode == "off" else
-                       "success" if all(run["status"] == "success" for run in svf_runs)
+                       "success" if (svf_runs and all(
+                           run["status"] == "success" for run in svf_runs))
                        else "degraded"),
             "engine": "SVF Andersen" if config.alias_mode != "off" else None,
+            "scope": ("linked-manifest" if config.alias_mode != "off" else None),
             "facts": all_svf_facts,
+            "facts_by_source": svf_facts_by_source,
+            "aliases_by_source": {
+                source: sorted(names)
+                for source, names in svf_aliases_by_source.items()},
+            "translation_units": len(units),
+            "linked_bitcode_sha256": (
+                linked_svf.linked_bitcode_sha256 if linked_svf else ""),
+            "linked_alias_complete": bool(
+                linked_svf and linked_svf.status == "success"
+                and linked_svf.translation_units == len(units)
+                and linked_svf.linked_bitcode_sha256),
+            "whole_program_scope": "manifest-internal",
+            "whole_program_complete": False,
             "runs": svf_runs,
         },
         "translation_units": len(units),
@@ -303,6 +333,53 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     formal["metadata"]["control_accounting"] = control_accounting
     stats["control_accounting"] = control_accounting
     stats.update(emitted_stats(formal))
+
+    from .formal import walk_leaf_ops
+    from .metrics import driver_metrics
+    op_ids = []
+    for module in formal.get("modules", []):
+        for op in walk_leaf_ops(module.get("ops", [])):
+            body = (op.get("Read") or op.get("Write")
+                    or op.get("ReadModifyWrite"))
+            if body and body.get("op_id"):
+                op_ids.append(body["op_id"])
+    quality = driver_metrics(formal)
+    alias_analysis = stats["alias_analysis"]
+    whole_program_gates = {
+        "linked_alias_complete": bool(
+            alias_analysis.get("linked_alias_complete")),
+        "all_translation_units_linked": bool(
+            linked_svf and linked_svf.translation_units == len(units)),
+        "linked_bitcode_hashed": bool(
+            alias_analysis.get("linked_bitcode_sha256")),
+        "internal_calls_resolved": stats.get("unresolved_internal_calls", 0) == 0,
+        "access_accounting_strict": bool(accounting.get("strict_complete")),
+        "control_accounting_complete": bool(control_accounting.get("complete")),
+        "cfg_complete": bool(
+            control_accounting.get("cfg", {}).get("complete", True)),
+        "path_validation_complete": bool(path_validation.get("complete")),
+        "path_validation_no_unknown": path_validation.get("unknown", 0) == 0,
+        "path_validation_no_infeasible": path_validation.get("infeasible", 0) == 0,
+        "switch_paths_exclusive": all(
+            pair.get("exclusive", False)
+            for pair in path_validation.get("switch_pairs", [])),
+        "operation_ids_unique": len(op_ids) == len(set(op_ids)),
+        "operation_evidence_complete": (
+            accounting.get("ris_ops_without_evidence", 0) == 0),
+        "computed_addresses_lowerable": quality.get("unsafe_computed", 0) == 0,
+        "values_complete": quality.get("unknown_value", 0) == 0,
+        "loops_proved": quality.get("conservative_loop", 0) == 0,
+        "access_domains_supported": (
+            quality.get("reliability", {}).get("Unsupported", 0) == 0),
+    }
+    whole_program_complete = all(whole_program_gates.values())
+    alias_analysis["whole_program_gates"] = whole_program_gates
+    alias_analysis["whole_program_complete"] = whole_program_complete
+    formal["metadata"]["alias_analysis"] = alias_analysis
+    formal["metadata"]["assurance_scope"][
+        "whole_program_scope"] = "manifest-internal"
+    formal["metadata"]["assurance_scope"][
+        "whole_program_complete"] = whole_program_complete
 
     combined_text = "\n\n".join(
         f"/* translation unit: {unit['source']} */\n{unit['source_text']}"
@@ -449,6 +526,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         "extracted_at": datetime.datetime.now().isoformat(timespec="seconds"),
         "functions_analyzed": len(funcs),
         "macros_resolved": sum(1 for n in macros.names() if macros.offset(n) is not None),
+        "function_macros": macros.function_macros(),
         "svf_aliases": sorted(svf_aliases),
         "alias_analysis": alias_analysis,
         **wrapper_stats,

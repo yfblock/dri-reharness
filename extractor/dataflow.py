@@ -553,6 +553,7 @@ def _general_assignment_store(assignments: list[dict], before_offset: int,
 class FuncExtraction:
     name: str
     params: list[str] = field(default_factory=list)
+    return_expr: str | None = None
     ops: list[Op] = field(default_factory=list)
     calls: list = field(default_factory=list)   # CallSite list (for call graph)
     warnings: list[str] = field(default_factory=list)
@@ -627,6 +628,8 @@ def _assign_target(lhs_text: str) -> Optional[str]:
 
 _LHS_RE = re.compile(r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*\w+)*)\s*=\s*(?!=)")
 _LHS_CONT_RE = re.compile(r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*\w+)*)\s*=\s*$")
+_DECL_LHS_RE = re.compile(
+    r"^\s*(?:[A-Za-z_]\w*\s+)+(?:\*+\s*)?([A-Za-z_]\w*)\s*=\s*(?!=)")
 
 
 def _bind_lhs(source_lines: list[str], call_line: int, call_name: str) -> Optional[str]:
@@ -642,6 +645,9 @@ def _bind_lhs(source_lines: list[str], call_line: int, call_name: str) -> Option
     if m and call_name and call_name in line:
         lhs = m.group(1).replace(" ", "")
         return lhs
+    declaration = _DECL_LHS_RE.match(line)
+    if declaration and call_name and call_name in line:
+        return declaration.group(1)
     # continuation: previous line ends with `var =`
     if call_line > 1:
         prev = source_lines[call_line - 2]
@@ -787,6 +793,15 @@ def extract_function(func: Func, macros, tu, *,
     """Extract register ops for one function (with wrapper inlining)."""
     result = FuncExtraction(
         name=func.name, params=[name for name, _type in func.params if name])
+    returns = []
+    for cursor in func.cursor.walk_preorder():
+        if cursor.kind == cx.CursorKind.RETURN_STMT:
+            text = source_text(tu, cursor).strip()
+            match = re.fullmatch(r"return\s+(.+?)\s*;?", text, re.S)
+            if match:
+                returns.append(match.group(1).strip())
+    if returns and len(set(returns)) == 1:
+        result.return_expr = returns[0]
     store: dict[str, AbsVal] = {}
     read_origins: dict[str, tuple[dict, int]] = {}
     read_initial: dict[str, str] = {}
@@ -863,7 +878,10 @@ def extract_function(func: Func, macros, tu, *,
         call_offset = (cs.cursor.location.offset
                        if cs.cursor.location is not None else 0)
         for transition in continuation:
-            if transition["after_offset"] and transition["after_offset"] <= call_offset:
+            before_offset = transition.get("before_offset", 0)
+            if (transition["after_offset"]
+                    and transition["after_offset"] <= call_offset
+                    and (not before_offset or call_offset < before_offset)):
                 frame = dict(transition["frame"])
                 control_stack.insert(0, frame)
                 if frame.get("guard"):
@@ -1043,8 +1061,29 @@ def extract_function(func: Func, macros, tu, *,
                     param: arg for param, arg in zip(inlined.params, cs.arg_text)
                     if param and arg
                 }
-                for op in inlined.ops:
-                    o2 = _instantiate_op(op, mapping, macros)
+                instantiated = [
+                    _instantiate_op(op, mapping, macros)
+                    for op in inlined.ops
+                ]
+                # If a helper returns a register read directly, bind the last
+                # read in its expanded body to the caller assignment target.
+                # This preserves patterns such as
+                # ``value = read_helper(...); write_helper(..., value | mask)``.
+                if lhs and inlined.return_expr:
+                    last_read = next(
+                        (item for item in reversed(instantiated)
+                         if item.kind == "Read"), None)
+                    returned = (_substitute_text(
+                        inlined.return_expr, mapping) or "").strip()
+                    direct_read_return = bool(re.search(
+                        r"\b(?:read[bwlq]|ioread(?:8|16|32|64)|"
+                        r"[A-Za-z_]\w*read[A-Za-z_]*)\s*\(", returned))
+                    if (last_read is not None
+                            and (not last_read.var
+                                 or last_read.var == returned
+                                 or direct_read_return)):
+                        last_read.var = lhs
+                for o2, op in zip(instantiated, inlined.ops):
                     o2.condition = cond or o2.condition
                     o2.cond_stack = cond_stack + o2.cond_stack
                     o2.control_stack = control_stack + o2.control_stack

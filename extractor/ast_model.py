@@ -414,12 +414,14 @@ def walk_with_conditions(func_cursor) -> Iterator[tuple[object, list[str]]]:
 
 
 def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
-    """Guards that dominate statements following simple early exits.
+    """Guards that dominate statements following simple control transfers.
 
     This is deliberately limited to the function body's top-level sequential
-    statements.  It soundly handles the common kernel pattern
-    ``if (error) return; MMIO();`` without pretending to be a general CFG.
-    The returned offsets identify exit statements covered by this model.
+    exits plus resolved forward gotos.  It handles both
+    ``if (error) return; MMIO();`` and ``if (skip) goto join; MMIO(); join:``.
+    Forward-goto guards have an end offset at the target label so paths merge
+    again at the join.  The returned offsets identify transfers covered by
+    this model.
     """
     def terminates(node) -> bool:
         if node.kind == cx.CursorKind.RETURN_STMT:
@@ -587,4 +589,45 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
                     "branch": "unreachable", "source": "early-exit",
                 },
             })
+
+    labels = {
+        cursor.spelling: (getattr(cursor.location, "offset", 0) or 0)
+        for cursor in func_cursor.walk_preorder()
+        if cursor.kind == cx.CursorKind.LABEL_STMT and cursor.spelling
+    }
+    control_by_offset = {
+        getattr(cursor.location, "offset", 0) or 0: stack
+        for cursor, stack in walk_with_control(func_cursor)
+        if cursor.kind == cx.CursorKind.GOTO_STMT
+    }
+    for cursor in func_cursor.walk_preorder():
+        if cursor.kind != cx.CursorKind.GOTO_STMT:
+            continue
+        text = source_text(cursor.translation_unit, cursor).strip()
+        match = re.fullmatch(r"goto\s+([A-Za-z_]\w*)\s*;?", text)
+        if not match:
+            continue
+        source_offset = getattr(cursor.location, "offset", 0) or 0
+        target_offset = labels.get(match.group(1), 0)
+        if not source_offset or target_offset <= source_offset:
+            continue
+        stack = control_by_offset.get(source_offset, [])
+        taken_parts = [frame.get("guard", "").strip() for frame in stack
+                       if frame.get("guard", "").strip()]
+        taken_guard = " && ".join(f"({part})" for part in taken_parts) or "1"
+        modeled.add(source_offset)
+        transitions.append({
+            "after_offset": getattr(cursor.extent.end, "offset", 0) or source_offset,
+            "before_offset": target_offset,
+            "frame": {
+                "kind": "cond",
+                "guard": negate(taken_guard),
+                "branch": "fallthrough",
+                "source": "forward-goto",
+                "source_guard": taken_guard,
+                "target_label": match.group(1),
+            },
+        })
+    transitions.sort(key=lambda item: (
+        item.get("after_offset", 0), item.get("before_offset", 1 << 62)))
     return transitions, modeled

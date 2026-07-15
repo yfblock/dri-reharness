@@ -254,16 +254,20 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "count": stats.get("wrapper_summary_count", 0),
                 "summaries": stats.get("wrapper_summaries", []),
             },
+            "function_macros": stats.get("function_macros", {}),
             "assurance_scope": {
                 "claim": "recognized register-access and structured-control universe",
                 "register_accesses": (
                     "known MMIO/regmap APIs plus direct volatile and inline-asm detection"),
                 "control_flow": (
-                    "structured lexical paths, switch exclusivity, bounded canonical loops, "
-                    "and simple parameter-only early exits"),
+                    "source statement CFG with dominance/joins, structured lexical paths, "
+                    "resolved forward-goto guards, switch exclusivity, and bounded loops"),
                 "alias_analysis": (
                     "off" if stats.get("alias_analysis", {}).get("mode") == "off"
-                    else "per-translation-unit SVF Andersen"),
+                    else ("manifest-linked SVF Andersen"
+                          if stats.get("alias_analysis", {}).get("scope")
+                          == "linked-manifest"
+                          else "per-translation-unit SVF Andersen")),
                 "indirect_calls": "simple static initializer/assignment targets",
                 "whole_program_complete": False,
             },

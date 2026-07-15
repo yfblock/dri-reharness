@@ -26,6 +26,8 @@ _MODELED_STATE_FIELDS = {
     "num_eps", "num_channels", "op_state", "lx_state",
     "fifo_size", "fifo_load", "desc_count", "next_desc", "compl_desc",
     "total_data", "target_frame", "frame_number", "dma",
+    "hpi_regstep",
+    "sie_num",
 }
 
 
@@ -47,7 +49,49 @@ def _last_read_var(module: dict) -> str | None:
     return reads[-1] if reads else None
 
 
-def _normalize_text(text: str) -> tuple[str, bool]:
+def _portable_function_macros(formal: dict) -> dict[str, dict]:
+    macros = formal.get("metadata", {}).get("function_macros", {})
+    return {
+        name: definition for name, definition in macros.items()
+        if not re.search(r"->|\.[A-Za-z_]", definition.get("body", ""))
+    }
+
+
+def _bound_resource_probe_ops(ops):
+    """Select the success path after backend resource binding.
+
+    DeviceSpec backends acquire MMIO/IRQ/clock resources before replaying RIS
+    probe initialization.  Source gotos into cleanup tails therefore describe
+    acquisition failures already handled by backend glue, not runtime branches
+    inside the bound-resource RIS contract.
+    """
+    out = []
+    cleanup = re.compile(r"^(?:err\w*|.*(?:fail|failed)|cleanup\w*)$")
+    for original in copy.deepcopy(ops):
+        if "Cond" in original:
+            control = original["Cond"].get("control") or {}
+            if (control.get("source") == "forward-goto"
+                    and cleanup.match(control.get("target_label", ""))):
+                out.extend(_bound_resource_probe_ops(
+                    original["Cond"].get("then_ops", [])))
+                continue
+            original["Cond"]["then_ops"] = _bound_resource_probe_ops(
+                original["Cond"].get("then_ops", []))
+            if original["Cond"].get("else_ops"):
+                original["Cond"]["else_ops"] = _bound_resource_probe_ops(
+                    original["Cond"]["else_ops"])
+        elif "Seq" in original:
+            original["Seq"]["ops"] = _bound_resource_probe_ops(
+                original["Seq"].get("ops", []))
+        elif "Loop" in original:
+            original["Loop"]["body"] = _bound_resource_probe_ops(
+                original["Loop"].get("body", []))
+        out.append(original)
+    return out
+
+
+def _normalize_text(text: str, safe_function_calls: set[str] | None = None
+                    ) -> tuple[str, bool]:
     """Lower source-private member expressions to the generated device state.
 
     The replacement is deliberately conservative and is reported as an
@@ -62,8 +106,17 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     text = re.sub(r"'(?:\\.|[^'\\])*'", "0", text)
     unsupported |= text != original
     text = re.sub(r"\bd->hwirq\b", "irqd_to_hwirq(d)", text)
+    hpi_root = (r"\b[A-Za-z_]\w*"
+                r"(?:(?:->|\.)[A-Za-z_]\w*)*?"
+                r"(?:->|\.)hpi")
+    text = re.sub(hpi_root + r"(?:->|\.)base\b", "base", text)
+    text = re.sub(hpi_root + r"(?:->|\.)regstep\b",
+                  "__state_hpi_regstep", text)
     text = re.sub(
-        r"\b[A-Za-z_]\w*->(?:base|reg|regs|ioaddr|[A-Za-z_]\w*_base)\b",
+        r"\b[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)*?"
+        r"(?:->|\.)sie_num\b", "__state_sie_num", text)
+    text = re.sub(
+        r"\b[A-Za-z_]\w*->(?:base|mmio|reg|regs|ioaddr|[A-Za-z_]\w*_base)\b",
         "base", text)
     text = re.sub(r"\b[A-Za-z_]\w*_base\b", "base", text)
     for field in _MODELED_STATE_FIELDS:
@@ -83,7 +136,8 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     call_re = re.compile(r"\b([A-Za-z_]\w*)\s*\([^()]*\)")
     def replace_call(match):
         nonlocal unsupported
-        if match.group(1) in safe_calls:
+        if (match.group(1) in safe_calls
+                or match.group(1) in (safe_function_calls or set())):
             return match.group(0)
         unsupported = True
         return "0"
@@ -489,56 +543,63 @@ def _lower_irq_source_callback(source: str, name: str, table_field: str,
     return "\n".join(lines)
 
 
-def _normalize_expr(expr, state_prefix: str | None = None):
+def _normalize_expr(expr, state_prefix: str | None = None,
+                    safe_function_calls: set[str] | None = None):
     if not isinstance(expr, dict):
         return expr, False
     out = copy.deepcopy(expr)
     if "Var" in out:
-        out["Var"], changed = _normalize_text(out["Var"])
+        out["Var"], changed = _normalize_text(
+            out["Var"], safe_function_calls)
         out["Var"] = _bind_state_text(out["Var"], state_prefix)
         return out, changed
     changed = False
     if "BinOp" in out:
         out["BinOp"]["left"], a = _normalize_expr(
-            out["BinOp"].get("left"), state_prefix)
+            out["BinOp"].get("left"), state_prefix, safe_function_calls)
         out["BinOp"]["right"], b = _normalize_expr(
-            out["BinOp"].get("right"), state_prefix)
+            out["BinOp"].get("right"), state_prefix, safe_function_calls)
         changed = a or b
     elif "Ite" in out:
         out["Ite"]["guard"], a = _normalize_expr(
-            out["Ite"].get("guard"), state_prefix)
+            out["Ite"].get("guard"), state_prefix, safe_function_calls)
         out["Ite"]["then"], b = _normalize_expr(
-            out["Ite"].get("then"), state_prefix)
+            out["Ite"].get("then"), state_prefix, safe_function_calls)
         out["Ite"]["else"], c = _normalize_expr(
-            out["Ite"].get("else"), state_prefix)
+            out["Ite"].get("else"), state_prefix, safe_function_calls)
         changed = a or b or c
     elif "Bits" in out:
         out["Bits"]["expr"], changed = _normalize_expr(
-            out["Bits"].get("expr"), state_prefix)
+            out["Bits"].get("expr"), state_prefix, safe_function_calls)
     return out, changed
 
 
-def _normalize_ops(ops, state_prefix: str | None = None):
+def _normalize_ops(ops, state_prefix: str | None = None,
+                   safe_function_calls: set[str] | None = None):
     out = copy.deepcopy(ops)
     changed = False
     for op in out:
         if "Cond" in op:
             op["Cond"]["guard"], c = _normalize_expr(
-                op["Cond"].get("guard"), state_prefix)
+                op["Cond"].get("guard"), state_prefix, safe_function_calls)
             op["Cond"]["then_ops"], a = _normalize_ops(
-                op["Cond"].get("then_ops", []), state_prefix)
+                op["Cond"].get("then_ops", []), state_prefix,
+                safe_function_calls)
             op["Cond"]["else_ops"], b = _normalize_ops(
-                op["Cond"].get("else_ops") or [], state_prefix)
+                op["Cond"].get("else_ops") or [], state_prefix,
+                safe_function_calls)
             changed |= a or b or c
         elif "Loop" in op:
             op["Loop"]["count"], c = _normalize_expr(
-                op["Loop"].get("count"), state_prefix)
+                op["Loop"].get("count"), state_prefix, safe_function_calls)
             op["Loop"]["body"], a = _normalize_ops(
-                op["Loop"].get("body", []), state_prefix)
+                op["Loop"].get("body", []), state_prefix,
+                safe_function_calls)
             changed |= a or c
         elif "Seq" in op:
             op["Seq"]["ops"], a = _normalize_ops(
-                op["Seq"].get("ops", []), state_prefix)
+                op["Seq"].get("ops", []), state_prefix,
+                safe_function_calls)
             changed |= a
         else:
             body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
@@ -547,10 +608,11 @@ def _normalize_ops(ops, state_prefix: str | None = None):
             addr = body.get("addr", {})
             if "Computed" in addr:
                 addr["Computed"], a = _normalize_expr(
-                    addr["Computed"], state_prefix)
+                    addr["Computed"], state_prefix, safe_function_calls)
                 changed |= a
             if "Read" in op and body.get("var"):
-                body["var"], a = _normalize_text(body["var"])
+                body["var"], a = _normalize_text(
+                    body["var"], safe_function_calls)
                 body["var"] = _bind_state_text(body["var"], state_prefix)
                 changed |= a
                 if (body["var"] in {"true", "false"}
@@ -560,7 +622,8 @@ def _normalize_ops(ops, state_prefix: str | None = None):
                     changed = True
             key = "value" if "Write" in op else "transform" if "ReadModifyWrite" in op else None
             if key:
-                body[key], a = _normalize_expr(body.get(key), state_prefix)
+                body[key], a = _normalize_expr(
+                    body.get(key), state_prefix, safe_function_calls)
                 changed |= a
     return out, changed
 
@@ -819,21 +882,31 @@ def _canonical_args(table_field: str):
 
 
 def _emit_callback(fn, module: dict, table_field: str, priv: str,
-                   regs: dict[str, int], bind) -> tuple[str | None, str | None]:
+                   regs: dict[str, int], bind,
+                   safe_function_calls: set[str] | None = None
+                   ) -> tuple[str | None, str | None]:
     spec = _callback_signature(table_field, priv)
     if spec is None:
         return None, f"{table_field}={fn.name}"
-    safe_ops, normalized = _normalize_ops(module["ops"], "g")
+    safe_ops, normalized = _normalize_ops(
+        module["ops"], "g", safe_function_calls)
     ret, params, prelude = spec
-    declared = {p.name for p in fn.signature.params} | {"base"}
+    declared = {"base"}
     canonical_args = _canonical_args(table_field)
     declared.update(name for name, _ctype in canonical_args)
-    declared.update({"d", "gc", "offset", "type", "value", "config"})
+    declared.update({"d", "gc", "offset", "type", "config"})
     lines = [f"static {ret} {fn.name}({params})", "{", prelude]
     for param, (canonical, ctype) in zip(
             fn.signature.params, canonical_args):
         if param.name != canonical:
             lines.append(f"\t{ctype} {param.name} = {canonical};")
+            declared.add(param.name)
+    source_params = {param.name for param in fn.signature.params}
+    if (table_field == "hc_driver.irq" and "int_status" in source_params
+            and "int_status" not in declared):
+        lines.append(
+            "\tu32 int_status = readw(g->base + HPI_STATUS * g->hpi_regstep);")
+        declared.add("int_status")
     decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
     if decls:
         lines.append(decls.replace("    ", "\t"))
@@ -922,10 +995,12 @@ def _probe_ops(device_spec, formal: dict):
     return probe, module
 
 
-def _emit_probe_body(module, regs, bind, indent="\t") -> list[str]:
+def _emit_probe_body(module, regs, bind, indent="\t",
+                     safe_function_calls: set[str] | None = None) -> list[str]:
     if module is None:
         return []
-    safe_ops, _ = _normalize_ops(module["ops"], "g")
+    safe_ops, _ = _normalize_ops(
+        _bound_resource_probe_ops(module["ops"]), "g", safe_function_calls)
     declared: set[str] = {"base", "ret", "g", "pdev"}
     decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
     out = []
@@ -1151,6 +1226,7 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
                    callbacks: dict[str, str], callback_code: list[str],
                    unsupported: list[str], clock_model: dict | None = None) -> str:
     dev = device_spec.name
+    safe_function_calls = set(_portable_function_macros(formal))
     cid = _cid(dev)
     _, probe_module = _probe_ops(device_spec, formal)
     if device_spec.cls in {"ahci", "sdhci", "virtio_mmio"}:
@@ -1212,6 +1288,22 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         L.append("\tg->ngpio = 32;")
     if any(s.name == "skip_init" for s in device_spec.state):
         L.append('\tg->skip_init = device_property_read_bool(&pdev->dev, "reharness,skip-init");')
+    if any(s.name == "hpi_regstep" for s in device_spec.state):
+        L += [
+            '\tif (device_property_read_u32(&pdev->dev, "hpi-regstep",',
+            "\t\t\t     &g->hpi_regstep))",
+            "\t\tg->hpi_regstep = 1;",
+            "\tif (!g->hpi_regstep)",
+            "\t\treturn -EINVAL;",
+        ]
+    if any(s.name == "sie_num" for s in device_spec.state):
+        L += [
+            '\tif (device_property_read_u32(&pdev->dev, "sie-number",',
+            "\t\t\t     &g->sie_num))",
+            "\t\tg->sie_num = 0;",
+            "\tif (g->sie_num >= C67X00_SIES)",
+            "\t\treturn -EINVAL;",
+        ]
     if has_clk:
         L += ["\tg->clk = devm_clk_get_optional_enabled(&pdev->dev, NULL);",
               "\tif (IS_ERR(g->clk))", "\t\treturn PTR_ERR(g->clk);"]
@@ -1235,7 +1327,9 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         L += [f"\tg->hw.init = &{cid}_clk_init;",
               "\tret = devm_clk_hw_register(&pdev->dev, &g->hw);",
               "\tif (ret)", "\t\treturn ret;"]
-    L += _emit_probe_body(probe_module, regs, bind)
+    L += _emit_probe_body(
+        probe_module, regs, bind,
+        safe_function_calls=safe_function_calls)
     if has_gpio:
         L += [f'\tg->gc.label = "{dev}";', "\tg->gc.parent = &pdev->dev;",
               "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
@@ -1292,6 +1386,7 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
               unsupported: list[str], gpio_model: dict | None = None,
               irq_model: dict | None = None) -> str:
     dev = device_spec.name
+    safe_function_calls = set(_portable_function_macros(formal))
     cid = _cid(dev)
     _, probe_module = _probe_ops(device_spec, formal)
     if device_spec.cls == "ahci":
@@ -1350,7 +1445,9 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
           f"\tg->base = pci_ioremap_bar(pdev, {bar});",
           "\tif (!g->base) {", "\t\tret = -ENOMEM;", "\t\tgoto err_regions;", "}",
           "\tpci_set_drvdata(pdev, g);"]
-    L += _emit_probe_body(probe_module, regs, bind)
+    L += _emit_probe_body(
+        probe_module, regs, bind,
+        safe_function_calls=safe_function_calls)
     gpio_ref = "g->gc"
     if has_gpio:
         if gpio_model:
@@ -1434,6 +1531,16 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}
     callbacks = _callback_map(bind, facts)
     modules = {m["name"]: m for m in formal["modules"]}
+    function_macros = _portable_function_macros(formal)
+    safe_function_calls = set(function_macros)
+    probe_refs = {
+        fn.ris_ref for fn in device_spec.functions if fn.role == "probe"
+    }
+
+    def backend_ops(module: dict):
+        ops = module.get("ops", [])
+        return (_bound_resource_probe_ops(ops)
+                if module.get("name") in probe_refs else ops)
     callbacks_for_codegen = {
         fn: field for fn, field in callbacks.items()
         if fn in modules or field.endswith((".probe", ".remove"))
@@ -1484,7 +1591,9 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     if usb_callback_fields:
         unsupported.append(
             "USB callback tables require endpoint/gadget/HCD lifecycle registration")
-    if any(_normalize_ops(m.get("ops", []))[1] for m in formal.get("modules", [])):
+    if any(_normalize_ops(
+            backend_ops(m), safe_function_calls=safe_function_calls)[1]
+           for m in formal.get("modules", [])):
         unsupported.append("source-private expressions require explicit state bindings")
 
     # Once a driver is already explicitly non-ready, keep large real-driver
@@ -1495,7 +1604,9 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     fallback_calls: set[str] = set()
     if unsupported:
         for module in formal.get("modules", []):
-            safe_ops, _ = _normalize_ops(module.get("ops", []))
+            safe_ops, _ = _normalize_ops(
+                backend_ops(module),
+                safe_function_calls=safe_function_calls)
             fallback_refs |= {name for name in value_var_names(safe_ops)
                               if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name)}
             fallback_refs |= set(re.findall(
@@ -1518,7 +1629,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         module = modules.get(fn.ris_ref)
         if module is None:
             continue
-        code, problem = _emit_callback(fn, module, field, priv, regs, bind)
+        code, problem = _emit_callback(
+            fn, module, field, priv, regs, bind, safe_function_calls)
         if code:
             callback_code.append(code)
         if problem:
@@ -1547,6 +1659,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         includes.append("#include <linux/spinlock.h>")
     if any(field.startswith("clk_ops.") for field in callbacks.values()):
         includes += ["#include <linux/clk-provider.h>"]
+    if any(state.name == "hpi_regstep" for state in device_spec.state):
+        includes += ["#include <linux/property.h>"]
     if any(field.startswith(("usb_ep_ops.", "usb_gadget_ops."))
            for field in callbacks.values()):
         includes += ["#include <linux/usb/gadget.h>"]
@@ -1557,6 +1671,11 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
          "// SPDX-License-Identifier: GPL-2.0", *includes, ""]
     for name, off in regs.items():
         L.append(f"#define {name}\t0x{off:x}")
+    for name, definition in sorted(function_macros.items()):
+        params = ", ".join(definition.get("params", []))
+        body = definition.get("body", "0")
+        L.append(
+            f"#ifndef {name}\n#define {name}({params}) {body}\n#endif")
     source_macros = _source_object_macros(facts)
     for name, value in source_macros.items():
         if name not in regs:
@@ -1566,10 +1685,11 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             if name not in regs and name not in source_macros:
                 L.append(f"#ifndef {name}\n#define {name}\t0x{value:x}\n#endif")
     known_constants = set(regs)
+    known_functions = set(function_macros)
     if facts is not None:
         known_constants |= set(facts.constants)
     if unsupported:
-        for name in sorted(fallback_calls - known_constants):
+        for name in sorted(fallback_calls - known_constants - known_functions):
             L.append(f"#ifndef {name}\n#define {name}(...) 0\n#endif")
         for name in sorted(fallback_refs - fallback_calls - known_constants
                            - {"MMIO", "TODO"}):

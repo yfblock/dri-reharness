@@ -220,6 +220,8 @@ _MODELED_STATE_FIELDS = {
     "target_frame": "UInt",
     "frame_number": "UInt",
     "dma": "UInt64",
+    "hpi_regstep": "UInt",
+    "sie_num": "UInt",
 }
 
 
@@ -236,6 +238,10 @@ def _modeled_state_fields(formal: dict) -> dict[str, str]:
                     found[field] = field_type
             if re.search(r"\bnum_gpios\b", text):
                 found["ngpio"] = "UInt"
+            if re.search(r"(?:->|\.)hpi(?:->|\.)regstep\b", text):
+                found["hpi_regstep"] = "UInt"
+            if re.search(r"(?:->|\.)sie_num\b", text):
+                found["sie_num"] = "UInt"
         elif "BinOp" in expr:
             inspect(expr["BinOp"].get("left"))
             inspect(expr["BinOp"].get("right"))
@@ -253,6 +259,8 @@ def _modeled_state_fields(formal: dict) -> dict[str, str]:
                 var = body.get("var")
                 if var:
                     inspect({"Var": var})
+                if "Computed" in body.get("addr", {}):
+                    inspect(body["addr"]["Computed"])
                 inspect(body.get("value") or body.get("transform"))
             if "Cond" in op:
                 inspect(op["Cond"].get("guard"))
@@ -274,7 +282,10 @@ def infer_device_spec(formal: dict, funcs: list[Func],
     # has clk_ops/clk_hw callbacks but does not necessarily consume a struct
     # clk; require an actual acquisition call or source field before adding the
     # consumer-side Clock state.
-    state: list[StateField] = [StateField("base", "MmioBase")]
+    has_hpi_state = bool(re.search(
+        r"(?:->|\.)hpi(?:->|\.)base\b", source_text))
+    state: list[StateField] = [StateField(
+        "base", "MmioBase", bind="hpi.base" if has_hpi_state else None)]
     has_irq = any(fs.role.startswith("interrupt") or fs.role == "set_irq_type" for fs in fn_specs)
     has_clk = bool(re.search(
         r"\b(?:(?:devm_)?clk_get(?:_optional)?(?:_enabled)?|"
@@ -287,7 +298,10 @@ def infer_device_spec(formal: dict, funcs: list[Func],
     existing = {s.name for s in state}
     for field, field_type in _modeled_state_fields(formal).items():
         if field not in existing:
-            state.append(StateField(field, field_type))
+            state.append(StateField(
+                field, field_type,
+                bind=("hpi.regstep" if field == "hpi_regstep"
+                      else "sie.sie_num" if field == "sie_num" else None)))
             existing.add(field)
 
     # resources

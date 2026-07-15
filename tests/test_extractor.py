@@ -393,15 +393,44 @@ def test_simple_early_return_becomes_continuation_guard():
     assert control["complete"] is True
 
 
-def test_goto_is_reported_as_unsupported_control_flow():
-    from extractor.metrics import score
+def test_forward_goto_is_lowered_to_bounded_cfg_guard():
+    from extractor.formal import expr_display, walk_leaf_ops
 
     source = os.path.join(REHARNESS, "tests", "fixtures", "goto_control.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    control = result.formal["metadata"]["control_accounting"]
+    assert control["complete"] is True
+    assert control["unsupported"] == 0
+    assert control["modeled_forward_gotos"] == 1
+    module = _module(result.formal, "goto_control")
+    assert "Cond" in module["ops"][0]
+    assert expr_display(module["ops"][0]["Cond"]["guard"]) == "(skip == 0x0)"
+    leaves = list(walk_leaf_ops(module["ops"]))
+    assert len(leaves) == 2
+    cfg = control["cfg"]
+    assert cfg["complete"] is True
+    assert cfg["join_count"] == 1
+    assert cfg["backedge_count"] == 0
+    function_cfg = cfg["functions"][0]
+    join = function_cfg["join_blocks"][0]
+    join_block = next(
+        block for block in function_cfg["blocks"] if block["id"] == join)
+    assert join_block["label"] == "out"
+    assert join_block["idom"] is not None
+    assert join_block["ipostdom"] is not None
+
+
+def test_backward_goto_remains_an_explicit_control_boundary():
+    from extractor.metrics import score
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "goto_backward.c")
     result = extract_ris(ExtractorConfig(source=source))
     control = result.formal["metadata"]["control_accounting"]
     assert control["complete"] is False
     assert control["unsupported"] == 1
     assert control["sites"][0]["kind"] == "goto"
+    assert control["cfg"]["complete"] is True
+    assert control["cfg"]["backedge_count"] == 1
     readiness = score(result.device_spec, result.formal, result.warnings,
                       result.facts)
     assert readiness["backend_bare_metal_ready"] is False
@@ -762,6 +791,21 @@ def test_cross_tu_inline_substitutes_formal_parameters_with_call_arguments():
         assert result.stats["propagated_mmio_edges"] >= 1
 
 
+def test_inlined_read_return_binds_the_caller_lhs():
+    from extractor.formal import expr_display, walk_leaf_ops
+
+    source = os.path.join(
+        REHARNESS, "tests", "fixtures", "read_return.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    leaves = list(walk_leaf_ops(
+        _module(result.formal, "read_return_update")["ops"]))
+    read = next(op["Read"] for op in leaves if "Read" in op)
+    write = next(op["Write"] for op in leaves if "Write" in op)
+    assert read["var"] == "value"
+    rendered = expr_display(write["value"])
+    assert "value" in rendered and "mask" in rendered
+
+
 def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     result = extract_ris(ExtractorConfig(source=DWC2_MULTI))
     assert result.stats["translation_units"] == 10
@@ -811,9 +855,32 @@ def test_real_linux_c67x00_multisource_driver():
     metrics = driver_metrics(result.formal)
     assert metrics["total_ops"] == 38
     assert metrics["computed"] == 32
+    assert metrics["unsafe_computed"] == 0
     assert metrics["unknown_value"] == 0
+    control = result.formal["metadata"]["control_accounting"]
+    assert control["unsupported"] == 0
+    assert control["modeled_forward_gotos"] >= 16
+    assert control["cfg"]["complete"] is True
+    assert result.stats["alias_analysis"]["whole_program_complete"] is False
+    state = {field.name: field for field in result.device_spec.state}
+    assert state["base"].bind == "hpi.base"
+    assert state["hpi_regstep"].type == "UInt"
+    assert state["hpi_regstep"].bind == "hpi.regstep"
+    assert state["sie_num"].bind == "sie.sie_num"
     assert result.facts.callbacks["platform_driver.probe"] == "c67x00_drv_probe"
     assert result.facts.callbacks["irq_handler.handler"] == "c67x00_irq"
+
+    code = _linux_generate_and_compile(C67X00_MULTI, "rh_test_c67x00")
+    assert "u32 hpi_regstep;" in code
+    assert '"hpi-regstep"' in code
+    assert '"sie-number"' in code
+    assert "#define SOFEOP_TO_HPI_EN(x)" in code
+    assert "HPI_STATUS * g->hpi_regstep" in code
+    assert "value = readw((base + (HPI_DATA * g->hpi_regstep)))" in code
+    assert "writew((value |" in code
+    assert "SOFEOP_TO_HPI_EN(g->sie_num)" in code
+    assert "SOFEOP_FLG(g->sie_num)" in code
+    assert "0 + (HPI_" not in code
 
 
 def test_real_linux_aspeed_vhub_five_source_driver():
@@ -829,7 +896,9 @@ def test_real_linux_aspeed_vhub_five_source_driver():
     assert len(result.formal["modules"]) == 15
     assert metrics["total_ops"] == 154
     assert metrics["symbolic"] == 114
-    assert metrics["rmw"] == 14
+    # Declaration-initialized reads (``u32 val = readl(...)``) now retain
+    # their caller LHS, exposing seven additional genuine RMW chains.
+    assert metrics["rmw"] == 21
     assert metrics["register_map"] == 22
     assert metrics["unknown_value"] == 0
     # Object-like macros whose definitions begin with parentheses must be
@@ -1253,6 +1322,10 @@ def test_source_private_state_is_preserved_in_specs_and_codegen():
         REHARNESS, "drivers", "test", "gpio-cadence.c")))
     assert {"bypass_orig", "skip_init", "ngpio"} <= {
         field.name for field in cadence.device_spec.state}
+    cadence_code = linux_gen.generate(
+        cadence.formal, cadence.device_spec,
+        default_bind(cadence.device_spec, "linux"), cadence.facts)
+    assert "REHARNESS_UNSUPPORTED" not in cadence_code
 
     pl061 = extract_ris(ExtractorConfig(source=PL061))
     assert {"gpio_dir", "gpio_is", "gpio_ibe", "gpio_iev", "gpio_ie"} <= {
@@ -1306,6 +1379,18 @@ def test_highbank_clock_arithmetic_oracle_catches_mutations():
                for item in result["mutations"].values())
 
 
+def test_c67x00_hpi_differential_oracle_catches_mutations():
+    from verification.c67x00_hpi_trace_oracle import verify_c67x00_hpi
+
+    result = verify_c67x00_hpi()
+    assert result["baseline_passed"] is True
+    assert len(result["primitive_cases"]) == 5
+    assert len(result["differential_cases"]) == 4
+    assert result["mutations_caught"] == 4
+    assert all(item["caught"] is True
+               for item in result["mutations"].values())
+
+
 def test_ris_semantic_fingerprint_catches_core_mutations():
     from verification.ris_mutation_oracle import verify_ris_mutations
 
@@ -1345,6 +1430,8 @@ def test_real_ftgpio_callback_and_ris_differential_trace_match():
 
 
 def test_visconti_clock_model_reports_conservative_boundary():
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
     from generator.linux import analyze_clock_source_model
 
     highbank = extract_ris(ExtractorConfig(source=os.path.join(
@@ -1363,6 +1450,12 @@ def test_visconti_clock_model_reports_conservative_boundary():
     assert "rate_table" in reasons
     assert "lock" in reasons
     assert rejected["lowered_callbacks"] == []
+    code = linux_gen.generate(
+        visconti.formal, visconti.device_spec,
+        default_bind(visconti.device_spec, "linux"), visconti.facts)
+    # Aggregate-dependent macros cannot be replayed after their source struct
+    # has been conservatively normalized to scalar generated state.
+    assert "#define PLL_CREATE_FRACMODE" not in code
 
 
 def test_verified_linux_specific_lowering_is_not_gated_by_generic_loops():
@@ -1515,6 +1608,68 @@ def test_svf_positive_alias_is_typed_and_attached_to_ris_evidence():
     evidence = op["Write"]["evidence"]
     assert evidence["alias_provenance"]["name"] == "alias"
     assert evidence["alias_provenance"]["kind"] == "MayAlias"
+
+
+def test_svf_manifest_link_propagates_alias_across_translation_units():
+    from extractor.alias import _tool_paths
+    from extractor.formal import walk_leaf_ops
+
+    if not all(os.path.isfile(path) for path in _tool_paths()[1:]):
+        return
+    fixture = os.path.join(
+        REHARNESS, "tests", "fixtures", "svf_linked.json")
+    user_source = os.path.abspath(os.path.join(
+        REHARNESS, "tests", "fixtures", "svf_linked_user.c"))
+    isolated = extract_ris(ExtractorConfig(
+        source=user_source, alias_mode="required"))
+    assert isolated.stats["svf_aliases"] == []
+
+    result = extract_ris(ExtractorConfig(
+        source=fixture, alias_mode="required"))
+    analysis = result.stats["alias_analysis"]
+
+    assert analysis["status"] == "success"
+    assert analysis["scope"] == "linked-manifest"
+    assert analysis["translation_units"] == 2
+    assert analysis["linked_alias_complete"] is True
+    assert len(analysis["linked_bitcode_sha256"]) == 64
+    assert analysis["aliases_by_source"][user_source] == ["linked_alias"]
+    assert analysis["facts_by_source"][user_source]["linked_alias"][
+        "scope"] == "linked-manifest"
+    assert analysis["whole_program_complete"] is True
+    assert all(analysis["whole_program_gates"].values())
+    assert result.formal["metadata"]["assurance_scope"][
+        "whole_program_scope"] == "manifest-internal"
+    assert result.formal["metadata"]["assurance_scope"][
+        "whole_program_complete"] is True
+
+    module = _module(result.formal, "svf_linked_alias_use")
+    op = next(walk_leaf_ops(module["ops"]))
+    evidence = op["Write"]["evidence"]
+    assert evidence["alias_provenance"]["name"] == "linked_alias"
+    assert evidence["alias_provenance"]["scope"] == "linked-manifest"
+
+
+def test_svf_manifest_required_does_not_fallback_without_llvm_link():
+    key = "REHARNESS_SVF_LLVM_LINK"
+    old = os.environ.get(key)
+    try:
+        os.environ[key] = "/nonexistent/llvm-link"
+        fixture = os.path.join(
+            REHARNESS, "tests", "fixtures", "svf_linked.json")
+        try:
+            extract_ris(ExtractorConfig(
+                source=fixture, alias_mode="required"))
+        except RuntimeError as exc:
+            assert "linked-analysis tools missing" in str(exc)
+            assert "llvm-link" in str(exc)
+        else:
+            raise AssertionError("required linked SVF silently fell back")
+    finally:
+        if old is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = old
 
 
 def test_svf_auto_mode_reports_tool_failure_instead_of_silent_empty_aliases():

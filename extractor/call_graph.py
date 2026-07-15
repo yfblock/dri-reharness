@@ -32,7 +32,7 @@ def _op_fingerprint(extraction: FuncExtraction) -> tuple:
     return tuple(
         (op.kind, repr(op.addr), op.width, op.value, op.condition,
          tuple(op.cond_stack), repr(op.control_stack), op.reg_name, op.var)
-        for op in extraction.ops)
+        for op in extraction.ops) + (("return", extraction.return_expr),)
 
 
 def build_inline_cache(funcs: list[Func], macros, tu, source_lines,
