@@ -62,7 +62,9 @@ def _computed_is_lowerable(expr: dict | None) -> bool:
             return True
         if re.fullmatch(r"sizeof\s+[A-Za-z_]\w*", value):
             return True
-        if re.fullmatch(r"[A-Za-z_]\w*->(?:base|regs|ioaddr)", value):
+        if re.fullmatch(
+                r"[A-Za-z_]\w*->(?:base|regs|ioaddr|hwirq|[A-Za-z_]\w*_base)",
+                value):
             return True
         return False
     if "BinOp" in expr:

@@ -29,11 +29,12 @@ from .dataflow import _split_top, _strip_casts
 # ── BinOp / Expr ─────────────────────────────────────────────────────
 
 BINOPS = ["==", "!=", "<=", ">=", "&&", "||", "<<", ">>", "<", ">",
-          "|", "&", "+", "-"]
+          "|", "&", "+", "-", "*", "/", "%"]
 BINOP_NAME = {
     "==": "Eq", "!=": "Ne", "<=": "Le", ">=": "Ge", "<": "Lt", ">": "Gt",
     "&&": "And", "||": "Or", "<<": "Shl", ">>": "Shr",
     "|": "BitOr", "&": "BitAnd", "+": "Add", "-": "Sub",
+    "*": "Mul", "/": "Div", "%": "Mod",
 }
 BINOP_SYM = {v: k for k, v in BINOP_NAME.items()}
 BINOP_SYM.update({"Add": "+", "Sub": "-", "BitAnd": "&", "BitOr": "|",

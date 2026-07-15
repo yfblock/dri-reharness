@@ -62,7 +62,9 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     text = re.sub(r"'(?:\\.|[^'\\])*'", "0", text)
     unsupported |= text != original
     text = re.sub(r"\bd->hwirq\b", "irqd_to_hwirq(d)", text)
-    text = re.sub(r"\b[A-Za-z_]\w*->(?:base|reg|regs|ioaddr)\b", "base", text)
+    text = re.sub(
+        r"\b[A-Za-z_]\w*->(?:base|reg|regs|ioaddr|[A-Za-z_]\w*_base)\b",
+        "base", text)
     text = re.sub(r"\b[A-Za-z_]\w*_base\b", "base", text)
     for field in _MODELED_STATE_FIELDS:
         text = re.sub(
@@ -239,7 +241,8 @@ def _parse_clk_ops_groups(source: str) -> dict[str, dict[str, str]]:
     return groups
 
 
-def _lower_clock_source_callback(source: str, name: str, priv: str) -> str | None:
+def _lower_clock_source_callback_analysis(
+        source: str, name: str, priv: str) -> tuple[str | None, str | None]:
     """Lower a clock callback while preserving its scalar C semantics.
 
     The original callback body is retained, but the source-private container
@@ -249,7 +252,7 @@ def _lower_clock_source_callback(source: str, name: str, priv: str) -> str | Non
     """
     function = _source_function(source, name)
     if function is None:
-        return None
+        return None, f"callback definition not found: {name}"
     body = function["body"]
     private = re.search(
         r"\bstruct\s+[A-Za-z_]\w*\s*\*\s*([A-Za-z_]\w*)\s*=\s*"
@@ -260,11 +263,16 @@ def _lower_clock_source_callback(source: str, name: str, priv: str) -> str | Non
         body = body[:private.start()] + body[private.end():]
         body = re.sub(rf"\b{re.escape(private_name)}\s*->\s*reg\b",
                       "base", body)
-        if re.search(rf"\b{re.escape(private_name)}\s*->", body):
-            return None
+        remaining_fields = sorted(set(re.findall(
+            rf"\b{re.escape(private_name)}\s*->\s*([A-Za-z_]\w*)", body)))
+        if remaining_fields:
+            return None, (f"{name}: unbound private fields on {private_name}: "
+                          + ", ".join(remaining_fields))
+        if re.search(rf"\b{re.escape(private_name)}\b", body):
+            return None, f"{name}: unbound private value {private_name}"
         params = _parameter_names(function["params"])
         if not params:
-            return None
+            return None, f"{name}: cannot identify callback state parameter"
         prelude = [
             f"\tstruct {priv} *g = container_of({params[0]}, struct {priv}, hw);",
             "\tvoid __iomem *base = g->base;",
@@ -274,30 +282,52 @@ def _lower_clock_source_callback(source: str, name: str, priv: str) -> str | Non
     residual = re.findall(r"\b([A-Za-z_]\w*)\s*->\s*([A-Za-z_]\w*)", body)
     allowed_roots = {"req"}
     if any(root not in allowed_roots for root, _field in residual):
-        return None
+        roots = sorted({root for root, _field in residual
+                        if root not in allowed_roots})
+        return None, f"{name}: residual aggregate roots: {', '.join(roots)}"
     body = body.strip("\n")
     lines = [function["header"], "{", *prelude]
     if body.strip():
         lines.append(body)
     lines.append("}")
-    return "\n".join(lines)
+    return "\n".join(lines), None
 
 
-def _clock_source_model(facts, priv: str) -> dict | None:
+def _lower_clock_source_callback(source: str, name: str, priv: str) -> str | None:
+    code, _reason = _lower_clock_source_callback_analysis(source, name, priv)
+    return code
+
+
+def _analyze_clock_source_model(facts, priv: str) -> dict:
+    result = {
+        "supported": False,
+        "reasons": [],
+        "groups": {},
+        "variants": [],
+        "callbacks": {},
+        "helpers": [],
+    }
     source_path = getattr(facts, "source", None) if facts is not None else None
     if not source_path or not source_path.endswith(".c") or not os.path.isfile(source_path):
-        return None
+        result["reasons"].append("versioned C source is unavailable")
+        return result
     source = open(source_path, "r", encoding="utf-8", errors="replace").read()
     groups = _parse_clk_ops_groups(source)
+    result["groups"] = groups
     if not groups:
-        return None
+        result["reasons"].append("no concrete struct clk_ops instances found")
+        return result
     functions = {function for fields in groups.values() for function in fields.values()}
     lowered: dict[str, str] = {}
     for function in sorted(functions):
-        code = _lower_clock_source_callback(source, function, priv)
+        code, reason = _lower_clock_source_callback_analysis(
+            source, function, priv)
         if code is None:
-            return None
+            result["reasons"].append(reason or f"cannot lower {function}")
+            continue
         lowered[function] = code
+    if result["reasons"]:
+        return result
 
     # Retain pure source helpers called by the callbacks (for example PLL rate
     # calculation).  Only helpers without aggregate member access are accepted.
@@ -317,8 +347,12 @@ def _clock_source_model(facts, priv: str) -> dict | None:
     for helper_name in sorted(helper_names):
         helper = _source_function(source, helper_name)
         if helper is None or "->" in helper["body"]:
-            return None
+            result["reasons"].append(
+                f"pure helper has unbound aggregate state: {helper_name}")
+            continue
         helpers.append(helper["text"])
+    if result["reasons"]:
+        return result
 
     variants: list[tuple[str, str]] = []
     for compatible, init_function in re.findall(
@@ -332,12 +366,41 @@ def _clock_source_model(facts, priv: str) -> dict | None:
         if len(candidates) == 1:
             variants.append((compatible, candidates[0]))
     if variants and {group for _compatible, group in variants} != set(groups):
-        return None
-    return {
-        "groups": groups,
+        missing = sorted(set(groups) - {group for _compatible, group in variants})
+        result["reasons"].append(
+            "clock variants do not cover ops groups: " + ", ".join(missing))
+        return result
+    result.update({
+        "supported": True,
         "callbacks": lowered,
         "helpers": helpers,
         "variants": variants,
+    })
+    return result
+
+
+def analyze_clock_source_model(facts, priv: str) -> dict:
+    """Serializable acceptance/rejection evidence for clock source lowering."""
+    result = _analyze_clock_source_model(facts, priv)
+    return {
+        "supported": result["supported"],
+        "reasons": list(result["reasons"]),
+        "groups": result["groups"],
+        "variants": list(result["variants"]),
+        "lowered_callbacks": sorted(result["callbacks"]),
+        "pure_helpers": len(result["helpers"]),
+    }
+
+
+def _clock_source_model(facts, priv: str) -> dict | None:
+    result = _analyze_clock_source_model(facts, priv)
+    if not result["supported"]:
+        return None
+    return {
+        "groups": result["groups"],
+        "callbacks": result["callbacks"],
+        "helpers": result["helpers"],
+        "variants": result["variants"],
     }
 
 
@@ -355,6 +418,75 @@ def _source_object_macros(facts) -> dict[str, str]:
         if value:
             macros[name] = value
     return macros
+
+
+def _lower_irq_source_callback(source: str, name: str, table_field: str,
+                               priv: str,
+                               gpio_member: str = "gc") -> str | None:
+    """Conservatively rebind generic-IRQ private state to generated state."""
+    if not (table_field.startswith("irq_chip.")
+            or table_field == "irq_handler.handler"):
+        return None
+    function = _source_function(source, name)
+    if function is None:
+        return None
+    body = function["body"]
+    prelude: list[str]
+    private_name = None
+
+    if table_field.startswith("irq_chip."):
+        generic = re.search(
+            r"\bstruct\s+irq_chip_generic\s*\*\s*([A-Za-z_]\w*)\s*=\s*"
+            r"irq_data_get_irq_chip_data\s*\([^;]+\)\s*;", body, re.S)
+        if generic is None:
+            return None
+        generic_name = generic.group(1)
+        private = re.search(
+            rf"\bstruct\s+[A-Za-z_]\w*\s*\*\s*([A-Za-z_]\w*)\s*=\s*"
+            rf"{re.escape(generic_name)}\s*->\s*private\s*;", body, re.S)
+        if private is None:
+            return None
+        private_name = private.group(1)
+        spans = sorted(
+            [(generic.start(), generic.end()), (private.start(), private.end())],
+            reverse=True)
+        for start, end in spans:
+            body = body[:start] + body[end:]
+        prelude = [
+            "\tstruct gpio_chip *gc = irq_data_get_irq_chip_data(d);",
+            f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+            "\tvoid __iomem *base = g->base;",
+        ]
+    else:
+        private = re.search(
+            r"\bstruct\s+[A-Za-z_]\w*\s*\*\s*([A-Za-z_]\w*)\s*=\s*"
+            r"data\s*;", body, re.S)
+        if private is None:
+            return None
+        private_name = private.group(1)
+        body = body[:private.start()] + body[private.end():]
+        prelude = [
+            f"\tstruct {priv} *g = data;",
+            "\t(void)irq;",
+            "\tvoid __iomem *base = g->base;",
+        ]
+
+    body = re.sub(
+        rf"\b{re.escape(private_name)}\s*->\s*[A-Za-z_]\w*base\b",
+        "base", body)
+    body = re.sub(
+        rf"\b{re.escape(private_name)}\s*->\s*id\b",
+        f"g->{gpio_member}.irq.domain", body)
+    if re.search(rf"\b{re.escape(private_name)}\b", body):
+        return None
+    residual = re.findall(r"\b([A-Za-z_]\w*)\s*->\s*([A-Za-z_]\w*)", body)
+    if any(root not in {"d", "g"} for root, _field in residual):
+        return None
+    lines = [function["header"], "{", *prelude]
+    if body.strip():
+        lines.append(body.strip("\n"))
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def _normalize_expr(expr, state_prefix: str | None = None):
@@ -812,11 +944,207 @@ def _pci_ids(device_spec, facts) -> tuple[int, int] | None:
     source = getattr(facts, "source", None) if facts is not None else None
     if source and os.path.isfile(source):
         text = open(source, "r", encoding="utf-8", errors="replace").read()
-        m = re.search(r"PCI_DEVICE\s*\(\s*(0x[0-9a-fA-F]+|\d+)\s*,\s*"
-                      r"(0x[0-9a-fA-F]+|\d+)\s*\)", text)
+        token = r"(?:0[xX][0-9a-fA-F]+|\d+|[A-Za-z_]\w*)"
+        m = re.search(rf"PCI_DEVICE\s*\(\s*({token})\s*,\s*"
+                      rf"({token})\s*\)", text)
         if m:
-            return int(m.group(1), 0), int(m.group(2), 0)
+            values = []
+            constants = getattr(facts, "constants", {}) if facts else {}
+            macros = _source_object_macros(facts)
+            for raw in m.groups():
+                if re.fullmatch(r"0[xX][0-9a-fA-F]+|\d+", raw):
+                    values.append(int(raw, 0))
+                elif raw in constants and isinstance(constants[raw], int):
+                    values.append(constants[raw])
+                elif raw in macros and re.fullmatch(
+                        r"\(?\s*(0[xX][0-9a-fA-F]+|\d+)\s*\)?",
+                        macros[raw]):
+                    values.append(int(re.sub(r"[()\s]", "", macros[raw]), 0))
+                else:
+                    return None
+            return values[0], values[1]
     return None
+
+
+def _source_gpio_model(facts) -> dict | None:
+    """Recover the conservative gpio_generic_chip_init configuration."""
+    source_path = getattr(facts, "source", None) if facts is not None else None
+    if not source_path or not os.path.isfile(source_path):
+        return None
+    source = open(source_path, "r", encoding="utf-8", errors="replace").read()
+    match = re.search(
+        r"\b([A-Za-z_]\w*)\s*=\s*\(struct\s+gpio_generic_chip_config\s*\)"
+        r"\s*\{(?P<body>.*?)\}\s*;",
+        source, re.S)
+    if match is None or not re.search(
+            rf"\bgpio_generic_chip_init\s*\([^,]+,\s*&\s*"
+            rf"{re.escape(match.group(1))}\s*\)", source, re.S):
+        return None
+    fields = dict(re.findall(
+        r"\.(dev|sz|dat|set|clr|dirout|dirin|flags)\s*=\s*([^,}]+)",
+        match.group("body")))
+    if not {"sz", "dat", "set", "dirout"} <= set(fields):
+        return None
+    # The emitted model below is intentionally limited to the native-endian
+    # 32-bit dat/set/dirout form.  Other gpio-mmio configurations have
+    # materially different accessor semantics and must not be approximated.
+    if fields["sz"].strip() != "4" or "clr" in fields or "dirin" in fields:
+        return None
+    if "flags" in fields and fields["flags"].strip() not in {"0", "0x0"}:
+        return None
+
+    normalized: dict[str, str] = {}
+    for field, raw in fields.items():
+        value = raw.strip()
+        if field == "dev":
+            normalized[field] = "&pdev->dev"
+            continue
+        value = re.sub(
+            r"\b[A-Za-z_]\w*->(?:base|reg|regs|ioaddr|[A-Za-z_]\w*_base)\b",
+            "g->base", value)
+        residual = value.replace("g->base", "")
+        if re.search(r"->|\.[A-Za-z_]", residual):
+            return None
+        if not re.fullmatch(r"[A-Za-z0-9_xX()|&~+\-<>\s]+", value):
+            return None
+        normalized[field] = value
+
+    ngpio = None
+    constants = getattr(facts, "constants", {}) if facts else {}
+    for raw in re.findall(r"\.ngpio\s*=\s*([A-Za-z_]\w*|0[xX][0-9a-fA-F]+|\d+)\s*;",
+                          source):
+        if re.fullmatch(r"0[xX][0-9a-fA-F]+|\d+", raw):
+            ngpio = int(raw, 0)
+        elif raw in constants and isinstance(constants[raw], int):
+            ngpio = constants[raw]
+        if ngpio is not None:
+            break
+    return {"fields": normalized, "ngpio": ngpio}
+
+
+def _source_generic_irq_model(facts) -> dict | None:
+    """Recover the generic-chip mask/unmask/EOI contract used by a source."""
+    source_path = getattr(facts, "source", None) if facts is not None else None
+    if not source_path or not os.path.isfile(source_path):
+        return None
+    source = open(source_path, "r", encoding="utf-8", errors="replace").read()
+    type_var = re.search(r"\bstruct\s+irq_chip_type\s*\*\s*([A-Za-z_]\w*)", source)
+    if type_var is None:
+        return None
+    var = re.escape(type_var.group(1))
+
+    def assigned(path: str) -> str | None:
+        found = re.search(rf"\b{var}\s*->\s*{path}\s*=\s*([^;]+);", source)
+        return found.group(1).strip() if found else None
+
+    helpers = {
+        "irq_mask": assigned(r"chip\s*\.\s*irq_mask"),
+        "irq_unmask": assigned(r"chip\s*\.\s*irq_unmask"),
+        "irq_eoi": assigned(r"chip\s*\.\s*irq_eoi"),
+    }
+    if helpers != {
+            "irq_mask": "irq_gc_mask_clr_bit",
+            "irq_unmask": "irq_gc_mask_set_bit",
+            "irq_eoi": "irq_gc_eoi"}:
+        return None
+    mask_reg = assigned(r"regs\s*\.\s*mask")
+    eoi_reg = assigned(r"regs\s*\.\s*eoi")
+    if not mask_reg or not eoi_reg:
+        return None
+    for value in (mask_reg, eoi_reg):
+        if not re.fullmatch(r"[A-Za-z_]\w*|0[xX][0-9a-fA-F]+|\d+", value):
+            return None
+    allocation = re.search(
+        r"\bdevm_irq_alloc_generic_chip\s*\(.*?,\s*(handle_[A-Za-z_]\w*)\s*\)",
+        source, re.S)
+    if allocation is None:
+        return None
+    return {"mask_reg": mask_reg, "eoi_reg": eoi_reg,
+            "handler": allocation.group(1)}
+
+
+def _emit_source_generic_irq_callbacks(cid: str, priv: str,
+                                       model: dict) -> list[str]:
+    mask = model["mask_reg"]
+    eoi = model["eoi_reg"]
+    return [
+        f"static void {cid}_irq_mask(struct irq_data *d)", "{",
+        "\tstruct gpio_chip *gc = irq_data_get_irq_chip_data(d);",
+        f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\tunsigned long flags;", "\tu32 bit = BIT(irqd_to_hwirq(d));",
+        "\traw_spin_lock_irqsave(&g->irq_lock, flags);",
+        "\tg->irq_mask_cache &= ~bit;",
+        f"\twritel(g->irq_mask_cache, g->base + {mask});",
+        "\traw_spin_unlock_irqrestore(&g->irq_lock, flags);", "}", "",
+        f"static void {cid}_irq_unmask(struct irq_data *d)", "{",
+        "\tstruct gpio_chip *gc = irq_data_get_irq_chip_data(d);",
+        f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\tunsigned long flags;", "\tu32 bit = BIT(irqd_to_hwirq(d));",
+        "\traw_spin_lock_irqsave(&g->irq_lock, flags);",
+        "\tg->irq_mask_cache |= bit;",
+        f"\twritel(g->irq_mask_cache, g->base + {mask});",
+        "\traw_spin_unlock_irqrestore(&g->irq_lock, flags);", "}", "",
+        f"static void {cid}_irq_eoi(struct irq_data *d)", "{",
+        "\tstruct gpio_chip *gc = irq_data_get_irq_chip_data(d);",
+        f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\tunsigned long flags;", "\tu32 bit = BIT(irqd_to_hwirq(d));",
+        "\traw_spin_lock_irqsave(&g->irq_lock, flags);",
+        f"\twritel(bit, g->base + {eoi});",
+        "\traw_spin_unlock_irqrestore(&g->irq_lock, flags);", "}", "",
+    ]
+
+
+def _emit_source_gpio_callbacks(cid: str, priv: str, model: dict) -> list[str]:
+    fields = model["fields"]
+    dat = fields["dat"]
+    set_reg = fields.get("set", dat)
+    dirout = fields.get("dirout")
+    if not dirout:
+        return []
+    return [
+        f"static int {cid}_gpio_request(struct gpio_chip *gc, unsigned int line)",
+        "{", "\treturn line < gc->ngpio ? 0 : -EINVAL;", "}", "",
+        f"static int {cid}_gpio_get(struct gpio_chip *gc, unsigned int line)",
+        "{", f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        f"\treturn !!(readl({dat}) & BIT(line));", "}", "",
+        f"static int {cid}_gpio_get_multiple(struct gpio_chip *gc,",
+        "\t\t\t\t unsigned long *mask, unsigned long *bits)", "{",
+        f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\t*bits &= ~*mask;", f"\t*bits |= readl({dat}) & *mask;",
+        "\treturn 0;", "}", "",
+        f"static int {cid}_gpio_set(struct gpio_chip *gc, unsigned int line, int value)",
+        "{", f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\tunsigned long flags;", "\tu32 bit = BIT(line);",
+        "\traw_spin_lock_irqsave(&g->gpio_lock, flags);",
+        "\tif (value)", "\t\tg->gpio_data |= bit;", "\telse",
+        "\t\tg->gpio_data &= ~bit;", f"\twritel(g->gpio_data, {set_reg});",
+        "\traw_spin_unlock_irqrestore(&g->gpio_lock, flags);",
+        "\treturn 0;", "}", "",
+        f"static int {cid}_gpio_set_multiple(struct gpio_chip *gc,",
+        "\t\t\t\t unsigned long *mask, unsigned long *bits)", "{",
+        f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\tunsigned long flags;", "\traw_spin_lock_irqsave(&g->gpio_lock, flags);",
+        "\tg->gpio_data &= ~*mask;", "\tg->gpio_data |= *bits & *mask;",
+        f"\twritel(g->gpio_data, {set_reg});",
+        "\traw_spin_unlock_irqrestore(&g->gpio_lock, flags);",
+        "\treturn 0;", "}", "",
+        f"static int {cid}_gpio_get_direction(struct gpio_chip *gc, unsigned int line)",
+        "{", f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        f"\treturn readl({dirout}) & BIT(line) ?",
+        "\t\tGPIO_LINE_DIRECTION_OUT : GPIO_LINE_DIRECTION_IN;", "}", "",
+        f"static int {cid}_gpio_direction_input(struct gpio_chip *gc, unsigned int line)",
+        "{", f"\tstruct {priv} *g = gpiochip_get_data(gc);",
+        "\tunsigned long flags;", "\traw_spin_lock_irqsave(&g->gpio_lock, flags);",
+        "\tg->gpio_dir &= ~BIT(line);", f"\twritel(g->gpio_dir, {dirout});",
+        "\traw_spin_unlock_irqrestore(&g->gpio_lock, flags);", "\treturn 0;", "}", "",
+        f"static int {cid}_gpio_direction_output(struct gpio_chip *gc,",
+        "\t\t\t\t    unsigned int line, int value)", "{",
+        f"\tstruct {priv} *g = gpiochip_get_data(gc);", "\tunsigned long flags;",
+        f"\t{cid}_gpio_set(gc, line, value);",
+        "\traw_spin_lock_irqsave(&g->gpio_lock, flags);",
+        "\tg->gpio_dir |= BIT(line);", f"\twritel(g->gpio_dir, {dirout});",
+        "\traw_spin_unlock_irqrestore(&g->gpio_lock, flags);", "\treturn 0;", "}", "",
+    ]
 
 
 def _emit_platform(formal, device_spec, bind, facts, priv, regs,
@@ -961,7 +1289,8 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
 
 def _emit_pci(formal, device_spec, bind, facts, priv, regs,
               callbacks: dict[str, str], callback_code: list[str],
-              unsupported: list[str]) -> str:
+              unsupported: list[str], gpio_model: dict | None = None,
+              irq_model: dict | None = None) -> str:
     dev = device_spec.name
     cid = _cid(dev)
     _, probe_module = _probe_ops(device_spec, formal)
@@ -975,12 +1304,21 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
     misc = dev == "edu"
     ids = _pci_ids(device_spec, facts)
     by_field = {field: fn for fn, field in callbacks.items()}
+    if irq_model:
+        by_field.setdefault("irq_chip.irq_mask", f"{cid}_irq_mask")
+        by_field.setdefault("irq_chip.irq_unmask", f"{cid}_irq_unmask")
+        by_field.setdefault("irq_chip.irq_eoi", f"{cid}_irq_eoi")
     has_gpio = device_spec.cls == "gpio_controller" or any(
         field.startswith("gpio_chip.") for field in by_field)
     has_irq = any(field.startswith("irq_chip.") for field in by_field)
     direct_handler = by_field.get("irq_handler.handler")
 
-    L = callback_code[:] + _emit_usb_callback_tables(dev, callbacks)
+    L = callback_code[:]
+    if gpio_model:
+        L += _emit_source_gpio_callbacks(cid, priv, gpio_model)
+    if irq_model:
+        L += _emit_source_generic_irq_callbacks(cid, priv, irq_model)
+    L += _emit_usb_callback_tables(dev, callbacks)
     if misc:
         L += [f"static int {cid}_open(struct inode *inode, struct file *file)", "{",
               f"\tstruct {priv} *g = container_of(file->private_data, struct {priv}, misc);",
@@ -1013,25 +1351,49 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
           "\tif (!g->base) {", "\t\tret = -ENOMEM;", "\t\tgoto err_regions;", "}",
           "\tpci_set_drvdata(pdev, g);"]
     L += _emit_probe_body(probe_module, regs, bind)
+    gpio_ref = "g->gc"
     if has_gpio:
-        L += [f'\tg->gc.label = "{dev}";', "\tg->gc.parent = &pdev->dev;",
-              "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
-              "\tg->gc.ngpio = 32;", "\tg->gc.can_sleep = false;"]
+        if gpio_model:
+            ngpio = gpio_model.get("ngpio") or 32
+            fields = gpio_model["fields"]
+            L += [f'\tg->gc.label = "{dev}";', "\tg->gc.parent = &pdev->dev;",
+                  "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
+                  f"\tg->gc.ngpio = {ngpio};", "\tg->gc.can_sleep = false;",
+                  "\tg->gc.request = " + cid + "_gpio_request;",
+                  "\tg->gc.get = " + cid + "_gpio_get;",
+                  "\tg->gc.get_multiple = " + cid + "_gpio_get_multiple;",
+                  "\tg->gc.set = " + cid + "_gpio_set;",
+                  "\tg->gc.set_multiple = " + cid + "_gpio_set_multiple;",
+                  "\tg->gc.get_direction = " + cid + "_gpio_get_direction;",
+                  "\tg->gc.direction_input = " + cid + "_gpio_direction_input;",
+                  "\tg->gc.direction_output = " + cid + "_gpio_direction_output;",
+                  "\traw_spin_lock_init(&g->gpio_lock);",
+                  f"\tg->gpio_data = readl({fields.get('set', fields['dat'])});",
+                  f"\tg->gpio_dir = readl({fields['dirout']});"]
+        else:
+            L += [f'\tg->gc.label = "{dev}";', "\tg->gc.parent = &pdev->dev;",
+                  "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
+                  "\tg->gc.ngpio = 32;", "\tg->gc.can_sleep = false;"]
         for field in ("request", "free", "get_direction", "direction_input",
                       "direction_output", "get", "set", "set_config"):
             fn = by_field.get(f"gpio_chip.{field}")
             if fn:
-                L.append(f"\tg->gc.{field} = {fn};")
+                L.append(f"\t{gpio_ref}.{field} = {fn};")
         if has_irq:
             L += [f'\tg->irqchip.name = "{dev}-irq";']
-            for field in ("irq_ack", "irq_mask", "irq_unmask", "irq_set_type"):
+            if irq_model:
+                L += ["\traw_spin_lock_init(&g->irq_lock);",
+                      "\tg->irq_mask_cache = 0;"]
+            for field in ("irq_ack", "irq_mask", "irq_unmask", "irq_eoi",
+                          "irq_set_type"):
                 fn = by_field.get(f"irq_chip.{field}")
                 if fn:
                     L.append(f"\tg->irqchip.{field} = {fn};")
-            L += ["\tgpio_irq_chip_set_chip(&g->gc.irq, &g->irqchip);",
-                  "\tg->gc.irq.handler = handle_simple_irq;",
-                  "\tg->gc.irq.default_type = IRQ_TYPE_NONE;"]
-        L += ["\tret = devm_gpiochip_add_data(&pdev->dev, &g->gc, g);",
+            handler = irq_model["handler"] if irq_model else "handle_simple_irq"
+            L += [f"\tgpio_irq_chip_set_chip(&{gpio_ref}.irq, &g->irqchip);",
+                  f"\t{gpio_ref}.irq.handler = {handler};",
+                  f"\t{gpio_ref}.irq.default_type = IRQ_TYPE_NONE;"]
+        L += [f"\tret = devm_gpiochip_add_data(&pdev->dev, &{gpio_ref}, g);",
               "\tif (ret)", "\t\tgoto err_iounmap;"]
     if direct_handler:
         L += [f"\tret = devm_request_irq(&pdev->dev, pdev->irq, {direct_handler},",
@@ -1088,6 +1450,27 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         for function in sorted(clock_model["callbacks"]):
             callback_code.append(clock_model["callbacks"][function])
             callback_code.append("")
+    gpio_model = (_source_gpio_model(facts)
+                  if device_spec.cls == "gpio_controller" else None)
+    irq_model = (_source_generic_irq_model(facts)
+                 if gpio_model is not None else None)
+    gpio_member = "gc"
+    irq_source_callbacks: dict[str, str] = {}
+    source_path = getattr(facts, "source", None) if facts is not None else None
+    if source_path and source_path.endswith(".c") and os.path.isfile(source_path):
+        source_text = open(
+            source_path, "r", encoding="utf-8", errors="replace").read()
+        for fn in device_spec.functions:
+            field = callbacks.get(fn.name)
+            if not field:
+                continue
+            code = _lower_irq_source_callback(
+                source_text, fn.name, field, priv, gpio_member)
+            if code:
+                irq_source_callbacks[fn.name] = code
+        for function in sorted(irq_source_callbacks):
+            callback_code.append(irq_source_callbacks[function])
+            callback_code.append("")
     if device_spec.cls == "ahci":
         unsupported.append("AHCI probe requires libata host/port state bindings")
     if device_spec.cls == "sdhci":
@@ -1126,6 +1509,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         if (clock_model and field.startswith("clk_ops.")
                 and fn.name in clock_model["callbacks"]):
             continue
+        if fn.name in irq_source_callbacks:
+            continue
         if dev == "edu" and field.startswith("file_operations."):
             # The edu PCI backend supplies checked raw-MMIO file operations
             # with the correct miscdevice private-data lifecycle below.
@@ -1156,7 +1541,10 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
                      "#include <linux/gpio/driver.h>", "#include <linux/clk.h>"]
     if any(field.startswith(("irq_chip.", "gpio_chip.", "gpio_irq_chip."))
            for field in callbacks.values()):
-        includes += ["#include <linux/gpio/driver.h>", "#include <linux/irq.h>"]
+        includes += ["#include <linux/gpio/driver.h>", "#include <linux/irq.h>",
+                     "#include <linux/bitops.h>"]
+    if gpio_model or irq_model:
+        includes.append("#include <linux/spinlock.h>")
     if any(field.startswith("clk_ops.") for field in callbacks.values()):
         includes += ["#include <linux/clk-provider.h>"]
     if any(field.startswith(("usb_ep_ops.", "usb_gadget_ops."))
@@ -1195,7 +1583,13 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         if any(field.startswith(("gpio_chip.", "irq_chip.", "gpio_irq_chip.",
                                  "irq_handler."))
                for field in callbacks.values()):
-            L += ["\tstruct gpio_chip gc;", "\tstruct irq_chip irqchip;"]
+            L.append("\tstruct gpio_chip gc;")
+            L.append("\tstruct irq_chip irqchip;")
+            if gpio_model:
+                L += ["\traw_spinlock_t gpio_lock;", "\tu32 gpio_data;",
+                      "\tu32 gpio_dir;"]
+            if irq_model:
+                L += ["\traw_spinlock_t irq_lock;", "\tu32 irq_mask_cache;"]
     else:
         L += ["\tstruct gpio_chip gc;", "\tstruct irq_chip irqchip;",
               "\tstruct clk *clk;"]
@@ -1223,7 +1617,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
 
     if is_pci:
         body = _emit_pci(formal, device_spec, bind, facts, priv, regs,
-                         callbacks, callback_code, unsupported)
+                         callbacks, callback_code, unsupported,
+                         gpio_model, irq_model)
     else:
         body = _emit_platform(formal, device_spec, bind, facts, priv, regs,
                               callbacks, callback_code, unsupported,

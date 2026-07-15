@@ -698,6 +698,11 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
     # below; this adds only macros defined by the target source itself.
     referenced |= set(re.findall(
         r"^\s*#\s*define\s+([A-Za-z_]\w*)", source_text, flags=re.M))
+    # PCI IDs are reconstruction-critical even when they come from a kernel
+    # header (for example PCI_VENDOR_ID_INTEL).  Keep identifiers used as
+    # PCI_DEVICE arguments instead of filtering them as header-wide noise.
+    for pci_args in re.findall(r"\bPCI_DEVICE\s*\(([^)]*)\)", source_text):
+        referenced |= set(re.findall(r"\b[A-Za-z_]\w*\b", pci_args))
     if formal is not None:
         from .formal import walk_all_ops
         for m in formal["modules"]:

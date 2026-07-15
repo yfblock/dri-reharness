@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from typing import Optional
+import clang.cindex as cx
 
 from . import mmio
 from . import taint as T
@@ -299,9 +300,26 @@ def resolve_addr(text: str, store: dict, macros) -> tuple[dict, Optional[str]]:
     if isinstance(v, Const):
         return addr_fixed(v.n), None
 
+    # A local pointer can be assigned in mutually exclusive branches before
+    # the MMIO call.  Preserve the branch-selected offset as a computed ITE
+    # instead of degrading the local variable to base+0.
+    resolved_text = v.text if isinstance(v, SymExpr) else text
+    ternary = _split_ternary_expr(resolved_text)
+    if ternary is not None:
+        guard, then_text, else_text = ternary
+        then_parts = _address_base_offset(then_text, store, macros)
+        else_parts = _address_base_offset(else_text, store, macros)
+        if (then_parts is not None and else_parts is not None
+                and then_parts[0] == else_parts[0]):
+            base = then_parts[0]
+            dynamic = (f"(({guard}) ? ({then_parts[1]})"
+                       f" : ({else_parts[1]}))")
+            return addr_indirect(base, 0, dynamic), None
+
     # Symbolic offset on a base: preserve the full dynamic offset expression.
     # The former representation kept only the base and silently discarded
     # terms such as (1 << (offset + 2)) or offset + i.
+    text = resolved_text
     plus = _split_top(_strip_casts(text), "+")
     if len(plus) > 1:
         base = None
@@ -317,6 +335,110 @@ def resolve_addr(text: str, store: dict, macros) -> tuple[dict, Optional[str]]:
 
     # fallback: keep the symbolic base string as Offset{base: text, offset:0}
     return addr_offset(_strip_casts(text), 0), None
+
+
+def _split_ternary_expr(text: str) -> tuple[str, str, str] | None:
+    text = _strip_parens(text)
+    depth = 0
+    question = -1
+    nested = 0
+    for index, char in enumerate(text):
+        if char in "([":
+            depth += 1
+        elif char in ")]":
+            depth -= 1
+        elif depth == 0 and char == "?":
+            if question < 0:
+                question = index
+            else:
+                nested += 1
+        elif depth == 0 and char == ":" and question >= 0:
+            if nested:
+                nested -= 1
+            else:
+                return (text[:question].strip(),
+                        text[question + 1:index].strip(),
+                        text[index + 1:].strip())
+    return None
+
+
+def _address_base_offset(text: str, store: dict, macros
+                         ) -> tuple[str, str] | None:
+    parts = _split_top(_strip_casts(text), "+")
+    if len(parts) < 2:
+        return None
+    base = None
+    offsets = []
+    for part in parts:
+        value = eval_expr(part, store, macros)
+        if base is None and isinstance(value, BasePtr):
+            base = value.base
+        else:
+            offsets.append(part.strip())
+    if base is None or not offsets:
+        return None
+    return base, " + ".join(offsets)
+
+
+def _plain_pointer_assignments(func_cursor, tu, store: dict, macros) -> list[dict]:
+    """Collect branch-guarded assignments of local MMIO pointer variables."""
+    assignments = []
+    for cursor, stack in walk_with_conditions(func_cursor):
+        if cursor.kind != cx.CursorKind.BINARY_OPERATOR:
+            continue
+        text = source_text(tu, cursor).strip().rstrip(";")
+        match = re.fullmatch(
+            r"([A-Za-z_]\w*)\s*=\s*(?!=)(.+)", text, flags=re.S)
+        if not match:
+            continue
+        lhs, rhs = match.group(1), match.group(2).strip()
+        if _address_base_offset(rhs, store, macros) is None:
+            continue
+        assignments.append({
+            "lhs": lhs,
+            "rhs": rhs,
+            "conditions": [condition for condition in stack if condition],
+            "line": cursor.location.line if cursor.location else 0,
+        })
+    return assignments
+
+
+def _pointer_assignment_store(assignments: list[dict], before_line: int
+                              ) -> dict[str, SymExpr]:
+    grouped: dict[str, list[dict]] = {}
+    for assignment in assignments:
+        if assignment["line"] and assignment["line"] < before_line:
+            grouped.setdefault(assignment["lhs"], []).append(assignment)
+    out: dict[str, SymExpr] = {}
+    for lhs, entries in grouped.items():
+        unconditional = [entry for entry in entries if not entry["conditions"]]
+        conditional = [entry for entry in entries if entry["conditions"]]
+        fallback = unconditional[-1]["rhs"] if unconditional else None
+        used: set[int] = set()
+        expression = fallback
+        for index, entry in enumerate(conditional):
+            if index in used:
+                continue
+            guard = " && ".join(entry["conditions"])
+            complement = f"!({guard})"
+            pair = next((
+                (other_index, other) for other_index, other in enumerate(conditional)
+                if other_index != index and other_index not in used
+                and " && ".join(other["conditions"]) == complement
+            ), None)
+            if pair is not None:
+                other_index, other = pair
+                expression = (f"(({guard}) ? ({entry['rhs']})"
+                              f" : ({other['rhs']}))")
+                used.update({index, other_index})
+                continue
+            if expression is not None:
+                expression = (f"(({guard}) ? ({entry['rhs']})"
+                              f" : ({expression}))")
+                used.add(index)
+        if expression is not None:
+            out[lhs] = SymExpr(expression)
+    return out
 
 
 # ── function extraction ──────────────────────────────────────────────
@@ -562,6 +684,9 @@ def extract_function(func: Func, macros, tu, *,
         else:
             store[pname] = SymExpr(pname)
 
+    pointer_assignments = _plain_pointer_assignments(
+        func.cursor, tu, store, macros)
+
     calls = function_calls(func.cursor)
     result.calls = calls
 
@@ -589,6 +714,9 @@ def extract_function(func: Func, macros, tu, *,
                 cond = st[-1]
 
         lhs = _bind_lhs(source_lines or [], cs.line, name)
+        call_store = dict(store)
+        call_store.update(_pointer_assignment_store(
+            pointer_assignments, cs.line))
 
         # ioremap → taint LHS as BasePtr
         if mmio.is_ioremap(name):
@@ -598,7 +726,7 @@ def extract_function(func: Func, macros, tu, *,
 
         if mmio.is_mmio_read(name):
             addr_arg = mmio.read_addr_expr(name, cs.arg_text)
-            addr, reg_name = resolve_addr(addr_arg, store, macros)
+            addr, reg_name = resolve_addr(addr_arg, call_store, macros)
             op = Op(
                 kind="Read", addr=addr, width=mmio.infer_width(name),
                 value=None, condition=cond, cond_stack=cond_stack,
@@ -618,8 +746,8 @@ def extract_function(func: Func, macros, tu, *,
             # Generic Linux writel(val, addr), plus explicitly modeled
             # driver-private wrappers such as dwc2_writel(state, val, off).
             val_text, addr_text = mmio.write_value_addr(name, cs.arg_text)
-            addr, reg_name = resolve_addr(addr_text, store, macros)
-            val = eval_expr(val_text, store, macros)
+            addr, reg_name = resolve_addr(addr_text, call_store, macros)
+            val = eval_expr(val_text, call_store, macros)
             kind = "Write"
             value = val_text.strip() or None
             rmw_var = None

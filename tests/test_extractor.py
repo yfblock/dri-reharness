@@ -18,7 +18,7 @@ from extractor import macros as M  # noqa: E402
 from extractor import taint as T  # noqa: E402
 from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
-from extractor.formal import expr_to_c, formal_display  # noqa: E402
+from extractor.formal import expr_to_c, formal_display, parse_expr  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -259,6 +259,9 @@ def test_formal_expr_normalization(ftgpio_formal):
                and o["Write"]["addr"]["Symbolic"]["register"] == "GPIO_INT_CLR")
     val = clr["Write"]["value"]
     assert val["BinOp"]["op"] == "BitXor"  # ~0x0 normalized
+    arithmetic = parse_expr("4 * (d->hwirq % 8)")
+    assert arithmetic["BinOp"]["op"] == "Mul"
+    assert arithmetic["BinOp"]["right"]["BinOp"]["op"] == "Mod"
 
 
 # ── regression: source-text byte offsets & module dedup (synthetic) ──
@@ -978,6 +981,97 @@ def test_source_private_state_is_preserved_in_specs_and_codegen():
     assert "REHARNESS_UNSUPPORTED" not in idt_code
     assert "static int idt_gpio_irq_init_hw(struct gpio_chip *gc)" in idt_code
     assert "g->gc.irq.init_hw = idt_gpio_irq_init_hw;" in idt_code
+
+
+def test_highbank_clock_arithmetic_oracle_catches_mutations():
+    from verification.clock_arithmetic_oracle import verify_highbank
+
+    result = verify_highbank()
+    assert result["baseline_passed"] is True
+    assert result["baseline_cases"] >= 20
+    assert result["mutations_caught"] == 3
+    assert all(item["caught_cases"] > 0
+               for item in result["mutations"].values())
+
+
+def test_visconti_clock_model_reports_conservative_boundary():
+    from generator.linux import analyze_clock_source_model
+
+    highbank = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "clk-highbank.c")))
+    accepted = analyze_clock_source_model(
+        highbank.facts, "clk_highbank_priv")
+    assert accepted["supported"] is True
+    assert len(accepted["groups"]) == 4
+
+    visconti = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "pll.c")))
+    rejected = analyze_clock_source_model(visconti.facts, "pll_priv")
+    assert rejected["supported"] is False
+    reasons = " ".join(rejected["reasons"])
+    assert "pll_base" in reasons
+    assert "rate_table" in reasons
+    assert "lock" in reasons
+    assert rejected["lowered_callbacks"] == []
+
+
+def test_sodaville_path_sensitive_local_mmio_and_irq_private_state():
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import driver_metrics
+    from extractor.spec import default_bind
+    from generator import baremetal as baremetal_gen
+    from generator import harness as harness_gen
+    from generator import linux as linux_gen
+
+    source = os.path.join(REHARNESS, "drivers", "test", "gpio-sodaville.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    assert result.facts.constants["PCI_VENDOR_ID_INTEL"] == 0x8086
+    assert result.facts.constants["PCI_DEVICE_ID_SDV_GPIO"] == 0x2E67
+    assert result.facts.constants["SDV_NUM_PUB_GPIOS"] == 12
+    module = _module(result.formal, "sdv_gpio_pub_set_type")
+    leaves = list(walk_leaf_ops(module["ops"]))
+    addresses = [
+        (op.get("Read") or op.get("ReadModifyWrite"))["addr"]
+        for op in leaves
+    ]
+    assert len(addresses) == 2
+    assert all("Computed" in address for address in addresses)
+    address_text = repr(addresses[0])
+    assert "GPIT1R0" in address_text and "GPIT1R1" in address_text
+    assert "d->hwirq" in address_text
+    metrics = driver_metrics(result.formal)
+    assert metrics["computed"] == 2
+    assert metrics["unsafe_computed"] == 0
+
+    harness = harness_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    baremetal = baremetal_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "baremetal"))
+    linux = linux_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "linux"), result.facts)
+    assert "REHARNESS_UNSUPPORTED" not in harness + baremetal + linux
+    assert "return IRQ_NONE;" in linux
+    assert "return -EINVAL;" in linux
+    assert "generic_handle_domain_irq(g->gc.irq.domain" in linux
+    assert "type_reg = base + GPIT1R0;" in linux
+    assert "type_reg = base + GPIT1R1;" in linux
+    assert "PCI_DEVICE(0x8086, 0x2e67)" in linux
+    assert "g->gc.ngpio = 12;" in linux
+    assert "g->gpio_data = readl(g->base + GPOUTR);" in linux
+    assert "g->gpio_dir = readl(g->base + GPOER);" in linux
+    assert "g->gc.get = gpio_sodaville_gpio_get;" in linux
+    assert "g->gc.set = gpio_sodaville_gpio_set;" in linux
+    assert "g->gc.direction_input = gpio_sodaville_gpio_direction_input;" in linux
+    assert "g->gc.direction_output = gpio_sodaville_gpio_direction_output;" in linux
+    assert "g->irqchip.irq_mask = gpio_sodaville_irq_mask;" in linux
+    assert "g->irqchip.irq_unmask = gpio_sodaville_irq_unmask;" in linux
+    assert "g->irqchip.irq_eoi = gpio_sodaville_irq_eoi;" in linux
+    assert "g->gc.irq.handler = handle_fasteoi_irq;" in linux
+    assert "writel(g->irq_mask_cache, g->base + GPIO_INT);" in linux
+    assert "writel(bit, g->base + GPSTR);" in linux
 
 
 def test_source_private_normalization_keeps_bitwise_and_valid():
