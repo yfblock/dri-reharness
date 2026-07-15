@@ -1,23 +1,23 @@
 === QEMU run: module=edu_drv bus=pci timeout=90s ===
 === QEMU 退出码: 0 ===
-[    0.031706] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
-[    0.031775] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
-[    0.072577] ftrace: allocating 31571 entries in 124 pages
-[    0.072838] ftrace: allocated 124 pages with 5 groups
-[    0.413544] thermal_sys: Registered thermal governor 'step_wise'
-[    0.418245] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
-[    0.423105] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-[    0.509584] pps_core: LinuxPPS API ver. 1 registered
-[    0.547879] Key type asymmetric registered
-[    0.547956] Asymmetric key parser 'x509' registered
-[    0.548376] io scheduler mq-deadline registered
-[    0.548437] io scheduler kyber registered
-[    0.592705] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.031779] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031852] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.072669] ftrace: allocating 31571 entries in 124 pages
+[    0.072933] ftrace: allocated 124 pages with 5 groups
+[    0.411026] thermal_sys: Registered thermal governor 'step_wise'
+[    0.415769] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.417166] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.499879] pps_core: LinuxPPS API ver. 1 registered
+[    0.546918] Key type asymmetric registered
+[    0.546996] Asymmetric key parser 'x509' registered
+[    0.547419] io scheduler mq-deadline registered
+[    0.547482] io scheduler kyber registered
+[    0.588597] rtc_cmos PNP0B00:00: registered as rtc0
 === insmod edu_drv ===
-[    1.011119] edu 0000:00:04.0: edu probed
-[    1.012644] insmod (56) used greatest stack depth: 13080 bytes left
-[    1.011119] edu 0000:00:04.0: edu probed
-[    1.012644] insmod (56) used greatest stack depth: 13080 bytes left
+[    1.004617] edu 0000:00:04.0: edu probed
+[    1.006154] insmod (54) used greatest stack depth: 13080 bytes left
+[    1.004617] edu 0000:00:04.0: edu probed
+[    1.006154] insmod (54) used greatest stack depth: 13080 bytes left
 TRACE id@0x00 = 0x010000ed OK
 TRACE live_check@0x04 write0xa5a5a5a5 read0x5a5a5a5a OK (~X)
 TRACE factorial@0x08(5)=120 OK
@@ -25,7 +25,7 @@ EDU_TRACE_OK
 EXERCISER_RC=0
 === rmmod edu_drv ===
 === QEMU_RUN_DONE ===
-[    1.589102] Call Trace:
+[    1.582291] Call Trace:
 
 === 成功判定 ===
   done=1 probe=2 real_oops=0

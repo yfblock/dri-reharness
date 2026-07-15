@@ -5,7 +5,7 @@
 \newcommand{\EvalFixed}{73}
 \newcommand{\EvalComputed}{25}
 \newcommand{\EvalRMW}{69}
-\newcommand{\EvalConditions}{70}
+\newcommand{\EvalConditions}{117}
 \newcommand{\EvalRegisters}{144}
 \newcommand{\EvalUnknown}{0}
 \newcommand{\EvalSymbolicPct}{76.4\%}
@@ -26,7 +26,7 @@
 \newcommand{\MultiSourceTUs}{19}
 \newcommand{\MultiSourceLines}{27447}
 \newcommand{\MultiSourceOps}{4394}
-\newcommand{\MultiSourceRMW}{891}
+\newcommand{\MultiSourceRMW}{948}
 \newcommand{\MultiSourceRegisters}{68}
 \newcommand{\MultiSourceFunctions}{626}
 \newcommand{\MultiSourceCallEdges}{974}
@@ -42,12 +42,12 @@
 \textbf{Driver} & \textbf{Ops} & \textbf{Sym} & \textbf{Fixed} & \textbf{Comp} & \textbf{RMW} & \textbf{Cond} & \textbf{Regs} & \textbf{\%Sym}\\
 \hline
 gpio-ftgpio010 & 22 & 22 & 0 & 0 & 7 & 2 & 9 & 100.0\%\\
-virtio\_mmio & 59 & 44 & 14 & 1 & 0 & 22 & 31 & 74.6\%\\
+virtio\_mmio & 59 & 44 & 14 & 1 & 0 & 44 & 31 & 74.6\%\\
 gpio-pl061 & 31 & 27 & 0 & 4 & 7 & 1 & 7 & 87.1\%\\
-gpio-cadence & 21 & 21 & 0 & 0 & 4 & 4 & 10 & 100.0\%\\
-edu & 5 & 3 & 2 & 0 & 0 & 0 & 3 & 60.0\%\\
+gpio-cadence & 21 & 21 & 0 & 0 & 4 & 8 & 10 & 100.0\%\\
+edu & 5 & 3 & 2 & 0 & 0 & 2 & 3 & 60.0\%\\
 \hline
-\textbf{Total (19)} & \textbf{429} & \textbf{317} & \textbf{73} & \textbf{25} & \textbf{69} & \textbf{70} & \textbf{144} & \textbf{76.4\%}\\
+\textbf{Total (19)} & \textbf{429} & \textbf{317} & \textbf{73} & \textbf{25} & \textbf{69} & \textbf{117} & \textbf{144} & \textbf{76.4\%}\\
 \hline
 \end{tabular}
 }
@@ -72,7 +72,7 @@ edu & 0.920 & 1.000 & 0.688 & \checkmark/\checkmark/\checkmark & \checkmark & \c
 \textbf{Driver module} & \textbf{TUs} & \textbf{LoC} & \textbf{Funcs} & \textbf{X-TU} & \textbf{Prop} & \textbf{Src MMIO} & \textbf{RIS MMIO} & \textbf{Ops} & \textbf{H/B/L} & \textbf{Orig. Kbuild}\\
 \hline
 aspeed-vhub & 5 & 3540 & 92 & 53 & 54 & 101 & 150 & 154 & \checkmark/\checkmark/-- & \checkmark$^\dagger$\\
-c67x00 & 4 & 2239 & 89 & 30 & 79 & 2 & 32 & 38 & \checkmark/\checkmark/-- & \checkmark$^\dagger$\\
+c67x00 & 4 & 2239 & 89 & 30 & 79 & 2 & 32 & 38 & \checkmark/\checkmark/\checkmark & \checkmark$^\dagger$\\
 dwc2 & 10 & 21668 & 445 & 140 & 445 & 804 & 3560 & 4202 & \checkmark/\checkmark/\checkmark & \checkmark$^\dagger$\\
 \hline
 \end{tabular}

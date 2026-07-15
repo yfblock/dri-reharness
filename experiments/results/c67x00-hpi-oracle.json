@@ -1,0 +1,157 @@
+{
+  "baseline_passed": true,
+  "differential_cases": [
+    {
+      "matched": true,
+      "regstep": 1,
+      "sie_num": 0,
+      "trace": [
+        [
+          "W",
+          2,
+          322
+        ],
+        [
+          "R",
+          0,
+          64
+        ],
+        [
+          "W",
+          2,
+          322
+        ],
+        [
+          "W",
+          0,
+          2112
+        ]
+      ]
+    },
+    {
+      "matched": true,
+      "regstep": 2,
+      "sie_num": 0,
+      "trace": [
+        [
+          "W",
+          4,
+          322
+        ],
+        [
+          "R",
+          0,
+          64
+        ],
+        [
+          "W",
+          4,
+          322
+        ],
+        [
+          "W",
+          0,
+          2112
+        ]
+      ]
+    },
+    {
+      "matched": true,
+      "regstep": 2,
+      "sie_num": 1,
+      "trace": [
+        [
+          "W",
+          4,
+          322
+        ],
+        [
+          "R",
+          0,
+          64
+        ],
+        [
+          "W",
+          4,
+          322
+        ],
+        [
+          "W",
+          0,
+          8256
+        ]
+      ]
+    },
+    {
+      "matched": true,
+      "regstep": 4,
+      "sie_num": 1,
+      "trace": [
+        [
+          "W",
+          8,
+          322
+        ],
+        [
+          "R",
+          0,
+          40960
+        ],
+        [
+          "W",
+          8,
+          322
+        ],
+        [
+          "W",
+          0,
+          40960
+        ]
+      ]
+    }
+  ],
+  "mutations": {
+    "operation_order": {
+      "caught": true
+    },
+    "register_index": {
+      "caught": true
+    },
+    "regstep": {
+      "caught": true
+    },
+    "wrapper_target": {
+      "caught": true
+    }
+  },
+  "mutations_caught": 4,
+  "primitive_cases": [
+    {
+      "kind": "primitive-1",
+      "matched": true,
+      "regstep": 1
+    },
+    {
+      "kind": "primitive-1",
+      "matched": true,
+      "regstep": 4
+    },
+    {
+      "kind": "primitive-2",
+      "matched": true,
+      "regstep": 2
+    },
+    {
+      "kind": "primitive-3",
+      "matched": true,
+      "regstep": 4
+    },
+    {
+      "kind": "primitive-4",
+      "matched": true,
+      "regstep": 2
+    }
+  ],
+  "schema": 1,
+  "source": "linux/drivers/usb/c67x00/c67x00-ll-hpi.c"
+}

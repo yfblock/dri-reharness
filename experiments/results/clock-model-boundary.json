@@ -1,9 +1,9 @@
 {
   "environment": {
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "e3e1d48bd677c08e58dfc51bdd206bad3c226560"
+    "reharness_commit": "85c576862274f5062cfdf956692be20a6a20b3c4"
   },
-  "generated_at": "2026-07-15T15:54:07.763892+00:00",
+  "generated_at": "2026-07-15T18:34:36.287870+00:00",
   "highbank": {
     "arithmetic_oracle": {
       "baseline_cases": 22,

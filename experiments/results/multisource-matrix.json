@@ -9,7 +9,7 @@
     "registers": 68,
     "resolved_cross_tu_call_edges": 223,
     "ris_mmio_ops": 3742,
-    "rmw": 891,
+    "rmw": 948,
     "source_lines": 27447,
     "source_mmio_primitives": 907,
     "translation_units": 19
@@ -36,14 +36,14 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 110,
+        "conditions": 126,
         "fixed": 36,
         "loops": 6,
         "ops": 154,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.76,
         "registers": 22,
-        "rmw": 14,
+        "rmw": 21,
         "symbolic": 114,
         "unknown_value": 0
       },
@@ -101,7 +101,7 @@
           "4 source MMIO access site(s) unaccounted",
           "1 source register/opaque access site(s) unsupported",
           "13 switch path pair(s) not proven exclusive",
-          "11 unsupported control-flow transfer(s)",
+          "7 unsupported control-flow transfer(s)",
           "6 conservative loop summary/summaries require validation",
           "missing role for: ast_vhub_wake_work",
           "callback entry without table binding: ast_vhub_wake_work",
@@ -115,7 +115,7 @@
       },
       "resolved_cross_tu_call_edges": 53,
       "ris_mmio_ops": 150,
-      "seconds": 28.991,
+      "seconds": 30.499,
       "source_count": 5,
       "source_lines": 3540,
       "source_mmio_primitives": {
@@ -136,8 +136,8 @@
       "backends": {
         "baremetal_compile": true,
         "harness_compile": true,
-        "harness_trace": false,
-        "linux_compile": false
+        "harness_trace": true,
+        "linux_compile": true
       },
       "call_edges": 128,
       "cross_tu_call_edges": 30,
@@ -153,7 +153,7 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 32,
-        "conditions": 7,
+        "conditions": 16,
         "fixed": 0,
         "loops": 3,
         "ops": 38,
@@ -217,8 +217,6 @@
         "backend_linux_ready": false,
         "blockers": [
           "1 switch path pair(s) not proven exclusive",
-          "16 unsupported control-flow transfer(s)",
-          "32 unsafe dynamic register address(es) (32 computed total)",
           "1 conservative loop summary/summaries require validation",
           "linux backend has unsupported semantic bindings"
         ],
@@ -226,11 +224,11 @@
         "facts_quality": 0.9,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.25
+        "ris_quality": 0.75
       },
       "resolved_cross_tu_call_edges": 30,
       "ris_mmio_ops": 32,
-      "seconds": 20.052,
+      "seconds": 21.178,
       "source_count": 4,
       "source_lines": 2239,
       "source_mmio_primitives": {
@@ -267,14 +265,14 @@
       "metrics": {
         "clang_diagnostics": 85,
         "computed": 383,
-        "conditions": 1490,
+        "conditions": 1633,
         "fixed": 133,
         "loops": 200,
         "ops": 4202,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.855,
         "registers": 46,
-        "rmw": 877,
+        "rmw": 927,
         "symbolic": 3044,
         "unknown_value": 0
       },
@@ -331,9 +329,9 @@
         "backend_linux_ready": false,
         "blockers": [
           "48 source MMIO access site(s) unaccounted",
-          "216 contradictory/infeasible RIS path(s)",
-          "38 switch path pair(s) not proven exclusive",
-          "90 unsupported control-flow transfer(s)",
+          "220 contradictory/infeasible RIS path(s)",
+          "35 switch path pair(s) not proven exclusive",
+          "32 unsupported control-flow transfer(s)",
           "203 unsafe dynamic register address(es) (383 computed total)",
           "85 clang error diagnostic(s)",
           "182 conservative loop summary/summaries require validation",
@@ -349,7 +347,7 @@
       },
       "resolved_cross_tu_call_edges": 140,
       "ris_mmio_ops": 3560,
-      "seconds": 88.37,
+      "seconds": 94.513,
       "source_count": 10,
       "source_lines": 21668,
       "source_mmio_primitives": {
@@ -375,8 +373,8 @@
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "e3e1d48bd677c08e58dfc51bdd206bad3c226560"
+    "reharness_commit": "85c576862274f5062cfdf956692be20a6a20b3c4"
   },
-  "generated_at": "2026-07-15T15:58:59.917457+00:00",
+  "generated_at": "2026-07-15T18:27:20.211412+00:00",
   "schema": 1
 }
