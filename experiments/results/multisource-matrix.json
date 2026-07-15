@@ -1,0 +1,125 @@
+{
+  "aggregate": {
+    "drivers": 2,
+    "ops": 166,
+    "registers": 22,
+    "rmw": 14,
+    "source_lines": 5779,
+    "translation_units": 9
+  },
+  "drivers": [
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "description": "Pinned Linux ASPEED virtual USB hub controller module",
+      "driver": "aspeed-vhub",
+      "functions_analyzed": 92,
+      "kbuild": "linux/drivers/usb/gadget/udc/aspeed-vhub/Makefile",
+      "kbuild_verified": true,
+      "manifest": "drivers/multisource/aspeed-vhub.json",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 38,
+        "fixed": 36,
+        "loops": 0,
+        "ops": 154,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.76,
+        "registers": 22,
+        "rmw": 14,
+        "symbolic": 114,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "missing role for: ast_vhub_ep0_queue, ast_vhub_ep0_dequeue, ast_vhub_epn_queue, ast_vhub_epn_dequeue, ast_vhub_epn_set_halt, ast_vhub_epn_set_wedge, ast_vhub_udc_get_frame, ast_vhub_udc_pullup, ast_vhub_udc_stop, ast_vhub_wake_work",
+          "callback entry without table binding: ast_vhub_ep0_queue, ast_vhub_ep0_dequeue, ast_vhub_epn_queue, ast_vhub_epn_dequeue, ast_vhub_epn_set_halt, ast_vhub_epn_set_wedge, ast_vhub_udc_get_frame, ast_vhub_udc_pullup, ast_vhub_udc_stop, ast_vhub_wake_work",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 0.333,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.832
+      },
+      "seconds": 25.139,
+      "source_count": 5,
+      "source_lines": 3540,
+      "source_sha256": {
+        "linux/drivers/usb/gadget/udc/aspeed-vhub/core.c": "a014b560d11ee4d55c8eb2c8da8e5c8db542b338f5eeb7146a4663c6d3c08525",
+        "linux/drivers/usb/gadget/udc/aspeed-vhub/dev.c": "a6ac828891230ab4a850226a1b40f4fc9570ffd62b9d65173e962a0c3b4c3d07",
+        "linux/drivers/usb/gadget/udc/aspeed-vhub/ep0.c": "23dcac9fec0433e9b60217937ddcbcdf9a692554c7eb1929cea520ed04a9af08",
+        "linux/drivers/usb/gadget/udc/aspeed-vhub/epn.c": "4e848e00ceb063a2465a030001d276610f5a99fdf49c643d76c322705172727d",
+        "linux/drivers/usb/gadget/udc/aspeed-vhub/hub.c": "ec50f18e4c26f94e6dfeef6b8c7702a1b50e8fe02db69413105cb109b97fe8e2"
+      }
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "description": "Pinned Linux Cypress C67X00 USB host-controller module",
+      "driver": "c67x00",
+      "functions_analyzed": 89,
+      "kbuild": "linux/drivers/usb/c67x00/Makefile",
+      "kbuild_verified": true,
+      "manifest": "drivers/multisource/c67x00.json",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 6,
+        "conditions": 1,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 12,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 0,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "6 unsafe dynamic register address(es) (6 computed total)",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 0.9,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.25
+      },
+      "seconds": 17.45,
+      "source_count": 4,
+      "source_lines": 2239,
+      "source_sha256": {
+        "linux/drivers/usb/c67x00/c67x00-drv.c": "9ec73baea89217d558094a4c8691e0271346cc8c3618bdfadc7e9b6699de855b",
+        "linux/drivers/usb/c67x00/c67x00-hcd.c": "deb8ee1c7341bbbfd143d4ebfa1206a5d2d786e61b1278673fb9d04af06a969f",
+        "linux/drivers/usb/c67x00/c67x00-ll-hpi.c": "d3603eef5554dfdf63d77e120141062c4ac888bb36770020a909e6da269f316d",
+        "linux/drivers/usb/c67x00/c67x00-sched.c": "c7d461b75fd82aa667115caa5500c6173408a4644d189a53a46d7a8da0ac35cf"
+      }
+    }
+  ],
+  "environment": {
+    "kernel_release": "7.1.0-rc7-gacb7500801e9",
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "reharness_commit": "67887a15952f76fe888894adcf9414c2a346853d"
+  },
+  "generated_at": "2026-07-15T09:31:31.564973+00:00",
+  "schema": 1
+}

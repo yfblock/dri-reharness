@@ -22,6 +22,12 @@
 \newcommand{\FTQEMUModuleCoverage}{1/1}
 \newcommand{\FTQEMUOpCoverage}{4/4}
 \newcommand{\FTQEMURegisterCoverage}{4/4}
+\newcommand{\MultiSourceDrivers}{2}
+\newcommand{\MultiSourceTUs}{9}
+\newcommand{\MultiSourceLines}{5779}
+\newcommand{\MultiSourceOps}{166}
+\newcommand{\MultiSourceRMW}{14}
+\newcommand{\MultiSourceRegisters}{22}
 
 \newcommand{\ExtractionResultsTable}{%
 \begin{tabular}{lrrrrrrrr}
@@ -49,6 +55,17 @@ virtio\_mmio & 0.772 & 0.812 & 1.000 & \checkmark/\checkmark/\checkmark & -- & \
 gpio-pl061 & 0.860 & 1.000 & 0.938 & \checkmark/\checkmark/\checkmark & \checkmark & \checkmark\\
 gpio-cadence & 1.000 & 1.000 & 1.000 & \checkmark/\checkmark/\checkmark & \checkmark & \checkmark\\
 edu & 0.720 & 1.000 & 0.688 & \checkmark/\checkmark/\checkmark & \checkmark & \checkmark\\
+\hline
+\end{tabular}
+}
+
+\newcommand{\MultiSourceResultsTable}{%
+\begin{tabular}{lrrrrrrc}
+\hline
+\textbf{Driver module} & \textbf{TUs} & \textbf{LoC} & \textbf{Funcs} & \textbf{Ops} & \textbf{RMW} & \textbf{Regs} & \textbf{H/B/L}\\
+\hline
+aspeed-vhub & 5 & 3540 & 92 & 154 & 14 & 22 & \checkmark/\checkmark/\checkmark\\
+c67x00 & 4 & 2239 & 89 & 12 & 0 & 0 & \checkmark/\checkmark/\checkmark\\
 \hline
 \end{tabular}
 }
