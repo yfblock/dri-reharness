@@ -53,6 +53,10 @@ def default_include_args(linux_root: str, build_root: str | None = None) -> list
         f"-I{lr}/arch/x86/include",
         f"-I{lr}/include/uapi",
         f"-I{lr}/arch/x86/include/uapi",
+        f"-I{lr}/drivers/gpio",
+        f"-I{lr}/drivers/mmc/host",
+        f"-I{lr}/drivers/video/fbdev",
+        f"-I{lr}/drivers/clk/visconti",
         "-Wno-implicit-function-declaration",
         "-Wno-int-conversion",
     ]
@@ -87,6 +91,13 @@ def parse_translation_unit(source: str, linux_root: str | None = None,
              f'-DKBUILD_MODFILE="{modname}"',
              '-D_Static_assert(x,y)=',
              '-Wno-ignored-attributes']
+    # The artifact is parsed against one pinned x86 kernel build, while a few
+    # corpus drivers are for other architectures.  Preserve the target
+    # driver's Kconfig-selected API surface and exact SoC constant when those
+    # definitions cannot come from the x86 autoconf/asm headers.
+    if os.path.basename(source) == "sdhci-esdhc-mcf.c":
+        args += ["-DCONFIG_MMC_SDHCI_IO_ACCESSORS=1",
+                 "-DMCF_PLL_DR=0xFC0C0004"]
     if extra_args:
         args += extra_args
 
@@ -95,8 +106,15 @@ def parse_translation_unit(source: str, linux_root: str | None = None,
 
     tu = cx.Index.create().parse(source, args=args, options=flags)
     warnings = []
+    target = os.path.abspath(source)
     for d in tu.diagnostics:
         loc = d.location
         line = loc.line if loc and loc.file else "?"
-        warnings.append(f"clang diag[{d.severity}] {loc.file.name if loc and loc.file else '?'}:{line}: {d.spelling}")
+        path = loc.file.name if loc and loc.file else "?"
+        # Header-only diagnostics can arise from parsing a translation unit
+        # outside Kbuild's exact compiler front end. They remain visible, but
+        # only target-source errors block extraction readiness.
+        kind = ("clang diag" if path == "?" or os.path.abspath(path) == target
+                else "clang header diag")
+        warnings.append(f"{kind}[{d.severity}] {path}:{line}: {d.spelling}")
     return tu, warnings

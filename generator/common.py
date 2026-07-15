@@ -18,24 +18,32 @@ def _vars_in_expr(e) -> set[str]:
             for m in re.finditer(r"\b[A-Za-z_]\w*\b", v):
                 before = v[:m.start()].rstrip()
                 after = v[m.end():].lstrip()
-                if after.startswith("(") or before.endswith(("->", ".")):
+                if (after.startswith(("(", "->", "."))
+                        or before.endswith(("->", "."))):
                     continue
                 out.add(m.group(0))
     if "BinOp" in e:
         out |= _vars_in_expr(e["BinOp"]["left"])
         out |= _vars_in_expr(e["BinOp"]["right"])
+    if "Ite" in e:
+        out |= _vars_in_expr(e["Ite"]["guard"])
+        out |= _vars_in_expr(e["Ite"]["then"])
+        out |= _vars_in_expr(e["Ite"]["else"])
     if "Bits" in e:
         out |= _vars_in_expr(e["Bits"]["expr"])
     return out
 
 
 def value_var_names(ops) -> set[str]:
-    """Identifiers referenced in value/guard expressions (for local decls)."""
+    """Identifiers referenced in values, guards, or computed addresses."""
     names: set[str] = set()
     for op in walk_all_ops(ops):
         if "Cond" in op:
             names |= _vars_in_expr(op["Cond"]["guard"])
-        elif "Write" in op:
+        body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+        if body and "Computed" in body.get("addr", {}):
+            names |= _vars_in_expr(body["addr"]["Computed"])
+        if "Write" in op:
             names |= _vars_in_expr(op["Write"].get("value"))
         elif "ReadModifyWrite" in op:
             names |= _vars_in_expr(op["ReadModifyWrite"].get("transform"))
@@ -85,6 +93,12 @@ def _replace_expr_var(expr, name: str | None, replacement: str):
         b["left"] = _replace_expr_var(b.get("left"), name, replacement)
         b["right"] = _replace_expr_var(b.get("right"), name, replacement)
         out["BinOp"] = b
+    elif "Ite" in expr:
+        i = dict(expr["Ite"])
+        i["guard"] = _replace_expr_var(i.get("guard"), name, replacement)
+        i["then"] = _replace_expr_var(i.get("then"), name, replacement)
+        i["else"] = _replace_expr_var(i.get("else"), name, replacement)
+        out["Ite"] = i
     elif "Bits" in expr:
         b = dict(expr["Bits"])
         b["expr"] = _replace_expr_var(b.get("expr"), name, replacement)
@@ -140,7 +154,8 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             r = bind.prim("MmioRead", o["width"]) or "readl"
             a = addr_to_c(o["addr"], base_expr, register_macros)
             var = o["var"]
-            if _is_simple_id(var):
+            if (_is_simple_id(var)
+                    or re.fullmatch(r"(?:g|dev)->[A-Za-z_]\w*", var)):
                 out.append(f"{pad}{var} = {r}({a});")
             else:
                 # member-access target (e.g. edu->revision) — discard the read

@@ -17,6 +17,12 @@ import copy
 from extractor.formal import walk_leaf_ops
 from .common import ops_to_c, local_decls
 
+_MODELED_STATE_FIELDS = {
+    "bypass_orig", "mask_cache", "skip_init", "ngpio",
+    "gpio_dir", "gpio_is", "gpio_ibe", "gpio_iev", "gpio_ie",
+    "version", "features",
+}
+
 
 def _cid(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]", "_", text)
@@ -43,55 +49,109 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     unsupported semantic binding, so the module can be compiled/tested without
     readiness falsely claiming exact reconstruction.
     """
-    original = text
+    unsupported = False
     text = re.sub(r"\bd->hwirq\b", "irqd_to_hwirq(d)", text)
-    text = re.sub(r"\b[A-Za-z_]\w*->(?:base|regs|ioaddr)\b", "base", text)
+    text = re.sub(r"\b[A-Za-z_]\w*->(?:base|reg|regs|ioaddr)\b", "base", text)
     text = re.sub(r"\b[A-Za-z_]\w*_base\b", "base", text)
-    text = re.sub(r"\bGENMASK\s*\([^)]*\)", "(~0U)", text)
-    text = re.sub(r"\b(?!BIT\b)[A-Z][A-Z0-9_]*\s*\([^()]*\)", "0", text)
+    for field in _MODELED_STATE_FIELDS:
+        text = re.sub(
+            rf"\b[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)*"
+            rf"(?:->|\.){re.escape(field)}\b",
+            f"__state_{field}", text)
+    text = re.sub(r"\bnum_gpios\b", "__state_ngpio", text)
+    safe_calls = {
+        "BIT", "GENMASK", "FIELD_GET", "FIELD_PREP",
+        "lower_32_bits", "upper_32_bits", "cpu_to_le32", "le32_to_cpu",
+        "cpu_to_le16", "le16_to_cpu",
+    }
+    call_re = re.compile(r"\b([A-Z][A-Z0-9_]*)\s*\([^()]*\)")
+    def replace_call(match):
+        nonlocal unsupported
+        if match.group(1) in safe_calls:
+            return match.group(0)
+        unsupported = True
+        return "0"
+    text = call_re.sub(replace_call, text)
     if re.fullmatch(r"\s*scoped_guard\s*\(.*\)\s*", text):
         text = "1"
+    # Statement-like iteration macros are not C expressions.  A partially
+    # recovered AST may expose one as a Cond guard; keep the backend buildable
+    # with an explicit unsupported marker instead of emitting `if (for (...))`.
+    if re.search(r"\bfor_each_[A-Za-z_]\w*\s*\(", text):
+        unsupported = True
+        text = "0"
     # Remaining source-private fields have no DeviceSpec binding yet.  Use a
     # neutral value and force backend readiness false via the marker.
-    text = re.sub(r"\b[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)+(?:\[[^]]+\])?",
-                  "0", text)
-    text = re.sub(r"\b[A-Za-z_]\w*\[[^]]+\](?:(?:->|\.)[A-Za-z_]\w*)*",
-                  "0", text)
-    return text, text != original
+    member_re = re.compile(
+        r"\b[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)+(?:\[[^]]+\])?")
+    if member_re.search(text):
+        unsupported = True
+        text = member_re.sub("0", text)
+    array_re = re.compile(
+        r"\b[A-Za-z_]\w*\[[^]]+\](?:(?:->|\.)[A-Za-z_]\w*)*")
+    if array_re.search(text):
+        unsupported = True
+        text = array_re.sub("0", text)
+    return text, unsupported
 
 
-def _normalize_expr(expr):
+def _bind_state_text(text: str, state_prefix: str | None) -> str:
+    if not state_prefix:
+        return text
+    return re.sub(r"\b__state_([A-Za-z_]\w*)\b",
+                  rf"{state_prefix}->\1", text)
+
+
+def _normalize_expr(expr, state_prefix: str | None = None):
     if not isinstance(expr, dict):
         return expr, False
     out = copy.deepcopy(expr)
     if "Var" in out:
         out["Var"], changed = _normalize_text(out["Var"])
+        out["Var"] = _bind_state_text(out["Var"], state_prefix)
         return out, changed
     changed = False
     if "BinOp" in out:
-        out["BinOp"]["left"], a = _normalize_expr(out["BinOp"].get("left"))
-        out["BinOp"]["right"], b = _normalize_expr(out["BinOp"].get("right"))
+        out["BinOp"]["left"], a = _normalize_expr(
+            out["BinOp"].get("left"), state_prefix)
+        out["BinOp"]["right"], b = _normalize_expr(
+            out["BinOp"].get("right"), state_prefix)
         changed = a or b
+    elif "Ite" in out:
+        out["Ite"]["guard"], a = _normalize_expr(
+            out["Ite"].get("guard"), state_prefix)
+        out["Ite"]["then"], b = _normalize_expr(
+            out["Ite"].get("then"), state_prefix)
+        out["Ite"]["else"], c = _normalize_expr(
+            out["Ite"].get("else"), state_prefix)
+        changed = a or b or c
     elif "Bits" in out:
-        out["Bits"]["expr"], changed = _normalize_expr(out["Bits"].get("expr"))
+        out["Bits"]["expr"], changed = _normalize_expr(
+            out["Bits"].get("expr"), state_prefix)
     return out, changed
 
 
-def _normalize_ops(ops):
+def _normalize_ops(ops, state_prefix: str | None = None):
     out = copy.deepcopy(ops)
     changed = False
     for op in out:
         if "Cond" in op:
-            op["Cond"]["guard"], c = _normalize_expr(op["Cond"].get("guard"))
-            op["Cond"]["then_ops"], a = _normalize_ops(op["Cond"].get("then_ops", []))
-            op["Cond"]["else_ops"], b = _normalize_ops(op["Cond"].get("else_ops") or [])
+            op["Cond"]["guard"], c = _normalize_expr(
+                op["Cond"].get("guard"), state_prefix)
+            op["Cond"]["then_ops"], a = _normalize_ops(
+                op["Cond"].get("then_ops", []), state_prefix)
+            op["Cond"]["else_ops"], b = _normalize_ops(
+                op["Cond"].get("else_ops") or [], state_prefix)
             changed |= a or b or c
         elif "Loop" in op:
-            op["Loop"]["count"], c = _normalize_expr(op["Loop"].get("count"))
-            op["Loop"]["body"], a = _normalize_ops(op["Loop"].get("body", []))
+            op["Loop"]["count"], c = _normalize_expr(
+                op["Loop"].get("count"), state_prefix)
+            op["Loop"]["body"], a = _normalize_ops(
+                op["Loop"].get("body", []), state_prefix)
             changed |= a or c
         elif "Seq" in op:
-            op["Seq"]["ops"], a = _normalize_ops(op["Seq"].get("ops", []))
+            op["Seq"]["ops"], a = _normalize_ops(
+                op["Seq"].get("ops", []), state_prefix)
             changed |= a
         else:
             body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
@@ -99,16 +159,16 @@ def _normalize_ops(ops):
                 continue
             addr = body.get("addr", {})
             if "Computed" in addr:
-                addr["Computed"], a = _normalize_expr(addr["Computed"])
+                addr["Computed"], a = _normalize_expr(
+                    addr["Computed"], state_prefix)
                 changed |= a
-                if (isinstance(addr["Computed"], dict) and
-                        re.fullmatch(r"[A-Za-z_]\w*", addr["Computed"].get("Var", "")) and
-                        addr["Computed"].get("Var") != "base"):
-                    addr["Computed"] = {"Var": "base"}
-                    changed = True
+            if "Read" in op and body.get("var"):
+                body["var"], a = _normalize_text(body["var"])
+                body["var"] = _bind_state_text(body["var"], state_prefix)
+                changed |= a
             key = "value" if "Write" in op else "transform" if "ReadModifyWrite" in op else None
             if key:
-                body[key], a = _normalize_expr(body.get(key))
+                body[key], a = _normalize_expr(body.get(key), state_prefix)
                 changed |= a
     return out, changed
 
@@ -123,12 +183,18 @@ def _callback_signature(table_field: str, priv: str):
         "\tstruct gpio_chip *gc = irq_desc_get_handler_data(desc);\n"
         f"\tstruct {priv} *g = gpiochip_get_data(gc);"
     )
+    direct_irq_pre = f"\tstruct {priv} *g = data;\n\t(void)irq;"
+    pm_pre = f"\tstruct {priv} *g = dev_get_drvdata(dev);"
+    clk_pre = f"\tstruct {priv} *g = container_of(hw, struct {priv}, hw);"
     specs = {
         "irq_chip.irq_ack": ("void", "struct irq_data *d", irq_pre),
         "irq_chip.irq_mask": ("void", "struct irq_data *d", irq_pre),
         "irq_chip.irq_unmask": ("void", "struct irq_data *d", irq_pre),
         "irq_chip.irq_set_type": ("int", "struct irq_data *d, unsigned int type", irq_pre),
         "gpio_irq_chip.parent_handler": ("void", "struct irq_desc *desc", chained_pre),
+        "gpio_irq_chip.init_hw": ("int", "struct gpio_chip *gc", gpio_pre),
+        "irq_handler.handler": (
+            "irqreturn_t", "int irq, void *data", direct_irq_pre),
         "gpio_chip.request": ("int", "struct gpio_chip *gc, unsigned int offset", gpio_pre),
         "gpio_chip.free": ("void", "struct gpio_chip *gc, unsigned int offset", gpio_pre),
         "gpio_chip.get_direction": ("int", "struct gpio_chip *gc, unsigned int offset", gpio_pre),
@@ -140,6 +206,23 @@ def _callback_signature(table_field: str, priv: str):
             "int", "struct gpio_chip *gc, unsigned int offset, int value", gpio_pre),
         "gpio_chip.set_config": (
             "int", "struct gpio_chip *gc, unsigned int offset, unsigned long config", gpio_pre),
+        "dev_pm_ops.suspend": ("int", "struct device *dev", pm_pre),
+        "dev_pm_ops.resume": ("int", "struct device *dev", pm_pre),
+        "clk_ops.prepare": ("int", "struct clk_hw *hw", clk_pre),
+        "clk_ops.unprepare": ("void", "struct clk_hw *hw", clk_pre),
+        "clk_ops.enable": ("int", "struct clk_hw *hw", clk_pre),
+        "clk_ops.disable": ("void", "struct clk_hw *hw", clk_pre),
+        "clk_ops.is_enabled": ("int", "struct clk_hw *hw", clk_pre),
+        "clk_ops.recalc_rate": (
+            "unsigned long", "struct clk_hw *hw, unsigned long parent_rate", clk_pre),
+        "clk_ops.determine_rate": (
+            "int", "struct clk_hw *hw, struct clk_rate_request *req", clk_pre),
+        "clk_ops.round_rate": (
+            "long", "struct clk_hw *hw, unsigned long rate, unsigned long *parent_rate",
+            clk_pre),
+        "clk_ops.set_rate": (
+            "int", "struct clk_hw *hw, unsigned long rate, unsigned long parent_rate",
+            clk_pre),
     }
     return specs.get(table_field)
 
@@ -151,14 +234,45 @@ def _canonical_args(table_field: str):
         "irq_chip.irq_unmask": [("d", "struct irq_data *")],
         "irq_chip.irq_set_type": [("d", "struct irq_data *"), ("type", "unsigned int")],
         "gpio_irq_chip.parent_handler": [("desc", "struct irq_desc *")],
-        "gpio_chip.request": [("offset", "unsigned int")],
-        "gpio_chip.free": [("offset", "unsigned int")],
-        "gpio_chip.get_direction": [("offset", "unsigned int")],
-        "gpio_chip.direction_input": [("offset", "unsigned int")],
-        "gpio_chip.direction_output": [("offset", "unsigned int"), ("value", "int")],
-        "gpio_chip.get": [("offset", "unsigned int")],
-        "gpio_chip.set": [("offset", "unsigned int"), ("value", "int")],
-        "gpio_chip.set_config": [("offset", "unsigned int"), ("config", "unsigned long")],
+        "gpio_irq_chip.init_hw": [],
+        "irq_handler.handler": [
+            ("irq", "int"), ("data", "void *")],
+        "gpio_chip.request": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
+        "gpio_chip.free": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
+        "gpio_chip.get_direction": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
+        "gpio_chip.direction_input": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
+        "gpio_chip.direction_output": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
+            ("value", "int")],
+        "gpio_chip.get": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
+        "gpio_chip.set": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
+            ("value", "int")],
+        "gpio_chip.set_config": [
+            ("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
+            ("config", "unsigned long")],
+        "dev_pm_ops.suspend": [("dev", "struct device *")],
+        "dev_pm_ops.resume": [("dev", "struct device *")],
+        "clk_ops.prepare": [("hw", "struct clk_hw *")],
+        "clk_ops.unprepare": [("hw", "struct clk_hw *")],
+        "clk_ops.enable": [("hw", "struct clk_hw *")],
+        "clk_ops.disable": [("hw", "struct clk_hw *")],
+        "clk_ops.is_enabled": [("hw", "struct clk_hw *")],
+        "clk_ops.recalc_rate": [
+            ("hw", "struct clk_hw *"), ("parent_rate", "unsigned long")],
+        "clk_ops.determine_rate": [
+            ("hw", "struct clk_hw *"), ("req", "struct clk_rate_request *")],
+        "clk_ops.round_rate": [
+            ("hw", "struct clk_hw *"), ("rate", "unsigned long"),
+            ("parent_rate", "unsigned long *")],
+        "clk_ops.set_rate": [
+            ("hw", "struct clk_hw *"), ("rate", "unsigned long"),
+            ("parent_rate", "unsigned long")],
     }.get(table_field, [])
 
 
@@ -167,13 +281,15 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     spec = _callback_signature(table_field, priv)
     if spec is None:
         return None, f"{table_field}={fn.name}"
-    safe_ops, normalized = _normalize_ops(module["ops"])
+    safe_ops, normalized = _normalize_ops(module["ops"], "g")
     ret, params, prelude = spec
     declared = {p.name for p in fn.signature.params} | {"base"}
     declared.update({"d", "gc", "offset", "type", "value", "config"})
     lines = [f"static {ret} {fn.name}({params})", "{", prelude]
-    original = [p for p in fn.signature.params if p.type != "DeviceState"]
-    for param, (canonical, ctype) in zip(original, _canonical_args(table_field)):
+    for param, (canonical, ctype) in zip(
+            fn.signature.params, _canonical_args(table_field)):
+        if param.type == "DeviceState":
+            continue
         if param.name != canonical:
             lines.append(f"\t{ctype} {param.name} = {canonical};")
     decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
@@ -183,12 +299,18 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     body = ops_to_c(safe_ops, bind, "base", regs, indent=1, word_type="u32")
     if body:
         lines.append(body.replace("    ", "\t"))
-    if ret == "int":
+    if ret == "irqreturn_t":
+        lines.append("\treturn IRQ_HANDLED;")
+    elif ret in {"int", "long", "unsigned long"}:
         result = _last_read_var(module) if table_field in {
-            "gpio_chip.get", "gpio_chip.get_direction"} else None
+            "gpio_chip.get", "gpio_chip.get_direction",
+            "clk_ops.is_enabled", "clk_ops.recalc_rate"} else None
         lines.append(f"\treturn {result or 0};")
     lines.extend(["}", ""])
     problem = f"{fn.name} source-private expressions normalized" if normalized else None
+    if table_field in {
+            "clk_ops.recalc_rate", "clk_ops.determine_rate", "clk_ops.round_rate"}:
+        problem = f"{fn.name} requires non-MMIO clock arithmetic"
     return "\n".join(lines), problem
 
 
@@ -203,7 +325,7 @@ def _probe_ops(device_spec, formal: dict):
 def _emit_probe_body(module, regs, bind, indent="\t") -> list[str]:
     if module is None:
         return []
-    safe_ops, _ = _normalize_ops(module["ops"])
+    safe_ops, _ = _normalize_ops(module["ops"], "g")
     declared: set[str] = {"base", "ret", "g", "pdev"}
     decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
     out = []
@@ -242,8 +364,30 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         f.startswith("gpio_chip.") for f in by_field)
     has_irq = any(f.startswith("irq_chip.") for f in by_field)
     has_clk = any(s.name == "clk" for s in device_spec.state)
+    has_clk_ops = any(f.startswith("clk_ops.") for f in by_field)
+    pm_fields = {
+        field.split(".", 1)[1]: fn for field, fn in by_field.items()
+        if field.startswith("dev_pm_ops.")
+    }
 
     L = callback_code[:]
+    if has_clk_ops:
+        L += [f"static const struct clk_ops {cid}_clk_ops = {{"]
+        for field in ("prepare", "unprepare", "enable", "disable",
+                      "is_enabled", "recalc_rate", "determine_rate",
+                      "round_rate", "set_rate"):
+            fn = by_field.get(f"clk_ops.{field}")
+            if fn:
+                L.append(f"\t.{field} = {fn},")
+        L += ["};", "", f"static const struct clk_init_data {cid}_clk_init = {{",
+              f'\t.name = "{dev}",', f"\t.ops = &{cid}_clk_ops,",
+              "\t.num_parents = 0,", "};", ""]
+    if pm_fields:
+        L += [f"static const struct dev_pm_ops {cid}_pm_ops = {{"]
+        for field in ("suspend", "resume"):
+            if field in pm_fields:
+                L.append(f"\t.{field} = {pm_fields[field]},")
+        L += ["};", ""]
     L += [f"static int {cid}_probe(struct platform_device *pdev)", "{",
           f"\tstruct {priv} *g;", "\tint ret;"]
     L += ["\tg = devm_kzalloc(&pdev->dev, sizeof(*g), GFP_KERNEL);",
@@ -252,14 +396,25 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
           "\tg->base = devm_platform_ioremap_resource(pdev, 0);",
           "\tif (IS_ERR(g->base))", "\t\treturn PTR_ERR(g->base);",
           "\tplatform_set_drvdata(pdev, g);"]
+    if any(s.name == "ngpio" for s in device_spec.state):
+        L.append("\tg->ngpio = 32;")
+    if any(s.name == "skip_init" for s in device_spec.state):
+        L.append('\tg->skip_init = device_property_read_bool(&pdev->dev, "reharness,skip-init");')
     if has_clk:
         L += ["\tg->clk = devm_clk_get_optional_enabled(&pdev->dev, NULL);",
               "\tif (IS_ERR(g->clk))", "\t\treturn PTR_ERR(g->clk);"]
+    if has_clk_ops:
+        L += [f"\tg->hw.init = &{cid}_clk_init;",
+              "\tret = devm_clk_hw_register(&pdev->dev, &g->hw);",
+              "\tif (ret)", "\t\treturn ret;"]
     L += _emit_probe_body(probe_module, regs, bind)
     if has_gpio:
         L += [f'\tg->gc.label = "{dev}";', "\tg->gc.parent = &pdev->dev;",
               "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
-              "\tg->gc.ngpio = 32;", "\tg->gc.can_sleep = false;"]
+              ("\tg->gc.ngpio = g->ngpio;" if any(
+                  s.name == "ngpio" for s in device_spec.state)
+               else "\tg->gc.ngpio = 32;"),
+              "\tg->gc.can_sleep = false;"]
         for field in ("request", "free", "get_direction", "direction_input",
                       "direction_output", "get", "set", "set_config"):
             fn = by_field.get(f"gpio_chip.{field}")
@@ -277,6 +432,9 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
             parent_handler = by_field.get("gpio_irq_chip.parent_handler")
             if parent_handler:
                 L.append(f"\tg->gc.irq.parent_handler = {parent_handler};")
+            init_hw = by_field.get("gpio_irq_chip.init_hw")
+            if init_hw:
+                L.append(f"\tg->gc.irq.init_hw = {init_hw};")
         L += ["\tret = devm_gpiochip_add_data(&pdev->dev, &g->gc, g);",
               "\tif (ret)", "\t\treturn ret;"]
     L += [f'\tdev_info(&pdev->dev, "{dev} probed\\n");', "\treturn 0;", "}", "",
@@ -288,13 +446,16 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
           f"static struct platform_driver {cid}_driver = {{",
           f"\t.probe = {cid}_probe,", f"\t.remove = {cid}_remove,",
           "\t.driver = {", f'\t\t.name = "{dev}",',
-          f"\t\t.of_match_table = {cid}_of_match,", "\t},", "};",
-          f"module_platform_driver({cid}_driver);"]
+          f"\t\t.of_match_table = {cid}_of_match,"]
+    if pm_fields:
+        L.append(f"\t\t.pm = &{cid}_pm_ops,")
+    L += ["\t},", "};", f"module_platform_driver({cid}_driver);"]
     return "\n".join(L)
 
 
 def _emit_pci(formal, device_spec, bind, facts, priv, regs,
-              callback_code: list[str]) -> str:
+              callbacks: dict[str, str], callback_code: list[str],
+              unsupported: list[str]) -> str:
     dev = device_spec.name
     cid = _cid(dev)
     _, probe_module = _probe_ops(device_spec, formal)
@@ -307,6 +468,11 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
     bar = 5 if device_spec.cls == "ahci" else 0
     misc = dev == "edu"
     ids = _pci_ids(device_spec, facts)
+    by_field = {field: fn for fn, field in callbacks.items()}
+    has_gpio = device_spec.cls == "gpio_controller" or any(
+        field.startswith("gpio_chip.") for field in by_field)
+    has_irq = any(field.startswith("irq_chip.") for field in by_field)
+    direct_handler = by_field.get("irq_handler.handler")
 
     L = callback_code[:]
     if misc:
@@ -341,12 +507,36 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
           "\tif (!g->base) {", "\t\tret = -ENOMEM;", "\t\tgoto err_regions;", "}",
           "\tpci_set_drvdata(pdev, g);"]
     L += _emit_probe_body(probe_module, regs, bind)
+    if has_gpio:
+        L += [f'\tg->gc.label = "{dev}";', "\tg->gc.parent = &pdev->dev;",
+              "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
+              "\tg->gc.ngpio = 32;", "\tg->gc.can_sleep = false;"]
+        for field in ("request", "free", "get_direction", "direction_input",
+                      "direction_output", "get", "set", "set_config"):
+            fn = by_field.get(f"gpio_chip.{field}")
+            if fn:
+                L.append(f"\tg->gc.{field} = {fn};")
+        if has_irq:
+            L += [f'\tg->irqchip.name = "{dev}-irq";']
+            for field in ("irq_ack", "irq_mask", "irq_unmask", "irq_set_type"):
+                fn = by_field.get(f"irq_chip.{field}")
+                if fn:
+                    L.append(f"\tg->irqchip.{field} = {fn};")
+            L += ["\tgpio_irq_chip_set_chip(&g->gc.irq, &g->irqchip);",
+                  "\tg->gc.irq.handler = handle_simple_irq;",
+                  "\tg->gc.irq.default_type = IRQ_TYPE_NONE;"]
+        L += ["\tret = devm_gpiochip_add_data(&pdev->dev, &g->gc, g);",
+              "\tif (ret)", "\t\tgoto err_iounmap;"]
+    if direct_handler:
+        L += [f"\tret = devm_request_irq(&pdev->dev, pdev->irq, {direct_handler},",
+              f'\t\t\t       IRQF_SHARED, "{dev}", g);',
+              "\tif (ret)", "\t\tgoto err_iounmap;"]
     if misc:
         L += ["\tg->misc.minor = MISC_DYNAMIC_MINOR;",
               "\tg->misc.name = KBUILD_MODNAME;", f"\tg->misc.fops = &{cid}_fops;",
               "\tret = misc_register(&g->misc);", "\tif (ret)", "\t\tgoto err_iounmap;"]
     L += [f'\tdev_info(&pdev->dev, "{dev} probed\\n");', "\treturn 0;"]
-    if misc:
+    if misc or has_gpio or direct_handler:
         L += ["err_iounmap:", "\tiounmap(g->base);"]
     L += ["err_regions:",
           "\tpci_release_regions(pdev);", "err_disable:", "\tpci_disable_device(pdev);",
@@ -376,6 +566,10 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}
     callbacks = _callback_map(bind, facts)
     modules = {m["name"]: m for m in formal["modules"]}
+    callbacks_for_codegen = {
+        fn: field for fn, field in callbacks.items()
+        if fn in modules or field.endswith((".probe", ".remove"))
+    }
 
     callback_code: list[str] = []
     unsupported: list[str] = []
@@ -404,11 +598,13 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         if problem:
             unsupported.append(problem)
 
+    callbacks = callbacks_for_codegen
     is_pci = any(field.startswith("pci_driver.") for field in callbacks.values())
     includes = [
         "#include <linux/module.h>", "#include <linux/device.h>",
         "#include <linux/io.h>", "#include <linux/slab.h>",
         "#include <linux/err.h>", "#include <linux/interrupt.h>",
+        "#include <linux/bits.h>",
     ]
     if is_pci:
         includes += ["#include <linux/pci.h>", "#include <linux/miscdevice.h>",
@@ -420,20 +616,37 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     if any(field.startswith(("irq_chip.", "gpio_chip.", "gpio_irq_chip."))
            for field in callbacks.values()):
         includes += ["#include <linux/gpio/driver.h>", "#include <linux/irq.h>"]
+    if any(field.startswith("clk_ops.") for field in callbacks.values()):
+        includes += ["#include <linux/clk-provider.h>"]
 
     L = [f"// Auto-generated deterministic Linux driver for {dev} (reharness)",
          "// SPDX-License-Identifier: GPL-2.0", *includes, ""]
     for name, off in regs.items():
         L.append(f"#define {name}\t0x{off:x}")
+    if facts is not None:
+        for name, value in sorted(facts.constants.items()):
+            if name not in regs:
+                L.append(f"#ifndef {name}\n#define {name}\t0x{value:x}\n#endif")
     L += ["", f"struct {priv} {{", "\tstruct device *dev;",
           "\tvoid __iomem *base;"]
     if is_pci:
         L.append("\tstruct pci_dev *pdev;")
         if dev == "edu":
             L.append("\tstruct miscdevice misc;")
+        if any(field.startswith(("gpio_chip.", "irq_chip.", "gpio_irq_chip.",
+                                 "irq_handler."))
+               for field in callbacks.values()):
+            L += ["\tstruct gpio_chip gc;", "\tstruct irq_chip irqchip;"]
     else:
         L += ["\tstruct gpio_chip gc;", "\tstruct irq_chip irqchip;",
               "\tstruct clk *clk;"]
+        if any(field.startswith("clk_ops.") for field in callbacks.values()):
+            L.append("\tstruct clk_hw hw;")
+    for state in device_spec.state:
+        if state.name in {"base", "clk", "num_irqs"}:
+            continue
+        ctype = "u64" if state.type == "UInt64" else "u32"
+        L.append(f"\t{ctype} {state.name};")
     L += ["};", ""]
 
     if unsupported:
@@ -442,7 +655,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         L.append("")
 
     if is_pci:
-        body = _emit_pci(formal, device_spec, bind, facts, priv, regs, callback_code)
+        body = _emit_pci(formal, device_spec, bind, facts, priv, regs,
+                         callbacks, callback_code, unsupported)
     else:
         body = _emit_platform(formal, device_spec, bind, facts, priv, regs,
                               callbacks, callback_code, unsupported)

@@ -41,9 +41,12 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define writeb(v, a) mmio_write8((uint8_t)(v), (uintptr_t)(a))")
     L.append("#define mdelay(n) (0)")
     L.append("#define irqd_to_hwirq(d) (d)")
+    L.append("#define BIT(n) (1u << (n))")
+    L.append("#define GENMASK(h, l) (((~0u) << (l)) & (~0u >> (31 - (h))))")
     L.append("#define pci_resource_len(p, b) (0u)")
     L.append("#define mmc_gpio_get_cd(m) (0)")
     L.append("#define ahci_remap_dcc(i) (0u)")
+    L.append("#define of_property_read_bool(np, name) (0)")
     L.append("")
     for name, off in regs.items():
         L.append(f"#define {name} 0x{off:x}")
@@ -69,6 +72,11 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("    uintptr_t base;")
     if any(s.name == "clk" for s in device_spec.state):
         L.append("    void *clk;")
+    for state in device_spec.state:
+        if state.name in {"base", "clk", "num_irqs"}:
+            continue
+        ctype = "uint64_t" if state.type == "UInt64" else "uint32_t"
+        L.append(f"    {ctype} {state.name};")
     L.append("};")
     L.append("")
 
@@ -77,7 +85,7 @@ def generate(formal: dict, device_spec, bind) -> str:
         m = func_by_name.get(fn.ris_ref)
         if not m:
             continue
-        safe_ops, _ = _normalize_ops(m["ops"])
+        safe_ops, _ = _normalize_ops(m["ops"], "dev")
         if portable_skip:
             safe_ops = []
         keep = [p for p in fn.signature.params if p.type != "DeviceState"]

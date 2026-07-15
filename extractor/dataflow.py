@@ -285,18 +285,21 @@ def resolve_addr(text: str, store: dict, macros) -> tuple[dict, Optional[str]]:
     if isinstance(v, Const):
         return addr_fixed(v.n), None
 
-    # symbolic offset on a base: try to recover base + variable → Indirect
+    # Symbolic offset on a base: preserve the full dynamic offset expression.
+    # The former representation kept only the base and silently discarded
+    # terms such as (1 << (offset + 2)) or offset + i.
     plus = _split_top(_strip_casts(text), "+")
-    if len(plus) == 2:
-        a = eval_expr(plus[0], store, macros)
-        b = eval_expr(plus[1], store, macros)
+    if len(plus) > 1:
         base = None
-        if isinstance(a, BasePtr):
-            base = a.base
-        elif isinstance(b, BasePtr):
-            base = b.base
-        if base is not None:
-            return addr_indirect(base, 0), None
+        dynamic: list[str] = []
+        for part in plus:
+            value = eval_expr(part, store, macros)
+            if base is None and isinstance(value, BasePtr):
+                base = value.base
+            else:
+                dynamic.append(part.strip())
+        if base is not None and dynamic:
+            return addr_indirect(base, 0, " + ".join(dynamic)), None
 
     # fallback: keep the symbolic base string as Offset{base: text, offset:0}
     return addr_offset(_strip_casts(text), 0), None
@@ -355,31 +358,116 @@ _MUTATION_OP = re.compile(
 )
 
 
-def _rmw_transform(var: str, read_line: int, write_line: int,
-                   source_lines: list[str]) -> Optional[str]:
-    """Recover straight-line mutations between a read and its matching write.
-
-    Branch-heavy switch/case updates cannot be represented by the current
-    path-insensitive RMW node, so they deliberately lower to Top instead of a
-    fabricated sequential transform.
-    """
-    between = "\n".join(source_lines[read_line: max(read_line, write_line - 1)])
-    pattern = re.compile(_MUTATION_OP.pattern.format(var=re.escape(var)))
-    changes = pattern.findall(between)
-    if not changes:
-        return var
-    if "case " in between and len(changes) > 1:
-        return None
-    expr = var
+def _apply_mutation(expr: str, op: str, rhs: str) -> str:
     op_map = {"|=": "|", "&=": "&", "^=": "^", "+=": "+", "-=": "-",
               "<<=": "<<", ">>=": ">>"}
-    for op, rhs in changes:
-        rhs = rhs.strip()
-        if op == "=":
-            expr = rhs
-        else:
-            expr = f"({expr} {op_map[op]} ({rhs}))"
+    rhs = rhs.strip()
+    return rhs if op == "=" else f"({expr} {op_map[op]} ({rhs}))"
+
+
+def _switch_rmw_transform(var: str, between: str, initial: str) -> Optional[str]:
+    """Build a nested conditional expression for switch-dependent mutations."""
+    sm = re.search(r"\bswitch\s*\(\s*([^()]+?)\s*\)\s*\{", between)
+    if not sm:
+        return None
+    selector = sm.group(1).strip()
+    start = sm.end() - 1
+    depth = 0
+    end = None
+    for i in range(start, len(between)):
+        if between[i] == "{":
+            depth += 1
+        elif between[i] == "}":
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+    if end is None:
+        return None
+    block = between[start + 1:end]
+    labels = list(re.finditer(r"\b(case\s+([^:]+)|default)\s*:", block))
+    if not labels:
+        return None
+    pattern = re.compile(_MUTATION_OP.pattern.format(var=re.escape(var)))
+    branches: list[tuple[list[str], str]] = []
+    pending: list[str] = []
+    fallback = initial
+    for idx, label in enumerate(labels):
+        seg_end = labels[idx + 1].start() if idx + 1 < len(labels) else len(block)
+        segment = block[label.end():seg_end]
+        case_name = label.group(2)
+        changes = pattern.findall(segment)
+        if case_name is None:
+            expr = initial
+            for op, rhs in changes:
+                expr = _apply_mutation(expr, op, rhs)
+            fallback = expr
+            pending.clear()
+            continue
+        pending.append(case_name.strip())
+        if not changes and "break" not in segment and "return" not in segment:
+            continue
+        expr = initial
+        for op, rhs in changes:
+            expr = _apply_mutation(expr, op, rhs)
+        branches.append((pending[:], expr))
+        pending.clear()
+    expr = fallback
+    for case_names, branch_expr in reversed(branches):
+        guard = " || ".join(f"({selector} == {name})" for name in case_names)
+        expr = f"(({guard}) ? ({branch_expr}) : ({expr}))"
     return expr
+
+
+def _rmw_transform(var: str, read_line: int, write_line: int,
+                   source_lines: list[str], line_conditions: dict[int, list[str]],
+                   initial: str | None = None) -> Optional[str]:
+    """Recover straight-line and branch-dependent mutations as ITEs."""
+    between = "\n".join(source_lines[read_line: max(read_line, write_line - 1)])
+    pattern = re.compile(_MUTATION_OP.pattern.format(var=re.escape(var)))
+    base = initial or var
+    switch_expr = _switch_rmw_transform(var, between, base)
+    if switch_expr is not None:
+        return switch_expr
+    matches = list(pattern.finditer(between))
+    if not matches:
+        return base
+    unconditional: list[tuple[str, str]] = []
+    conditional: dict[tuple[str, ...], list[tuple[str, str]]] = {}
+    for match in matches:
+        line = read_line + between[:match.start()].count("\n") + 1
+        stack = tuple(c for c in line_conditions.get(line, [])
+                      if "scoped_guard" not in c and "gpio_generic_lock" not in c)
+        item = (match.group(1), match.group(2))
+        if stack:
+            conditional.setdefault(stack, []).append(item)
+        else:
+            unconditional.append(item)
+    expr = base
+    for op, rhs in unconditional:
+        expr = _apply_mutation(expr, op, rhs)
+    for stack, changes in reversed(list(conditional.items())):
+        branch = base
+        for op, rhs in changes:
+            branch = _apply_mutation(branch, op, rhs)
+        guard = " && ".join(f"({c})" for c in stack)
+        expr = f"(({guard}) ? ({branch}) : ({expr}))"
+    return expr
+
+
+def _read_initial_transform(lhs: str, cs, source_lines: list[str], tu) -> str:
+    """Preserve operations wrapped around a read call on its assignment line."""
+    if cs.line <= 0 or cs.line > len(source_lines):
+        return lhs
+    line = source_lines[cs.line - 1]
+    m = re.search(rf"\b{re.escape(lhs)}\s*=\s*(.+);", line)
+    if not m:
+        return lhs
+    rhs = m.group(1).strip()
+    call = source_text(tu, cs.cursor).strip()
+    if call and call in rhs:
+        return rhs.replace(call, lhs, 1)
+    return lhs
 
 
 def extract_function(func: Func, macros, tu, *,
@@ -394,6 +482,7 @@ def extract_function(func: Func, macros, tu, *,
     result = FuncExtraction(name=func.name)
     store: dict[str, AbsVal] = {}
     read_origins: dict[str, tuple[dict, int]] = {}
+    read_initial: dict[str, str] = {}
     # seed file-scope MMIO base globals (e.g. `static void __iomem *mmio`)
     for g in (mmio_globals or []):
         store[g] = BasePtr(g)
@@ -426,7 +515,8 @@ def extract_function(func: Func, macros, tu, *,
         cond = None
         cond_stack = []
         if cs.line in line_to_cond:
-            st = line_to_cond[cs.line]
+            st = [c for c in line_to_cond[cs.line]
+                  if "scoped_guard" not in c and "gpio_generic_lock" not in c]
             if st:
                 cond_stack = list(st)
                 cond = st[-1]
@@ -453,6 +543,8 @@ def extract_function(func: Func, macros, tu, *,
                 key = _norm_key(lhs)
                 store[key] = ReadTaint(addr=addr, reg_name=reg_name)
                 read_origins[key] = (addr, cs.line)
+                read_initial[key] = _read_initial_transform(
+                    key, cs, source_lines or [], tu)
             continue
 
         if mmio.is_mmio_write(name):
@@ -474,7 +566,8 @@ def extract_function(func: Func, macros, tu, *,
                 if origin and addr_equal(origin[0], addr):
                     rmw_var = key
                     value = _rmw_transform(
-                        key, origin[1], cs.line, source_lines or [])
+                        key, origin[1], cs.line, source_lines or [],
+                        line_to_cond, read_initial.get(key))
             op = Op(
                 kind=kind, addr=addr, width=mmio.infer_width(name),
                 value=value, condition=cond, cond_stack=cond_stack,

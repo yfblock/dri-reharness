@@ -18,7 +18,7 @@ from extractor import macros as M  # noqa: E402
 from extractor import taint as T  # noqa: E402
 from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
-from extractor.formal import formal_display  # noqa: E402
+from extractor.formal import expr_to_c, formal_display  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -47,6 +47,8 @@ def _module(formal, name):
 def test_macro_eval_hex():
     assert M._eval_int_expr("0x20") == 0x20
     assert M._eval_int_expr("0xA4") == 0xA4
+    assert M._eval_int_expr("0x10U") == 0x10
+    assert M._eval_int_expr("32ULL") == 32
 
 
 def test_macro_eval_bit_and_expr():
@@ -110,6 +112,8 @@ def test_resolve_addr_offset_with_macro_name():
 
 FTGPIO = os.path.join(REHARNESS, "drivers", "test", "gpio-ftgpio010.c")
 EDU = os.path.join(REHARNESS, "drivers", "test", "edu.c")
+PL061 = os.path.join(REHARNESS, "drivers", "test", "gpio-pl061.c")
+MB86S7X = os.path.join(REHARNESS, "drivers", "test", "gpio-mb86s7x.c")
 
 
 @_fixture(scope="module")
@@ -179,12 +183,30 @@ def test_rmw_preserves_straight_line_bit_transform(ftgpio_formal):
     assert unmask["transform"]["BinOp"]["op"] == "BitOr"
     assert mask["read_var"] == "val" and unmask["read_var"] == "val"
 
-    # Multi-path switch transforms must remain explicitly unknown rather than
-    # being incorrectly concatenated into one sequential update.
+    # Multi-path switch transforms are represented as nested ITEs.  Every
+    # branch starts from the original register value, so the cases are not
+    # incorrectly concatenated into one sequential update.
     irq_ops = []
     _leaf_ops(_module(ftgpio_formal, "ftgpio_gpio_set_irq_type")["ops"], irq_ops)
-    assert all("Top" in o["ReadModifyWrite"]["transform"]
-               for o in irq_ops if "ReadModifyWrite" in o)
+    transforms = [o["ReadModifyWrite"]["transform"]
+                  for o in irq_ops if "ReadModifyWrite" in o]
+    assert len(transforms) == 3
+    assert all("Ite" in transform for transform in transforms)
+    rendered = [expr_to_c(transform) for transform in transforms]
+    assert all("?" in text and "TODO: unknown" not in text for text in rendered)
+    assert all("IRQ_TYPE_EDGE_BOTH" in text and "IRQ_TYPE_LEVEL_LOW" in text
+               for text in rendered)
+
+
+def test_ite_codegen_uses_c_conditional_expression():
+    expr = {"Ite": {
+        "guard": {"BinOp": {"op": "Eq", "left": {"Var": "type"},
+                              "right": {"Const": 1}}},
+        "then": {"BinOp": {"op": "BitOr", "left": {"Var": "reg"},
+                             "right": {"Var": "mask"}}},
+        "else": {"Var": "reg"},
+    }}
+    assert expr_to_c(expr) == "((type == 0x1) ? (reg | mask) : reg)"
 
 
 def test_formal_records_branch_conditions(ftgpio_formal):
@@ -476,9 +498,39 @@ def test_readiness_score():
     res = extract_ris(ExtractorConfig(source=FTGPIO))
     s = score(res.device_spec, res.formal, res.warnings, res.facts)
     assert s["ris_quality"] >= 0.9
-    assert s["backend_bare_metal_ready"] is False
-    assert any("unknown (Top)" in b for b in s["blockers"])
+    assert s["backend_harness_ready"] is True
+    assert s["backend_bare_metal_ready"] is True
+    assert s["backend_linux_ready"] is True
+    assert not any("unknown (Top)" in b for b in s["blockers"])
     assert 0 <= s["function_spec_quality"] <= 1.0
+
+
+def test_computed_address_lowering_distinguishes_safe_and_unsafe():
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import driver_metrics, score
+
+    pl061 = extract_ris(ExtractorConfig(source=PL061))
+    addrs = []
+    for module in pl061.formal["modules"]:
+        for op in walk_leaf_ops(module["ops"]):
+            body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            if body and "Computed" in body.get("addr", {}):
+                addrs.append(body["addr"]["Computed"])
+    assert len(addrs) == 4
+    assert all(expr_to_c(addr) ==
+               "(pl061->base + (0x1 << (offset + 0x2)))" for addr in addrs)
+    metrics = driver_metrics(pl061.formal)
+    assert metrics["computed"] == 4 and metrics["unsafe_computed"] == 0
+    ready = score(pl061.device_spec, pl061.formal, pl061.warnings, pl061.facts)
+    assert ready["backend_bare_metal_ready"] is True
+
+    mb86 = extract_ris(ExtractorConfig(source=MB86S7X))
+    metrics = driver_metrics(mb86.formal)
+    assert metrics["computed"] > 0
+    assert metrics["unsafe_computed"] == metrics["computed"]
+    blocked = score(mb86.device_spec, mb86.formal, mb86.warnings, mb86.facts)
+    assert blocked["backend_bare_metal_ready"] is False
+    assert any("unsafe dynamic register address" in b for b in blocked["blockers"])
 
 
 # ── Milestone 9: facts, bundle, llm_synthesis_ready, repair loop ─────
@@ -600,6 +652,85 @@ def test_callback_binding_uses_enclosing_struct_type():
     assert got["chip_get"]["field"] == "get"
     assert got["pci_probe"]["table"] == "pci_driver"
     assert got["pci_probe"]["field"] == "probe"
+
+
+def test_callback_binding_covers_irq_pm_and_clock_forms():
+    from extractor.spec_infer import parse_callback_bindings
+    src = textwrap.dedent("""
+        static int gpio_init_hw(struct gpio_chip *gc) { return 0; }
+        static int irq_fn(int irq, void *data) { return 0; }
+        static int suspend_fn(struct device *dev) { return 0; }
+        static int resume_fn(struct device *dev) { return 0; }
+        static int clk_prepare(struct clk_hw *hw) { return 0; }
+        static int clk_set_rate(struct clk_hw *hw, unsigned long rate,
+                                unsigned long parent_rate) { return 0; }
+        static const struct gpio_irq_chip girq = { .init_hw = gpio_init_hw };
+        static const struct clk_ops cops = {
+            .prepare = clk_prepare,
+            .set_rate = clk_set_rate,
+        };
+        DEFINE_SIMPLE_DEV_PM_OPS(pm, suspend_fn, resume_fn);
+        static int probe(void) {
+            return request_irq(1, irq_fn, 0, "test", 0);
+        }
+    """)
+    names = {"gpio_init_hw", "irq_fn", "suspend_fn", "resume_fn",
+             "clk_prepare", "clk_set_rate"}
+    got = parse_callback_bindings(src, names)
+    assert got["gpio_init_hw"]["table"] == "gpio_irq_chip"
+    assert got["irq_fn"]["table"] == "irq_handler"
+    assert got["suspend_fn"]["table"] == "dev_pm_ops"
+    assert got["resume_fn"]["field"] == "resume"
+    assert got["clk_prepare"]["table"] == "clk_ops"
+    assert got["clk_set_rate"]["field"] == "set_rate"
+
+
+def test_source_private_state_is_preserved_in_specs_and_codegen():
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+
+    cadence = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "gpio-cadence.c")))
+    assert {"bypass_orig", "skip_init", "ngpio"} <= {
+        field.name for field in cadence.device_spec.state}
+
+    pl061 = extract_ris(ExtractorConfig(source=PL061))
+    assert {"gpio_dir", "gpio_is", "gpio_ibe", "gpio_iev", "gpio_ie"} <= {
+        field.name for field in pl061.device_spec.state}
+    pl061_code = linux_gen.generate(
+        pl061.formal, pl061.device_spec,
+        default_bind(pl061.device_spec, "linux"), pl061.facts)
+    assert "g->gpio_is = readb" in pl061_code
+    assert "writeb(g->gpio_ie" in pl061_code
+    assert "REHARNESS_UNSUPPORTED" not in pl061_code
+
+    virtio = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "virtio_mmio.c")))
+    assert {"features", "version"} <= {
+        field.name for field in virtio.device_spec.state}
+
+    clock = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "clk-highbank.c")))
+    clock_code = linux_gen.generate(
+        clock.formal, clock.device_spec,
+        default_bind(clock.device_spec, "linux"), clock.facts)
+    assert "struct clk_hw hw;" in clock_code
+    assert "static const struct clk_ops" in clock_code
+
+
+def test_target_clang_diagnostics_are_separate_from_header_noise():
+    from extractor.metrics import count_clang_errors
+
+    assert count_clang_errors([
+        "clang header diag[3] /kernel/header.h:1: frontend mismatch",
+        "clang diag[2] driver.c:1: warning",
+    ]) == 0
+    assert count_clang_errors(["clang diag[3] driver.c:1: real source error"]) == 1
+
+    for filename in ("ahci.c", "sdhci-esdhc-mcf.c"):
+        result = extract_ris(ExtractorConfig(source=os.path.join(
+            REHARNESS, "drivers", "test", filename)))
+        assert count_clang_errors(result.warnings) == 0, result.warnings
 
 
 def test_svf_required_reports_missing_tools_without_temp_leaks():

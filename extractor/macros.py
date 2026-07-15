@@ -19,6 +19,11 @@ def _eval_int_expr(text: str) -> int | None:
     t = text.strip()
     if not t:
         return None
+    # Kernel register definitions commonly carry C integer suffixes (U, L,
+    # UL, ULL).  Python's int/eval reject them, but they do not change the
+    # mathematical value needed by the RIS register map.
+    t = re.sub(r"\b(0[xX][0-9a-fA-F]+|\d+)(?:[uU][lL]{0,2}|[lL]{1,2}[uU]?)\b",
+               r"\1", t)
     # BIT(n) → 1 << n
     m = re.fullmatch(r"BIT\s*\(\s*(\d+)\s*\)", t, re.I)
     if m:

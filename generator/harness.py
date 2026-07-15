@@ -40,6 +40,10 @@ def _vars_in_expr(e) -> set[str]:
     if "BinOp" in e:
         out |= _vars_in_expr(e["BinOp"]["left"])
         out |= _vars_in_expr(e["BinOp"]["right"])
+    if "Ite" in e:
+        out |= _vars_in_expr(e["Ite"]["guard"])
+        out |= _vars_in_expr(e["Ite"]["then"])
+        out |= _vars_in_expr(e["Ite"]["else"])
     if "Bits" in e:
         out |= _vars_in_expr(e["Bits"]["expr"])
     return out
@@ -59,6 +63,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     # stubs for kernel helpers that appear in value expressions, so the harness
     # compiles standalone. Values may be approximate; trace shape is what matters.
     L.append("#define BIT(n) (1u << (n))")
+    L.append("#define GENMASK(h, l) (((~0u) << (l)) & (~0u >> (31 - (h))))")
     L.append("#define irqd_to_hwirq(d) (d)")
     L.append("#define cpu_to_le32(x) (x)")
     L.append("#define le32_to_cpu(x) (x)")
@@ -81,6 +86,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define pci_resource_len(p, b) (0u)")
     L.append("#define mmc_gpio_get_cd(m) (0)")
     L.append("#define ahci_remap_dcc(i) (0u)")
+    L.append("#define of_property_read_bool(np, name) (0)")
     L.append("")
     L.append(f"#define MMIO_SIZE 0x1000")
     L.append("static uint32_t mmio_region[MMIO_SIZE / 4];")
@@ -118,7 +124,14 @@ def generate(formal: dict, device_spec, bind) -> str:
         L.append("/* REHARNESS_UNSUPPORTED: source-private expressions normalized */")
     L.append("")
     # device struct
-    L.append(f"{priv} {{ uintptr_t base; }};")
+    state_fields = [s for s in device_spec.state
+                    if s.name not in {"base", "clk", "num_irqs"}]
+    L.append(f"{priv} {{")
+    L.append("    uintptr_t base;")
+    for state in state_fields:
+        ctype = "uint64_t" if state.type == "UInt64" else "uint32_t"
+        L.append(f"    {ctype} {state.name};")
+    L.append("};")
     L.append("")
 
     # one C function per RIS module
@@ -127,7 +140,7 @@ def generate(formal: dict, device_spec, bind) -> str:
         m = func_by_name.get(fn.ris_ref)
         if not m:
             continue
-        safe_ops, _ = _normalize_ops(m["ops"])
+        safe_ops, _ = _normalize_ops(m["ops"], "dev")
         if portable_skip:
             safe_ops = []
         # drop DeviceState params (the device is passed as `dev`); keep the rest
@@ -151,7 +164,10 @@ def generate(formal: dict, device_spec, bind) -> str:
     entry = next((fn for fn in device_spec.functions if fn.role == "probe"), None)
     entry = entry or (device_spec.functions[0] if device_spec.functions else None)
     L.append("int main(void) {")
-    L.append(f"    {priv} dev = {{ .base = 0 }};")
+    init = [".base = 0"]
+    if any(s.name == "ngpio" for s in state_fields):
+        init.append(".ngpio = 32")
+    L.append(f"    {priv} dev = {{ {', '.join(init)} }};")
     if entry:
         keep = [p for p in entry.signature.params if p.type != "DeviceState"]
         call_args = ", ".join(["0"] * len(keep)) + (", " if keep else "") + "&dev"

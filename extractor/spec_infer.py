@@ -19,7 +19,7 @@ from .spec import (FunctionSpec, DeviceSpec, Signature, Param, Binding,
                    RegisterDesc, StateField, Resource, Effect, reg_effect,
                    event_effect)
 from .ast_model import Func
-from .formal import walk_leaf_ops
+from .formal import walk_leaf_ops, walk_all_ops
 
 _MEMBER_BASE = re.compile(r"^([A-Za-z_]\w*)->\w+$")
 _VAR_BASE = re.compile(r"^[A-Za-z_]\w+$")
@@ -177,6 +177,56 @@ _DEVICE_CLASS_HINTS = [
     ("rtc", "rtc"), ("i2c", "i2c"), ("spi", "spi"),
 ]
 
+_MODELED_STATE_FIELDS = {
+    "bypass_orig": "UInt",
+    "mask_cache": "UInt",
+    "skip_init": "Bool",
+    "ngpio": "UInt",
+    "gpio_dir": "UInt",
+    "gpio_is": "UInt",
+    "gpio_ibe": "UInt",
+    "gpio_iev": "UInt",
+    "gpio_ie": "UInt",
+    "version": "UInt",
+    "features": "UInt64",
+}
+
+
+def _modeled_state_fields(formal: dict) -> dict[str, str]:
+    found: dict[str, str] = {}
+
+    def inspect(expr):
+        if not isinstance(expr, dict):
+            return
+        if "Var" in expr:
+            text = expr["Var"]
+            for field, field_type in _MODELED_STATE_FIELDS.items():
+                if re.search(rf"(?:->|\.){re.escape(field)}\b", text):
+                    found[field] = field_type
+            if re.search(r"\bnum_gpios\b", text):
+                found["ngpio"] = "UInt"
+        elif "BinOp" in expr:
+            inspect(expr["BinOp"].get("left"))
+            inspect(expr["BinOp"].get("right"))
+        elif "Ite" in expr:
+            inspect(expr["Ite"].get("guard"))
+            inspect(expr["Ite"].get("then"))
+            inspect(expr["Ite"].get("else"))
+        elif "Bits" in expr:
+            inspect(expr["Bits"].get("expr"))
+
+    for module in formal["modules"]:
+        for op in walk_all_ops(module["ops"]):
+            body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            if body:
+                var = body.get("var")
+                if var:
+                    inspect({"Var": var})
+                inspect(body.get("value") or body.get("transform"))
+            if "Cond" in op:
+                inspect(op["Cond"].get("guard"))
+    return found
+
 
 def infer_device_spec(formal: dict, funcs: list[Func],
                       fn_specs: list[FunctionSpec], source_path: str,
@@ -197,6 +247,11 @@ def infer_device_spec(formal: dict, funcs: list[Func],
         state.append(StateField("clk", "Clock"))
     if has_irq:
         state.append(StateField("num_irqs", "UInt"))
+    existing = {s.name for s in state}
+    for field, field_type in _modeled_state_fields(formal).items():
+        if field not in existing:
+            state.append(StateField(field, field_type))
+            existing.add(field)
 
     # resources
     resources: list[Resource] = [Resource("mmio0", "MmioResource", True, "base")]
@@ -239,6 +294,7 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "handle_irq": ("interrupt_handler", "irq"),
     "irq_handler": ("interrupt_handler", "irq"),
     "parent_handler": ("interrupt_handler", "irq"),
+    "init_hw": ("init", "boot"),
     # platform_driver / pci_driver / etc.
     "probe": ("probe", "boot"),
     "remove": ("remove", "thread"),
@@ -261,6 +317,16 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "get_shm_region": ("read_config", "thread"),
     "notify_vq": ("notify", "thread"),
     "notify": ("notify", "thread"),
+    # clk_ops
+    "prepare": ("init", "thread"),
+    "unprepare": ("remove", "thread"),
+    "enable": ("init", "thread"),
+    "disable": ("remove", "thread"),
+    "is_enabled": ("get_status", "thread"),
+    "recalc_rate": ("read_config", "thread"),
+    "determine_rate": ("read_config", "thread"),
+    "round_rate": ("read_config", "thread"),
+    "set_rate": ("write_config", "thread"),
     # gpio_chip (beyond irq)
     "get_direction": ("read_config", "thread"),
     "direction_input": ("write_config", "thread"),
@@ -286,6 +352,7 @@ FIELD_TABLE = {
     "irq_mask_ack": "irq_chip", "irq_eoi": "irq_chip", "irq_enable": "irq_chip",
     "irq_disable": "irq_chip", "irq_set_type": "irq_chip", "handle_irq": "irq_chip",
     "parent_handler": "gpio_irq_chip",
+    "init_hw": "gpio_irq_chip",
     "probe": "platform_driver", "remove": "platform_driver", "shutdown": "platform_driver",
     "suspend": "dev_pm_ops", "resume": "dev_pm_ops", "freeze": "dev_pm_ops",
     "thaw": "dev_pm_ops", "poweroff": "dev_pm_ops", "restore": "dev_pm_ops",
@@ -352,6 +419,23 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
     where funcname is a target function."""
     src = _strip_comments_strings(source_text)
     out: dict[str, dict] = {}
+
+    def signature_table(fname: str, field: str) -> str | None:
+        m = re.search(
+            rf"\b{re.escape(fname)}\s*\((.*?)\)\s*\{{", src, flags=re.S)
+        params = m.group(1) if m else ""
+        if "struct gpio_chip" in params:
+            return "gpio_chip"
+        if "struct irq_data" in params:
+            return "irq_chip"
+        if "struct clk_hw" in params:
+            return "clk_ops"
+        if "struct virtio_device" in params:
+            return "virtio_config_ops"
+        if "struct device" in params and field in {
+                "suspend", "resume", "freeze", "thaw", "poweroff", "restore"}:
+            return "dev_pm_ops"
+        return None
     # Prefer the actual enclosing struct type.  Field names such as `get`,
     # `set`, and `probe` are ambiguous without this context.
     for table, block in _initializer_blocks(src):
@@ -379,12 +463,37 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
         if role_ctx is None:
             continue
         role, ctx = role_ctx
+        table = signature_table(fname, field) or FIELD_TABLE.get(field, "ops")
         out[fname] = {
             "field": field,
             "role": role,
             "context": ctx,
-            "table": FIELD_TABLE.get(field, "ops"),
+            "table": table,
         }
+
+    # Macro-declared PM tables do not contain designated initializers in the
+    # preprocessed source text retained by the artifact corpus.
+    for m in re.finditer(
+            r"DEFINE_(?:SIMPLE_)?DEV_PM_OPS\s*\(\s*\w+\s*,\s*"
+            r"([A-Za-z_]\w*)\s*,\s*([A-Za-z_]\w*)", src):
+        for field, fname in (("suspend", m.group(1)), ("resume", m.group(2))):
+            if fname in target_names:
+                role, ctx = FIELD_ROLE[field]
+                out[fname] = {
+                    "field": field, "role": role, "context": ctx,
+                    "table": "dev_pm_ops",
+                }
+
+    # Direct IRQ registration is a callback binding even though no ops table
+    # initializer exists.
+    for fname in target_names:
+        if re.search(
+                rf"\b(?:devm_)?request_irq\s*\([^;]*\b{re.escape(fname)}\b",
+                src, flags=re.S):
+            out.setdefault(fname, {
+                "field": "handler", "role": "interrupt_handler",
+                "context": "irq", "table": "irq_handler",
+            })
     return out
 
 
@@ -571,6 +680,10 @@ def _vars_in_expr(e) -> set[str]:
     if "BinOp" in e:
         out |= _vars_in_expr(e["BinOp"].get("left"))
         out |= _vars_in_expr(e["BinOp"].get("right"))
+    if "Ite" in e:
+        out |= _vars_in_expr(e["Ite"].get("guard"))
+        out |= _vars_in_expr(e["Ite"].get("then"))
+        out |= _vars_in_expr(e["Ite"].get("else"))
     if "Bits" in e:
         out |= _vars_in_expr(e["Bits"].get("expr"))
     return out

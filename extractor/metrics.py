@@ -5,6 +5,7 @@ count, condition/loop count, clang diagnostic count. Used by the readiness
 scorer (Milestone 8) and the `metrics` CLI.
 """
 from __future__ import annotations
+import re
 from .formal import walk_leaf_ops, walk_all_ops
 
 
@@ -40,15 +41,48 @@ def _expr_has_top(expr: dict | None) -> bool:
     if "BinOp" in expr:
         b = expr["BinOp"]
         return _expr_has_top(b.get("left")) or _expr_has_top(b.get("right"))
+    if "Ite" in expr:
+        i = expr["Ite"]
+        return (_expr_has_top(i.get("guard")) or _expr_has_top(i.get("then"))
+                or _expr_has_top(i.get("else")))
     if "Bits" in expr:
         return _expr_has_top(expr["Bits"].get("expr"))
+    return False
+
+
+def _computed_is_lowerable(expr: dict | None) -> bool:
+    """Whether all address terms can be emitted without approximation."""
+    if not isinstance(expr, dict) or "Top" in expr:
+        return False
+    if "Const" in expr:
+        return True
+    if "Var" in expr:
+        value = expr["Var"].strip()
+        if re.fullmatch(r"[A-Za-z_]\w*", value):
+            return True
+        if re.fullmatch(r"sizeof\s+[A-Za-z_]\w*", value):
+            return True
+        if re.fullmatch(r"[A-Za-z_]\w*->(?:base|regs|ioaddr)", value):
+            return True
+        return False
+    if "BinOp" in expr:
+        b = expr["BinOp"]
+        return (_computed_is_lowerable(b.get("left"))
+                and _computed_is_lowerable(b.get("right")))
+    if "Ite" in expr:
+        i = expr["Ite"]
+        return (_computed_is_lowerable(i.get("guard"))
+                and _computed_is_lowerable(i.get("then"))
+                and _computed_is_lowerable(i.get("else")))
+    if "Bits" in expr:
+        return _computed_is_lowerable(expr["Bits"].get("expr"))
     return False
 
 
 def module_metrics(module: dict) -> dict:
     ops = list(walk_leaf_ops(module["ops"]))
     total = len(ops)
-    sym = fixed = comp = rmw = 0
+    sym = fixed = comp = unsafe_comp = rmw = 0
     unknown_val = 0
     for o in ops:
         addr = (o.get("Read") or o.get("Write") or o.get("ReadModifyWrite") or {}).get("addr")
@@ -59,6 +93,8 @@ def module_metrics(module: dict) -> dict:
             fixed += 1
         elif k == "computed":
             comp += 1
+            if not _computed_is_lowerable(addr.get("Computed")):
+                unsafe_comp += 1
         if "ReadModifyWrite" in o:
             rmw += 1
         # unknown value: Write/RMW value or transform is Top or contains Top
@@ -78,6 +114,7 @@ def module_metrics(module: dict) -> dict:
         "symbolic": sym,
         "fixed": fixed,
         "computed": comp,
+        "unsafe_computed": unsafe_comp,
         "rmw": rmw,
         "unknown_value": unknown_val,
         "cond": cond,
@@ -88,7 +125,8 @@ def module_metrics(module: dict) -> dict:
 
 def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     mods = [module_metrics(m) for m in formal["modules"]]
-    agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed", "rmw",
+    agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed",
+                           "unsafe_computed", "rmw",
                            "unknown_value", "cond", "loop")}
     for m in mods:
         for k in agg:
@@ -169,8 +207,10 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         facts_quality = 0.0
 
     blockers: list[str] = []
-    if met["computed"] > 0:
-        blockers.append(f"{met['computed']} dynamic (computed) register address(es)")
+    if met["unsafe_computed"] > 0:
+        blockers.append(
+            f"{met['unsafe_computed']} unsafe dynamic register address(es) "
+            f"({met['computed']} computed total)")
     if met["unknown_value"] > 0:
         blockers.append(f"{met['unknown_value']} unknown (Top) value(s)")
     if met["clang_diag"] > 0:
@@ -184,7 +224,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unbound_callbacks:
         blockers.append(f"callback entry without table binding: {', '.join(unbound_callbacks)}")
 
-    baremetal_ready = (met["computed"] == 0 and met["unknown_value"] == 0
+    baremetal_ready = (met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                        and ris_quality >= 0.7)
     linux_ready = (baremetal_ready and function_spec_quality >= 0.6
                    and not unbound_callbacks and len(device_spec.registers) > 0)
@@ -198,13 +238,13 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             return gen_results.get(backend, {})
         h = _gr("harness")
         if h:
-            harness_ready = bool(met["computed"] == 0 and met["unknown_value"] == 0
+            harness_ready = bool(met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                  and h.get("compiled") and h.get("trace_passed")
                                  and not h.get("has_todo")
                                  and not h.get("unsupported"))
         bm = _gr("baremetal")
         if bm:
-            baremetal_ready = bool(met["computed"] == 0 and met["unknown_value"] == 0
+            baremetal_ready = bool(met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                    and bm.get("compiled") and not bm.get("has_todo")
                                    and not bm.get("unsupported"))
         lx = _gr("linux")

@@ -28,8 +28,11 @@ def addr_offset(base: str, offset: int) -> dict:
     return {"Offset": {"base": base, "offset": int(offset)}}
 
 
-def addr_indirect(base_reg: str, offset: int) -> dict:
-    return {"Indirect": {"base_reg": base_reg, "offset": int(offset)}}
+def addr_indirect(base_reg: str, offset: int, expr: str | None = None) -> dict:
+    out = {"base_reg": base_reg, "offset": int(offset)}
+    if expr:
+        out["expr"] = expr
+    return {"Indirect": out}
 
 
 def addr_offset_of(a: dict) -> Optional[int]:

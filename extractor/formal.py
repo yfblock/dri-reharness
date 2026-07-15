@@ -1,7 +1,8 @@
 """Formal RIS language — mirrors driver-harness src/ir/formal.rs.
 
 A mathematically-grounded representation of register interaction sequences:
-  Expr   = Const | Var | BinOp{op,left,right} | Bits{hi,lo,expr} | Top
+  Expr   = Const | Var | BinOp{op,left,right} | Ite{guard,then,else}
+         | Bits{hi,lo,expr} | Top
   RegAddr= Fixed{base,offset} | Symbolic{device,register} | Computed(Expr)
   RISOp  = Read | Write | ReadModifyWrite | Delay | Cond | Seq | Loop
   FormalRIS = {driver, version, modules[], register_map[], metadata}
@@ -50,6 +51,15 @@ def parse_expr(text: str) -> dict:
     if not t:
         return {"Top": None}
 
+    ternary = _split_ternary(t)
+    if ternary is not None:
+        guard, then_expr, else_expr = ternary
+        return {"Ite": {
+            "guard": parse_expr(guard),
+            "then": parse_expr(then_expr),
+            "else": parse_expr(else_expr),
+        }}
+
     # comparison / logical / bitwise / arithmetic (lowest precedence first)
     for sep in BINOPS:
         parts = _split_top(t, sep)
@@ -90,6 +100,29 @@ def parse_expr(text: str) -> dict:
     return {"Var": t}
 
 
+def _split_ternary(text: str) -> tuple[str, str, str] | None:
+    """Split a top-level C conditional expression, including nested ITEs."""
+    depth = 0
+    question = -1
+    nested = 0
+    for i, ch in enumerate(text):
+        if ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth -= 1
+        elif depth == 0 and ch == "?":
+            if question < 0:
+                question = i
+            else:
+                nested += 1
+        elif depth == 0 and ch == ":" and question >= 0:
+            if nested:
+                nested -= 1
+            else:
+                return text[:question], text[question + 1:i], text[i + 1:]
+    return None
+
+
 def expr_display(e: dict) -> str:
     if e is None:
         return "⊤"
@@ -102,6 +135,10 @@ def expr_display(e: dict) -> str:
     if "BinOp" in e:
         b = e["BinOp"]
         return f"({expr_display(b['left'])} {BINOP_SYM.get(b['op'], b['op'])} {expr_display(b['right'])})"
+    if "Ite" in e:
+        i = e["Ite"]
+        return (f"({expr_display(i['guard'])} ? {expr_display(i['then'])}"
+                f" : {expr_display(i['else'])})")
     if "Bits" in e:
         b = e["Bits"]
         return f"{expr_display(b['expr'])}[{b['hi']}:{b['lo']}]"
@@ -138,6 +175,10 @@ def expr_to_c(e: dict | None) -> str:
             return f"(~{left})"
         sym = BINOP_SYM.get(op, op)
         return f"({left} {sym} {right})"
+    if "Ite" in e:
+        i = e["Ite"]
+        return (f"({expr_to_c(i['guard'])} ? {expr_to_c(i['then'])}"
+                f" : {expr_to_c(i['else'])})")
     if "Bits" in e:
         b = e["Bits"]
         inner = expr_to_c(b["expr"])
@@ -164,10 +205,16 @@ def formal_addr(flat_addr: dict, reg_name: Optional[str]) -> dict:
         o = flat_addr["Indirect"]
         base_reg = o.get("base_reg", "")
         off = int(o.get("offset", 0))
+        expr = {"Var": base_reg}
+        dynamic = o.get("expr")
+        if dynamic:
+            expr = {"BinOp": {
+                "op": "Add", "left": expr, "right": parse_expr(dynamic),
+            }}
         if off:
-            expr = {"BinOp": {"op": "Add", "left": {"Var": base_reg}, "right": {"Const": off}}}
-        else:
-            expr = {"Var": base_reg}
+            expr = {"BinOp": {
+                "op": "Add", "left": expr, "right": {"Const": off},
+            }}
         return {"Computed": expr}
     if "Fixed" in flat_addr:
         return {"Fixed": {"base": "", "offset": int(flat_addr["Fixed"])}}

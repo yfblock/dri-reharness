@@ -221,20 +221,39 @@ def walk_with_conditions(func_cursor) -> Iterator[tuple[object, list[str]]]:
         cx.CursorKind.DO_STMT: 1,
     }
 
+    def visit(ch, stack):
+        if ch.kind == cx.CursorKind.IF_STMT:
+            parts = list(ch.get_children())
+            if not parts:
+                return
+            cond = source_text(ch.translation_unit, parts[0])
+            yield (ch, stack)
+            yield from visit(parts[0], stack)
+            if len(parts) > 1:
+                then_stack = stack + [cond] if cond else stack
+                yield from visit(parts[1], then_stack)
+            if len(parts) > 2:
+                else_cond = f"!({cond})" if cond else ""
+                else_stack = stack + [else_cond] if else_cond else stack
+                yield from visit(parts[2], else_stack)
+        elif ch.kind in _CONTROL_PRED_CHILD:
+            pred_idx = _CONTROL_PRED_CHILD[ch.kind]
+            parts = list(ch.get_children())
+            if pred_idx < len(parts):
+                cond = source_text(ch.translation_unit, parts[pred_idx])
+                new_stack = stack + [cond] if cond else stack
+            else:
+                new_stack = stack
+            yield (ch, new_stack)
+            for sub in parts:
+                yield from visit(sub, new_stack)
+        else:
+            yield (ch, stack)
+            for sub in ch.get_children():
+                yield from visit(sub, stack)
+
     def walk(node, stack):
         for ch in node.get_children():
-            if ch.kind in _CONTROL_PRED_CHILD:
-                pred_idx = _CONTROL_PRED_CHILD[ch.kind]
-                preds = list(ch.get_children())
-                if pred_idx < len(preds):
-                    cond = source_text(ch.translation_unit, preds[pred_idx])
-                    new_stack = stack + [cond] if cond else stack
-                else:
-                    new_stack = stack
-                yield (ch, new_stack)
-                yield from walk(ch, new_stack)
-            else:
-                yield (ch, stack)
-                yield from walk(ch, stack)
+            yield from visit(ch, stack)
 
     yield from walk(func_cursor, [])
