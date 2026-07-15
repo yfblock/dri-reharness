@@ -110,7 +110,7 @@
       },
       "resolved_cross_tu_call_edges": 53,
       "ris_mmio_ops": 150,
-      "seconds": 26.904,
+      "seconds": 26.819,
       "source_count": 5,
       "source_lines": 3540,
       "source_mmio_primitives": {
@@ -222,7 +222,7 @@
       },
       "resolved_cross_tu_call_edges": 30,
       "ris_mmio_ops": 6,
-      "seconds": 18.845,
+      "seconds": 19.074,
       "source_count": 4,
       "source_lines": 2239,
       "source_mmio_primitives": {
@@ -336,7 +336,7 @@
       },
       "resolved_cross_tu_call_edges": 140,
       "ris_mmio_ops": 3313,
-      "seconds": 71.442,
+      "seconds": 72.075,
       "source_count": 10,
       "source_lines": 21668,
       "source_mmio_primitives": {
@@ -362,8 +362,8 @@
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "ed63cae0c3aae0f7c8b35d00b22de3948b7ff25c"
+    "reharness_commit": "2d3736ab75e0ba4c4d1d833f08a9f8e96eb9fb45"
   },
-  "generated_at": "2026-07-15T11:06:46.300914+00:00",
+  "generated_at": "2026-07-15T11:39:34.455400+00:00",
   "schema": 1
 }

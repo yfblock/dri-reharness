@@ -2,7 +2,7 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-论文制品的 v4 冻结入口为 annotated tag `paper-artifact-v4`。结果 JSON 中的 `reharness_commit` 固定为 `ed63cae0c3aae0f7c8b35d00b22de3948b7ff25c`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
+论文制品的 v5 冻结入口为 annotated tag `paper-artifact-v5`。结果 JSON 中的 `reharness_commit` 固定为 `2d3736ab75e0ba4c4d1d833f08a9f8e96eb9fb45`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
 
 ## 环境
 
