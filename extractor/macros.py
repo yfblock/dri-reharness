@@ -85,6 +85,22 @@ class MacroTable:
     def __len__(self):
         return len(self._tab)
 
+    def merge(self, other: "MacroTable") -> list[str]:
+        """Merge another translation unit's integer macros.
+
+        Returns names whose numeric definitions conflict.  The first
+        definition is retained so callers can report the ambiguity instead of
+        silently changing the register map according to source ordering.
+        """
+        conflicts: list[str] = []
+        for name in other.names():
+            if name in self:
+                if self.offset(name) != other.offset(name):
+                    conflicts.append(name)
+                continue
+            self.add(name, other.raw(name) or "")
+        return conflicts
+
 
 _DEFINE_RE = re.compile(
     r"^\s*#\s*define\s+([A-Za-z_]\w*)\s+(.+?)\s*(?:/\*.*)?$"
@@ -113,6 +129,7 @@ def collect_from_tu(tu, target_file: str | None = None) -> MacroTable:
     evaluates to an integer are kept (register offsets / masks).
     """
     tab = MacroTable()
+    line_cache: dict[str, list[str]] = {}
     tgt = os.path.abspath(target_file) if target_file else None
     for c in tu.cursor.walk_preorder():
         if c.kind != cx.CursorKind.MACRO_DEFINITION:
@@ -124,8 +141,23 @@ def collect_from_tu(tu, target_file: str | None = None) -> MacroTable:
         expr_toks = toks[1:]
         if expr_toks and expr_toks[0] == name:
             expr_toks = expr_toks[1:]
-        # skip function-like macros: NAME ( args )
-        if len(expr_toks) >= 1 and expr_toks[0] == "(":
+        # Distinguish `#define F(x) ...` from object-like definitions whose
+        # value merely starts with parentheses (`#define FLAG (1 << 3)`).
+        # Token streams omit whitespace, so inspect the spelling line.
+        function_like = False
+        loc_file = c.location.file
+        if loc_file and c.location.line:
+            try:
+                if loc_file.name not in line_cache:
+                    with open(loc_file.name, "r", encoding="utf-8",
+                              errors="replace") as fh:
+                        line_cache[loc_file.name] = fh.readlines()
+                line = line_cache[loc_file.name][c.location.line - 1]
+                function_like = bool(re.match(
+                    rf"^\s*#\s*define\s+{re.escape(name)}\(", line))
+            except (OSError, IndexError):
+                pass
+        if function_like:
             continue
         expr = " ".join(expr_toks)
         # only keep if it evaluates to an int (filter config/feature flags noise too)

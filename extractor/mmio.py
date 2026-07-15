@@ -9,6 +9,7 @@ MMIO_READ_FNS = {
     "readb", "readw", "readl", "readq",
     "ioread8", "ioread16", "ioread32", "ioread64",
     "__raw_readb", "__raw_readw", "__raw_readl", "__raw_readq",
+    "__readb", "__readw", "__readl", "__readq",
     "inb", "inw", "inl",
     "readb_relaxed", "readw_relaxed", "readl_relaxed", "readq_relaxed",
 }
@@ -17,6 +18,7 @@ MMIO_WRITE_FNS = {
     "writeb", "writew", "writel", "writeq",
     "iowrite8", "iowrite16", "iowrite32", "iowrite64",
     "__raw_writeb", "__raw_writew", "__raw_writel", "__raw_writeq",
+    "__writeb", "__writew", "__writel", "__writeq",
     "outb", "outw", "outl",
     "writeb_relaxed", "writew_relaxed", "writel_relaxed", "writeq_relaxed",
 }

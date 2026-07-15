@@ -76,3 +76,65 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
             extra_blacklist=extra_blacklist,
         )
     return result, inlined_names, callback_entries
+
+
+def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
+                                include_framework: bool = False,
+                                extra_blacklist: set[str] | None = None
+                                ) -> tuple[dict, set, set]:
+    """Extract and inline across multiple C translation units.
+
+    Each unit supplies ``funcs``, ``macros``, ``tu``, ``source_lines``, and
+    ``mmio_globals``.  Direct per-function summaries are expanded iteratively,
+    allowing a callback in one C file to inherit MMIO operations through
+    helpers defined in other files.  Function names must be unique across the
+    selected driver module; the orchestrator validates this before entry.
+    """
+    funcs = [f for unit in units for f in unit["funcs"]]
+    names = {f.name for f in funcs}
+    owner = {f.name: unit for unit in units for f in unit["funcs"]}
+
+    callback_entries: set[str] = set()
+    for unit in units:
+        callback_entries |= callback_entry_functions(unit["tu"], names)
+
+    def extract_all(inline_cache=None) -> dict[str, FuncExtraction]:
+        result: dict[str, FuncExtraction] = {}
+        for f in funcs:
+            unit = owner[f.name]
+            cache = inline_cache
+            if cache and f.name in cache:
+                cache = {name: ex for name, ex in cache.items()
+                         if name != f.name}
+            result[f.name] = extract_function(
+                f, unit["macros"], unit["tu"],
+                source_lines=unit["source_lines"],
+                inline_cache=cache,
+                mmio_globals=unit["mmio_globals"],
+                max_depth=1,
+                include_framework=include_framework,
+                extra_blacklist=extra_blacklist,
+            )
+        return result
+
+    expanded = extract_all()
+    for _ in range(max(0, max_depth)):
+        inline_cache = {
+            name: ex for name, ex in expanded.items()
+            if ex.ops and name not in callback_entries
+        }
+        next_expanded = extract_all(inline_cache)
+        before = {name: len(ex.ops) for name, ex in expanded.items()}
+        after = {name: len(ex.ops) for name, ex in next_expanded.items()}
+        expanded = next_expanded
+        if after == before:
+            break
+
+    inlineable = {name for name, ex in expanded.items()
+                  if ex.ops and name not in callback_entries}
+    inlined_into_caller: set[str] = set()
+    for f in funcs:
+        for cs in function_calls(f.cursor):
+            if cs.name in inlineable and cs.name != f.name:
+                inlined_into_caller.add(cs.name)
+    return expanded, inlined_into_caller - callback_entries, callback_entries

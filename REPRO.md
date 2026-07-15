@@ -29,7 +29,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：47 passed, 0 failed。
+预期：51 passed, 0 failed。
 
 ## 3. 19-driver 确定性矩阵
 
@@ -52,6 +52,23 @@ llm_synthesis_ready=12
 *_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定；可精确 lowering 的 computed address（例如 PL061 banked GPIO）不再被误判为 blocker。
 
 实验内核配置固定启用 `CONFIG_COMMON_CLK=y`，用于验证生成的 clock framework 注册路径；该配置随 artifact 版本化。
+
+## 3b. 真实多源 Linux 驱动矩阵
+
+~~~bash
+python3 verification/run_multisource_matrix.py
+~~~
+
+该实验只接受至少 4 个 C 文件的 manifest，并检查所有文件确实出现在固定 Linux 源码的同一 Kbuild `*-y` 对象列表中。当前规模阶梯：
+
+~~~text
+c67x00:      4 translation units, 2239 lines, 89 functions, 12 ops
+aspeed-vhub: 5 translation units, 3540 lines, 92 functions, 154 ops
+aggregate:   9 translation units, 5779 lines, 166 ops, 14 RMW
+compile:     harness=2/2 bare-metal=2/2 Linux=2/2
+~~~
+
+权威输出：`experiments/results/multisource-matrix.json`。多源 compile 表示聚合生成物可构建；USB callback 与私有状态仍未达到 strict readiness，因此不会把规模实验写成语义完整。
 
 ## 4. 确定性 QEMU 实验
 
@@ -115,6 +132,7 @@ git submodule update --init
 ./tools/prepare_kernel.sh build
 ./run.sh test
 python3 verification/run_matrix.py
+python3 verification/run_multisource_matrix.py
 verification/run_qemu_experiments.sh
 python3 tools/generate_paper_results.py
 (cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)

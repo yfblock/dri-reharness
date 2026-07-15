@@ -64,12 +64,14 @@ def test_macro_table_collect_from_source():
         #define GPIO_DIR       0x08
         #define NOT_A_REG      foo
         #define BIT(n) (1 << (n))
+        #define FLAG           (1 << 4)
     """)
     tab = M.collect_from_source(src)
     assert tab.offset("GPIO_INT_EN") == 0x20
     assert tab.offset("GPIO_DIR") == 0x08
     assert "NOT_A_REG" not in tab
     assert "BIT" not in tab
+    assert tab.offset("FLAG") == 16
 
 
 # ── taint / dataflow ─────────────────────────────────────────────────
@@ -114,6 +116,9 @@ FTGPIO = os.path.join(REHARNESS, "drivers", "test", "gpio-ftgpio010.c")
 EDU = os.path.join(REHARNESS, "drivers", "test", "edu.c")
 PL061 = os.path.join(REHARNESS, "drivers", "test", "gpio-pl061.c")
 MB86S7X = os.path.join(REHARNESS, "drivers", "test", "gpio-mb86s7x.c")
+C67X00_MULTI = os.path.join(REHARNESS, "drivers", "multisource", "c67x00.json")
+ASPEED_VHUB_MULTI = os.path.join(
+    REHARNESS, "drivers", "multisource", "aspeed-vhub.json")
 
 
 @_fixture(scope="module")
@@ -294,6 +299,101 @@ def test_pure_helper_is_inlined_and_deduped():
     leaves = []
     _leaf_ops(_module(formal, "caller")["ops"], leaves)
     assert any("Write" in o for o in leaves)
+
+
+def test_four_translation_unit_manifest_inlines_across_sources():
+    import json
+    import tempfile
+
+    sources = {
+        "low.c": textwrap.dedent("""
+            #define REG_LOW 0x20
+            extern unsigned int readl(void *addr);
+            unsigned int low(void *base) { return readl(base + REG_LOW); }
+        """),
+        "mid.c": textwrap.dedent("""
+            extern unsigned int low(void *base);
+            unsigned int mid(void *base) { return low(base); }
+        """),
+        "entry.c": textwrap.dedent("""
+            extern unsigned int mid(void *base);
+            unsigned int entry(void *base) { return mid(base); }
+        """),
+        "other.c": textwrap.dedent("""
+            #define REG_OTHER 0x24
+            extern void writel(unsigned int value, void *addr);
+            void other(void *base) { writel(1, base + REG_OTHER); }
+        """),
+    }
+    with tempfile.TemporaryDirectory() as directory:
+        for name, source in sources.items():
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as fh:
+                fh.write(source)
+        manifest = os.path.join(directory, "driver.json")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            json.dump({"schema": 1, "name": "multi-demo",
+                       "sources": list(sources)}, fh)
+
+        result = extract_ris(ExtractorConfig(
+            source=manifest, linux_root="/nonexistent", max_inline_depth=3))
+        assert result.formal["driver"] == "multi-demo"
+        assert result.stats["translation_units"] == 4
+        assert len(result.stats["source_files"]) == 4
+        assert len(result.formal["metadata"]["sources"]) == 4
+        names = {module["name"] for module in result.formal["modules"]}
+        assert names == {"entry", "other"}
+
+        entry_ops = []
+        _leaf_ops(_module(result.formal, "entry")["ops"], entry_ops)
+        assert any("Read" in op for op in entry_ops)
+        regs = {reg["name"]: reg["offset"]
+                for reg in result.formal["register_map"]}
+        assert regs == {"REG_LOW": 0x20, "REG_OTHER": 0x24}
+        module_sources = {os.path.basename(module["source"][0])
+                          for module in result.formal["modules"]}
+        assert module_sources == {"entry.c", "other.c"}
+
+
+def test_real_linux_c67x00_multisource_driver():
+    from extractor.metrics import count_clang_errors, driver_metrics
+
+    result = extract_ris(ExtractorConfig(source=C67X00_MULTI))
+    assert result.stats["translation_units"] == 4
+    assert result.stats["source_lines"] == 2239
+    assert result.stats["functions_analyzed"] == 89
+    assert all("/linux/drivers/usb/c67x00/" in source
+               for source in result.stats["source_files"])
+    assert count_clang_errors(result.warnings) == 0
+
+    modules = {module["name"] for module in result.formal["modules"]}
+    assert modules == {"c67x00_irq", "c67x00_drv_probe"}
+    metrics = driver_metrics(result.formal)
+    assert metrics["computed"] == 6
+    assert metrics["unknown_value"] == 0
+    assert result.facts.callbacks["platform_driver.probe"] == "c67x00_drv_probe"
+    assert result.facts.callbacks["irq_handler.handler"] == "c67x00_irq"
+
+
+def test_real_linux_aspeed_vhub_five_source_driver():
+    from extractor.metrics import count_clang_errors, driver_metrics
+
+    result = extract_ris(ExtractorConfig(source=ASPEED_VHUB_MULTI))
+    assert result.stats["translation_units"] == 5
+    assert result.stats["source_lines"] == 3540
+    assert result.stats["functions_analyzed"] == 92
+    assert count_clang_errors(result.warnings) == 0
+
+    metrics = driver_metrics(result.formal)
+    assert len(result.formal["modules"]) == 15
+    assert metrics["total_ops"] == 154
+    assert metrics["symbolic"] == 114
+    assert metrics["rmw"] == 14
+    assert metrics["register_map"] == 22
+    assert metrics["unknown_value"] == 0
+    # Object-like macros whose definitions begin with parentheses must be
+    # recovered from the driver's local header, not mistaken for functions.
+    assert result.facts.constants["VHUB_IRQ_EP_POOL_ACK_STALL"] == (1 << 16)
+    assert result.facts.constants["VHUB_SW_RESET_ROOT_HUB"] == 1
 
 
 def test_callback_entry_not_deduped(ftgpio_formal):
@@ -716,6 +816,20 @@ def test_source_private_state_is_preserved_in_specs_and_codegen():
         default_bind(clock.device_spec, "linux"), clock.facts)
     assert "struct clk_hw hw;" in clock_code
     assert "static const struct clk_ops" in clock_code
+
+
+def test_source_private_normalization_keeps_bitwise_and_valid():
+    from generator.linux import _normalize_text
+
+    bitwise, changed = _normalize_text("readl(base + sreg) & sclk->clkbit")
+    assert changed is True
+    assert bitwise == "readl(base + sreg) & 0"
+    address, changed = _normalize_text("req == &u_req->req")
+    assert changed is True
+    assert address == "req == 0"
+    address_term, changed = _normalize_text("&u_req->req")
+    assert changed is True
+    assert address_term == "0"
 
 
 def test_target_clang_diagnostics_are_separate_from_header_noise():

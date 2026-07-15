@@ -127,6 +127,8 @@ def _split_top(text: str, sep: str) -> list[str]:
 
 
 _MEMBER_RE = re.compile(r"^(\w+)(?:->|\.)(\w+)$")
+_CHAINED_MEMBER_RE = re.compile(
+    r"^[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)+$")
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _HEX_RE = re.compile(r"^0[xX][0-9a-fA-F]+$")
 _DEC_RE = re.compile(r"^\d+$")
@@ -199,6 +201,18 @@ def eval_expr(text: str, store: dict, macros) -> AbsVal:
         key = f"{var}->{fld}"
         if key in store:
             return store[key]
+        return SymExpr(t)
+
+    # Nested aggregate base, e.g. dev->hpi.base or card->port.regs.  Preserve
+    # the complete source path as the MMIO base instead of degrading the whole
+    # address to an opaque string.
+    if _CHAINED_MEMBER_RE.match(t):
+        field = re.split(r"->|\.", t)[-1]
+        fld_low = field.lower()
+        if field in BASE_FIELDS or "base" in fld_low or fld_low in ("regs", "reg"):
+            return BasePtr(t)
+        if t in store:
+            return store[t]
         return SymExpr(t)
 
     # identifier

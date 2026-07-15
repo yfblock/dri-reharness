@@ -40,7 +40,7 @@
 \email{anonymous@example.com}
 
 \begin{abstract}
-Device drivers account for the majority of operating system code, yet their register-level behavior remains largely implicit---buried in C source with ad-hoc macros, pointer arithmetic, and framework-dependent idioms. We present \reharness, a pipeline that extracts formal register interaction sequences (RIS) from C drivers using libclang AST analysis combined with flow-sensitive dataflow and taint tracking. The extracted RIS feeds backend-independent function/device specifications and deterministic userspace, bare-metal, and Linux generators. Evaluation artifacts are produced by a version-pinned, machine-readable pipeline rather than manually transcribed tables. Across \EvalDrivers{} Linux drivers, \reharness extracts \EvalOps{} operations: \EvalSymbolic{} symbolic, \EvalFixed{} fixed, and \EvalComputed{} computed-address accesses, including \EvalRMW{} read-modify-write patterns and \EvalConditions{} conditions. All three generated backends compile for \EvalDrivers{}/\EvalDrivers{} drivers. Strict semantic readiness is intentionally more conservative (\LinuxReadyCount{}/\EvalDrivers{} for Linux) because unknown transforms, unsafe dynamic addresses, and unbound subsystem state are treated as blockers rather than silently approximated. Deterministically generated drivers additionally pass value-level QEMU validation on the edu PCI device and offset/order trace validation on a real gpio-ftgpio010 driver.
+Device drivers account for the majority of operating system code, yet their register-level behavior remains largely implicit---buried in C source with ad-hoc macros, pointer arithmetic, and framework-dependent idioms. We present \reharness, a pipeline that extracts formal register interaction sequences (RIS) from C drivers using libclang AST analysis combined with flow-sensitive dataflow and taint tracking. The extracted RIS feeds backend-independent function/device specifications and deterministic userspace, bare-metal, and Linux generators. Evaluation artifacts are produced by a version-pinned, machine-readable pipeline rather than manually transcribed tables. Across \EvalDrivers{} Linux drivers, \reharness extracts \EvalOps{} operations: \EvalSymbolic{} symbolic, \EvalFixed{} fixed, and \EvalComputed{} computed-address accesses, including \EvalRMW{} read-modify-write patterns and \EvalConditions{} conditions. We additionally evaluate \MultiSourceDrivers{} real multi-source Linux modules comprising \MultiSourceTUs{} translation units and \MultiSourceLines{} lines. All three generated backends compile for every single- and multi-source case. Strict semantic readiness is intentionally more conservative (\LinuxReadyCount{}/\EvalDrivers{} for Linux) because unknown transforms, unsafe dynamic addresses, and unbound subsystem state are treated as blockers rather than silently approximated. Deterministically generated drivers additionally pass value-level QEMU validation on the edu PCI device and offset/order trace validation on a real gpio-ftgpio010 driver.
 \end{abstract}
 
 \keywords{device drivers, formal specification, program analysis, code generation, LLM-assisted synthesis}
@@ -473,6 +473,19 @@ Table~\ref{tab:extraction} is generated directly from the machine-readable exper
 The \EvalRMW{} detected RMW patterns are concentrated in interrupt mask/unmask callbacks and configuration functions. Straight-line mutations such as \texttt{val \&= \~BIT(line)} are retained as transforms. Branch-dependent switch updates are represented as nested \texttt{Ite} expressions, with every branch applied independently to the original read value rather than incorrectly concatenated.
 
 The \EvalConditions{} recorded branch conditions occur primarily in configuration and probe functions that check device state before modifying registers.
+
+\subsection{Multi-Source Driver Scaling}
+
+The initial corpus treats one C translation unit as one extraction target. To evaluate realistic module scale, we added versioned manifests for Kbuild modules composed from four or more C files. Each manifest is checked against the pinned Linux module's actual \texttt{*-y} object list; the files are not unrelated drivers grouped after the fact. The extractor builds every translation unit with its own preprocessing context, merges macros and source facts, and iteratively propagates MMIO summaries across file boundaries before constructing one combined RIS and DeviceSpec.
+
+\begin{table}[t]
+\centering
+\caption{Real multi-source Linux driver modules. TUs are C translation units; H/B/L reports harness, bare-metal, and Linux compilation.}
+\label{tab:multisource}
+\resizebox{\columnwidth}{!}{\MultiSourceResultsTable}
+\end{table}
+
+Table~\ref{tab:multisource} covers \MultiSourceTUs{} translation units and \MultiSourceLines{} source lines, yielding \MultiSourceOps{} operations, \MultiSourceRMW{} RMW patterns, and \MultiSourceRegisters{} mapped registers. C67X00 demonstrates cross-file propagation from its low-level HPI implementation into probe and IRQ entry points. ASPEED vHub increases the scale to five files and preserves 154 operations across endpoint, hub, interrupt, and probe paths. All generated backends compile for both modules, while strict readiness remains conservative because USB subsystem callback/state models are not yet complete.
 
 \subsection{Generation Readiness (RQ3)}
 

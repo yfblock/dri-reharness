@@ -1,6 +1,7 @@
 """CLI entry: `python3 -m extractor extract --source ... --output out.ris`"""
 from __future__ import annotations
 import argparse
+import json
 import os
 import sys
 
@@ -26,10 +27,13 @@ def _config_from_args(args) -> ExtractorConfig:
         linux_root=getattr(args, "linux_root", None),
         max_inline_depth=getattr(args, "max_inline_depth", 3),
         alias_mode=getattr(args, "alias_mode", "off"),
+        driver_name=getattr(args, "driver_name", None),
     )
 
 
 def _add_analysis_options(parser, *, extended: bool = False) -> None:
+    parser.add_argument("--driver-name", default=None,
+                        help="override driver name (manifest name is used by default)")
     parser.add_argument("--linux-root", default=None,
                         help="Linux tree (default: repository linux/ submodule)")
     parser.add_argument("--alias-mode", choices=["off", "auto", "required"], default="off",
@@ -50,44 +54,52 @@ def main(argv: list[str] | None = None) -> int:
     sub = p.add_subparsers(dest="command", required=True)
 
     e = sub.add_parser("extract", help="Extract RIS (.ris spec language) from a C source file")
-    e.add_argument("-s", "--source", required=True)
+    e.add_argument("-s", "--source", required=True,
+                   help="C source file or multi-source JSON manifest")
     e.add_argument("-o", "--output", default="output/ris.ris",
                    help="formal-language text output (.ris)")
     _add_analysis_options(e, extended=True)
 
     m = sub.add_parser("metrics", help="Print per-module extraction quality metrics")
-    m.add_argument("-s", "--source", required=True)
+    m.add_argument("-s", "--source", required=True,
+                   help="C source file or multi-source JSON manifest")
     _add_analysis_options(m)
 
     sp = sub.add_parser("spec", help="Print inferred backend-independent .dspec")
-    sp.add_argument("-s", "--source", required=True)
+    sp.add_argument("-s", "--source", required=True,
+                    help="C source file or multi-source JSON manifest")
     sp.add_argument("-o", "--output", default=None, help="write .dspec to file")
     _add_analysis_options(sp)
 
     g = sub.add_parser("gen", help="Generate backend C from RIS + DeviceSpec + bind")
-    g.add_argument("-s", "--source", required=True)
+    g.add_argument("-s", "--source", required=True,
+                   help="C source file or multi-source JSON manifest")
     g.add_argument("-b", "--backend", required=True,
                    choices=["harness", "baremetal", "linux"])
     g.add_argument("-o", "--output", default=None, help="output .c file")
     _add_analysis_options(g)
 
     sc = sub.add_parser("score", help="Generation readiness scoring")
-    sc.add_argument("-s", "--source", required=True)
+    sc.add_argument("-s", "--source", required=True,
+                    help="C source file or multi-source JSON manifest")
     _add_analysis_options(sc)
 
     dr = sub.add_parser("driver", help="One-shot full pipeline: RIS + dspec + bind "
                                        "+ all backends + trace verification")
-    dr.add_argument("-s", "--source", required=True)
+    dr.add_argument("-s", "--source", required=True,
+                    help="C source file or multi-source JSON manifest")
     dr.add_argument("-o", "--outdir", default=None, help="output dir (default output/<name>/)")
     _add_analysis_options(dr)
 
     fa = sub.add_parser("facts", help="Print source facts (.facts) for LLM synthesis")
-    fa.add_argument("-s", "--source", required=True)
+    fa.add_argument("-s", "--source", required=True,
+                    help="C source file or multi-source JSON manifest")
     fa.add_argument("-o", "--output", default=None)
     _add_analysis_options(fa)
 
     bu = sub.add_parser("bundle", help="Build LLM input bundle (RIS+dspec+bind+facts)")
-    bu.add_argument("-s", "--source", required=True)
+    bu.add_argument("-s", "--source", required=True,
+                    help="C source file or multi-source JSON manifest")
     bu.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
     bu.add_argument("-o", "--outdir", default=None)
     _add_analysis_options(bu)
@@ -198,6 +210,9 @@ def main(argv: list[str] | None = None) -> int:
         save_formal_text(res.formal, os.path.join(outdir, f"{name}.ris"))
         _w(outdir, f"{name}.dspec", res.device_spec.display())
         _w(outdir, f"{name}.facts", res.facts.display())
+        _w(ver_dir, "analysis.json", json.dumps({
+            "stats": res.stats, "warnings": res.warnings,
+        }, indent=2, sort_keys=True))
 
         # ── generated C + verification (derived) ──
         gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}

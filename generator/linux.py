@@ -15,7 +15,7 @@ import re
 import copy
 
 from extractor.formal import walk_leaf_ops
-from .common import ops_to_c, local_decls
+from .common import ops_to_c, local_decls, value_var_names
 
 _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
@@ -92,6 +92,10 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     if array_re.search(text):
         unsupported = True
         text = array_re.sub("0", text)
+    # A normalized address-of member may become `== &0`; remove only unary
+    # address-of, never a legitimate bitwise `value & 0` expression.
+    text = re.sub(r"^\s*&\s*0\b", "0", text)
+    text = re.sub(r"(?<=[=(,])\s*&\s*0\b", " 0", text)
     return text, unsupported
 
 
@@ -581,6 +585,22 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         unsupported.append("virtio-mmio probe requires virtio core state bindings")
     if any(_normalize_ops(m.get("ops", []))[1] for m in formal.get("modules", [])):
         unsupported.append("source-private expressions require explicit state bindings")
+
+    # Once a driver is already explicitly non-ready, keep large real-driver
+    # outputs compilable even when source-local macro helpers are not exported
+    # through FactsSpec. Object constants recovered from headers remain exact;
+    # only the residual names below receive guarded neutral fallbacks.
+    fallback_refs: set[str] = set()
+    fallback_calls: set[str] = set()
+    if unsupported:
+        for module in formal.get("modules", []):
+            safe_ops, _ = _normalize_ops(module.get("ops", []))
+            fallback_refs |= {name for name in value_var_names(safe_ops)
+                              if re.fullmatch(r"[A-Z][A-Z0-9_]*", name)}
+            fallback_refs |= set(re.findall(
+                r"\b[A-Z][A-Z0-9_]{2,}\b", repr(safe_ops)))
+            fallback_calls |= set(re.findall(
+                r"\b([A-Z][A-Z0-9_]{2,})\s*\(", repr(safe_ops)))
     for fn in device_spec.functions:
         field = callbacks.get(fn.name)
         if not field or field.endswith(".probe") or field.endswith(".remove"):
@@ -627,6 +647,15 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         for name, value in sorted(facts.constants.items()):
             if name not in regs:
                 L.append(f"#ifndef {name}\n#define {name}\t0x{value:x}\n#endif")
+    known_constants = set(regs)
+    if facts is not None:
+        known_constants |= set(facts.constants)
+    if unsupported:
+        for name in sorted(fallback_calls - known_constants):
+            L.append(f"#ifndef {name}\n#define {name}(...) 0\n#endif")
+        for name in sorted(fallback_refs - fallback_calls - known_constants
+                           - {"MMIO", "TODO"}):
+            L.append(f"#ifndef {name}\n#define {name} 0\n#endif")
     L += ["", f"struct {priv} {{", "\tstruct device *dev;",
           "\tvoid __iomem *base;"]
     if is_pci:

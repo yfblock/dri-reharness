@@ -135,9 +135,11 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
         if sem[1]:
             ensures.append(sem[1])
 
+    loc = func.cursor.location
+    actual_source = (loc.file.name if loc and loc.file else source_path)
     return FunctionSpec(
         name=func.name, signature=sig, role=role, context=context,
-        source=f"{os.path.basename(source_path)}:{func.line}",
+        source=f"{os.path.basename(actual_source)}:{func.line}",
         binds=binds, requires=requires, ensures=ensures, effects=effects,
         ris_ref=module["name"], is_callback_entry=is_callback_entry,
         callback_table=callback_table,
