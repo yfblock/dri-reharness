@@ -7,11 +7,8 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
-# Local symlinks to the sibling driver-harness repo.
-# These point outside this repo (../driver-harness/{drivers,linux}); recreate
-# them locally — see README. Not committed to avoid broken links for others.
-/drivers
-/linux
+# drivers/ is a versioned evaluation corpus.
+# linux/ is a pinned, initialized Git submodule (see .gitmodules).
 
 # Editor / OS cruft
 *.swp
@@ -24,8 +21,28 @@ __pycache__/
 plan.md
 
 # QEMU/build artifacts (regenerable)
-/initramfs_edu.cpio.gz
+/initramfs_*.cpio.gz
 /test_rootfs/
+/test_rootfs_run/
+/test_rootfs_plat/
+/test/edu_trace_test
+/test/gpio_trace_test
+/kernel/build/
+*.ko
+*.o
+*.mod
+*.mod.c
+*.cmd
+Module.symvers
+modules.order
+
+# LaTeX intermediates (the source and final PDF remain versioned)
+/paper/*.aux
+/paper/*.log
+/paper/*.out
+/paper/*.fls
+/paper/*.fdb_latexmk
+/paper/comment.cut
 
 # Node (Pi SDK synthesizer deps)
 node_modules/

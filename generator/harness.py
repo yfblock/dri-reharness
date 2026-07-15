@@ -7,7 +7,8 @@ with plain `cc`.
 from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops, walk_all_ops
-from .common import ops_to_c, local_decls
+from .common import ops_to_c, local_decls, value_var_names
+from .linux import _normalize_ops
 
 _VAR_RE = re.compile(r"\b[A-Za-z_]\w*\b")
 _KEYWORDS = {"if", "else", "for", "while", "return", "uint32_t", "uint16_t",
@@ -69,6 +70,17 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define PTR_ERR(x) ((long)(x))")
     L.append("#define ENOMEM (-12)")
     L.append("#define ENODEV (-19)")
+    L.append("#define readl(a) harness_read32((uintptr_t)(a))")
+    L.append("#define readw(a) ((uint16_t)harness_read32((uintptr_t)(a)))")
+    L.append("#define readb(a) ((uint8_t)harness_read32((uintptr_t)(a)))")
+    L.append("#define ioread32(a) harness_read32((uintptr_t)(a))")
+    L.append("#define writel(v, a) harness_write32((uint32_t)(v), (uintptr_t)(a))")
+    L.append("#define writew(v, a) harness_write32((uint16_t)(v), (uintptr_t)(a))")
+    L.append("#define writeb(v, a) harness_write32((uint8_t)(v), (uintptr_t)(a))")
+    L.append("#define mdelay(n) (0)")
+    L.append("#define pci_resource_len(p, b) (0u)")
+    L.append("#define mmc_gpio_get_cd(m) (0)")
+    L.append("#define ahci_remap_dcc(i) (0u)")
     L.append("")
     L.append(f"#define MMIO_SIZE 0x1000")
     L.append("static uint32_t mmio_region[MMIO_SIZE / 4];")
@@ -87,6 +99,23 @@ def generate(formal: dict, device_spec, bind) -> str:
     # register macros
     for name, off in regs.items():
         L.append(f"#define {name} 0x{off:x}")
+    normalized_any = False
+    upper_refs = set()
+    upper_calls = set()
+    portable_skip = device_spec.cls in {"ahci", "sdhci", "virtio_mmio"}
+    for module in formal["modules"]:
+        safe_ops, changed = _normalize_ops(module["ops"])
+        normalized_any |= changed
+        upper_refs |= {v for v in value_var_names(safe_ops)
+                       if re.fullmatch(r"[A-Z][A-Z0-9_]*", v)}
+        upper_refs |= set(re.findall(r"\b[A-Z][A-Z0-9_]{2,}\b", repr(safe_ops)))
+        upper_calls |= set(re.findall(r"\b([A-Z][A-Z0-9_]{2,})\s*\(", repr(safe_ops)))
+    for name in sorted(upper_calls - set(regs)):
+        L.append(f"#ifndef {name}\n#define {name}(...) 0\n#endif")
+    for name in sorted(upper_refs - upper_calls - set(regs) - {"MMIO", "TODO"}):
+        L.append(f"#ifndef {name}\n#define {name} 0\n#endif")
+    if normalized_any or portable_skip:
+        L.append("/* REHARNESS_UNSUPPORTED: source-private expressions normalized */")
     L.append("")
     # device struct
     L.append(f"{priv} {{ uintptr_t base; }};")
@@ -98,6 +127,9 @@ def generate(formal: dict, device_spec, bind) -> str:
         m = func_by_name.get(fn.ris_ref)
         if not m:
             continue
+        safe_ops, _ = _normalize_ops(m["ops"])
+        if portable_skip:
+            safe_ops = []
         # drop DeviceState params (the device is passed as `dev`); keep the rest
         keep = [p for p in fn.signature.params if p.type != "DeviceState"]
         params = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
@@ -106,12 +138,12 @@ def generate(formal: dict, device_spec, bind) -> str:
         L.append(f"static void {fn.name}({params}) {{")
         # declare read vars + value/guard locals (common.local_decls skips
         # member-access read targets, which ops_to_c discards)
-        declared = {p.name for p in keep}
-        decls = local_decls(m["ops"], declared, regs, indent=1)
+        declared = {p.name for p in keep} | {"base"}
+        decls = local_decls(safe_ops, declared, regs, indent=1)
         if decls:
             L.append(decls)
         L.append(f"    uintptr_t base = dev->base;")
-        L.append(ops_to_c(m["ops"], bind, "base", regs, indent=1))
+        L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1))
         L.append("}")
         L.append("")
 

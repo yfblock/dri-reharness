@@ -8,6 +8,11 @@ from __future__ import annotations
 from .formal import walk_leaf_ops, walk_all_ops
 
 
+def count_clang_errors(warnings: list[str]) -> int:
+    """Count only error/fatal libclang diagnostics (severity 3/4)."""
+    return sum("clang diag[3]" in w or "clang diag[4]" in w for w in warnings)
+
+
 def _addr_kind(addr: dict) -> str | None:
     if not addr:
         return None
@@ -43,7 +48,7 @@ def _expr_has_top(expr: dict | None) -> bool:
 def module_metrics(module: dict) -> dict:
     ops = list(walk_leaf_ops(module["ops"]))
     total = len(ops)
-    sym = fixed = comp = 0
+    sym = fixed = comp = rmw = 0
     unknown_val = 0
     for o in ops:
         addr = (o.get("Read") or o.get("Write") or o.get("ReadModifyWrite") or {}).get("addr")
@@ -54,6 +59,8 @@ def module_metrics(module: dict) -> dict:
             fixed += 1
         elif k == "computed":
             comp += 1
+        if "ReadModifyWrite" in o:
+            rmw += 1
         # unknown value: Write/RMW value or transform is Top or contains Top
         val = None
         if "Write" in o:
@@ -71,6 +78,7 @@ def module_metrics(module: dict) -> dict:
         "symbolic": sym,
         "fixed": fixed,
         "computed": comp,
+        "rmw": rmw,
         "unknown_value": unknown_val,
         "cond": cond,
         "loop": loop,
@@ -80,7 +88,7 @@ def module_metrics(module: dict) -> dict:
 
 def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     mods = [module_metrics(m) for m in formal["modules"]]
-    agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed",
+    agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed", "rmw",
                            "unknown_value", "cond", "loop")}
     for m in mods:
         for k in agg:
@@ -100,7 +108,8 @@ def format_metrics(metrics: dict) -> str:
     lines = [
         f"driver metrics: {metrics['total_ops']} ops | "
         f"symbolic {metrics['symbolic']} fixed {metrics['fixed']} computed {metrics['computed']} | "
-        f"unknown_value {metrics['unknown_value']} | cond {metrics['cond']} loop {metrics['loop']} | "
+        f"rmw {metrics['rmw']} unknown_value {metrics['unknown_value']} | "
+        f"cond {metrics['cond']} loop {metrics['loop']} | "
         f"pct_symbolic {metrics['pct_symbolic']} pct_non_top {metrics['pct_non_top_value']} | "
         f"clang_diag {metrics['clang_diag']} | regs {metrics['register_map']}",
         "",
@@ -121,16 +130,17 @@ def format_metrics(metrics: dict) -> str:
 # ═══════════════════════════════════════════════════════════════════
 def score(device_spec, formal: dict, warnings: list[str], facts=None,
           gen_results: dict | None = None) -> dict:
-    met = driver_metrics(formal, n_clang_diag=len(warnings))
+    met = driver_metrics(formal, n_clang_diag=count_clang_errors(warnings))
     total_ops = met["total_ops"] or 1
     addr_total = met["symbolic"] + met["fixed"] + met["computed"] or 1
 
-    ris_quality = round(
+    raw_ris_quality = (
         0.7 * (met["symbolic"] / addr_total)
         + 0.2 * ((total_ops - met["unknown_value"]) / total_ops)
-        + 0.1 * (1.0 if met["computed"] == 0 else 0.5),
-        3,
+        + 0.1 * (1.0 if met["computed"] == 0 else 0.5)
     )
+    diagnostic_penalty = min(0.2, met["clang_diag"] * 0.01)
+    ris_quality = round(max(0.0, raw_ris_quality - diagnostic_penalty), 3)
 
     fns = device_spec.functions
     with_role = sum(1 for f in fns if f.role and f.role not in ("unknown", "helper"))
@@ -163,6 +173,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         blockers.append(f"{met['computed']} dynamic (computed) register address(es)")
     if met["unknown_value"] > 0:
         blockers.append(f"{met['unknown_value']} unknown (Top) value(s)")
+    if met["clang_diag"] > 0:
+        blockers.append(f"{met['clang_diag']} clang error diagnostic(s)")
     unroled = [f.name for f in fns if f.role in ("unknown",)]
     if unroled:
         blockers.append(f"missing role for: {', '.join(unroled)}")
@@ -172,7 +184,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unbound_callbacks:
         blockers.append(f"callback entry without table binding: {', '.join(unbound_callbacks)}")
 
-    baremetal_ready = (met["computed"] == 0 and ris_quality >= 0.7)
+    baremetal_ready = (met["computed"] == 0 and met["unknown_value"] == 0
+                       and ris_quality >= 0.7)
     linux_ready = (baremetal_ready and function_spec_quality >= 0.6
                    and not unbound_callbacks and len(device_spec.registers) > 0)
     harness_ready = baremetal_ready  # trace check applied below if gen_results present
@@ -185,17 +198,25 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             return gen_results.get(backend, {})
         h = _gr("harness")
         if h:
-            harness_ready = bool(h.get("compiled") and h.get("trace_passed")
-                                 and not h.get("has_todo"))
+            harness_ready = bool(met["computed"] == 0 and met["unknown_value"] == 0
+                                 and h.get("compiled") and h.get("trace_passed")
+                                 and not h.get("has_todo")
+                                 and not h.get("unsupported"))
         bm = _gr("baremetal")
         if bm:
-            baremetal_ready = bool(bm.get("compiled") and not bm.get("has_todo"))
+            baremetal_ready = bool(met["computed"] == 0 and met["unknown_value"] == 0
+                                   and bm.get("compiled") and not bm.get("has_todo")
+                                   and not bm.get("unsupported"))
         lx = _gr("linux")
         if lx:
             linux_ready = bool(baremetal_ready and function_spec_quality >= 0.6
                                and not lx.get("has_todo")
+                               and not lx.get("unsupported")
+                               and lx.get("compiled", False)
                                and lx.get("syntax_ok", False)
                                and len(device_spec.registers) > 0)
+            if lx.get("unsupported"):
+                blockers.append("linux backend has unsupported semantic bindings")
 
     # LLM synthesis gate (plan M9): artifacts sufficient to ask an LLM to
     # synthesize/repair a candidate under verification feedback. Distinct from

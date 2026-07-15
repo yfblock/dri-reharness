@@ -12,9 +12,10 @@ set -u
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
 
-KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-/home/yfblock/Code/linux/arch/x86/boot/bzImage}"
-KERNEL_VERSION="${KERNEL_VERSION:-7.1.0-rc7-gacb7500801e9-dirty}"
-REGISTRAR_KO="${REGISTRAR_KO:-/home/yfblock/Code/linux-driver-harness/test/device-registrar.ko}"
+KERNELDIR="${KERNELDIR:-$PROJECT_DIR/kernel/build}"
+KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-$KERNELDIR/arch/x86/boot/bzImage}"
+KERNEL_VERSION="${KERNEL_VERSION:-$(make -s -C "$KERNELDIR" kernelrelease 2>/dev/null || true)}"
+REGISTRAR_KO="${REGISTRAR_KO:-$PROJECT_DIR/verification/device-registrar/device-registrar.ko}"
 OUT="${RH_QEMU_OUT:-/tmp/reharness_qemu_run.txt}"
 
 # 默认值
@@ -106,6 +107,7 @@ if [ -n "$EXERCISER" ]; then
     cat >> "$ROOTFS_DIR/init" <<INIT
 echo "=== exerciser ==="
 /bin/exerciser $EXERCISER_ARGS 2>&1
+echo "EXERCISER_RC=\$?"
 INIT
 fi
 
@@ -136,17 +138,25 @@ timeout --kill-after=5 "$TIMEOUT" qemu-system-x86_64 "${QEMU_ARGS[@]}" </dev/nul
 RC=$?
 
 echo "=== QEMU 退出码: $RC ==="
-grep -aiE 'insmod|rmmod|probed|registered|probe|QEMU_RUN_DONE' "$OUT" | tail -25
+grep -aiE 'insmod|rmmod|probed|registered|probe|TRACE|EXERCISER_RC|QEMU_RUN_DONE' "$OUT" | tail -30
 
 # ── 成功判定 (通用) ──
 echo ""; echo "=== 成功判定 ==="
 DONE=$(grep -ac 'QEMU_RUN_DONE' "$OUT")
 PROBE=$(grep -acE "$PROBE_PATTERN" "$OUT")
 REAL_OOPS=$(grep -aE 'Oops:|BUG:|Unable to handle|general protection|Kernel panic - not syncing' "$OUT" | grep -vacE 'Attempted to kill init')
+EX_RC_OK=1
+if [ -n "$EXERCISER" ]; then
+    grep -aq 'EXERCISER_RC=0' "$OUT" || EX_RC_OK=0
+fi
+if [[ "$EXERCISER" == *edu_trace_test* ]]; then
+    grep -aq 'EDU_TRACE_OK' "$OUT" || EX_RC_OK=0
+fi
 echo "  done=$DONE probe=$PROBE real_oops=$REAL_OOPS"
 if [ "$REAL_OOPS" -gt 0 ]; then echo "  => 失败: 崩溃/oops"; exit 2; fi
-if [ "$DONE" -gt 0 ] && [ "$PROBE" -gt 0 ]; then
+if [ "$DONE" -gt 0 ] && [ "$PROBE" -gt 0 ] && [ "$EX_RC_OK" -eq 1 ]; then
     echo "  => 成功: $MODULE_NAME probe 成功"
     exit 0
 fi
+if [ "$EX_RC_OK" -ne 1 ]; then echo "  => 失败: exerciser/语义检查未通过"; exit 3; fi
 echo "  => 失败: 未完成 probe"; exit 1

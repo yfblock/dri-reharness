@@ -23,18 +23,35 @@ import subprocess
 import tempfile
 from typing import Optional
 
-# SVF 工具路径
-_SVF_SETUP = os.path.expanduser("~/SVF/setup.sh")
-_WPA = os.path.expanduser("~/SVF/Release-build/bin/wpa")
-_CLANG = os.path.expanduser("~/SVF/llvm-21.1.0.obj/bin/clang")
-_LLVM_AS = os.path.expanduser("~/SVF/llvm-21.1.0.obj/bin/llvm-as")
+
+def _tool_paths() -> tuple[str, str, str, str]:
+    """Resolve SVF tools from environment, with conventional local defaults."""
+    root = os.path.expanduser(os.environ.get("REHARNESS_SVF_ROOT", "~/SVF"))
+    setup = os.environ.get("REHARNESS_SVF_SETUP", os.path.join(root, "setup.sh"))
+    wpa = os.environ.get("REHARNESS_SVF_WPA", os.path.join(root, "Release-build/bin/wpa"))
+    clang = os.environ.get(
+        "REHARNESS_SVF_CLANG", os.path.join(root, "llvm-21.1.0.obj/bin/clang"))
+    llvm_as = os.environ.get(
+        "REHARNESS_SVF_LLVM_AS", os.path.join(root, "llvm-21.1.0.obj/bin/llvm-as"))
+    return setup, wpa, clang, llvm_as
 
 
-def _source_svf_env() -> dict:
+def _timeout(name: str, default: int) -> int:
+    try:
+        return max(1, int(os.environ.get(name, default)))
+    except ValueError:
+        return default
+
+
+def _source_svf_env(setup: str) -> dict:
     """Source SVF setup.sh and return the env dict."""
-    r = subprocess.run(f"bash -c 'source {_SVF_SETUP} Release 2>/dev/null && env'",
-                       shell=True, capture_output=True, text=True)
     env = dict(os.environ)
+    if not os.path.isfile(setup):
+        return env
+    r = subprocess.run(
+        ["bash", "-c", 'source "$1" Release 2>/dev/null && env', "bash", setup],
+        capture_output=True, text=True, timeout=10,
+    )
     for line in r.stdout.splitlines():
         if "=" in line:
             k, v = line.split("=", 1)
@@ -43,7 +60,8 @@ def _source_svf_env() -> dict:
 
 
 def _generate_stubbed_bc(source: str, linux_root: str | None = None,
-                        env: dict | None = None) -> str | None:
+                        env: dict | None = None, *, workdir: str,
+                        clang: str, llvm_as: str) -> str | None:
     """Compile C → .ll → IR stub → .bc for SVF analysis.
 
     Strips MODULE_* macros, strips __maybe_unused (prevents function
@@ -52,8 +70,6 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
     here = os.path.dirname(os.path.abspath(__file__))
     tools_dir = os.path.normpath(os.path.join(here, "..", "tools"))
     linux = linux_root or os.path.normpath(os.path.join(here, "..", "linux"))
-    if not os.path.isdir(os.path.join(linux, "arch", "x86", "include", "generated")):
-        linux = os.path.expanduser("~/Code/linux")
 
     modname = os.path.splitext(os.path.basename(source))[0]
 
@@ -62,16 +78,16 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
         src_text = f.read()
     stripped = re.sub(r'^\s*MODULE_\w+\s*\([^)]*\)\s*;\s*$', '', src_text, flags=re.M)
     stripped = stripped.replace('__maybe_unused', '')
-    c_path = tempfile.mktemp(suffix=".c", prefix="rh_svf_")
+    c_path = os.path.join(workdir, "source.c")
     with open(c_path, "w") as f:
         f.write(stripped)
 
-    ll_path = tempfile.mktemp(suffix=".ll", prefix="rh_svf_")
-    bc_path = tempfile.mktemp(suffix=".bc", prefix="rh_svf_")
+    ll_path = os.path.join(workdir, "source.ll")
+    bc_path = os.path.join(workdir, "source.bc")
 
     # 1. clang → .ll
     args = [
-        _CLANG, "-S", "-emit-llvm", "-g", "-O0", "-c", "-w",
+        clang, "-S", "-emit-llvm", "-g", "-O0", "-c", "-w",
         f"-I{linux}/arch/x86/include",
         f"-I{linux}/arch/x86/include/generated",
         f"-I{linux}/include",
@@ -89,8 +105,9 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
         "-o", ll_path,
     ]
     e = env or os.environ
-    r = subprocess.run(args, capture_output=True, text=True, timeout=60, env=e)
-    os.unlink(c_path)
+    r = subprocess.run(
+        args, capture_output=True, text=True,
+        timeout=_timeout("REHARNESS_SVF_CLANG_TIMEOUT", 30), env=e)
     if r.returncode != 0 or not os.path.exists(ll_path):
         return None
 
@@ -108,9 +125,9 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
         pass  # stub 失败则用原始 .ll
 
     # 3. llvm-as → .bc
-    r2 = subprocess.run([_LLVM_AS, ll_path, "-o", bc_path],
-                       capture_output=True, text=True, timeout=30, env=e)
-    os.unlink(ll_path)
+    r2 = subprocess.run(
+        [llvm_as, ll_path, "-o", bc_path], capture_output=True, text=True,
+        timeout=_timeout("REHARNESS_SVF_LLVM_AS_TIMEOUT", 15), env=e)
     if r2.returncode != 0 or not os.path.exists(bc_path):
         return None
     return bc_path
@@ -123,11 +140,12 @@ _VAR_RE = re.compile(r'^var(\d+)\[([^\]]*)\]')
 _SYM_LINE_RE = re.compile(r'^(\d+)\s+(.*)')
 
 
-def _run_wpa(bc_path: str, env: dict) -> str:
+def _run_wpa(bc_path: str, env: dict, wpa: str) -> str:
     """Run wpa -ander -print-aliases -print-symbol-table, return stdout."""
     r = subprocess.run(
-        [_WPA, "-ander", "-print-aliases", "-print-symbol-table", bc_path],
-        capture_output=True, text=True, timeout=120, env=env
+        [wpa, "-ander", "-print-aliases", "-print-symbol-table", bc_path],
+        capture_output=True, text=True,
+        timeout=_timeout("REHARNESS_SVF_WPA_TIMEOUT", 60), env=env
     )
     return r.stdout
 
@@ -258,7 +276,8 @@ def _parse_wpa_aliases(output: str, symbol_table: dict,
 # ── 主接口 ──
 
 def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
-                      mmio_globals: set[str] | None = None) -> set[str]:
+                      mmio_globals: set[str] | None = None,
+                      required: bool = False) -> set[str]:
     """Find C variable names that alias MMIO base pointers using SVF.
 
     Args:
@@ -273,34 +292,43 @@ def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
     if mmio_globals is None:
         mmio_globals = set()
 
-    if not os.path.exists(_WPA) or not os.path.exists(_CLANG):
+    setup, wpa, clang, llvm_as = _tool_paths()
+    missing = [p for p in (wpa, clang, llvm_as) if not os.path.isfile(p)]
+    if missing:
+        if required:
+            raise RuntimeError("SVF tools missing: " + ", ".join(missing))
         return set()
 
-    env = _source_svf_env()
-
-    # 1. 编译 .ll → stub → .bc
-    bc_path = _generate_stubbed_bc(source, linux_root, env)
-    if bc_path is None:
-        return set()
-
+    env = _source_svf_env(setup)
     try:
-        # 2. 运行 wpa
-        stdout = _run_wpa(bc_path, env)
+        # Every intermediate lives under one managed directory.  It is removed
+        # on success, compilation failure, timeout, and Ctrl-C.
+        with tempfile.TemporaryDirectory(prefix="rh_svf_") as tmp:
+            bc_path = _generate_stubbed_bc(
+                source, linux_root, env, workdir=tmp, clang=clang,
+                llvm_as=llvm_as)
+            if bc_path is None:
+                if required:
+                    raise RuntimeError("SVF LLVM IR generation failed")
+                return set()
 
-        # 3. 解析 symbol table
-        sym_tab = _parse_symbol_table(stdout)
+            # 2. 运行 wpa
+            stdout = _run_wpa(bc_path, env, wpa)
 
-        # 4. 找 MMIO origin var IDs
-        origin_vars = _find_mmio_origin_vars(sym_tab, mmio_globals)
+            # 3. 解析 symbol table
+            sym_tab = _parse_symbol_table(stdout)
 
-        # 5. 解析 alias pairs → C 变量名
-        aliases = _parse_wpa_aliases(stdout, sym_tab, origin_vars, source, tu)
+            # 4. 找 MMIO origin var IDs
+            origin_vars = _find_mmio_origin_vars(sym_tab, mmio_globals)
 
-        return aliases | mmio_globals
+            # 5. 解析 alias pairs → C 变量名
+            aliases = _parse_wpa_aliases(stdout, sym_tab, origin_vars, source, tu)
+
+            # The caller already has mmio_globals.  Return only new knowledge
+            # so success reporting and metrics are not misleading.
+            return aliases - mmio_globals
 
     except Exception:
-        return mmio_globals  # 出错时返回原始 globals
-
-    finally:
-        if bc_path and os.path.exists(bc_path):
-            os.unlink(bc_path)
+        if required:
+            raise
+        return set()

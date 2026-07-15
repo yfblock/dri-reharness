@@ -1,0 +1,20 @@
+{
+  "experiments": {
+    "edu": {
+      "probe": true,
+      "value_oracle": "EDU_TRACE_OK"
+    },
+    "gpio-ftgpio010": {
+      "module_coverage": "1/1",
+      "op_coverage": "4/4",
+      "probe": true,
+      "register_coverage": "4/4",
+      "trace_oracle": "TRACE_MATCH_OK"
+    }
+  },
+  "generated_at": "2026-07-14T21:16:05.477585+00:00",
+  "kernel_release": "7.1.0-rc7-gacb7500801e9",
+  "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+  "reharness_commit": "3c2e042596ae83203f12f153f3d2b7ed492f4c3e",
+  "schema": 1
+}

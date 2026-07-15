@@ -168,6 +168,25 @@ def test_formal_detects_rmw(ftgpio_formal):
     assert rmw >= 5   # mask/unmask + set_irq_type(3) + set_config
 
 
+def test_rmw_preserves_straight_line_bit_transform(ftgpio_formal):
+    mask_ops = []
+    unmask_ops = []
+    _leaf_ops(_module(ftgpio_formal, "ftgpio_gpio_mask_irq")["ops"], mask_ops)
+    _leaf_ops(_module(ftgpio_formal, "ftgpio_gpio_unmask_irq")["ops"], unmask_ops)
+    mask = next(o["ReadModifyWrite"] for o in mask_ops if "ReadModifyWrite" in o)
+    unmask = next(o["ReadModifyWrite"] for o in unmask_ops if "ReadModifyWrite" in o)
+    assert mask["transform"]["BinOp"]["op"] == "BitAnd"
+    assert unmask["transform"]["BinOp"]["op"] == "BitOr"
+    assert mask["read_var"] == "val" and unmask["read_var"] == "val"
+
+    # Multi-path switch transforms must remain explicitly unknown rather than
+    # being incorrectly concatenated into one sequential update.
+    irq_ops = []
+    _leaf_ops(_module(ftgpio_formal, "ftgpio_gpio_set_irq_type")["ops"], irq_ops)
+    assert all("Top" in o["ReadModifyWrite"]["transform"]
+               for o in irq_ops if "ReadModifyWrite" in o)
+
+
 def test_formal_records_branch_conditions(ftgpio_formal):
     """set_config's `if (val == deb_div)` becomes a Cond block."""
     sc = _module(ftgpio_formal, "ftgpio_gpio_set_config")
@@ -360,7 +379,7 @@ def test_ftgpio_function_roles(ftgpio_formal):
     assert roles["ftgpio_gpio_probe"] == "probe"
     # callback entries keep their table binding
     ack = next(f for f in ds.functions if f.name == "ftgpio_gpio_ack_irq")
-    assert ack.is_callback_entry and ack.callback_table == "irq_chip"
+    assert ack.is_callback_entry and ack.callback_table == "irq_chip.irq_ack"
 
 
 def test_ftgpio_device_spec(ftgpio_formal):
@@ -457,7 +476,8 @@ def test_readiness_score():
     res = extract_ris(ExtractorConfig(source=FTGPIO))
     s = score(res.device_spec, res.formal, res.warnings, res.facts)
     assert s["ris_quality"] >= 0.9
-    assert s["backend_bare_metal_ready"] is True
+    assert s["backend_bare_metal_ready"] is False
+    assert any("unknown (Top)" in b for b in s["blockers"])
     assert 0 <= s["function_spec_quality"] <= 1.0
 
 
@@ -521,6 +541,133 @@ def test_bundle_assembly():
     for need in (f"{name}.ris", f"{name}.dspec", f"{name}.facts",
                  f"{name}.harness.bind", "score.txt"):
         assert need in files, f"missing {need}"
+
+
+# ── extraction configuration / optional SVF regressions ─────────────
+
+def test_extraction_cache_respects_inline_depth():
+    """Changing analysis configuration must not reuse a path-only cache."""
+    import tempfile
+    src = textwrap.dedent("""
+        #define REG 0x10
+        static void helper(void *b) { writel(1, b + REG); }
+        static void caller(void *b) { helper(b); }
+    """)
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, "cache.c")
+        with open(p, "w", encoding="utf-8") as fh:
+            fh.write(src)
+        deep = extract_ris(ExtractorConfig(
+            source=p, linux_root="/nonexistent", max_inline_depth=3))
+        shallow = extract_ris(ExtractorConfig(
+            source=p, linux_root="/nonexistent", max_inline_depth=0))
+        assert any(m["name"] == "caller" for m in deep.formal["modules"])
+        assert not any(m["name"] == "caller" for m in shallow.formal["modules"])
+
+
+def test_framework_and_blacklist_options_are_effective():
+    import tempfile
+    src = textwrap.dedent("""
+        #define REG 0x10
+        static void kmalloc(void *b) { writel(1, b + REG); }
+        static void caller(void *b) { kmalloc(b); }
+    """)
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, "framework.c")
+        with open(p, "w", encoding="utf-8") as fh:
+            fh.write(src)
+        filtered = extract_ris(ExtractorConfig(source=p, linux_root="/nonexistent"))
+        included = extract_ris(ExtractorConfig(
+            source=p, linux_root="/nonexistent", include_framework=True))
+        blacklisted = extract_ris(ExtractorConfig(
+            source=p, linux_root="/nonexistent", include_framework=True,
+            extra_blacklist=["kmalloc"]))
+        assert not any(m["name"] == "caller" for m in filtered.formal["modules"])
+        assert any(m["name"] == "caller" for m in included.formal["modules"])
+        assert not any(m["name"] == "caller" for m in blacklisted.formal["modules"])
+
+
+def test_callback_binding_uses_enclosing_struct_type():
+    from extractor.spec_infer import parse_callback_bindings
+    src = textwrap.dedent("""
+        static int chip_get(void *gc, unsigned int n) { return 0; }
+        static int pci_probe(void *pdev, void *id) { return 0; }
+        static const struct gpio_chip chip = { .get = chip_get };
+        static struct pci_driver drv = { .probe = pci_probe };
+    """)
+    got = parse_callback_bindings(src, {"chip_get", "pci_probe"})
+    assert got["chip_get"]["table"] == "gpio_chip"
+    assert got["chip_get"]["field"] == "get"
+    assert got["pci_probe"]["table"] == "pci_driver"
+    assert got["pci_probe"]["field"] == "probe"
+
+
+def test_svf_required_reports_missing_tools_without_temp_leaks():
+    import tempfile
+    keys = ("REHARNESS_SVF_ROOT", "REHARNESS_SVF_SETUP", "REHARNESS_SVF_WPA",
+            "REHARNESS_SVF_CLANG", "REHARNESS_SVF_LLVM_AS")
+    old = {k: os.environ.get(k) for k in keys}
+    try:
+        for k in keys:
+            os.environ[k] = f"/nonexistent/{k.lower()}"
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "alias.c")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write("static void f(void *b) { writel(1, b); }\n")
+            try:
+                extract_ris(ExtractorConfig(
+                    source=p, linux_root="/nonexistent", alias_mode="required"))
+            except RuntimeError as e:
+                assert "SVF tools missing" in str(e)
+            else:
+                raise AssertionError("required SVF mode accepted missing tools")
+    finally:
+        for k, value in old.items():
+            if value is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = value
+
+
+def _linux_generate_and_compile(source: str, module_name: str):
+    import subprocess
+    import tempfile
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+
+    res = extract_ris(ExtractorConfig(source=source))
+    bind = default_bind(res.device_spec, "linux")
+    code = linux_gen.generate(res.formal, res.device_spec, bind, res.facts)
+    assert "TODO" not in code
+    build = os.path.join(REHARNESS, "kernel", "build")
+    if not os.path.isfile(os.path.join(build, "Makefile")):
+        return code
+    with tempfile.TemporaryDirectory() as d:
+        cpath = os.path.join(d, f"{module_name}.c")
+        with open(cpath, "w", encoding="utf-8") as fh:
+            fh.write(code)
+        with open(os.path.join(d, "Makefile"), "w", encoding="utf-8") as fh:
+            fh.write(f"obj-m += {module_name}.o\n")
+        run = subprocess.run(
+            ["make", "-C", build, f"M={d}", "modules"],
+            capture_output=True, text=True)
+        assert run.returncode == 0, run.stdout + run.stderr
+    return code
+
+
+def test_linux_backend_kernel_builds_gpio_and_edu():
+    gpio = _linux_generate_and_compile(FTGPIO, "rh_test_gpio")
+    edu = _linux_generate_and_compile(EDU, "rh_test_edu")
+    assert "module_platform_driver" in gpio
+    assert "module_pci_driver" in edu and "struct miscdevice misc" in edu
+    assert "REHARNESS_UNSUPPORTED" not in gpio + edu
+
+
+def test_ahci_linux_backend_builds_with_explicit_limitation():
+    ahci = os.path.join(REHARNESS, "drivers", "test", "ahci.c")
+    code = _linux_generate_and_compile(ahci, "rh_test_ahci")
+    assert "module_pci_driver" in code
+    assert "REHARNESS_UNSUPPORTED" in code
 
 
 # ── standalone runner (no pytest required) ───────────────────────────

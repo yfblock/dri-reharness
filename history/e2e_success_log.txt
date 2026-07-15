@@ -1,6 +1,6 @@
 ############ reharness edu 端到端 ############
-kernel: /home/yfblock/Code/linux
-bzImage: /home/yfblock/Code/linux/arch/x86/boot/bzImage
+kernel: $PROJECT/linux
+bzImage: $PROJECT/kernel/build/arch/x86/boot/bzImage
 
 [0] reharness 自测
   ✓ test passed

@@ -350,15 +350,50 @@ def _norm_key(lhs: str) -> str:
     return lhs.replace(" ", "")
 
 
+_MUTATION_OP = re.compile(
+    r"\b{var}\s*(<<=|>>=|\|=|&=|\^=|\+=|-=|=)\s*([^;]+);"
+)
+
+
+def _rmw_transform(var: str, read_line: int, write_line: int,
+                   source_lines: list[str]) -> Optional[str]:
+    """Recover straight-line mutations between a read and its matching write.
+
+    Branch-heavy switch/case updates cannot be represented by the current
+    path-insensitive RMW node, so they deliberately lower to Top instead of a
+    fabricated sequential transform.
+    """
+    between = "\n".join(source_lines[read_line: max(read_line, write_line - 1)])
+    pattern = re.compile(_MUTATION_OP.pattern.format(var=re.escape(var)))
+    changes = pattern.findall(between)
+    if not changes:
+        return var
+    if "case " in between and len(changes) > 1:
+        return None
+    expr = var
+    op_map = {"|=": "|", "&=": "&", "^=": "^", "+=": "+", "-=": "-",
+              "<<=": "<<", ">>=": ">>"}
+    for op, rhs in changes:
+        rhs = rhs.strip()
+        if op == "=":
+            expr = rhs
+        else:
+            expr = f"({expr} {op_map[op]} ({rhs}))"
+    return expr
+
+
 def extract_function(func: Func, macros, tu, *,
                      source_lines: Optional[list[str]] = None,
                      inline_cache: Optional[dict] = None,
                      mmio_globals: Optional[list[str]] = None,
                      depth: int = 0, max_depth: int = 3,
-                     condition: Optional[str] = None) -> FuncExtraction:
+                     condition: Optional[str] = None,
+                     include_framework: bool = False,
+                     extra_blacklist: Optional[set[str]] = None) -> FuncExtraction:
     """Extract register ops for one function (with wrapper inlining)."""
     result = FuncExtraction(name=func.name)
     store: dict[str, AbsVal] = {}
+    read_origins: dict[str, tuple[dict, int]] = {}
     # seed file-scope MMIO base globals (e.g. `static void __iomem *mmio`)
     for g in (mmio_globals or []):
         store[g] = BasePtr(g)
@@ -385,6 +420,8 @@ def extract_function(func: Func, macros, tu, *,
     for cs in calls:
         name = cs.name
         if not name or name in _CONTROL_KW:
+            continue
+        if name in (extra_blacklist or set()):
             continue
         cond = None
         cond_stack = []
@@ -413,7 +450,9 @@ def extract_function(func: Func, macros, tu, *,
             )
             result.ops.append(op)
             if lhs:
-                store[_norm_key(lhs)] = ReadTaint(addr=addr, reg_name=reg_name)
+                key = _norm_key(lhs)
+                store[key] = ReadTaint(addr=addr, reg_name=reg_name)
+                read_origins[key] = (addr, cs.line)
             continue
 
         if mmio.is_mmio_write(name):
@@ -426,13 +465,21 @@ def extract_function(func: Func, macros, tu, *,
             val = eval_expr(val_text, store, macros)
             kind = "Write"
             value = val_text.strip() or None
+            rmw_var = None
             # RMW: value is a read-taint of the SAME address
             if isinstance(val, ReadTaint) and addr_equal(val.addr, addr):
                 kind = "ReadModifyWrite"
+                key = _norm_key(val_text.strip())
+                origin = read_origins.get(key)
+                if origin and addr_equal(origin[0], addr):
+                    rmw_var = key
+                    value = _rmw_transform(
+                        key, origin[1], cs.line, source_lines or [])
             op = Op(
                 kind=kind, addr=addr, width=mmio.infer_width(name),
                 value=value, condition=cond, cond_stack=cond_stack,
                 reg_name=reg_name,
+                var=rmw_var,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
             )
             result.ops.append(op)
@@ -452,7 +499,7 @@ def extract_function(func: Func, macros, tu, *,
             continue
 
         # framework → ignore (filtered)
-        if mmio.is_framework(name):
+        if not include_framework and mmio.is_framework(name):
             continue
 
         # wrapper function inlining

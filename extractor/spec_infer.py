@@ -159,7 +159,8 @@ def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
             continue
         cb = cb_bindings.get(m["name"])
         if cb:
-            role, context, table = cb["role"], cb["context"], cb["table"]
+            role, context = cb["role"], cb["context"]
+            table = f"{cb['table']}.{cb['field']}"
         else:
             hint =  name_role_hints(m["name"])
             role = hint or ("helper" if m["name"] not in callback_entries else "unknown")
@@ -237,6 +238,7 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "irq_set_wake": ("set_irq_type", "irq"),
     "handle_irq": ("interrupt_handler", "irq"),
     "irq_handler": ("interrupt_handler", "irq"),
+    "parent_handler": ("interrupt_handler", "irq"),
     # platform_driver / pci_driver / etc.
     "probe": ("probe", "boot"),
     "remove": ("remove", "thread"),
@@ -268,16 +270,22 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "set_config": ("write_config", "thread"),
     "request": ("init", "thread"),
     "free": ("remove", "thread"),
+    # file_operations
+    "open": ("init", "thread"),
+    "read": ("read_config", "thread"),
+    "write": ("write_config", "thread"),
     # generic
     "init": ("init", "boot"),
     "exit": ("remove", "thread"),
 }
 
-# which struct type a field likely belongs to (for callback_table label)
+# Fallback table when a callback reference is outside a recognizable struct
+# initializer.  Initializer-aware parsing below is authoritative.
 FIELD_TABLE = {
     "irq_ack": "irq_chip", "irq_mask": "irq_chip", "irq_unmask": "irq_chip",
     "irq_mask_ack": "irq_chip", "irq_eoi": "irq_chip", "irq_enable": "irq_chip",
     "irq_disable": "irq_chip", "irq_set_type": "irq_chip", "handle_irq": "irq_chip",
+    "parent_handler": "gpio_irq_chip",
     "probe": "platform_driver", "remove": "platform_driver", "shutdown": "platform_driver",
     "suspend": "dev_pm_ops", "resume": "dev_pm_ops", "freeze": "dev_pm_ops",
     "thaw": "dev_pm_ops", "poweroff": "dev_pm_ops", "restore": "dev_pm_ops",
@@ -285,12 +293,43 @@ FIELD_TABLE = {
     "get_status": "virtio_config_ops", "set_status": "virtio_config_ops",
     "reset": "virtio_config_ops", "generation": "virtio_config_ops",
     "get_shm_region": "virtio_config_ops", "notify_vq": "virtio_config_ops",
+    "request": "gpio_chip", "free": "gpio_chip",
+    "get_direction": "gpio_chip", "direction_input": "gpio_chip",
+    "direction_output": "gpio_chip", "set_config": "gpio_chip",
 }
 
 
 _DESIGNATED_INIT = re.compile(
-    r"\.\s*([A-Za-z_]\w*)\s*=\s*&?\s*([A-Za-z_]\w*)\s*[,}]"
+    r"(?:\.|->)\s*([A-Za-z_]\w*)\s*=\s*&?\s*([A-Za-z_]\w*)(?=\s*[,};]|\s*$)"
 )
+
+_STRUCT_INIT = re.compile(
+    r"\bstruct\s+([A-Za-z_]\w*)\s+[A-Za-z_]\w*(?:\s*\[[^]]*\])?\s*=\s*\{"
+)
+
+_KNOWN_CALLBACK_TABLES = {
+    "irq_chip", "gpio_chip", "platform_driver", "pci_driver", "amba_driver",
+    "virtio_config_ops", "clk_ops", "dev_pm_ops", "file_operations",
+    "gpio_irq_chip",
+}
+
+
+def _initializer_blocks(src: str):
+    """Yield `(struct_type, initializer_text)` with balanced-brace parsing."""
+    for m in _STRUCT_INIT.finditer(src):
+        table = m.group(1)
+        if table not in _KNOWN_CALLBACK_TABLES:
+            continue
+        start = m.end() - 1
+        depth = 0
+        for i in range(start, len(src)):
+            if src[i] == "{":
+                depth += 1
+            elif src[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    yield table, src[start + 1:i]
+                    break
 
 
 def _strip_comments_strings(src: str) -> str:
@@ -313,9 +352,28 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
     where funcname is a target function."""
     src = _strip_comments_strings(source_text)
     out: dict[str, dict] = {}
+    # Prefer the actual enclosing struct type.  Field names such as `get`,
+    # `set`, and `probe` are ambiguous without this context.
+    for table, block in _initializer_blocks(src):
+        for m in _DESIGNATED_INIT.finditer(block):
+            field, fname = m.group(1), m.group(2)
+            if fname not in target_names:
+                continue
+            role_ctx = FIELD_ROLE.get(field)
+            if role_ctx is None:
+                continue
+            role, ctx = role_ctx
+            out[fname] = {
+                "field": field,
+                "role": role,
+                "context": ctx,
+                "table": table,
+            }
+
+    # Fallback for macro-generated or otherwise nonstandard initializers.
     for m in _DESIGNATED_INIT.finditer(src):
         field, fname = m.group(1), m.group(2)
-        if fname not in target_names:
+        if fname not in target_names or fname in out:
             continue
         role_ctx = FIELD_ROLE.get(field)
         if role_ctx is None:

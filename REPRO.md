@@ -1,91 +1,119 @@
-# 复现 reharness edu 端到端
+# 复现 reharness 论文结果
 
-从 reharness 提取的 `.ris/.dspec/.bind/.facts` → opencode 合成 Linux PCI 驱动 → 内核源码编译 → QEMU 真实 edu 设备运行。
+本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-## 前置依赖
+## 环境
 
-| 依赖 | 要求 | 本机位置 |
-|------|------|---------|
-| Linux 源码 | 已配置+已构建（有 bzImage/vmlinux/Module.symvers），`CONFIG_PCI=y` | `~/Code/linux` (7.1.0-rc7) |
-| opencode CLI | 已装且能调通模型 | `opencode` (v1.17.16, model `deepseek/deepseek-v4-flash`) |
-| libclang | Python `clang.cindex`，libclang-18 | `/usr/lib/llvm-18/lib/libclang-18.so.18` |
-| QEMU | `qemu-system-x86_64` 支持 `-device edu` | qemu 11.0.2 |
-| reharness | `./run.sh test` 通过 | `~/Code/dri-trans-paper/reharness` |
+需要：
 
-> 内核构建（如需重建）：`cd ~/Code/linux && make -j32 bzImage modules`。
-> （edu 是 PCI 设备，不需要 GPIOLIB；若要跑 gpio 类驱动才需 `CONFIG_GPIOLIB=y`。）
+- Python 3、clang.cindex、libclang 18
+- GNU make、C 编译器和 Linux 内核构建依赖
+- QEMU qemu-system-x86_64，包含 -device edu
+- cpio 及构造 initramfs 所需的宿主工具
+- latexmk/pdfLaTeX（仅论文构建）
 
-## 一键复现
+项目不依赖宿主机上的外部 driver 或 Linux 源码目录。drivers/ 已纳入仓库，linux/ 由 submodule 固定版本。
 
-```bash
-cd ~/Code/dri-trans-paper/reharness
-./run_edu_e2e.sh            # 全流程: bundle → opencode 合成 → 编译 → QEMU
-# 或跳过 opencode 合成（用已生成的 edu_drv.c）:
-./run_edu_e2e.sh 1
-```
+## 1. 初始化与构建实验内核
 
-成功标志：QEMU 串口出现
-```
-edu 0000:00:04.0: edu device id 0x010000ed
-edu 0000:00:04.0: edu probed: BAR0 at [mem 0xfea00000-0xfeafffff], mmio ..., irq 11
-crw------- 1 0 0 10, 258 ... /dev/edu
-```
-判定脚本输出 `=> 成功`。
+~~~bash
+git submodule update --init
+./tools/prepare_kernel.sh build
+~~~
 
-## 分步复现
+脚本使用 kernel/linux-x86_64.config，在 kernel/build/ out-of-tree 构建，不修改 submodule 工作树。固定内核 release 和 commit 会写入实验 JSON。
 
-```bash
-cd ~/Code/dri-trans-paper/reharness
+## 2. 回归测试
 
-# 1. 基线自测
-./run.sh test                          # 37 passed
+~~~bash
+./run.sh test
+~~~
 
-# 2. 提取规约 bundle（.ris/.dspec/.bind/.facts/.scaffold.c）
-./run.sh bundle drivers/test/edu.c linux output/edu_synth
+预期：42 passed, 0 failed。
 
-# 3. opencode 从 bundle 合成 PCI 驱动（run_edu_e2e.sh 内部就是这一步）
-#    产物: output/edu_drv/edu_drv.c
+## 3. 19-driver 确定性矩阵
 
-# 4. 编译为内核模块（针对下载的 linux 源码）
-cd output/edu_drv && make KERNELDIR=/home/yfblock/Code/linux && cd -
-# 产物: output/edu_drv/edu_drv.ko
+~~~bash
+python3 verification/run_matrix.py
+~~~
 
-# 5. QEMU 运行（真实 edu PCI 设备）
-bash qemu_edu.sh 60
-```
+输出：experiments/results/matrix.json。
 
-## opencode 接入 reharness synth（可选）
+当前冻结聚合值：
 
-reharness 的 `synthesis.py` 支持经 `REHARNESS_LLM_CMD` 插拔 LLM：
+~~~text
+drivers=19 ops=393 symbolic=260 fixed=63 computed=56
+rmw=67 conditions=60 registers=124 unknown_value=4
+harness_compile=19 baremetal_compile=19 linux_compile=19
+strict_ready: harness=1 baremetal=1 linux=1
+llm_synthesis_ready=10
+~~~
 
-```bash
-export REHARNESS_LLM_CMD="$PWD/tools/opencode_llm.sh"
-./run.sh synth drivers/test/edu.c linux output/edu_synth_loop
-# run_repair_loop: scaffold → verify → opencode patch → repeat
-```
+*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、computed address、clang error 或 REHARNESS_UNSUPPORTED 状态绑定。
 
-`tools/opencode_llm.sh` 把 stdin prompt 转给 `opencode run --model deepseek/deepseek-v4-flash`。
+## 4. 确定性 QEMU 实验
 
-## 产物与证据
+~~~bash
+verification/run_qemu_experiments.sh
+~~~
 
-```
-output/edu_synth/      reharness 提取的 bundle (.ris/.dspec/.bind/.facts/.scaffold.c)
-output/edu_drv/        opencode 合成的 edu_drv.c + Makefile + 编译出的 edu_drv.ko
-history/               时间线 + qemu_edu_success_log.txt（QEMU 成功串口日志）
-```
+脚本会自行：
 
-## 备注
+1. 生成并 Kbuild edu Linux 模块；
+2. 构建 guest exerciser，启动 QEMU -device edu；
+3. 检查 ID、live-check 和 factorial 的值级 oracle；
+4. 生成并 instrument gpio-ftgpio010 模块；
+5. 构建 platform device registrar；
+6. 启动 QEMU 并按 RIS 比对 probe 的 MMIO offset/order。
 
-- edu 真实 PCI id 是 `0x1234:0x11e8`（vendor 0x1234, device 0x11e8，源自 QEMU `hw/misc/edu.c`），识别码寄存器 0x00 读出 `0x010000ed`（0xRRrr00edu 格式）。
-- `generator/linux.py` 生成的是 platform_driver 骨架，而 edu 是 PCI 设备；故 `run_edu_e2e.sh` 用 opencode 从 bundle 整段合成 PCI 驱动（而非修补 platform scaffold）。
-- 迭代：若编译/QEMU 失败，`run_edu_e2e.sh` 的合成步骤可重跑（opencode 非确定性），或用 `REHARNESS_LLM_CMD` 走 `./run.sh synth` 的 repair loop。
+成功标志：
 
-## 迭代机制 (目标: 失败让 opencode 继续修)
+~~~text
+EDU_TRACE_OK
+TRACE_MATCH_OK
+module coverage 1/1
+op coverage 4/4
+register coverage 4/4
+QEMU_EXPERIMENTS_OK
+~~~
 
-`run_edu_e2e.sh` 两层迭代循环:
-- `MAX_COMPILE_ITER`(默认3): 编译失败 → 把错误+约束+当前代码喂 opencode → 重编
-- `MAX_QEMU_ITER`(默认3): QEMU 失败 → 提取 oops/dmesg/超时 → 喂 opencode → 重编 → 重跑
+权威输出：
 
-约束块固化了已知教训(struct miscdevice 无 cdev 成员、设备名=edu_drv、.open 用 container_of(file->private_data,...,mdev) 等), 防止 opencode 重犯。
+- experiments/results/qemu.json
+- experiments/results/qemu-edu-serial.log
+- experiments/results/qemu-ftgpio010-serial.log
+- experiments/results/qemu-ftgpio010-trace.txt
 
-`MAX_COMPILE_ITER=5 MAX_QEMU_ITER=5 ./run_edu_e2e.sh` 可加大迭代次数。
+## 5. 生成论文数据并构建 PDF
+
+~~~bash
+python3 tools/generate_paper_results.py
+(cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
+~~~
+
+tools/generate_paper_results.py 从 matrix.json 与 qemu.json 生成 paper/generated_results.tex。不要手工编辑该文件。
+
+## 可选：SVF 与 LLM
+
+SVF 默认关闭以保证快速、稳定复现：
+
+~~~bash
+python3 -m extractor extract -s drivers/test/gpio-ftgpio010.c \
+  --alias-mode auto -o output/ftgpio-svf.ris
+~~~
+
+工具位置和超时通过 REHARNESS_SVF_* 环境变量配置；required 模式在工具缺失或失败时返回错误。
+
+LLM synthesis 是独立的可选路径，通过 REHARNESS_LLM_CMD 接入外部命令。模型和 endpoint 具有非确定性，因此 LLM 结果不计入论文的 19/19 编译和 QEMU headline claims。
+
+## 从干净 checkout 完整执行
+
+~~~bash
+git submodule update --init
+./tools/prepare_kernel.sh build
+./run.sh test
+python3 verification/run_matrix.py
+verification/run_qemu_experiments.sh
+python3 tools/generate_paper_results.py
+(cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
+~~~

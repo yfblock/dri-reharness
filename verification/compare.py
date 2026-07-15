@@ -77,11 +77,12 @@ def stats(formal: dict) -> dict:
     }
 
 
-def _extract_one(driver_path: str):
+def _extract_one(job):
     """Worker: extract a single driver, return (name, stats_dict or None)."""
+    driver_path, alias_mode = job
     name = os.path.basename(driver_path)[:-2]
     try:
-        res = extract_ris(ExtractorConfig(source=driver_path))
+        res = extract_ris(ExtractorConfig(source=driver_path, alias_mode=alias_mode))
         return (name, stats(res.formal))
     except Exception as e:
         print(f"  [error on {os.path.basename(driver_path)}: {e}]", file=sys.stderr)
@@ -92,6 +93,8 @@ def main():
     parser = argparse.ArgumentParser(description="reharness per-driver extraction stats")
     parser.add_argument("-j", "--jobs", type=int, default=0,
                         help="parallel workers (0=auto, default min(cpu_count, num_drivers))")
+    parser.add_argument("--alias-mode", choices=["off", "auto", "required"], default="off",
+                        help="SVF alias analysis mode (default: off)")
     args = parser.parse_args()
 
     drivers_dir = os.path.join(REHARNESS, "drivers", "test")
@@ -108,7 +111,7 @@ def main():
     if n_jobs <= 1:
         # 串行
         for dp in driver_paths:
-            name, s = _extract_one(dp)
+            name, s = _extract_one((dp, args.alias_mode))
             if s is None:
                 continue
             for k in tot:
@@ -119,7 +122,8 @@ def main():
         import time
         t0 = time.time()
         with multiprocessing.Pool(n_jobs) as pool:
-            results = pool.map(_extract_one, driver_paths)
+            results = pool.map(_extract_one,
+                               [(dp, args.alias_mode) for dp in driver_paths])
         elapsed = time.time() - t0
 
         for name, s in results:

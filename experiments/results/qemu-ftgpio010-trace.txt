@@ -1,0 +1,8 @@
+[trace_match] 1 个可校验模块 (共 6: 1 pass, 0 fail, 4 IRQ skip, 1 other skip), traced=4 ops
+  ✓ ftgpio_gpio_probe: 4 ops [('W', 32), ('W', 44), ('W', 48), ('W', 64)]
+
+[coverage] 模块覆盖: 1/1 可校验模块通过 (100%); 4 IRQ 模块未行使; 共 6 模块
+[coverage] op 覆盖: 4/4 ops 命中 (100%)
+[coverage] 寄存器覆盖: 4/4 寄存器偏移被访问 (100%)
+[coverage] trace 级别: 偏移级+exerciser
+TRACE_MATCH_OK

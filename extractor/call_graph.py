@@ -12,12 +12,15 @@ from .dataflow import extract_function, FuncExtraction
 
 
 def build_inline_cache(funcs: list[Func], macros, tu, source_lines,
-                       mmio_globals=None) -> dict[str, FuncExtraction]:
+                       mmio_globals=None, include_framework: bool = False,
+                       extra_blacklist: set[str] | None = None) -> dict[str, FuncExtraction]:
     """Pass 1: per-function direct extraction (no inlining yet)."""
     cache: dict[str, FuncExtraction] = {}
     for f in funcs:
         cache[f.name] = extract_function(f, macros, tu, source_lines=source_lines,
-                                         mmio_globals=mmio_globals)
+                                         mmio_globals=mmio_globals,
+                                         include_framework=include_framework,
+                                         extra_blacklist=extra_blacklist)
     return cache
 
 
@@ -35,7 +38,9 @@ def call_graph(funcs: list[Func]) -> dict[str, set[str]]:
 
 
 def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
-                          mmio_globals=None, max_depth: int = 3) -> tuple[dict, set, set]:
+                          mmio_globals=None, max_depth: int = 3,
+                          include_framework: bool = False,
+                          extra_blacklist: set[str] | None = None) -> tuple[dict, set, set]:
     """Final extraction with wrapper inlining enabled.
 
     Returns (extractions, inlined_names, callback_entries) where:
@@ -43,7 +48,8 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
       - callback_entries: functions referenced as function-pointer values
         (kept as own modules, not inlined)
     """
-    base = build_inline_cache(funcs, macros, tu, source_lines, mmio_globals)
+    base = build_inline_cache(funcs, macros, tu, source_lines, mmio_globals,
+                              include_framework, extra_blacklist)
     names = {f.name for f in funcs}
     # callback entries (function-pointer references) are standalone entry points
     callback_entries = callback_entry_functions(tu, names)
@@ -66,5 +72,7 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
             inline_cache=inline_cache,
             mmio_globals=mmio_globals,
             max_depth=max_depth,
+            include_framework=include_framework,
+            extra_blacklist=extra_blacklist,
         )
     return result, inlined_names, callback_entries

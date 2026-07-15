@@ -1,6 +1,6 @@
 obj-m += edu_drv.o
-KERNELDIR ?= /home/yfblock/Code/linux
+KERNELDIR ?= ../linux
 all:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	$(MAKE) -C $(KERNELDIR) M=$(CURDIR) modules
 clean:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+	$(MAKE) -C $(KERNELDIR) M=$(CURDIR) clean

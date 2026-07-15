@@ -7,8 +7,9 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 
-KERNELDIR="${KERNELDIR:-/home/yfblock/Code/linux}"
+KERNELDIR="${KERNELDIR:-$HERE/kernel/build}"
 KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-$KERNELDIR/arch/x86/boot/bzImage}"
+KERNEL_RELEASE="${KERNEL_RELEASE:-$(make -s -C "$KERNELDIR" kernelrelease 2>/dev/null || echo unknown)}"
 SRC="${1:?用法: $0 <src.c> [subsystem|skip_synth] [skip_synth]}"
 SUBSYSTEM="${2:-auto}"
 SKIP_SYNTH="${3:-0}"
@@ -161,26 +162,26 @@ if [ "$SKIP_SYNTH" != "1" ]; then
   case "$SUBSYSTEM" in
     edu)
       cat > $RH_TMP/synth_prompt.txt <<PROMPT_HEAD
-你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的 .ris/.dspec/.bind/.facts 由 reharness 从 QEMU edu PCI 驱动源码提取。请合成一个完整、可作为内核模块编译的 Linux PCI 驱动 $MODULE.c。
+你是 Linux 内核驱动开发专家(目标内核 $KERNEL_RELEASE)。下面的 .ris/.dspec/.bind/.facts 由 reharness 从 QEMU edu PCI 驱动源码提取。请合成一个完整、可作为内核模块编译的 Linux PCI 驱动 $MODULE.c。
 关键事实: PCI vendor 0x1234 device 0x11e8; 寄存器 IO_IRQ_STATUS=0x24 IO_IRQ_ACK=0x64 IO_DMA_SRC=0x80 IO_DMA_DST=0x88 IO_DMA_CNT=0x90 IO_DMA_CMD=0x98。
 PROMPT_HEAD
       echo -e "\n## 要求\n1) pci_device_id(PCI_DEVICE(0x1234,0x11e8))/pci_driver/module_pci_driver/MODULE_LICENSE(\"GPL\")。\n2) probe: pci_enable_device_mem, pci_request_regions, pci_ioremap_bar(pdev,0), 读id(0x0), misc_register。\n3) irq_handler: 读IO_IRQ_STATUS写IO_IRQ_ACK。\n4) file_operations read/write: readl/writel + copy_to/from_user。\n5) probe 禁止 DMA/request_irq。6) 只输出一个 \`\`\`c 代码块。" >> $RH_TMP/synth_prompt.txt
       ;;
     gpio)
       cat > $RH_TMP/synth_prompt.txt <<PROMPT_HEAD
-你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游 GPIO 驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform GPIO 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
+你是 Linux 内核驱动开发专家(目标内核 $KERNEL_RELEASE)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游 GPIO 驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform GPIO 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
 PROMPT_HEAD
       echo -e "\n## 要求\n1) 把每个 .ris 模块映射到 gpio_chip 回调 (get_direction/direction_input/direction_output/get/set; probe→init写入)。\n2) 用 .ris 操作序列实现回调体, 偏移用 .dspec, 宽度按 B1/B2/B4。\n3) probe 结束 devm_gpiochip_add_data + dev_info。\n4) remove: void, devm 托管则基本为空。\n5) 只输出一个 \`\`\`c 代码块。" >> $RH_TMP/synth_prompt.txt
       ;;
     clk)
       cat > $RH_TMP/synth_prompt.txt <<PROMPT_HEAD
-你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游 CLK 驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform CLK 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
+你是 Linux 内核驱动开发专家(目标内核 $KERNEL_RELEASE)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游 CLK 驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform CLK 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
 PROMPT_HEAD
       echo -e "\n## 要求\n1) 把每个 .ris 模块映射到 clk_ops 回调 (enable/disable/recalc_rate/set_rate/is_enabled/prepare/unprepare; probe→init写入)。\n2) 用 .ris 操作序列实现回调体, 偏移用 .dspec, 宽度按 B1/B4。\n3) probe 结束 devm_clk_hw_register + dev_info。\n4) remove: void, devm 托管则基本为空。\n5) 只输出一个 \`\`\`c 代码块。" >> $RH_TMP/synth_prompt.txt
       ;;
     generic|*)
       cat > $RH_TMP/synth_prompt.txt <<PROMPT_HEAD
-你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
+你是 Linux 内核驱动开发专家(目标内核 $KERNEL_RELEASE)。下面 .ris/.dspec/.bind/.facts 由 reharness 从真实上游驱动 $SRC 提取。请合成一个完整、可作为内核模块编译的 Linux platform 驱动 $MODULE.c (obj-m 名 $MODULE, KBUILD_MODNAME="$MODULE")。
 PROMPT_HEAD
       echo -e "\n## 要求\n1) platform_driver, .driver.name = KBUILD_MODNAME, module_platform_driver, MODULE_LICENSE(\"GPL\")。\n2) probe: ioremap + 执行 .ris probe 模块的 init 写入序列 + dev_info。\n3) 用 .ris 操作序列实现回调体, 偏移用 .dspec, 宽度按 B1/B4。\n4) remove: void, devm 托管则基本为空。\n5) probe 禁止 DMA/request_irq。6) 只输出一个 \`\`\`c 代码块。" >> $RH_TMP/synth_prompt.txt
       ;;
@@ -247,7 +248,7 @@ for iter in $(seq 1 $MAX_QEMU_ITER); do
   [ -z "$QEMU_ERR" ] && QEMU_ERR="(QEMU 输出 ${OB} 字节; 可能卡死/超时)"
   echo "$QEMU_ERR" > "$QDIR/error.txt"
   cat > $RH_TMP/qemu_fix.txt <<FIXHEAD
-你是 Linux 内核驱动开发专家(7.1.0-rc7)。合成驱动在 QEMU 运行时出错, 请修复。
+你是 Linux 内核驱动开发专家(目标内核 $KERNEL_RELEASE)。合成驱动在 QEMU 运行时出错, 请修复。
 ## 运行时错误
 $QEMU_ERR
 
@@ -297,7 +298,7 @@ for titer in $(seq 1 $MAX_TRACE_ITER); do
   echo "  ✗ trace 一致性失败 (尝试 $titer), 喂 LLM 修回调逻辑..."
   TRACE_FAIL=$(cat $RH_TMP/trace_match.out)
   cat > $RH_TMP/trace_fix.txt <<TFIX
-你是 Linux 内核驱动开发专家(7.1.0-rc7)。合成驱动的 MMIO 访问 trace 与 .ris 规约不匹配, 请修复。
+你是 Linux 内核驱动开发专家(目标内核 $KERNEL_RELEASE)。合成驱动的 MMIO 访问 trace 与 .ris 规约不匹配, 请修复。
 ## trace 一致性失败
 $TRACE_FAIL
 

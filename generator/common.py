@@ -14,6 +14,13 @@ def _vars_in_expr(e) -> set[str]:
         v = e["Var"]
         if _VAR_ID.match(v):
             out.add(v)
+        else:
+            for m in re.finditer(r"\b[A-Za-z_]\w*\b", v):
+                before = v[:m.start()].rstrip()
+                after = v[m.end():].lstrip()
+                if after.startswith("(") or before.endswith(("->", ".")):
+                    continue
+                out.add(m.group(0))
     if "BinOp" in e:
         out |= _vars_in_expr(e["BinOp"]["left"])
         out |= _vars_in_expr(e["BinOp"]["right"])
@@ -55,12 +62,34 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
         lines.append(f"{pad}{ctype} {v} = 0;")
     extra = sorted(value_var_names(ops) - declared - set(regs.keys()))
     for v in extra:
+        # Upper-case identifiers are C/kernel constants, not locals.  Declaring
+        # them would collide with macros such as PCI_VENDOR_ID_INTEL.
+        if re.fullmatch(r"[A-Z][A-Z0-9_]*", v):
+            continue
         lines.append(f"{pad}{ctype} {v} = 0;")
     return "\n".join(lines)
 
 
 def _width_suffix(width: str) -> str:
     return {"B1": "8", "B2": "16", "B4": "32", "B8": "64"}.get(width, "32")
+
+
+def _replace_expr_var(expr, name: str | None, replacement: str):
+    if not isinstance(expr, dict) or not name:
+        return expr
+    if expr.get("Var") == name:
+        return {"Var": replacement}
+    out = dict(expr)
+    if "BinOp" in expr:
+        b = dict(expr["BinOp"])
+        b["left"] = _replace_expr_var(b.get("left"), name, replacement)
+        b["right"] = _replace_expr_var(b.get("right"), name, replacement)
+        out["BinOp"] = b
+    elif "Bits" in expr:
+        b = dict(expr["Bits"])
+        b["expr"] = _replace_expr_var(b.get("expr"), name, replacement)
+        out["Bits"] = b
+    return out
 
 
 def addr_to_c(addr: dict, base_expr: str, register_macros: dict[str, int]) -> str:
@@ -83,7 +112,7 @@ def addr_to_c(addr: dict, base_expr: str, register_macros: dict[str, int]) -> st
 
 
 def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
-             indent: int = 1) -> str:
+             indent: int = 1, word_type: str = "uint32_t") -> str:
     """Translate a list of formal RISOps to C statements."""
     pad = "    " * indent
     out: list[str] = []
@@ -92,20 +121,20 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             guard = expr_to_c(op["Cond"]["guard"])
             out.append(f"{pad}if ({guard}) {{")
             out.append(ops_to_c(op["Cond"]["then_ops"], bind, base_expr,
-                                register_macros, indent + 1))
+                                register_macros, indent + 1, word_type))
             if op["Cond"].get("else_ops"):
                 out.append(f"{pad}}} else {{")
                 out.append(ops_to_c(op["Cond"]["else_ops"], bind, base_expr,
-                                    register_macros, indent + 1))
+                                    register_macros, indent + 1, word_type))
             out.append(f"{pad}}}")
         elif "Loop" in op:
             out.append(f"{pad}for (/* loop {expr_to_c(op['Loop']['count'])} */ (;;) {{")
             out.append(ops_to_c(op["Loop"]["body"], bind, base_expr,
-                                register_macros, indent + 1))
+                                register_macros, indent + 1, word_type))
             out.append(f"{pad}}}")
         elif "Seq" in op:
             out.append(ops_to_c(op["Seq"]["ops"], bind, base_expr,
-                                register_macros, indent))
+                                register_macros, indent, word_type))
         elif "Read" in op:
             o = op["Read"]
             r = bind.prim("MmioRead", o["width"]) or "readl"
@@ -128,13 +157,9 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             r = bind.prim("MmioRead", o["width"]) or "readl"
             w = bind.prim("MmioWrite", o["width"]) or "writel"
             a = addr_to_c(o["addr"], base_expr, register_macros)
-            # the transform is typically the read-back variable; rename it to v
-            t = o["transform"]
-            if isinstance(t, dict) and "Var" in t:
-                t_c = "v"
-            else:
-                t_c = expr_to_c(t)
-            out.append(f"{pad}{{ uint32_t v = {r}({a}); {w}({t_c}, {a}); }}")
+            t = _replace_expr_var(o.get("transform"), o.get("read_var"), "v")
+            t_c = "v" if isinstance(t, dict) and "Top" in t else expr_to_c(t)
+            out.append(f"{pad}{{ {word_type} v = {r}({a}); {w}({t_c}, {a}); }}")
         elif "Delay" in op:
             out.append(f"{pad}/* delay {expr_to_c(op['Delay']['cycles'])} ns */")
     return "\n".join(s for s in out if s)

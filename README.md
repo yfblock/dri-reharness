@@ -1,103 +1,104 @@
 # reharness
 
-libclang AST + 数据流/污点追踪的设备驱动寄存器交互序列（RIS）提取器。
+reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS），推断后端无关的设备语义，并确定性生成 userspace harness、bare-metal C 和 Linux 内核模块。
 
-driver-harness 用正则解析 C 驱动源码提取 RIS，README 自承应使用真正的 C 解析器。
-reharness 用 **libclang AST + 过程间 call-graph 内联 + 流敏感数据流/污点追踪**重写提取器，
-产出对齐 driver-harness `src/ir/formal.rs` 的 **`.ris` 形式化规约语言**（不产出任何 JSON）。
+核心分析使用 libclang AST、过程间有限深度内联、流敏感数据流与污点追踪。相比正则基线，它能恢复宏寄存器偏移、包装函数中的 MMIO、分支条件、地址算术和 read-modify-write（RMW）变换。
 
-## 解决的正则方案四个硬伤
+## 当前状态
 
-| 硬伤 | driver-harness (regex) | reharness |
-|------|------------------------|-----------|
-| 寄存器宏偏移 | 硬编码 virtio_map，其余驱动解析为 0 | libclang preprocessing record + 求值，任意 `#define REG 0x20` 均解析 |
-| 过程间调用 | 包装函数内 MMIO 丢失 | call-graph + 包装函数内联（深度≤3） |
-| 控制流/条件 | `condition` 恒为 None | `if/for/while` 分支谓词附到 op |
-| 数据流 | 无法计算 `base+偏移`、无 RMW | 流敏感 store：`base+offset`、`ioremap`→BasePtr、readl→ReadTaint、RMW 检测 |
+- 版本化语料：drivers/ 内含 19 个测试驱动。
+- 版本化内核：linux/ 是固定到实验 commit 的 Git submodule。
+- 三个确定性后端：19/19 均可编译。
+- 严格语义 readiness：harness、bare-metal、Linux 均为 1/19；可编译不等于语义完整。
+- 测试套件：42 tests。
+- QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过 probe MMIO offset/order oracle。
+- SVF 别名分析：off、auto、required，默认 off，可通过 REHARNESS_SVF_* 配置工具路径和超时。
 
-## 输出：`.ris` 形式化规约语言（唯一输出格式，无 JSON）
+当前冻结实验结果来自 experiments/results/matrix.json：
 
-`extract` 产出单个 `.ris` 文本文件，文法：
+| 驱动数 | Ops | Symbolic | Fixed | Computed | RMW | Conditions | Registers |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 19 | 393 | 260 | 63 | 56 | 67 | 60 | 124 |
 
-```
-driver gpio-ftgpio010 v0.1.0 {
-  module ftgpio_gpio_set_config {
-    val := R(B4, g->base.GPIO_DEBOUNCE_PRESCALE) -- Config
-    IF (val == deb_div) {
-      val := R(B4, g->base.GPIO_DEBOUNCE_EN) -- Config
-      RMW(B4, g->base.GPIO_DEBOUNCE_EN) = val -- Config
-    }
-    W(B4, g->base.GPIO_DEBOUNCE_PRESCALE) = deb_div -- Config
-  }
-}
-```
+地址分类是刻意分开的：只有可静态命名的访问记为 Symbolic；常量偏移和运行时索引分别保留为 Fixed 与 Computed，不会伪造成“100% symbolic”。
 
-操作形式：
-- `Read`：`var := R(width, addr) -- intent`
-- `Write`：`W(width, addr) = expr -- intent`
-- `ReadModifyWrite`：`RMW(width, addr) = transform -- intent`
-- `Cond`：`IF guard { ... } ELSE { ... }`（按条件栈嵌套，路径不敏感）
-- `Loop`：`LOOP count { ... }`
-- `Delay`：`DELAY(cycles)`
+## RIS 与语义输出
 
-形式化要素：
-- **`Expr` 代数**：值/条件解析为 `Const | Var | BinOp{op,left,right} | Bits | Top`
-  （`BIT(n)`→`Shl(1,n)`，`~x`→`BitXor(x, ⊤)`，`a | b`→`BitOr`）。
-- **`RegAddr`**：解析出的寄存器宏 → `Symbolic{device, register}`（如 `g->base.GPIO_INT_EN`）；
-  `base+offset` → `Fixed{base, offset}`；`base+变量` → `Computed(Expr)`。
-- **`register_map`**：驱动**实际访问的寄存器**（从 ops 的 `reg_name` 收集，解析偏移），非内核头噪音。
-- **`Cond` 嵌套**：同一分支谓词下的 op 嵌入 `IF guard { ... }`。
+RIS 操作包括：
 
-该规约对齐 driver-harness `src/ir/formal.rs`（`Expr`/`RISOp`/`FormalRIS`/性质 P1–P4），
-可作为形式化验证、运行时 trace 比对、代码生成的输入。
+- Read：var := R(width, addr)
+- Write：W(width, addr) = expr
+- ReadModifyWrite：RMW(width, addr) = transform
+- Cond、Loop、Delay
 
-## 提取器流水线
+表达式域为 Const、Var、BinOp、Bits、Top。无法安全合并的多路径变换输出 Top；生成器会据此阻止 strict readiness。
 
-```
-parse TU (libclang, 容错) → 宏偏移表 → 目标函数 →
-  per-function 流敏感数据流 (store: var→AbsVal)
-    ├ ioremap/devm_ioremap → BasePtr (污点源)
-    ├ readl(addr) → 解析 RegAddr + ReadTaint
-    ├ writel(val,addr) → 解析 + RMW 检测 (val 为同 addr 的 ReadTaint)
-    ├ 分支内 op 附 condition
-    └ 包装函数调用 → 内联其 ops
-→ intent 标注 (基于解析后宏名) → 形式化为 .ris 规约
-```
+完整 pipeline 可生成：
 
-抽象值域（`extractor/taint.py`）：`BasePtr` / `Offset(base,off,reg_name)` / `ReadTaint(addr)` / `Const` / `SymExpr` / `Top`。
+- .ris：寄存器交互序列
+- .dspec：FunctionSpec/DeviceSpec
+- .bind：后端绑定
+- .facts：源码结构、callback、resource 等事实
+- harness、bare-metal 和 Linux C
 
-## 用法
+实验聚合信息使用 JSON 保存，以便论文表格和复现脚本机器读取；RIS 本身仍使用正式的 .ris 文本语言。
 
-```bash
-./run.sh extract drivers/test/gpio-ftgpio010.c        # 提取 → output/ris.ris
-./run.sh show output/ris.ris                           # 打印 .ris
-./run.sh demo                                          # gpio-ftgpio010 → output/demo/gpio-ftgpio010.ris
-./run.sh compare                                       # 全驱动提取统计
-./run.sh test                                          # 测试套件
-```
+## 快速开始
 
-也可直接：`python3 -m extractor extract -s <src> -o <out.ris>`
+~~~bash
+git submodule update --init
+./tools/prepare_kernel.sh build
+
+./run.sh test
+./run.sh extract drivers/test/gpio-ftgpio010.c output/ftgpio.ris
+./run.sh spec drivers/test/gpio-ftgpio010.c output/ftgpio.dspec
+./run.sh gen drivers/test/edu.c linux output/edu_drv.c
+./run.sh driver drivers/test/edu.c output/edu
+~~~
+
+直接调用 python3 -m extractor 时，分析类子命令支持 --alias-mode off|auto|required。
+
+## 复现实验和论文
+
+~~~bash
+./run.sh test
+python3 verification/run_matrix.py
+verification/run_qemu_experiments.sh
+python3 tools/generate_paper_results.py
+(cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
+~~~
+
+权威结果：
+
+- experiments/results/matrix.json
+- experiments/results/qemu.json
+- paper/generated_results.tex（自动生成，不手改）
+- paper/paper.pdf
+
+详细环境和判定标准见 [REPRO.md](REPRO.md)。
 
 ## 依赖
 
-- Python 3 + `clang.cindex`（随 libclang，路径 `/usr/lib/llvm-18/lib/libclang-18.so.18`）
-- 无额外 Python 包依赖；无 Rust/JSON 依赖
-- 测试可独立运行（`python3 tests/test_extractor.py`），也兼容 pytest
+- Python 3
+- Python clang.cindex 与 libclang 18
+- C 编译器和 GNU make
+- Linux 内核构建依赖
+- QEMU x86_64（仅运行时实验）
+- cpio、静态链接 libc/工具链（用于 guest rootfs）
 
-## 提取统计（17 个测试驱动，`./run.sh compare`）
-
-```
-TOTAL   461 ops / 129 寄存器解析 / 77 RMW / 62 分支条件 / 100 寄存器映射项
-```
+LLM 不是确定性测试、矩阵或 QEMU 结果的依赖。可选 synthesis loop 通过 REHARNESS_LLM_CMD 接入外部模型。
 
 ## 目录
 
-```
-extractor/        Python 提取器 (tu, macros, ast_model, mmio, taint, dataflow,
-                  call_graph, intent, formal, formalize, extractor, cli)
-tests/            pytest/独立测试
-verification/     compare.py (全驱动提取统计)
-drivers -> ../driver-harness/drivers
-linux  -> ../driver-harness/linux
-run.sh            调度器
-```
+~~~text
+drivers/                 版本化的 19-driver evaluation corpus
+linux/                   固定 commit 的 Linux Git submodule
+kernel/                  实验 config、patch、构建说明和 out-of-tree build
+extractor/               AST 提取、数据流、语义推断、metrics、CLI
+generator/               harness / bare-metal / Linux 后端
+verification/            compile matrix、QEMU experiments、trace comparison
+experiments/results/     机器可读的冻结结果与日志
+tools/                   kernel、instrumentation、paper result 工具
+paper/                   论文源文件、自动结果宏和 PDF
+tests/                   回归测试
+~~~

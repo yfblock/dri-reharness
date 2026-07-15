@@ -34,12 +34,17 @@ preflight() {
     echo "  ✗ qemu-system-x86_64 未安装"; errors=$((errors+1))
   fi
   # libclang
-  if [ ! -f /usr/lib/llvm-18/lib/libclang-18.so.18 ]; then
-    echo "  ⚠ libclang-18 可能缺失 (提取会 fallback 到 regex)"; errors=$((errors+1))
+  if ! python3 -c 'from extractor.tu import locate_libclang; raise SystemExit(0 if locate_libclang() else 1)' 2>/dev/null; then
+    echo "  ✗ libclang 不可用"; errors=$((errors+1))
   fi
   # device-registrar (platform bus 需要)
   if [ "${BUS:-}" = "platform" ]; then
-    local rko="${REGISTRAR_KO:-/home/yfblock/Code/linux-driver-harness/test/device-registrar.ko}"
+    local rdir="$HERE/verification/device-registrar"
+    local rko="${REGISTRAR_KO:-$rdir/device-registrar.ko}"
+    if [ ! -f "$rko" ] && [ -f "$rdir/Makefile" ]; then
+      echo "  构建 device-registrar.ko ..."
+      make -C "$rdir" KERNELDIR="$KERNELDIR" >/dev/null 2>&1 || true
+    fi
     if [ ! -f "$rko" ]; then
       echo "  ✗ device-registrar.ko 不存在: $rko"; errors=$((errors+1))
     fi
@@ -107,9 +112,9 @@ gen_makefile() {
 obj-m += $MODULE.o
 KERNELDIR ?= $KERNELDIR
 all:
-	\$(MAKE) -C \$(KERNELDIR) M=\$(PWD) modules
+	\$(MAKE) -C \$(KERNELDIR) M=\$(CURDIR) modules
 clean:
-	\$(MAKE) -C \$(KERNELDIR) M=\$(PWD) clean
+	\$(MAKE) -C \$(KERNELDIR) M=\$(CURDIR) clean
 EOF
 }
 
@@ -125,7 +130,7 @@ compile_loop() {
     grep -iE 'error:|warning:' "$RH_TMP/compile.log" | head -15 | sed 's/^/    /'
     grep -iE 'error:|warning:' "$RH_TMP/compile.log" | head -40 > "$RH_TMP/compile_err.txt"
     cat > "$RH_TMP/compile_fix.txt" <<FIXHEAD
-你是 Linux 内核驱动开发专家(目标内核 7.1.0-rc7)。下面的驱动编译失败, 请修复。
+你是 Linux 内核驱动开发专家(目标内核 ${KERNEL_RELEASE:-unknown})。下面的驱动编译失败, 请修复。
 ## 编译错误
 $(grep -iE 'error:|warning:' "$RH_TMP/compile.log" | head -25)
 

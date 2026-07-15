@@ -1,0 +1,801 @@
+{
+  "aggregate": {
+    "clang_diagnostics": 26,
+    "computed": 56,
+    "conditions": 60,
+    "fixed": 63,
+    "loops": 0,
+    "ops": 393,
+    "registers": 124,
+    "rmw": 67,
+    "symbolic": 260,
+    "unknown_value": 4
+  },
+  "alias_mode": "off",
+  "drivers": [
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "ahci",
+      "metrics": {
+        "clang_diagnostics": 3,
+        "computed": 0,
+        "conditions": 13,
+        "fixed": 1,
+        "loops": 0,
+        "ops": 20,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.95,
+        "registers": 6,
+        "rmw": 5,
+        "symbolic": 19,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 clang error diagnostic(s)",
+          "callback entry without table binding: ahci_pci_device_runtime_suspend, ahci_pci_device_runtime_resume, ahci_pci_device_suspend, ahci_pci_device_resume",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.875,
+        "facts_quality": 0.4,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.935
+      },
+      "seconds": 5.917,
+      "source_sha256": "ea6533b6e12e49982d0b11195a3ed7b94746cb302bc212eb9067e9cf4b6a65a2"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "ahci_ceva",
+      "metrics": {
+        "clang_diagnostics": 3,
+        "computed": 0,
+        "conditions": 4,
+        "fixed": 2,
+        "loops": 0,
+        "ops": 26,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.923,
+        "registers": 10,
+        "rmw": 4,
+        "symbolic": 24,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 clang error diagnostic(s)",
+          "callback entry without table binding: ceva_ahci_resume",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 0.9,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.916
+      },
+      "seconds": 5.615,
+      "source_sha256": "f1877cae1d91cacb85ad83973d17e20f48b9e7d73cbe61aef04b459725d77987"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "ahci_dwc",
+      "metrics": {
+        "clang_diagnostics": 3,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 9,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 5,
+        "rmw": 2,
+        "symbolic": 9,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 clang error diagnostic(s)",
+          "callback entry without table binding: ahci_dwc_resume",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.812,
+        "facts_quality": 0.9,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.97
+      },
+      "seconds": 5.856,
+      "source_sha256": "b539d16daf929ae15e69040553f52708898ae7dc8f17391e1e65f1e5482970ae"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "ahci_mvebu",
+      "metrics": {
+        "clang_diagnostics": 3,
+        "computed": 0,
+        "conditions": 1,
+        "fixed": 6,
+        "loops": 0,
+        "ops": 15,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.6,
+        "registers": 4,
+        "rmw": 3,
+        "symbolic": 9,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 clang error diagnostic(s)",
+          "missing role for: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine",
+          "callback entry without table binding: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.75,
+        "facts_quality": 0.9,
+        "function_spec_quality": 0.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.69
+      },
+      "seconds": 5.543,
+      "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "ahci_sunxi",
+      "metrics": {
+        "clang_diagnostics": 3,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 4,
+        "loops": 0,
+        "ops": 18,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.5,
+        "registers": 1,
+        "rmw": 2,
+        "symbolic": 4,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 clang error diagnostic(s)",
+          "missing role for: ahci_sunxi_start_engine",
+          "callback entry without table binding: ahci_sunxi_start_engine, ahci_sunxi_resume",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.562,
+        "facts_quality": 0.6,
+        "function_spec_quality": 0.667,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.62
+      },
+      "seconds": 5.557,
+      "source_sha256": "464349c5dcf3fe20ddad4b73535a0da345c9c78ea0aedcd30d1135c32c866683"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "clk-highbank",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 5,
+        "fixed": 25,
+        "loops": 0,
+        "ops": 25,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 6,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "missing role for: clk_pll_prepare, clk_pll_unprepare, clk_pll_enable, clk_pll_disable, clk_pll_recalc_rate, clk_pll_set_rate, clk_cpu_periphclk_recalc_rate, clk_cpu_a9bclk_recalc_rate, clk_periclk_recalc_rate, clk_periclk_set_rate",
+          "callback entry without table binding: clk_pll_prepare, clk_pll_unprepare, clk_pll_enable, clk_pll_disable, clk_pll_recalc_rate, clk_pll_set_rate, clk_cpu_periphclk_recalc_rate, clk_cpu_a9bclk_recalc_rate, clk_periclk_recalc_rate, clk_periclk_set_rate",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 0.6,
+        "function_spec_quality": 0.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.3
+      },
+      "seconds": 2.938,
+      "source_sha256": "77a6ff180b7f16aabc7380cb583e6b1fc87c8eb09cadd6aa41be1c39d03d5c09"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "clk-nomadik",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 33,
+        "conditions": 11,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 33,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 11,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "33 dynamic (computed) register address(es)",
+          "missing role for: pll_clk_enable, pll_clk_disable, pll_clk_is_enabled, pll_clk_recalc_rate, src_clk_enable, src_clk_disable, src_clk_is_enabled",
+          "callback entry without table binding: nomadik_clk_reboot_handler, pll_clk_enable, pll_clk_disable, pll_clk_is_enabled, pll_clk_recalc_rate, src_clk_enable, src_clk_disable, src_clk_is_enabled, nomadik_src_clk_init_debugfs",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 0.6,
+        "function_spec_quality": 0.154,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.25
+      },
+      "seconds": 3.87,
+      "source_sha256": "57ee47118f6dadbde5f35d6f0be21d0be5f1473c7391b7900c6d45240901758f"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "edu",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 0,
+        "fixed": 2,
+        "loops": 0,
+        "ops": 5,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.6,
+        "registers": 3,
+        "rmw": 0,
+        "symbolic": 3,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": true,
+        "backend_harness_ready": true,
+        "backend_linux_ready": true,
+        "blockers": [],
+        "device_spec_quality": 0.688,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.72
+      },
+      "seconds": 4.534,
+      "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-cadence",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 21,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 10,
+        "rmw": 4,
+        "symbolic": 21,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
+      },
+      "seconds": 4.233,
+      "source_sha256": "8bd222fffd641e7d0f13b2fe46c9b795d1da11351a797eaaa44ee25c76b64f2f"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-ftgpio010",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 1,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 22,
+        "pct_non_top": 0.864,
+        "pct_symbolic": 1.0,
+        "registers": 9,
+        "rmw": 7,
+        "symbolic": 22,
+        "unknown_value": 3
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 unknown (Top) value(s)"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.973
+      },
+      "seconds": 4.228,
+      "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-idt3243x",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 7,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 4,
+        "rmw": 1,
+        "symbolic": 7,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "callback entry without table binding: idt_gpio_irq_init_hw",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.75,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
+      },
+      "seconds": 4.1,
+      "source_sha256": "a693a4f7e2993a805d75ceb89b1ead93119e8792e0e3071d1b13954042045952"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-mb86s7x",
+      "metrics": {
+        "clang_diagnostics": 1,
+        "computed": 13,
+        "conditions": 0,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 13,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 6,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "13 dynamic (computed) register address(es)",
+          "1 clang error diagnostic(s)",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.24
+      },
+      "seconds": 4.357,
+      "source_sha256": "de532c264a6b7e15f70b332e3b2339f43c522d9ac867b2a21d0192b3c029ada5"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-pl061",
+      "metrics": {
+        "clang_diagnostics": 3,
+        "computed": 4,
+        "conditions": 1,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 31,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.871,
+        "registers": 7,
+        "rmw": 7,
+        "symbolic": 27,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "4 dynamic (computed) register address(es)",
+          "3 clang error diagnostic(s)",
+          "callback entry without table binding: pl061_suspend, pl061_resume",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.938,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.83
+      },
+      "seconds": 4.881,
+      "source_sha256": "85ae65ac39b37f7b665e805155c6b8ef7d67c7be10b6d81a1a3efa6b282222a0"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-sodaville",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 1,
+        "fixed": 2,
+        "loops": 0,
+        "ops": 7,
+        "pct_non_top": 0.857,
+        "pct_symbolic": 0.714,
+        "registers": 3,
+        "rmw": 1,
+        "symbolic": 5,
+        "unknown_value": 1
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 unknown (Top) value(s)",
+          "callback entry without table binding: sdv_gpio_pub_irq_handler"
+        ],
+        "device_spec_quality": 0.688,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.771
+      },
+      "seconds": 4.677,
+      "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "pll",
+      "metrics": {
+        "clang_diagnostics": 1,
+        "computed": 0,
+        "conditions": 0,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 27,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 7,
+        "rmw": 6,
+        "symbolic": 25,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 clang error diagnostic(s)",
+          "missing role for: visconti_pll_recalc_rate, visconti_pll_set_rate, visconti_pll_is_enabled, visconti_pll_enable, visconti_pll_disable",
+          "callback entry without table binding: visconti_pll_recalc_rate, visconti_pll_set_rate, visconti_pll_is_enabled, visconti_pll_enable, visconti_pll_disable",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.938,
+        "facts_quality": 0.4,
+        "function_spec_quality": 0.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.99
+      },
+      "seconds": 2.949,
+      "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "sdhci-esdhc-mcf",
+      "metrics": {
+        "clang_diagnostics": 1,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 12,
+        "loops": 0,
+        "ops": 14,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 0,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 clang error diagnostic(s)",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 1.0,
+        "function_spec_quality": 0.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.29
+      },
+      "seconds": 3.795,
+      "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "sdhci-of-at91",
+      "metrics": {
+        "clang_diagnostics": 1,
+        "computed": 0,
+        "conditions": 3,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 8,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 2,
+        "rmw": 2,
+        "symbolic": 8,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 clang error diagnostic(s)",
+          "callback entry without table binding: sdhci_at91_runtime_resume",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.625,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.99
+      },
+      "seconds": 4.728,
+      "source_sha256": "22906899fc5fbd31e698b4bf958ea41e9ffe52b5866fbe6b3099874d7c6861f8"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "virtio_mmio",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 6,
+        "conditions": 9,
+        "fixed": 9,
+        "loops": 0,
+        "ops": 59,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.746,
+        "registers": 31,
+        "rmw": 0,
+        "symbolic": 44,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "6 dynamic (computed) register address(es)",
+          "missing role for: vm_get_features, vm_finalize_features, vm_interrupt, virtio_mmio_restore",
+          "callback entry without table binding: vm_get_features, vm_finalize_features, vm_notify, vm_interrupt, virtio_mmio_restore",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 0.75,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.772
+      },
+      "seconds": 4.821,
+      "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "wmt_ge_rops",
+      "metrics": {
+        "clang_diagnostics": 4,
+        "computed": 0,
+        "conditions": 1,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 33,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 22,
+        "rmw": 0,
+        "symbolic": 33,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 0,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "4 clang error diagnostic(s)",
+          "missing role for: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync",
+          "callback entry without table binding: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 0.6,
+        "function_spec_quality": 0.25,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.96
+      },
+      "seconds": 5.032,
+      "source_sha256": "b1d7894f2d3a41780709a049861a7468575864c3d1ed6815893f3090499a60c5"
+    }
+  ],
+  "environment": {
+    "kernel_release": "7.1.0-rc7-gacb7500801e9",
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "reharness_commit": "3c2e042596ae83203f12f153f3d2b7ed492f4c3e"
+  },
+  "generated_at": "2026-07-14T21:15:31.998098+00:00",
+  "schema": 1
+}

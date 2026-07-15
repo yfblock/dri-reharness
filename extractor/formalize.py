@@ -26,7 +26,9 @@ def _to_risop(op: Op, id_counter: list[int]) -> dict:
                           "value": F.parse_expr(op.value), "intent": op.intent}}
     if op.kind == "ReadModifyWrite":
         return {"ReadModifyWrite": {"addr": addr, "width": width,
-                                    "transform": F.parse_expr(op.value), "intent": op.intent}}
+                                    "transform": F.parse_expr(op.value),
+                                    "read_var": op.var,
+                                    "intent": op.intent}}
     if op.kind == "Delay":
         ns = getattr(op, "_delay_ns", 0)
         return {"Delay": {"cycles": F.parse_expr(str(ns))}}

@@ -298,11 +298,13 @@ def default_bind(device_spec, backend: str) -> BindSpec:
         b.state = [StateMap("dev.base", base_expr)]
         for fn in device_spec.functions:
             if fn.is_callback_entry and fn.callback_table:
-                field = fn.callback_table
-                # table.field — recover field from role if table is bare "irq_chip"
-                f = _field_for_role(fn.role)
-                if f:
-                    b.callbacks.append(CallbackMap(f"{field}.{f}", fn.name))
+                if "." in fn.callback_table:
+                    b.callbacks.append(CallbackMap(fn.callback_table, fn.name))
+                else:
+                    f = _field_for_role(fn.role)
+                    if f:
+                        b.callbacks.append(CallbackMap(
+                            f"{fn.callback_table}.{f}", fn.name))
             elif fn.role == "probe":
                 b.callbacks.append(CallbackMap("platform_driver.probe", fn.name))
             elif fn.role == "remove":
