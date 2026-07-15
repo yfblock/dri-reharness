@@ -1,0 +1,115 @@
+{
+  "environment": {
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "reharness_commit": "7ab0cf20526e62e8806617585463f1b8a513a80f"
+  },
+  "generated_at": "2026-07-15T13:11:09.324852+00:00",
+  "highbank": {
+    "arithmetic_oracle": {
+      "baseline_cases": 22,
+      "baseline_passed": true,
+      "mutations": {
+        "a9b_shift": {
+          "caught_cases": 3
+        },
+        "periclk_increment": {
+          "caught_cases": 2
+        },
+        "pll_divq": {
+          "caught_cases": 2
+        }
+      },
+      "mutations_caught": 3,
+      "schema": 1
+    },
+    "source_model": {
+      "groups": {
+        "a9bclk_ops": {
+          "recalc_rate": "clk_cpu_a9bclk_recalc_rate"
+        },
+        "a9periphclk_ops": {
+          "recalc_rate": "clk_cpu_periphclk_recalc_rate"
+        },
+        "clk_pll_ops": {
+          "determine_rate": "clk_pll_determine_rate",
+          "disable": "clk_pll_disable",
+          "enable": "clk_pll_enable",
+          "prepare": "clk_pll_prepare",
+          "recalc_rate": "clk_pll_recalc_rate",
+          "set_rate": "clk_pll_set_rate",
+          "unprepare": "clk_pll_unprepare"
+        },
+        "periclk_ops": {
+          "determine_rate": "clk_periclk_determine_rate",
+          "recalc_rate": "clk_periclk_recalc_rate",
+          "set_rate": "clk_periclk_set_rate"
+        }
+      },
+      "lowered_callbacks": [
+        "clk_cpu_a9bclk_recalc_rate",
+        "clk_cpu_periphclk_recalc_rate",
+        "clk_periclk_determine_rate",
+        "clk_periclk_recalc_rate",
+        "clk_periclk_set_rate",
+        "clk_pll_determine_rate",
+        "clk_pll_disable",
+        "clk_pll_enable",
+        "clk_pll_prepare",
+        "clk_pll_recalc_rate",
+        "clk_pll_set_rate",
+        "clk_pll_unprepare"
+      ],
+      "pure_helpers": 1,
+      "reasons": [],
+      "source_sha256": "77a6ff180b7f16aabc7380cb583e6b1fc87c8eb09cadd6aa41be1c39d03d5c09",
+      "supported": true,
+      "variants": [
+        [
+          "calxeda,hb-pll-clock",
+          "clk_pll_ops"
+        ],
+        [
+          "calxeda,hb-a9periph-clock",
+          "a9periphclk_ops"
+        ],
+        [
+          "calxeda,hb-a9bus-clock",
+          "a9bclk_ops"
+        ],
+        [
+          "calxeda,hb-emmc-clock",
+          "periclk_ops"
+        ]
+      ]
+    }
+  },
+  "schema": 1,
+  "visconti_pll": {
+    "boundary_expected": true,
+    "source_model": {
+      "groups": {
+        "visconti_pll_ops": {
+          "determine_rate": "visconti_pll_determine_rate",
+          "disable": "visconti_pll_disable",
+          "enable": "visconti_pll_enable",
+          "is_enabled": "visconti_pll_is_enabled",
+          "recalc_rate": "visconti_pll_recalc_rate",
+          "set_rate": "visconti_pll_set_rate"
+        }
+      },
+      "lowered_callbacks": [],
+      "pure_helpers": 0,
+      "reasons": [
+        "visconti_pll_determine_rate: unbound private fields on pll: rate_count, rate_table",
+        "visconti_pll_disable: unbound private fields on pll: lock, pll_base",
+        "visconti_pll_enable: unbound private fields on pll: lock, pll_base, rate_table",
+        "visconti_pll_is_enabled: unbound private fields on pll: pll_base",
+        "visconti_pll_recalc_rate: unbound private value pll",
+        "visconti_pll_set_rate: unbound private value pll"
+      ],
+      "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492",
+      "supported": false,
+      "variants": []
+    }
+  }
+}

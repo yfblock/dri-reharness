@@ -1,35 +1,35 @@
 === QEMU run: module=gpio_ftgpio010 bus=platform timeout=90s ===
 === QEMU 退出码: 0 ===
-[    0.032174] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
-[    0.073191] ftrace: allocating 31571 entries in 124 pages
-[    0.073468] ftrace: allocated 124 pages with 5 groups
-[    0.413131] thermal_sys: Registered thermal governor 'step_wise'
-[    0.417777] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
-[    0.421733] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-[    0.506533] pps_core: LinuxPPS API ver. 1 registered
-[    0.548301] Key type asymmetric registered
-[    0.548378] Asymmetric key parser 'x509' registered
-[    0.548815] io scheduler mq-deadline registered
-[    0.548877] io scheduler kyber registered
-[    0.587426] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.032055] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073592] ftrace: allocating 31571 entries in 124 pages
+[    0.073858] ftrace: allocated 124 pages with 5 groups
+[    0.417111] thermal_sys: Registered thermal governor 'step_wise'
+[    0.421900] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.423421] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.504811] pps_core: LinuxPPS API ver. 1 registered
+[    0.546414] Key type asymmetric registered
+[    0.546493] Asymmetric key parser 'x509' registered
+[    0.546944] io scheduler mq-deadline registered
+[    0.547006] io scheduler kyber registered
+[    0.589431] rtc_cmos PNP0B00:00: registered as rtc0
 === insmod device-registrar target=gpio-ftgpio010 ===
 === insmod gpio_ftgpio010 ===
-[    1.323518] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
-[    0.032106] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
-[    0.032174] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
-[    0.413131] thermal_sys: Registered thermal governor 'step_wise'
-[    0.417777] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
-[    0.421733] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-[    0.506533] pps_core: LinuxPPS API ver. 1 registered
-[    0.548301] Key type asymmetric registered
-[    0.548378] Asymmetric key parser 'x509' registered
-[    0.548815] io scheduler mq-deadline registered
-[    0.548877] io scheduler kyber registered
-[    0.587426] rtc_cmos PNP0B00:00: registered as rtc0
-[    1.323518] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
+[    1.317921] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
+[    0.031986] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.032055] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.417111] thermal_sys: Registered thermal governor 'step_wise'
+[    0.421900] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.423421] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.504811] pps_core: LinuxPPS API ver. 1 registered
+[    0.546414] Key type asymmetric registered
+[    0.546493] Asymmetric key parser 'x509' registered
+[    0.546944] io scheduler mq-deadline registered
+[    0.547006] io scheduler kyber registered
+[    0.589431] rtc_cmos PNP0B00:00: registered as rtc0
+[    1.317921] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
 === rmmod gpio_ftgpio010 ===
 === QEMU_RUN_DONE ===
-[    1.898156] Call Trace:
+[    1.893891] Call Trace:
 
 === 成功判定 ===
   done=1 probe=18 real_oops=0

@@ -2,7 +2,7 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-论文制品的 v5 冻结入口为 annotated tag `paper-artifact-v5`。结果 JSON 中的 `reharness_commit` 固定为 `2d3736ab75e0ba4c4d1d833f08a9f8e96eb9fb45`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
+论文制品的 v6 冻结入口为 annotated tag `paper-artifact-v6`。结果 JSON 中的 `reharness_commit` 固定为 `7ab0cf20526e62e8806617585463f1b8a513a80f`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
 
 ## 环境
 
@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：55 passed, 0 failed。
+预期：58 passed, 0 failed。
 
 ## 3. 19-driver 确定性矩阵
 
@@ -44,16 +44,28 @@ python3 verification/run_matrix.py
 当前冻结聚合值：
 
 ~~~text
-drivers=19 ops=425 symbolic=314 fixed=64 computed=33
+drivers=19 ops=425 symbolic=314 fixed=62 computed=35
 rmw=71 conditions=58 registers=141 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
-strict_ready: harness=6 baremetal=6 linux=6
+strict_ready: harness=7 baremetal=7 linux=7
 llm_synthesis_ready=12
 ~~~
 
 *_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定；可精确 lowering 的 computed address（例如 PL061 banked GPIO）不再被误判为 blocker。
 
 实验内核配置固定启用 `CONFIG_COMMON_CLK=y`，用于验证生成的 clock framework 注册路径；该配置随 artifact 版本化。
+
+## 3a. Clock 算术 oracle 与泛化边界
+
+~~~bash
+python3 verification/run_clock_model_boundary.py
+~~~
+
+输出：`experiments/results/clock-model-boundary.json`。
+
+Highbank 的生成 callback 会在独立 userspace MMIO shim 中执行并与 Python reference 比较：22 个基线用例全部通过，PLL divq、A9 bus shift 和 periclk increment 三类 mutation 均至少被一个用例检出。该 oracle 验证当前版本化公式，但不是 Highbank 真实硬件等价证明。
+
+同一分析器必须保守拒绝 Visconti PLL；JSON 会记录 `pll_base`、`rate_table/rate_count`、`lock` 和未绑定 private value 等原因。这个负例用于防止把 Highbank 的受限语法 lowering 错写成通用 clock source-private 支持。
 
 ## 3b. 真实多源 Linux 驱动矩阵
 
@@ -140,6 +152,7 @@ git submodule update --init
 ./run.sh test
 python3 verification/run_matrix.py
 python3 verification/run_multisource_matrix.py
+python3 verification/run_clock_model_boundary.py
 verification/run_qemu_experiments.sh
 python3 tools/generate_paper_results.py
 (cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)

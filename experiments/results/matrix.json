@@ -1,9 +1,9 @@
 {
   "aggregate": {
     "clang_diagnostics": 3,
-    "computed": 33,
+    "computed": 35,
     "conditions": 58,
-    "fixed": 64,
+    "fixed": 62,
     "loops": 0,
     "ops": 425,
     "registers": 141,
@@ -50,7 +50,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.965
       },
-      "seconds": 6.809,
+      "seconds": 7.072,
       "source_sha256": "ea6533b6e12e49982d0b11195a3ed7b94746cb302bc212eb9067e9cf4b6a65a2"
     },
     {
@@ -81,7 +81,6 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "2 unsafe dynamic register address(es) (2 computed total)",
           "callback entry without table binding: ceva_ahci_resume",
           "linux backend has unsupported semantic bindings"
         ],
@@ -91,7 +90,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.896
       },
-      "seconds": 6.516,
+      "seconds": 6.769,
       "source_sha256": "f1877cae1d91cacb85ad83973d17e20f48b9e7d73cbe61aef04b459725d77987"
     },
     {
@@ -130,7 +129,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 6.812,
+      "seconds": 7.137,
       "source_sha256": "b539d16daf929ae15e69040553f52708898ae7dc8f17391e1e65f1e5482970ae"
     },
     {
@@ -171,7 +170,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.72
       },
-      "seconds": 6.428,
+      "seconds": 6.643,
       "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf"
     },
     {
@@ -212,7 +211,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.65
       },
-      "seconds": 6.51,
+      "seconds": 6.766,
       "source_sha256": "464349c5dcf3fe20ddad4b73535a0da345c9c78ea0aedcd30d1135c32c866683"
     },
     {
@@ -249,7 +248,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.3
       },
-      "seconds": 3.427,
+      "seconds": 3.516,
       "source_sha256": "77a6ff180b7f16aabc7380cb583e6b1fc87c8eb09cadd6aa41be1c39d03d5c09"
     },
     {
@@ -289,7 +288,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.844
       },
-      "seconds": 4.504,
+      "seconds": 4.596,
       "source_sha256": "57ee47118f6dadbde5f35d6f0be21d0be5f1473c7391b7900c6d45240901758f"
     },
     {
@@ -326,7 +325,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.72
       },
-      "seconds": 5.286,
+      "seconds": 5.453,
       "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
     },
     {
@@ -363,7 +362,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 4.832,
+      "seconds": 4.999,
       "source_sha256": "8bd222fffd641e7d0f13b2fe46c9b795d1da11351a797eaaa44ee25c76b64f2f"
     },
     {
@@ -400,7 +399,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 4.866,
+      "seconds": 5.018,
       "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
     },
     {
@@ -437,7 +436,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 4.708,
+      "seconds": 4.947,
       "source_sha256": "a693a4f7e2993a805d75ceb89b1ead93119e8792e0e3071d1b13954042045952"
     },
     {
@@ -477,7 +476,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.25
       },
-      "seconds": 5.052,
+      "seconds": 5.271,
       "source_sha256": "de532c264a6b7e15f70b332e3b2339f43c522d9ac867b2a21d0192b3c029ada5"
     },
     {
@@ -514,7 +513,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.86
       },
-      "seconds": 5.548,
+      "seconds": 5.749,
       "source_sha256": "85ae65ac39b37f7b665e805155c6b8ef7d67c7be10b6d81a1a3efa6b282222a0"
     },
     {
@@ -527,9 +526,9 @@
       "driver": "gpio-sodaville",
       "metrics": {
         "clang_diagnostics": 0,
-        "computed": 0,
+        "computed": 2,
         "conditions": 1,
-        "fixed": 2,
+        "fixed": 0,
         "loops": 0,
         "ops": 7,
         "pct_non_top": 1.0,
@@ -541,19 +540,17 @@
       },
       "pipeline_exit": 0,
       "readiness": {
-        "backend_bare_metal_ready": false,
-        "backend_harness_ready": false,
-        "backend_linux_ready": false,
-        "blockers": [
-          "linux backend has unsupported semantic bindings"
-        ],
+        "backend_bare_metal_ready": true,
+        "backend_harness_ready": true,
+        "backend_linux_ready": true,
+        "blockers": [],
         "device_spec_quality": 0.688,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.8
+        "ris_quality": 0.75
       },
-      "seconds": 5.465,
+      "seconds": 5.707,
       "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109"
     },
     {
@@ -592,7 +589,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 3.543,
+      "seconds": 3.618,
       "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492"
     },
     {
@@ -633,7 +630,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.4
       },
-      "seconds": 5.373,
+      "seconds": 5.505,
       "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396"
     },
     {
@@ -673,7 +670,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 5.628,
+      "seconds": 5.748,
       "source_sha256": "22906899fc5fbd31e698b4bf958ea41e9ffe52b5866fbe6b3099874d7c6861f8"
     },
     {
@@ -715,7 +712,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.772
       },
-      "seconds": 5.641,
+      "seconds": 5.741,
       "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5"
     },
     {
@@ -755,7 +752,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.97
       },
-      "seconds": 5.868,
+      "seconds": 5.971,
       "source_sha256": "b1d7894f2d3a41780709a049861a7468575864c3d1ed6815893f3090499a60c5"
     }
   ],
@@ -764,8 +761,8 @@
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "reharness_commit": "2d3736ab75e0ba4c4d1d833f08a9f8e96eb9fb45"
+    "reharness_commit": "7ab0cf20526e62e8806617585463f1b8a513a80f"
   },
-  "generated_at": "2026-07-15T11:37:24.441231+00:00",
+  "generated_at": "2026-07-15T13:12:49.444318+00:00",
   "schema": 1
 }
