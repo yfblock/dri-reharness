@@ -108,7 +108,12 @@ def module_metrics(module: dict) -> dict:
         if _value_is_top(val) or _expr_has_top(val):
             unknown_val += 1
     cond = sum(1 for o in walk_all_ops(module["ops"]) if "Cond" in o)
-    loop = sum(1 for o in walk_all_ops(module["ops"]) if "Loop" in o)
+    loop_nodes = [o["Loop"] for o in walk_all_ops(module["ops"])
+                  if "Loop" in o]
+    loop = len(loop_nodes)
+    conservative_loop = sum(
+        node.get("reliability") != "Exact" or not node.get("bounded")
+        for node in loop_nodes)
     addr_total = sym + fixed + comp
     return {
         "module": module["name"],
@@ -121,6 +126,7 @@ def module_metrics(module: dict) -> dict:
         "unknown_value": unknown_val,
         "cond": cond,
         "loop": loop,
+        "conservative_loop": conservative_loop,
         "pct_symbolic": round(sym / addr_total, 3) if addr_total else None,
     }
 
@@ -128,8 +134,8 @@ def module_metrics(module: dict) -> dict:
 def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     mods = [module_metrics(m) for m in formal["modules"]]
     agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed",
-                           "unsafe_computed", "rmw",
-                           "unknown_value", "cond", "loop")}
+                           "unsafe_computed", "rmw", "unknown_value", "cond",
+                           "loop", "conservative_loop")}
     for m in mods:
         for k in agg:
             agg[k] += m[k]
@@ -141,6 +147,39 @@ def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     agg["clang_diag"] = n_clang_diag
     agg["modules"] = mods
     agg["register_map"] = len(formal.get("register_map", []))
+    reliability = {"Exact": 0, "Conservative": 0, "Unknown": 0,
+                   "Unsupported": 0}
+    for module in formal.get("modules", []):
+        for op in walk_leaf_ops(module.get("ops", [])):
+            body = (op.get("Read") or op.get("Write")
+                    or op.get("ReadModifyWrite"))
+            if body is not None:
+                level = body.get("reliability", "Unknown")
+                reliability[level] = reliability.get(level, 0) + 1
+    accounting = formal.get("metadata", {}).get("access_accounting", {})
+    agg["reliability"] = reliability
+    agg["access_accounting"] = {
+        key: accounting.get(key, False if key in {"complete", "strict_complete"} else 0)
+        for key in ("source_accesses", "emitted", "filtered",
+                    "unsupported", "unaccounted",
+                    "ris_ops_without_evidence", "complete", "strict_complete")
+    }
+    validation = formal.get("metadata", {}).get("path_validation", {})
+    agg["path_validation"] = {
+        key: validation.get(key, False if key == "complete" else 0)
+        for key in ("complete", "satisfiable", "infeasible", "unknown")
+    }
+    agg["path_validation"]["nonexclusive_switch_pairs"] = sum(
+        not pair.get("exclusive", False)
+        for pair in validation.get("switch_pairs", []))
+    control = formal.get("metadata", {}).get("control_accounting", {})
+    agg["control_accounting"] = {
+        "complete": control.get("complete", True),
+        "modeled_early_returns": control.get("modeled_early_returns", 0),
+        "assumed_framework_error_gotos": control.get(
+            "assumed_framework_error_gotos", 0),
+        "unsupported": control.get("unsupported", 0),
+    }
     return agg
 
 
@@ -174,8 +213,10 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     total_ops = met["total_ops"] or 1
     addr_total = met["symbolic"] + met["fixed"] + met["computed"] or 1
 
+    safe_addresses = addr_total - met["unsafe_computed"]
     raw_ris_quality = (
-        0.7 * (met["symbolic"] / addr_total)
+        0.5 * (safe_addresses / addr_total)
+        + 0.2 * (met["symbolic"] / addr_total)
         + 0.2 * ((total_ops - met["unknown_value"]) / total_ops)
         + 0.1 * (1.0 if met["computed"] == 0 else 0.5)
     )
@@ -209,6 +250,37 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         facts_quality = 0.0
 
     blockers: list[str] = []
+    accounting = met.get("access_accounting", {})
+    if accounting.get("unaccounted", 0):
+        blockers.append(
+            f"{accounting['unaccounted']} source MMIO access site(s) unaccounted")
+    if accounting.get("ris_ops_without_evidence", 0):
+        blockers.append(
+            f"{accounting['ris_ops_without_evidence']} RIS operation(s) lack source evidence")
+    if accounting.get("filtered", 0):
+        blockers.append(
+            f"{accounting['filtered']} source MMIO access site(s) explicitly filtered")
+    if accounting.get("unsupported", 0):
+        blockers.append(
+            f"{accounting['unsupported']} source register/opaque access site(s) unsupported")
+    path_validation = met.get("path_validation", {})
+    if path_validation.get("unknown", 0):
+        blockers.append(
+            f"{path_validation['unknown']} path predicate(s) not SMT-validated")
+    if path_validation.get("infeasible", 0):
+        blockers.append(
+            f"{path_validation['infeasible']} contradictory/infeasible RIS path(s)")
+    if path_validation.get("nonexclusive_switch_pairs", 0):
+        blockers.append(
+            f"{path_validation['nonexclusive_switch_pairs']} switch path pair(s) not proven exclusive")
+    unsupported_ops = met.get("reliability", {}).get("Unsupported", 0)
+    if unsupported_ops:
+        blockers.append(
+            f"{unsupported_ops} register operation(s) use unsupported access domain")
+    unsupported_control = met.get("control_accounting", {}).get("unsupported", 0)
+    if unsupported_control:
+        blockers.append(
+            f"{unsupported_control} unsupported control-flow transfer(s)")
     if met["unsafe_computed"] > 0:
         blockers.append(
             f"{met['unsafe_computed']} unsafe dynamic register address(es) "
@@ -217,6 +289,9 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         blockers.append(f"{met['unknown_value']} unknown (Top) value(s)")
     if met["clang_diag"] > 0:
         blockers.append(f"{met['clang_diag']} clang error diagnostic(s)")
+    if met["conservative_loop"] > 0:
+        blockers.append(
+            f"{met['conservative_loop']} conservative loop summary/summaries require validation")
     unroled = [f.name for f in fns if f.role in ("unknown",)]
     if unroled:
         blockers.append(f"missing role for: {', '.join(unroled)}")
@@ -231,7 +306,15 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if not has_register_access:
         blockers.append("no MMIO register accesses")
 
-    baremetal_ready = (met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+    accounting_ready = bool(accounting.get("strict_complete", False))
+    path_ready = (bool(path_validation.get("complete", False))
+                  and path_validation.get("infeasible", 0) == 0
+                  and path_validation.get("nonexclusive_switch_pairs", 0) == 0)
+    baremetal_ready = (accounting_ready and path_ready
+                       and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+                       and unsupported_ops == 0
+                       and unsupported_control == 0
+                       and met["conservative_loop"] == 0
                        and ris_quality >= 0.7)
     linux_ready = (baremetal_ready and function_spec_quality >= 0.6
                    and not unbound_callbacks and has_register_access)
@@ -245,18 +328,35 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             return gen_results.get(backend, {})
         h = _gr("harness")
         if h:
-            harness_ready = bool(met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+            harness_ready = bool(accounting_ready and path_ready
+                                 and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+                                 and unsupported_control == 0
+                                 and met["conservative_loop"] == 0
                                  and h.get("compiled") and h.get("trace_passed")
                                  and not h.get("has_todo")
                                  and not h.get("unsupported"))
         bm = _gr("baremetal")
         if bm:
-            baremetal_ready = bool(met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+            baremetal_ready = bool(accounting_ready and path_ready
+                                   and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+                                   and unsupported_control == 0
+                                   and met["conservative_loop"] == 0
                                    and bm.get("compiled") and not bm.get("has_todo")
                                    and not bm.get("unsupported"))
         lx = _gr("linux")
         if lx:
-            linux_ready = bool(baremetal_ready and function_spec_quality >= 0.6
+            # Linux has source-aware class-specific lowerings (notably clock
+            # models) that may faithfully preserve semantics a generic
+            # harness/bare-metal backend cannot execute.  Judge the actual
+            # generated Linux artifact directly instead of requiring generic
+            # backend readiness as a prerequisite.
+            linux_ready = bool(accounting_ready and path_ready
+                               and met["unsafe_computed"] == 0
+                               and met["unknown_value"] == 0
+                               and unsupported_ops == 0
+                               and unsupported_control == 0
+                               and function_spec_quality >= 0.6
+                               and not unbound_callbacks
                                and not lx.get("has_todo")
                                and not lx.get("unsupported")
                                and lx.get("compiled", False)

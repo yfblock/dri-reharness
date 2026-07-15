@@ -137,7 +137,7 @@ def test_edu_pci_extraction():
     assert regs.get("IO_IRQ_STATUS") == 0x24
     assert regs.get("IO_IRQ_ACK") == 0x64
     # mmio global recognized as base → no Top addresses
-    from extractor.formal import walk_leaf_ops
+    from extractor.formal import expr_display, walk_leaf_ops
     for m in res.formal["modules"]:
         for o in walk_leaf_ops(m["ops"]):
             if "Delay" in o:
@@ -250,6 +250,303 @@ def test_formal_display_text(ftgpio_formal):
     assert "-- Interrupt" in txt
 
 
+def test_access_accounting_and_operation_evidence_are_complete():
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import driver_metrics, score
+
+    result = extract_ris(ExtractorConfig(source=FTGPIO))
+    accounting = result.formal["metadata"]["access_accounting"]
+    assert accounting["source_accesses"] == 22
+    assert accounting["emitted"] == 22
+    assert accounting["unaccounted"] == 0
+    assert accounting["ris_ops_without_evidence"] == 0
+    assert accounting["complete"] is True
+    assert accounting["strict_complete"] is True
+
+    op_ids = []
+    for module in result.formal["modules"]:
+        for op in walk_leaf_ops(module["ops"]):
+            body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            if body is None:
+                continue
+            op_ids.append(body["op_id"])
+            assert body["evidence"]["site_id"]
+            assert body["evidence"]["source"] == os.path.abspath(FTGPIO)
+            assert body["reliability"] in {"Exact", "Conservative", "Unknown"}
+            assert body["address_precision"] in {
+                "symbolic", "fixed", "computed", "unknown"}
+    assert len(op_ids) == len(set(op_ids)) == 22
+    metrics = driver_metrics(result.formal)
+    assert sum(metrics["reliability"].values()) == 22
+    assert score(result.device_spec, result.formal, result.warnings,
+                 result.facts)["backend_linux_ready"] is True
+
+
+def test_filtered_source_mmio_access_blocks_strict_readiness():
+    from extractor.metrics import score
+
+    result = extract_ris(ExtractorConfig(
+        source=FTGPIO, extra_blacklist=["readl"]))
+    accounting = result.formal["metadata"]["access_accounting"]
+    assert accounting["filtered"] > 0
+    assert accounting["complete"] is True
+    assert accounting["strict_complete"] is False
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_linux_ready"] is False
+    assert any("explicitly filtered" in blocker
+               for blocker in readiness["blockers"])
+
+
+def test_structured_control_preserves_loop_and_branch_evidence():
+    from extractor.formal import expr_display, walk_leaf_ops
+    from extractor.metrics import driver_metrics, score
+    from extractor.spec import default_bind
+    from generator import harness as harness_gen
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "control_flow.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    module = _module(result.formal, "control_flow")
+    assert len(module["ops"]) == 1 and "Loop" in module["ops"][0]
+    loop = module["ops"][0]["Loop"]
+    assert loop["loop_kind"] == "for"
+    assert loop["reliability"] == "Conservative"
+    assert expr_display(loop["guard"]) == "(i < count)"
+    assert loop["init"] == "i = 0"
+    assert loop["step"] == "i++"
+    leaves = list(walk_leaf_ops(module["ops"]))
+    assert len(leaves) == 2
+    assert all((leaf["Write"]["path_precision"] == "syntactic")
+               for leaf in leaves)
+    metrics = driver_metrics(result.formal)
+    assert metrics["loop"] == 1 and metrics["cond"] == 2
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_harness_ready"] is False
+    assert any("conservative loop" in blocker
+               for blocker in readiness["blockers"])
+    code = harness_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    assert "REHARNESS_UNSUPPORTED_LOOP" in code
+
+
+def test_canonical_bounded_loop_is_proved_and_lowered():
+    from extractor.metrics import driver_metrics, score
+    from extractor.spec import default_bind
+    from generator import harness as harness_gen
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "bounded_loop.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    module = _module(result.formal, "bounded_loop")
+    assert len(module["ops"]) == 1 and "Loop" in module["ops"][0]
+    loop = module["ops"][0]["Loop"]
+    assert loop["reliability"] == "Exact"
+    assert loop["bounded"] is True
+    assert loop["count"] == {"Const": 4}
+    assert loop["induction_var"] == "i"
+    metrics = driver_metrics(result.formal)
+    assert metrics["loop"] == 1
+    assert metrics["conservative_loop"] == 0
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_bare_metal_ready"] is True
+    code = harness_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    assert "for (i = 0; (i < 0x4); i++)" in code
+    assert "REHARNESS_UNSUPPORTED_LOOP" not in code
+
+
+def test_path_sensitive_assignment_store_builds_ite_write_value():
+    from extractor.formal import expr_display
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "path_state.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    module = _module(result.formal, "path_state")
+    write = next(op["Write"] for op in module["ops"] if "Write" in op)
+    assert "Ite" in write["value"]
+    rendered = expr_display(write["value"])
+    assert "select" in rendered
+    assert "0x2" in rendered and "0x1" in rendered
+    assert write["addr"]["Symbolic"]["register"] == "VALUE_REG"
+    assert write["reliability"] == "Exact"
+
+
+def test_simple_early_return_becomes_continuation_guard():
+    from extractor.formal import expr_display, walk_leaf_ops
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "early_return.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    module = _module(result.formal, "early_return")
+    assert len(module["ops"]) == 1 and "Cond" in module["ops"][0]
+    cond = module["ops"][0]["Cond"]
+    assert expr_display(cond["guard"]) == "enabled"
+    leaves = list(walk_leaf_ops(module["ops"]))
+    assert len(leaves) == 1
+    assert leaves[0]["Write"]["addr"]["Symbolic"]["register"] == "EARLY_REG"
+    validation = result.formal["metadata"]["path_validation"]
+    assert validation["complete"] is True
+    assert validation["infeasible"] == 0
+    control = result.formal["metadata"]["control_accounting"]
+    assert control["modeled_early_returns"] == 1
+    assert control["complete"] is True
+
+
+def test_goto_is_reported_as_unsupported_control_flow():
+    from extractor.metrics import score
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "goto_control.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    control = result.formal["metadata"]["control_accounting"]
+    assert control["complete"] is False
+    assert control["unsupported"] == 1
+    assert control["sites"][0]["kind"] == "goto"
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_bare_metal_ready"] is False
+    assert any("unsupported control-flow" in blocker
+               for blocker in readiness["blockers"])
+
+
+def test_switch_cases_receive_mutually_exclusive_path_guards():
+    from extractor.formal import expr_display, walk_leaf_ops
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "switch_paths.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    module = _module(result.formal, "switch_paths")
+    leaves = list(walk_leaf_ops(module["ops"]))
+    assert len(leaves) == 3
+    guards = []
+    for top in module["ops"]:
+        assert "Cond" in top
+        guards.append(expr_display(top["Cond"]["guard"]))
+    assert any("mode" in guard and "0x1" in guard for guard in guards)
+    assert any("mode" in guard and "0x2" in guard for guard in guards)
+    default = next(guard for guard in guards
+                   if "||" in guard and "== 0x0" in guard)
+    assert "0x1" in default and "0x2" in default
+    assert all(leaf["Write"]["reliability"] == "Conservative"
+               for leaf in leaves)
+    validation = result.formal["metadata"]["path_validation"]
+    assert validation["complete"] is True
+    assert len(validation["switch_pairs"]) == 3
+    assert all(pair["exclusive"] for pair in validation["switch_pairs"])
+
+
+def test_smt_path_validation_blocks_contradictory_nested_path():
+    from extractor.metrics import score
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "infeasible_path.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    validation = result.formal["metadata"]["path_validation"]
+    assert validation["complete"] is True
+    assert validation["infeasible"] == 1
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_linux_ready"] is False
+    assert any("contradictory/infeasible" in blocker
+               for blocker in readiness["blockers"])
+
+
+def test_auto_wrapper_summary_survives_zero_inline_depth():
+    from extractor.formal import walk_leaf_ops
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "mmio_wrapper.c")
+    result = extract_ris(ExtractorConfig(
+        source=source, max_inline_depth=0))
+    assert result.stats["wrapper_summary_count"] >= 1
+    assert any("wrapper_read" in name
+               for name in result.stats["wrapper_summaries"])
+    module = _module(result.formal, "wrapper_caller")
+    leaves = list(walk_leaf_ops(module["ops"]))
+    assert len(leaves) == 1 and "Read" in leaves[0]
+    read = leaves[0]["Read"]
+    assert read["addr"]["Symbolic"]["register"] == "WRAP_STATUS"
+    assert read["evidence"]["origin"] == "wrapper_summary"
+    assert read["evidence"]["summarized_at"][0]["callee"] == "wrapper_read"
+
+
+def test_static_ops_table_indirect_call_is_resolved_and_propagated():
+    from extractor.formal import walk_leaf_ops
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "indirect_ops.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    assert result.stats["resolved_indirect_calls"] == 1
+    assert result.stats["indirect_call_targets"]["local_ops.emit"] == \
+        "indirect_emit"
+    caller = _module(result.formal, "indirect_caller")
+    leaves = list(walk_leaf_ops(caller["ops"]))
+    assert len(leaves) == 1 and "Write" in leaves[0]
+    write = leaves[0]["Write"]
+    assert write["addr"]["Symbolic"]["register"] == "INDIRECT_REG"
+    assert write["value"] == {"Const": 7}
+    summarized = write["evidence"].get("summarized_at", [])
+    inlined = write["evidence"].get("inlined_at", [])
+    assert any(item.get("indirect_expression") == "local_ops.emit"
+               for item in summarized + inlined)
+
+
+def test_regmap_operations_are_accounted_but_domain_blocked():
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import driver_metrics, score
+    from extractor.spec import default_bind
+    from generator import harness as harness_gen
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "regmap_access.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    module = _module(result.formal, "regmap_access")
+    leaves = list(walk_leaf_ops(module["ops"]))
+    assert len(leaves) == 3
+    assert {next(iter(leaf)) for leaf in leaves} == {
+        "Read", "Write", "ReadModifyWrite"}
+    assert all((leaf.get("Read") or leaf.get("Write")
+                or leaf.get("ReadModifyWrite"))["access_domain"] == "regmap"
+               for leaf in leaves)
+    assert all((leaf.get("Read") or leaf.get("Write")
+                or leaf.get("ReadModifyWrite"))["reliability"] == "Unsupported"
+               for leaf in leaves)
+    accounting = result.formal["metadata"]["access_accounting"]
+    assert accounting["source_accesses"] == 4
+    assert accounting["emitted"] == 3
+    assert accounting["unsupported"] == 1
+    assert accounting["unaccounted"] == 0
+    assert accounting["strict_complete"] is False
+    metrics = driver_metrics(result.formal)
+    assert metrics["reliability"]["Unsupported"] == 3
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_linux_ready"] is False
+    assert any("unsupported access domain" in blocker
+               for blocker in readiness["blockers"])
+    code = harness_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    assert code.count("REHARNESS_UNSUPPORTED_ACCESS_DOMAIN") == 3
+
+
+def test_volatile_and_inline_asm_accesses_block_false_strict_completion():
+    from extractor.metrics import score
+
+    source = os.path.join(REHARNESS, "tests", "fixtures", "opaque_access.c")
+    result = extract_ris(ExtractorConfig(source=source, linux_root="/nonexistent"))
+    accounting = result.formal["metadata"]["access_accounting"]
+    assert accounting["source_accesses"] == 3
+    assert accounting["emitted"] == 0
+    assert accounting["unsupported"] == 3
+    assert accounting["unaccounted"] == 0
+    assert accounting["complete"] is True
+    assert accounting["strict_complete"] is False
+    assert {site["access_domain"] for site in accounting["sites"]} == {
+        "direct_volatile", "inline_asm"}
+    assert {site["access_kind"] for site in accounting["sites"]} == {
+        "read", "write", "opaque"}
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_linux_ready"] is False
+    assert any("unsupported" in blocker for blocker in readiness["blockers"])
+
+
 def test_formal_expr_normalization(ftgpio_formal):
     """BIT(x) -> Shl(1, x); ~0x0 -> BitXor(0, ⊤)."""
     probe = _module(ftgpio_formal, "ftgpio_gpio_probe")
@@ -257,8 +554,12 @@ def test_formal_expr_normalization(ftgpio_formal):
     _leaf_ops(probe["ops"], leaves)
     clr = next(o for o in leaves if "Write" in o
                and o["Write"]["addr"]["Symbolic"]["register"] == "GPIO_INT_CLR")
-    val = clr["Write"]["value"]
-    assert val["BinOp"]["op"] == "BitXor"  # ~0x0 normalized
+    # The dataflow evaluator may soundly fold this extracted write to the
+    # all-ones constant.  Exercise the formal parser directly so this remains
+    # a normalization test rather than constraining constant folding.
+    assert clr["Write"]["value"] == {"Const": 0xFFFFFFFF}
+    val = parse_expr("~0x0")
+    assert val["BinOp"]["op"] == "BitXor"
     arithmetic = parse_expr("4 * (d->hwirq % 8)")
     assert arithmetic["BinOp"]["op"] == "Mul"
     assert arithmetic["BinOp"]["right"]["BinOp"]["op"] == "Mod"
@@ -499,9 +800,17 @@ def test_real_linux_c67x00_multisource_driver():
     assert count_clang_errors(result.warnings) == 0
 
     modules = {module["name"] for module in result.formal["modules"]}
-    assert modules == {"c67x00_irq", "c67x00_drv_probe"}
+    # Wrapper summaries now carry the low-level HPI register primitives
+    # through the host-controller callback layer instead of stopping at the
+    # top-level IRQ/probe entries.
+    assert modules == {
+        "c67x00_irq", "c67x00_drv_probe", "c67x00_hub_status_data",
+        "c67x00_hub_control", "c67x00_hcd_irq", "c67x00_hcd_get_frame",
+        "c67x00_urb_enqueue",
+    }
     metrics = driver_metrics(result.formal)
-    assert metrics["computed"] == 6
+    assert metrics["total_ops"] == 38
+    assert metrics["computed"] == 32
     assert metrics["unknown_value"] == 0
     assert result.facts.callbacks["platform_driver.probe"] == "c67x00_drv_probe"
     assert result.facts.callbacks["irq_handler.handler"] == "c67x00_irq"
@@ -835,7 +1144,10 @@ def test_extraction_cache_respects_inline_depth():
     import tempfile
     src = textwrap.dedent("""
         #define REG 0x10
-        static void helper(void *b) { writel(1, b + REG); }
+        static void helper(void *b) {
+            writel(1, b + REG);
+            writel(2, b + REG);
+        }
         static void caller(void *b) { helper(b); }
     """)
     with tempfile.TemporaryDirectory() as d:
@@ -994,6 +1306,44 @@ def test_highbank_clock_arithmetic_oracle_catches_mutations():
                for item in result["mutations"].values())
 
 
+def test_ris_semantic_fingerprint_catches_core_mutations():
+    from verification.ris_mutation_oracle import verify_ris_mutations
+
+    result = verify_ris_mutations()
+    assert result["mutations_caught"] == 4
+    assert all(item["caught"] for item in result["mutations"].values())
+
+
+def test_machine_readable_reliability_report_distinguishes_strict_and_opaque():
+    from verification.reliability_report import build_driver_report
+
+    strict = build_driver_report(FTGPIO)
+    assert strict["strict_reliable"] is True
+    assert strict["audit"]["leaf_register_ops"] == 22
+    assert strict["audit"]["duplicate_op_ids"] == []
+    assert strict["claim_scope"]["whole_program_complete"] is False
+    opaque = build_driver_report(os.path.join(
+        REHARNESS, "tests", "fixtures", "opaque_access.c"))
+    assert opaque["strict_reliable"] is False
+    assert opaque["access_accounting"]["unsupported"] == 3
+
+
+def test_original_c_and_ris_differential_trace_match():
+    from verification.ris_trace_oracle import verify_path_state_trace
+
+    result = verify_path_state_trace()
+    assert all(case["matched"] for case in result["cases"].values())
+    assert result["mutation_caught"] is True
+
+
+def test_real_ftgpio_callback_and_ris_differential_trace_match():
+    from verification.ftgpio_trace_oracle import verify_ftgpio_ack_trace
+
+    result = verify_ftgpio_ack_trace()
+    assert all(case["matched"] for case in result["cases"].values())
+    assert result["mutation_caught"] is True
+
+
 def test_visconti_clock_model_reports_conservative_boundary():
     from generator.linux import analyze_clock_source_model
 
@@ -1013,6 +1363,23 @@ def test_visconti_clock_model_reports_conservative_boundary():
     assert "rate_table" in reasons
     assert "lock" in reasons
     assert rejected["lowered_callbacks"] == []
+
+
+def test_verified_linux_specific_lowering_is_not_gated_by_generic_loops():
+    from extractor.metrics import score
+
+    highbank = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "clk-highbank.c")))
+    readiness = score(
+        highbank.device_spec, highbank.formal, highbank.warnings,
+        highbank.facts,
+        gen_results={"linux": {
+            "compiled": True, "syntax_ok": True,
+            "has_todo": False, "unsupported": False,
+        }})
+    assert readiness["backend_harness_ready"] is False
+    assert readiness["backend_bare_metal_ready"] is False
+    assert readiness["backend_linux_ready"] is True
 
 
 def test_sodaville_path_sensitive_local_mmio_and_irq_private_state():
@@ -1128,6 +1495,48 @@ def test_svf_required_reports_missing_tools_without_temp_leaks():
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = value
+
+
+def test_svf_positive_alias_is_typed_and_attached_to_ris_evidence():
+    from extractor.alias import _tool_paths
+    from extractor.formal import walk_leaf_ops
+
+    if not all(os.path.isfile(path) for path in _tool_paths()[1:]):
+        return
+    source = os.path.join(REHARNESS, "tests", "fixtures", "svf_alias.c")
+    result = extract_ris(ExtractorConfig(
+        source=source, alias_mode="required"))
+    analysis = result.stats["alias_analysis"]
+    assert analysis["status"] == "success"
+    assert result.stats["svf_aliases"] == ["alias"]
+    assert analysis["facts"]["alias"]["accepted"] is True
+    assert analysis["toolchain"]["clang_version"]
+    op = next(walk_leaf_ops(result.formal["modules"][0]["ops"]))
+    evidence = op["Write"]["evidence"]
+    assert evidence["alias_provenance"]["name"] == "alias"
+    assert evidence["alias_provenance"]["kind"] == "MayAlias"
+
+
+def test_svf_auto_mode_reports_tool_failure_instead_of_silent_empty_aliases():
+    keys = ("REHARNESS_SVF_ROOT", "REHARNESS_SVF_SETUP", "REHARNESS_SVF_WPA",
+            "REHARNESS_SVF_CLANG", "REHARNESS_SVF_LLVM_AS")
+    old = {key: os.environ.get(key) for key in keys}
+    try:
+        for key in keys:
+            os.environ[key] = f"/nonexistent/auto/{key.lower()}"
+        source = os.path.join(REHARNESS, "tests", "fixtures", "svf_alias.c")
+        result = extract_ris(ExtractorConfig(
+            source=source, alias_mode="auto"))
+        assert result.stats["alias_analysis"]["status"] == "missing_tools"
+        assert result.stats["svf_aliases"] == []
+        assert any("SVF alias analysis missing_tools" in warning
+                   for warning in result.warnings)
+    finally:
+        for key, value in old.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 def _linux_generate_and_compile(source: str, module_name: str):

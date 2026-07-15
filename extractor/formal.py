@@ -71,6 +71,11 @@ def parse_expr(text: str) -> dict:
                 expr = {"BinOp": {"op": op, "left": expr, "right": parse_expr(p)}}
             return expr
 
+    # unary logical not, represented within the existing BinOp algebra
+    if t.startswith("!") and not t.startswith("!="):
+        return {"BinOp": {"op": "Eq", "left": parse_expr(t[1:]),
+                          "right": {"Const": 0}}}
+
     # unary ~
     if t.startswith("~"):
         inner = parse_expr(t[1:])
@@ -238,15 +243,29 @@ def addr_display(a: dict) -> str:
 
 def op_display(op: dict, indent: int = 0) -> str:
     pad = "  " * indent
+
+    def suffix(body):
+        op_id = body.get("op_id")
+        reliability = body.get("reliability")
+        evidence = body.get("evidence") or {}
+        source = evidence.get("source")
+        line = evidence.get("line")
+        audit = ""
+        if op_id or reliability:
+            audit += f" @{op_id or '?'} [{reliability or 'Unknown'}]"
+        if source and line:
+            audit += f" {source}:{line}"
+        return audit
+
     if "Read" in op:
         o = op["Read"]
-        return f"{pad}{o['var']} := R({o['width']}, {addr_display(o['addr'])}) -- {o['intent']}"
+        return f"{pad}{o['var']} := R({o['width']}, {addr_display(o['addr'])}) -- {o['intent']}{suffix(o)}"
     if "Write" in op:
         o = op["Write"]
-        return f"{pad}W({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['value'])} -- {o['intent']}"
+        return f"{pad}W({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['value'])} -- {o['intent']}{suffix(o)}"
     if "ReadModifyWrite" in op:
         o = op["ReadModifyWrite"]
-        return f"{pad}RMW({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['transform'])} -- {o['intent']}"
+        return f"{pad}RMW({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['transform'])} -- {o['intent']}{suffix(o)}"
     if "Delay" in op:
         return f"{pad}DELAY({expr_display(op['Delay']['cycles'])})"
     if "Cond" in op:
@@ -268,7 +287,10 @@ def op_display(op: dict, indent: int = 0) -> str:
         return "\n".join(lines)
     if "Loop" in op:
         o = op["Loop"]
-        lines = [f"{pad}LOOP {expr_display(o['count'])} {{"]
+        guard = o.get("guard")
+        detail = expr_display(guard) if guard else expr_display(o["count"])
+        lines = [f"{pad}LOOP {o.get('loop_kind', 'loop')} {detail} "
+                 f"[{o.get('reliability', 'Unknown')}] {{"]
         for sub in o["body"]:
             lines.append(op_display(sub, indent + 1))
         lines.append(f"{pad}}}")
@@ -283,6 +305,27 @@ def formal_display(formal: dict) -> str:
         for op in m["ops"]:
             lines.append(op_display(op, indent=2))
         lines.append("  }")
+    accounting = formal.get("metadata", {}).get("access_accounting")
+    if accounting:
+        lines += ["  accounting {",
+                  f"    source_accesses {accounting['source_accesses']}",
+                  f"    emitted {accounting['emitted']}",
+                  f"    filtered {accounting['filtered']}",
+                  f"    unsupported {accounting['unsupported']}",
+                  f"    unaccounted {accounting['unaccounted']}",
+                  f"    ris_ops_without_evidence {accounting['ris_ops_without_evidence']}",
+                  f"    strict_complete {str(accounting['strict_complete']).lower()}",
+                  "  }"]
+    validation = formal.get("metadata", {}).get("path_validation")
+    if validation:
+        lines += ["  path_validation {",
+                  f"    solver \"{validation.get('solver', 'unknown')}\"",
+                  f"    satisfiable {validation.get('satisfiable', 0)}",
+                  f"    infeasible {validation.get('infeasible', 0)}",
+                  f"    unknown {validation.get('unknown', 0)}",
+                  f"    intentionally_unreachable {validation.get('intentionally_unreachable', 0)}",
+                  f"    complete {str(validation.get('complete', False)).lower()}",
+                  "  }"]
     lines.append("}")
     return "\n".join(lines)
 

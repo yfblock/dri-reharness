@@ -35,6 +35,17 @@ PRIVATE_MMIO_WRITE_LAYOUTS = {
     "dwc2_writel": (0, 1, 2, "regs"),
 }
 
+REGMAP_READ_FNS = {"regmap_read": (0, 1, 2)}
+REGMAP_WRITE_FNS = {"regmap_write": (0, 1, 2)}
+REGMAP_RMW_FNS = {"regmap_update_bits": (0, 1, 2, 3)}
+
+UNSUPPORTED_REGISTER_FNS = {
+    "regmap_bulk_read", "regmap_bulk_write", "regmap_raw_read",
+    "regmap_raw_write", "memcpy_fromio", "memcpy_toio", "memset_io",
+    "ioread32_rep", "iowrite32_rep", "pci_read_config_dword",
+    "pci_write_config_dword",
+}
+
 DELAY_FNS = {"mdelay", "udelay", "ndelay", "msleep", "ssleep"}
 
 # Functions that return an MMIO base pointer (taint sources).
@@ -99,14 +110,36 @@ def infer_width(name: str) -> int:
 
 
 def is_mmio_read(name: str) -> bool:
-    return name in MMIO_READ_FNS or name in PRIVATE_MMIO_READ_LAYOUTS
+    return (name in MMIO_READ_FNS or name in PRIVATE_MMIO_READ_LAYOUTS
+            or name in REGMAP_READ_FNS)
 
 
 def is_mmio_write(name: str) -> bool:
-    return name in MMIO_WRITE_FNS or name in PRIVATE_MMIO_WRITE_LAYOUTS
+    return (name in MMIO_WRITE_FNS or name in PRIVATE_MMIO_WRITE_LAYOUTS
+            or name in REGMAP_WRITE_FNS)
+
+
+def is_mmio_rmw(name: str) -> bool:
+    return name in REGMAP_RMW_FNS
+
+
+def is_unsupported_register_access(name: str) -> bool:
+    return name in UNSUPPORTED_REGISTER_FNS
+
+
+def access_domain(name: str) -> str:
+    if name in REGMAP_READ_FNS or name in REGMAP_WRITE_FNS or name in REGMAP_RMW_FNS:
+        return "regmap"
+    return "mmio"
 
 
 def read_addr_expr(name: str, args: list[str]) -> str:
+    regmap = REGMAP_READ_FNS.get(name)
+    if regmap is not None:
+        state_arg, offset_arg, _result_arg = regmap
+        if max(regmap) >= len(args):
+            return ""
+        return f"{args[state_arg]} + {args[offset_arg]}"
     layout = PRIVATE_MMIO_READ_LAYOUTS.get(name)
     if layout is None:
         return args[0] if args else ""
@@ -117,6 +150,12 @@ def read_addr_expr(name: str, args: list[str]) -> str:
 
 
 def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
+    regmap = REGMAP_WRITE_FNS.get(name)
+    if regmap is not None:
+        state_arg, offset_arg, value_arg = regmap
+        if max(regmap) >= len(args):
+            return "", ""
+        return args[value_arg], f"{args[state_arg]} + {args[offset_arg]}"
     layout = PRIVATE_MMIO_WRITE_LAYOUTS.get(name)
     if layout is None:
         if len(args) >= 2:
@@ -127,6 +166,25 @@ def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
         return "", ""
     addr = f"{args[state_arg]}->{base_field} + {args[offset_arg]}"
     return args[value_arg], addr
+
+
+def read_result_var(name: str, args: list[str], lhs: str | None) -> str | None:
+    regmap = REGMAP_READ_FNS.get(name)
+    if regmap is None:
+        return lhs
+    result_arg = regmap[2]
+    if result_arg >= len(args):
+        return lhs
+    return args[result_arg].strip().lstrip("&*").strip()
+
+
+def rmw_parts(name: str, args: list[str]) -> tuple[str, str, str] | None:
+    layout = REGMAP_RMW_FNS.get(name)
+    if layout is None or max(layout) >= len(args):
+        return None
+    state_arg, offset_arg, mask_arg, value_arg = layout
+    address = f"{args[state_arg]} + {args[offset_arg]}"
+    return address, args[mask_arg], args[value_arg]
 
 
 def is_delay(name: str) -> bool:

@@ -4,6 +4,11 @@ import re
 from extractor.formal import expr_to_c, walk_leaf_ops, walk_all_ops
 
 _VAR_ID = re.compile(r"^[A-Za-z_]\w*$")
+_C_KEYWORDS = {
+    "auto", "char", "const", "double", "enum", "extern", "float", "for",
+    "int", "long", "register", "restrict", "short", "signed", "static",
+    "struct", "typedef", "union", "unsigned", "void", "volatile", "while",
+}
 
 
 def _vars_in_expr(e) -> set[str]:
@@ -40,6 +45,14 @@ def value_var_names(ops) -> set[str]:
     for op in walk_all_ops(ops):
         if "Cond" in op:
             names |= _vars_in_expr(op["Cond"]["guard"])
+        elif "Loop" in op:
+            names |= _vars_in_expr(op["Loop"].get("guard"))
+            for loop_text in (op["Loop"].get("init", ""),
+                              op["Loop"].get("step", "")):
+                names |= {
+                    name for name in re.findall(r"\b[A-Za-z_]\w*\b", loop_text)
+                    if name not in _C_KEYWORDS
+                }
         body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
         if body and "Computed" in body.get("addr", {}):
             names |= _vars_in_expr(body["addr"]["Computed"])
@@ -131,6 +144,13 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
     pad = "    " * indent
     out: list[str] = []
     for op in ops:
+        leaf = (op.get("Read") or op.get("Write")
+                or op.get("ReadModifyWrite"))
+        if leaf is not None and leaf.get("reliability") == "Unsupported":
+            out.append(
+                f"{pad}/* REHARNESS_UNSUPPORTED_ACCESS_DOMAIN: "
+                f"{leaf.get('access_domain', 'unknown')} {leaf.get('op_id', '?')} */")
+            continue
         if "Cond" in op:
             guard = expr_to_c(op["Cond"]["guard"])
             out.append(f"{pad}if ({guard}) {{")
@@ -142,10 +162,21 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                                     register_macros, indent + 1, word_type))
             out.append(f"{pad}}}")
         elif "Loop" in op:
-            out.append(f"{pad}for (/* loop {expr_to_c(op['Loop']['count'])} */ (;;) {{")
-            out.append(ops_to_c(op["Loop"]["body"], bind, base_expr,
-                                register_macros, indent + 1, word_type))
-            out.append(f"{pad}}}")
+            loop = op["Loop"]
+            guard = expr_to_c(loop.get("guard", {"Top": None}))
+            if (loop.get("reliability") == "Exact"
+                    and loop.get("bounded")
+                    and loop.get("loop_kind") == "for"):
+                init = loop.get("init", "").strip().rstrip(";")
+                step = loop.get("step", "").strip().rstrip(";")
+                out.append(f"{pad}for ({init}; {guard}; {step}) {{")
+                out.append(ops_to_c(loop.get("body", []), bind, base_expr,
+                                    register_macros, indent + 1, word_type))
+                out.append(f"{pad}}}")
+            else:
+                out.append(
+                    f"{pad}/* REHARNESS_UNSUPPORTED_LOOP: "
+                    f"{loop.get('loop_kind', 'loop')} guard={guard} */")
         elif "Seq" in op:
             out.append(ops_to_c(op["Seq"]["ops"], bind, base_expr,
                                 register_macros, indent, word_type))

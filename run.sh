@@ -23,12 +23,14 @@ Commands:
   e2e <src> [target] [skip_synth]   end-to-end: extract → Pi synth → compile → QEMU → trace
   metrics <src>             per-module extraction quality metrics
   score <src>               generation readiness scoring
+  reliability [src ...]     machine-readable scoped RIS reliability report
   pipeline <src> [out.ris]  extract (alias of extract)
   demo                      extract gpio-ftgpio010 → output/demo/gpio-ftgpio010.ris
   compare [-j N]              per-driver extraction stats (N=parallel jobs, 0=auto)
   test                      run the test suite
 
-No JSON is produced. The .ris spec language is the sole RIS output format.
+The .ris spec language remains the sole RIS artifact format; reliability
+emits a separate audit JSON and does not replace the RIS.
 EOF
 }
 
@@ -57,6 +59,7 @@ cmd_metrics() { $PY -m extractor metrics -s "${1:?need src}"; }
 cmd_facts()   { $PY -m extractor facts   -s "${1:?need src}" ${2:+-o "$2"}; }
 cmd_bundle()  { $PY -m extractor bundle  -s "${1:?need src}" -b "${2:-harness}" ${3:+-o "$3"}; }
 cmd_score()   { $PY -m extractor score   -s "${1:?need src}"; }
+cmd_reliability() { $PY verification/reliability_report.py "$@"; }
 cmd_driver()  { $PY -m extractor driver  -s "${1:?need src}" ${2:+-o "$2"}; }
 cmd_e2e()     { bash "$HERE/run_e2e.sh" "$@"; }
 
@@ -84,6 +87,7 @@ case "${1:-help}" in
   e2e)       shift; cmd_e2e "$@";;
   metrics)   shift; cmd_metrics "$@";;
   score)     shift; cmd_score "$@";;
+  reliability) shift; cmd_reliability "$@";;
   pipeline)  shift; cmd_pipeline "$@";;
   demo)      shift; cmd_demo "$@";;
   compare)   shift; cmd_compare "$@";;

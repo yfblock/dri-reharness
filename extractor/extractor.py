@@ -42,6 +42,13 @@ class ExtractionResult:
 _extraction_cache: dict[tuple, ExtractionResult] = {}
 
 
+def _alias_cache_identity(mode: str) -> tuple:
+    if mode == "off":
+        return ("off",)
+    from .alias import alias_configuration_key
+    return (mode, alias_configuration_key())
+
+
 def _c_identifier(text: str) -> str:
     value = re.sub(r"[^A-Za-z0-9_]", "_", text)
     if not value or value[0].isdigit():
@@ -193,6 +200,8 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     units: list[dict] = []
     combined_macros = macros_mod.MacroTable()
     all_svf_aliases: set[str] = set()
+    all_svf_facts: dict[str, dict] = {}
+    svf_runs: list[dict] = []
 
     for source in sources:
         if not source.endswith(".c"):
@@ -207,24 +216,41 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         funcs = target_functions(tu, source)
         mmio_globals = target_mmio_globals(tu, source)
         svf_aliases: set[str] = set()
+        svf_facts: dict[str, dict] = {}
         if config.alias_mode != "off":
             try:
                 from .alias import find_mmio_aliases
-                svf_aliases = find_mmio_aliases(
+                alias_result = find_mmio_aliases(
                     source, tu, linux_root=config.linux_root,
                     mmio_globals=set(mmio_globals),
                     required=config.alias_mode == "required",
                 )
+                svf_aliases = alias_result.aliases
+                svf_facts = alias_result.facts
+                svf_runs.append({
+                    "source": source, "status": alias_result.status,
+                    "aliases": sorted(alias_result.aliases),
+                    "diagnostics": alias_result.diagnostics,
+                    "engine": alias_result.engine,
+                    "candidates": alias_result.candidates,
+                    "toolchain": alias_result.toolchain,
+                })
+                if alias_result.status != "success":
+                    warnings.append(
+                        f"SVF alias analysis {alias_result.status} for {source}: "
+                        + "; ".join(alias_result.diagnostics))
                 mmio_globals = list(set(mmio_globals) | svf_aliases)
             except Exception as e:
                 if config.alias_mode == "required":
                     raise
                 warnings.append(f"SVF alias analysis skipped for {source}: {e}")
         all_svf_aliases |= svf_aliases
+        all_svf_facts.update(svf_facts)
         units.append({
             "source": source, "source_text": source_text,
             "source_lines": source_text.splitlines(), "tu": tu,
             "macros": macros, "funcs": funcs, "mmio_globals": mmio_globals,
+            "mmio_alias_facts": svf_facts,
         })
 
     funcs = [f for unit in units for f in unit["funcs"]]
@@ -244,6 +270,15 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         "macros_resolved": sum(1 for n in combined_macros.names()
                                if combined_macros.offset(n) is not None),
         "svf_aliases": sorted(all_svf_aliases),
+        "alias_analysis": {
+            "mode": config.alias_mode,
+            "status": ("off" if config.alias_mode == "off" else
+                       "success" if all(run["status"] == "success" for run in svf_runs)
+                       else "degraded"),
+            "engine": "SVF Andersen" if config.alias_mode != "off" else None,
+            "facts": all_svf_facts,
+            "runs": svf_runs,
+        },
         "translation_units": len(units),
         "source_files": list(sources),
         "source_lines": sum(len(unit["source_lines"]) for unit in units),
@@ -254,6 +289,19 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         driver_name, descriptor, funcs, extractions, combined_macros,
         stats, inlined_names)
     formal["metadata"]["sources"] = list(sources)
+    from .smt import validate_formal_paths
+    path_validation = validate_formal_paths(formal)
+    formal["metadata"]["path_validation"] = path_validation
+    stats["path_validation"] = path_validation
+    from .accounting import build_access_accounting
+    accounting = build_access_accounting(
+        funcs, formal, set(config.extra_blacklist))
+    formal["metadata"]["access_accounting"] = accounting
+    stats["access_accounting"] = accounting
+    from .control import build_control_accounting
+    control_accounting = build_control_accounting(funcs)
+    formal["metadata"]["control_accounting"] = control_accounting
+    stats["control_accounting"] = control_accounting
     stats.update(emitted_stats(formal))
 
     combined_text = "\n\n".join(
@@ -307,6 +355,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
             os.path.abspath(config.linux_root) if config.linux_root else None,
             config.max_inline_depth, config.include_framework,
             tuple(sorted(config.extra_blacklist)), config.alias_mode,
+            _alias_cache_identity(config.alias_mode),
         )
         if cache_key not in _extraction_cache:
             _extraction_cache[cache_key] = _extract_multi(
@@ -326,6 +375,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         os.path.abspath(config.linux_root) if config.linux_root else None,
         config.max_inline_depth, config.include_framework,
         tuple(sorted(config.extra_blacklist)), config.alias_mode,
+        _alias_cache_identity(config.alias_mode),
     )
     if cache_key in _extraction_cache:
         return _extraction_cache[cache_key]
@@ -351,22 +401,43 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     # take minutes on a single real driver.  Core extraction and the standard
     # test/experiment suite stay deterministic and fast with alias_mode=off.
     svf_aliases: set[str] = set()
+    svf_facts: dict[str, dict] = {}
+    alias_analysis = {
+        "mode": config.alias_mode, "status": "off", "engine": None,
+        "facts": {}, "diagnostics": [], "candidates": {}, "toolchain": {},
+    }
     if config.alias_mode != "off":
         try:
             from .alias import find_mmio_aliases
-            svf_aliases = find_mmio_aliases(
+            alias_result = find_mmio_aliases(
                 source, tu, linux_root=config.linux_root,
                 mmio_globals=set(mmio_globals),
                 required=config.alias_mode == "required",
             )
+            svf_aliases = alias_result.aliases
+            svf_facts = alias_result.facts
+            alias_analysis = {
+                "mode": config.alias_mode, "status": alias_result.status,
+                "engine": alias_result.engine,
+                "facts": alias_result.facts,
+                "diagnostics": alias_result.diagnostics,
+                "candidates": alias_result.candidates,
+                "toolchain": alias_result.toolchain,
+            }
+            if alias_result.status != "success":
+                warnings.append(
+                    f"SVF alias analysis {alias_result.status}: "
+                    + "; ".join(alias_result.diagnostics))
             mmio_globals = list(set(mmio_globals) | svf_aliases)
         except Exception as e:
             if config.alias_mode == "required":
                 raise
             warnings.append(f"SVF alias analysis skipped: {e}")
 
-    extractions, inlined_names, callback_entries = extract_with_inlining(
+    (extractions, inlined_names, callback_entries,
+     wrapper_stats) = extract_with_inlining(
         funcs, macros, tu, source_lines, mmio_globals=mmio_globals,
+        mmio_alias_facts=svf_facts,
         max_depth=config.max_inline_depth,
         include_framework=config.include_framework,
         extra_blacklist=set(config.extra_blacklist),
@@ -379,10 +450,25 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         "functions_analyzed": len(funcs),
         "macros_resolved": sum(1 for n in macros.names() if macros.offset(n) is not None),
         "svf_aliases": sorted(svf_aliases),
+        "alias_analysis": alias_analysis,
+        **wrapper_stats,
     }
 
     formal = build_formal_ris(driver_name, source, funcs, extractions, macros,
                               stats, inlined_names)
+    from .smt import validate_formal_paths
+    path_validation = validate_formal_paths(formal)
+    formal["metadata"]["path_validation"] = path_validation
+    stats["path_validation"] = path_validation
+    from .accounting import build_access_accounting
+    accounting = build_access_accounting(
+        funcs, formal, set(config.extra_blacklist))
+    formal["metadata"]["access_accounting"] = accounting
+    stats["access_accounting"] = accounting
+    from .control import build_control_accounting
+    control_accounting = build_control_accounting(funcs)
+    formal["metadata"]["control_accounting"] = control_accounting
+    stats["control_accounting"] = control_accounting
 
     # recompute op stats from the emitted .ris (consistent with output)
     from .formal import emitted_stats

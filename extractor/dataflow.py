@@ -15,9 +15,11 @@ from . import mmio
 from . import taint as T
 from .taint import (
     BasePtr, Offset, ReadTaint, Const, SymExpr, Top, AbsVal,
-    addr_fixed, addr_offset, addr_indirect, addr_equal,
+    addr_fixed, addr_offset, addr_indirect, addr_equal, addr_base_of,
+    val_to_value_str,
 )
-from .ast_model import Func, function_calls, walk_with_conditions, source_text
+from .ast_model import (Func, function_calls, walk_with_conditions,
+                        walk_with_control, continuation_guards, source_text)
 
 BASE_FIELDS = {"base", "base_addr", "regs", "io_base", "mmio_base",
                "reg_base", "virtbase", "base0", "base1"}
@@ -38,6 +40,8 @@ class Op:
     line: int = 0
     var: Optional[str] = None       # Read LHS variable (for formal `x := R(...)`)
     cond_stack: list = field(default_factory=list)  # full branch predicate stack
+    control_stack: list = field(default_factory=list)  # structured cond/loop frames
+    evidence: dict = field(default_factory=dict)    # auditable source provenance
 
 
 # ── expression evaluation ────────────────────────────────────────────
@@ -441,6 +445,108 @@ def _pointer_assignment_store(assignments: list[dict], before_line: int
     return out
 
 
+_GENERAL_ASSIGN_RE = re.compile(
+    r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*[A-Za-z_]\w*)*)\s*"
+    r"(=|\+=|-=|\|=|&=|\^=|<<=|>>=)\s*(?!=)(.+?)\s*;?\s*$", re.S)
+
+
+def _general_assignments(func_cursor, tu) -> list[dict]:
+    """Collect ordinary scalar/member assignments with lexical path evidence."""
+    assignments: list[dict] = []
+    for cursor, control in walk_with_control(func_cursor):
+        text = source_text(tu, cursor).strip()
+        lhs = op = rhs = None
+        if cursor.kind == cx.CursorKind.BINARY_OPERATOR:
+            match = _GENERAL_ASSIGN_RE.match(text)
+            if match:
+                lhs, op, rhs = match.groups()
+        elif cursor.kind == cx.CursorKind.VAR_DECL and "=" in text:
+            match = re.match(
+                rf".*?\b{re.escape(cursor.spelling)}\s*=\s*(.+?)\s*;?\s*$",
+                text, re.S)
+            if match:
+                lhs, op, rhs = cursor.spelling, "=", match.group(1)
+        if not lhs or rhs is None:
+            continue
+        lhs = re.sub(r"\s+", "", lhs)
+        # MMIO/ioremap call assignments are modeled by the call interpreter,
+        # which also attaches read taint and source evidence.
+        calls = set(re.findall(r"\b([A-Za-z_]\w*)\s*\(", rhs))
+        if any(mmio.is_mmio_read(name) or mmio.is_mmio_rmw(name)
+               or mmio.is_ioremap(name)
+               for name in calls):
+            continue
+        # Do not substitute the result of an arbitrary helper call as though
+        # it were an understood scalar expression.  That previously turned
+        # e.g. ``deb_div`` into ``DIV_ROUND_CLOSEST(...)`` even though the
+        # extractor has no summary for that helper, overstating precision and
+        # making otherwise valid backend locals impossible to bind.  Retain a
+        # small, explicitly expression-like macro allowlist whose semantics
+        # are preserved by the formal expression/code generators.
+        expression_macros = {
+            "BIT", "BIT_ULL", "GENMASK", "GENMASK_ULL",
+            "FIELD_GET", "FIELD_PREP", "lower_32_bits", "upper_32_bits",
+        }
+        if calls - expression_macros:
+            continue
+        if op != "=":
+            rhs = f"({lhs}) {op[:-1]} ({rhs})"
+        loc = cursor.location
+        assignments.append({
+            "lhs": lhs,
+            "rhs": rhs.strip(),
+            "line": loc.line if loc else 0,
+            "offset": loc.offset if loc else 0,
+            "control": [dict(frame) for frame in control],
+            "conditions": [frame.get("guard", "") for frame in control
+                           if frame.get("guard")],
+        })
+    assignments.sort(key=lambda entry: (entry["offset"], entry["line"]))
+    return assignments
+
+
+def _abs_expr(value: AbsVal, fallback: str) -> str:
+    if isinstance(value, Const):
+        return hex(value.n) if value.n >= 0 else str(value.n)
+    if isinstance(value, BasePtr):
+        return value.base
+    if isinstance(value, Offset):
+        return f"({value.base}) + ({value.off})" if value.base else str(value.off)
+    if isinstance(value, SymExpr):
+        return value.text
+    return fallback
+
+
+def _general_assignment_store(assignments: list[dict], before_offset: int,
+                              initial: dict, macros) -> dict:
+    store = dict(initial)
+    for entry in assignments:
+        if entry["offset"] and entry["offset"] >= before_offset:
+            break
+        # Loop-carried state requires a fixpoint.  Applying the initializer as
+        # a guarded scalar assignment at every operation incorrectly froze the
+        # induction variable (e.g. ``i`` became ``i < 4 ? 0 : i``).  Leave it
+        # symbolic; the formal Loop node carries the exact induction semantics
+        # when a bound is proved, or remains conservative otherwise.
+        if any(frame.get("kind") == "loop" for frame in entry["control"]):
+            continue
+        lhs = entry["lhs"]
+        value = eval_expr(entry["rhs"], store, macros)
+        conditions = [condition for condition in entry["conditions"] if condition]
+        # A loop-carried assignment cannot be represented as one exact scalar
+        # state without a fixpoint. Keep its expression but mark it with the
+        # loop guard so downstream reliability remains conservative.
+        if conditions:
+            old = store.get(lhs, SymExpr(lhs))
+            guard = " && ".join(f"({condition})" for condition in conditions)
+            store[lhs] = SymExpr(
+                f"(({guard}) ? ({_abs_expr(value, entry['rhs'])})"
+                f" : ({_abs_expr(old, lhs)}))")
+        else:
+            store[lhs] = value
+    return store
+
+
 # ── function extraction ──────────────────────────────────────────────
 
 @dataclass
@@ -486,12 +592,20 @@ def _substitute_addr(addr: dict, mapping: dict[str, str]) -> dict:
 def _instantiate_op(op: Op, mapping: dict[str, str], macros=None) -> Op:
     import copy
     out = copy.copy(op)
+    out.evidence = copy.deepcopy(op.evidence)
     out.addr = _substitute_addr(op.addr, mapping)
     out.value = _substitute_text(op.value, mapping)
     out.condition = _substitute_text(op.condition, mapping)
     out.cond_stack = [
         _substitute_text(condition, mapping) or condition
         for condition in op.cond_stack]
+    out.control_stack = []
+    for frame in op.control_stack:
+        copied = dict(frame)
+        for key in ("guard", "init", "step"):
+            if copied.get(key):
+                copied[key] = _substitute_text(copied[key], mapping)
+        out.control_stack.append(copied)
     out.var = _substitute_text(op.var, mapping)
     indirect = out.addr.get("Indirect")
     if indirect and macros is not None:
@@ -662,6 +776,10 @@ def extract_function(func: Func, macros, tu, *,
                      source_lines: Optional[list[str]] = None,
                      inline_cache: Optional[dict] = None,
                      mmio_globals: Optional[list[str]] = None,
+                     mmio_alias_facts: Optional[dict[str, dict]] = None,
+                     wrapper_summaries: Optional[dict[str, dict]] = None,
+                     indirect_targets: Optional[dict[str, str]] = None,
+                     callback_entries: Optional[set[str]] = None,
                      depth: int = 0, max_depth: int = 3,
                      condition: Optional[str] = None,
                      include_framework: bool = False,
@@ -686,17 +804,43 @@ def extract_function(func: Func, macros, tu, *,
 
     pointer_assignments = _plain_pointer_assignments(
         func.cursor, tu, store, macros)
+    general_assignments = _general_assignments(func.cursor, tu)
+    continuation, _modeled_exits = continuation_guards(func.cursor)
 
     calls = function_calls(func.cursor)
     result.calls = calls
 
-    # map line → condition stack (path-insensitive: innermost branch pred)
+    def evidence_for(cs, kind: str, addr: dict,
+                     source_address: str = "") -> dict:
+        from .accounting import callsite_evidence
+        evidence = callsite_evidence(func, cs, kind)
+        base = addr_base_of(addr) or ""
+        for alias, fact in (mmio_alias_facts or {}).items():
+            referenced = bool(re.search(
+                rf"(?<![A-Za-z0-9_]){re.escape(alias)}(?![A-Za-z0-9_])",
+                source_address or ""))
+            if (base == alias or base.startswith(alias + "->")
+                    or base.startswith(alias + ".") or referenced):
+                evidence["alias_provenance"] = {"name": alias, **fact}
+                break
+        return evidence
+
+    # map line → structured lexical control stack
     line_to_cond: dict[int, list[str]] = {}
-    for cursor, stack in walk_with_conditions(func.cursor):
+    line_to_control: dict[int, list[dict]] = {}
+    for cursor, stack in walk_with_control(func.cursor):
         if cursor.location and cursor.location.file:
             ln = cursor.location.line
-            if stack:
-                line_to_cond.setdefault(ln, stack)
+            filtered_stack = [
+                frame for frame in stack
+                if "scoped_guard" not in frame.get("guard", "")
+                and "gpio_generic_lock" not in frame.get("guard", "")
+            ]
+            if filtered_stack:
+                line_to_control.setdefault(ln, filtered_stack)
+                line_to_cond.setdefault(
+                    ln, [frame.get("guard", "") for frame in filtered_stack
+                         if frame.get("guard")])
 
     for cs in calls:
         name = cs.name
@@ -706,15 +850,30 @@ def extract_function(func: Func, macros, tu, *,
             continue
         cond = None
         cond_stack = []
+        control_stack = []
         if cs.line in line_to_cond:
             st = [c for c in line_to_cond[cs.line]
                   if "scoped_guard" not in c and "gpio_generic_lock" not in c]
             if st:
                 cond_stack = list(st)
                 cond = st[-1]
+        if cs.line in line_to_control:
+            control_stack = [dict(frame) for frame in line_to_control[cs.line]]
+
+        call_offset = (cs.cursor.location.offset
+                       if cs.cursor.location is not None else 0)
+        for transition in continuation:
+            if transition["after_offset"] and transition["after_offset"] <= call_offset:
+                frame = dict(transition["frame"])
+                control_stack.insert(0, frame)
+                if frame.get("guard"):
+                    cond_stack.insert(0, frame["guard"])
+                    cond = cond or frame["guard"]
 
         lhs = _bind_lhs(source_lines or [], cs.line, name)
         call_store = dict(store)
+        call_store.update(_general_assignment_store(
+            general_assignments, call_offset, call_store, macros))
         call_store.update(_pointer_assignment_store(
             pointer_assignments, cs.line))
 
@@ -730,16 +889,40 @@ def extract_function(func: Func, macros, tu, *,
             op = Op(
                 kind="Read", addr=addr, width=mmio.infer_width(name),
                 value=None, condition=cond, cond_stack=cond_stack,
-                reg_name=reg_name, var=lhs or None,
+                control_stack=control_stack,
+                reg_name=reg_name,
+                var=mmio.read_result_var(name, cs.arg_text, lhs) or None,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
+                evidence=evidence_for(cs, "read", addr, addr_arg),
             )
             result.ops.append(op)
-            if lhs:
-                key = _norm_key(lhs)
+            result_var = mmio.read_result_var(name, cs.arg_text, lhs)
+            if result_var:
+                key = _norm_key(result_var)
                 store[key] = ReadTaint(addr=addr, reg_name=reg_name)
                 read_origins[key] = (addr, cs.line)
                 read_initial[key] = _read_initial_transform(
                     key, cs, source_lines or [], tu)
+            continue
+
+        if mmio.is_mmio_rmw(name):
+            parts = mmio.rmw_parts(name, cs.arg_text)
+            if parts is None:
+                result.warnings.append(
+                    f"cannot decode register RMW call {name} at line {cs.line}")
+                continue
+            address_text, mask_text, update_text = parts
+            addr, reg_name = resolve_addr(address_text, call_store, macros)
+            transform = (f"((__old & ~({mask_text})) | "
+                         f"(({update_text}) & ({mask_text})))")
+            result.ops.append(Op(
+                kind="ReadModifyWrite", addr=addr,
+                width=mmio.infer_width(name), value=transform,
+                condition=cond, cond_stack=cond_stack,
+                control_stack=control_stack, reg_name=reg_name,
+                var="__old", source_loc=f"{func.name}:{cs.line}",
+                line=cs.line,
+                evidence=evidence_for(cs, "rmw", addr, address_text)))
             continue
 
         if mmio.is_mmio_write(name):
@@ -749,7 +932,7 @@ def extract_function(func: Func, macros, tu, *,
             addr, reg_name = resolve_addr(addr_text, call_store, macros)
             val = eval_expr(val_text, call_store, macros)
             kind = "Write"
-            value = val_text.strip() or None
+            value = val_to_value_str(val) or val_text.strip() or None
             rmw_var = None
             # RMW: value is a read-taint of the SAME address
             if isinstance(val, ReadTaint) and addr_equal(val.addr, addr):
@@ -764,9 +947,11 @@ def extract_function(func: Func, macros, tu, *,
             op = Op(
                 kind=kind, addr=addr, width=mmio.infer_width(name),
                 value=value, condition=cond, cond_stack=cond_stack,
+                control_stack=control_stack,
                 reg_name=reg_name,
                 var=rmw_var,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
+                evidence=evidence_for(cs, "write", addr, addr_text),
             )
             result.ops.append(op)
             continue
@@ -777,6 +962,7 @@ def extract_function(func: Func, macros, tu, *,
             op = Op(
                 kind="Delay", addr=addr_fixed(0), width=0,
                 value=str(ns), condition=cond, cond_stack=cond_stack,
+                control_stack=control_stack,
                 intent="Synchronization",
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
             )
@@ -784,14 +970,73 @@ def extract_function(func: Func, macros, tu, *,
             result.ops.append(op)
             continue
 
+        from .indirect import resolve_indirect_call
+        indirect_target = resolve_indirect_call(cs, indirect_targets or {})
+        callee_key = indirect_target or cs.symbol_id or name
+        resolved_name = indirect_target or name
+        inlined = ((inline_cache or {}).get(callee_key)
+                   or (inline_cache or {}).get(resolved_name))
+        summary = ((wrapper_summaries or {}).get(callee_key)
+                   or (wrapper_summaries or {}).get(resolved_name))
+        # A function registered as a callback is an independent entry point.
+        # A direct C call to it must not duplicate its MMIO body in another
+        # module.  An actual indirect ops-table dispatch is different: the
+        # call-site semantics depend on resolving that target, so propagation
+        # remains enabled for ``indirect_target``.
+        if (not indirect_target
+                and callee_key in (callback_entries or set())):
+            inlined = None
+            summary = None
+        if (inlined is None or depth >= max_depth) and summary is not None:
+            import copy
+            mapping = {
+                param: arg for param, arg in zip(
+                    summary.get("params", []), cs.arg_text)
+                if param and arg
+            }
+            address_text = _substitute_text(
+                summary.get("address"), mapping) or ""
+            addr, reg_name = resolve_addr(address_text, call_store, macros)
+            evidence = copy.deepcopy(summary.get("evidence", {}))
+            evidence["origin"] = "wrapper_summary"
+            evidence.setdefault("summarized_at", []).append({
+                "function": func.name, "line": cs.line,
+                "callee": resolved_name, "source_loc": func.source_path,
+                "indirect_expression": cs.callee_text if indirect_target else None,
+            })
+            if summary["kind"] == "Read":
+                op = Op(
+                    kind="Read", addr=addr, width=summary["width"],
+                    value=None, condition=cond, cond_stack=cond_stack,
+                    control_stack=control_stack, reg_name=reg_name,
+                    var=lhs or None, evidence=evidence,
+                    source_loc=f"{func.name}:{cs.line} (summary {resolved_name})",
+                    line=cs.line)
+                result.ops.append(op)
+                if lhs:
+                    key = _norm_key(lhs)
+                    store[key] = ReadTaint(addr=addr, reg_name=reg_name)
+                    read_origins[key] = (addr, cs.line)
+                    read_initial[key] = key
+            else:
+                raw_value = _substitute_text(
+                    summary.get("value"), mapping) or ""
+                abstract_value = eval_expr(raw_value, call_store, macros)
+                value = val_to_value_str(abstract_value) or raw_value or None
+                result.ops.append(Op(
+                    kind="Write", addr=addr, width=summary["width"],
+                    value=value, condition=cond, cond_stack=cond_stack,
+                    control_stack=control_stack, reg_name=reg_name,
+                    evidence=evidence,
+                    source_loc=f"{func.name}:{cs.line} (summary {resolved_name})",
+                    line=cs.line))
+            continue
+
         # framework → ignore (filtered)
         if not include_framework and mmio.is_framework(name):
             continue
 
         # wrapper function inlining
-        callee_key = cs.symbol_id or name
-        inlined = ((inline_cache or {}).get(callee_key)
-                   or (inline_cache or {}).get(name))
         if inlined is not None and depth < max_depth:
             if inlined.ops:
                 mapping = {
@@ -801,8 +1046,16 @@ def extract_function(func: Func, macros, tu, *,
                 for op in inlined.ops:
                     o2 = _instantiate_op(op, mapping, macros)
                     o2.condition = cond or o2.condition
-                    o2.cond_stack = cond_stack or o2.cond_stack
+                    o2.cond_stack = cond_stack + o2.cond_stack
+                    o2.control_stack = control_stack + o2.control_stack
                     o2.source_loc = f"{func.name}:{cs.line} (↳ {op.source_loc})"
+                    o2.evidence.setdefault("inlined_at", []).append({
+                        "function": func.name,
+                        "line": cs.line,
+                        "callee": resolved_name,
+                        "indirect_expression": cs.callee_text
+                        if indirect_target else None,
+                    })
                     result.ops.append(o2)
 
     return result

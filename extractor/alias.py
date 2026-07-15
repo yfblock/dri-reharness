@@ -21,7 +21,20 @@ import os
 import re
 import subprocess
 import tempfile
+from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Optional
+
+
+@dataclass
+class AliasAnalysisResult:
+    aliases: set[str] = field(default_factory=set)
+    facts: dict[str, dict] = field(default_factory=dict)
+    candidates: list[dict] = field(default_factory=list)
+    status: str = "success"
+    diagnostics: list[str] = field(default_factory=list)
+    engine: str = "SVF Andersen"
+    toolchain: dict = field(default_factory=dict)
 
 
 def _tool_paths() -> tuple[str, str, str, str]:
@@ -34,6 +47,37 @@ def _tool_paths() -> tuple[str, str, str, str]:
     llvm_as = os.environ.get(
         "REHARNESS_SVF_LLVM_AS", os.path.join(root, "llvm-21.1.0.obj/bin/llvm-as"))
     return setup, wpa, clang, llvm_as
+
+
+def alias_configuration_key() -> tuple:
+    """Cache identity for all external state that changes SVF results."""
+    paths = _tool_paths()
+    identities = []
+    for path in paths:
+        try:
+            identities.append((os.path.abspath(path), os.path.getmtime(path),
+                               os.path.getsize(path)))
+        except OSError:
+            identities.append((os.path.abspath(path), 0, 0))
+    return (*identities,
+            os.environ.get("REHARNESS_KERNEL_BUILD", ""),
+            os.environ.get("REHARNESS_SVF_CLANG_TIMEOUT", ""),
+            os.environ.get("REHARNESS_SVF_LLVM_AS_TIMEOUT", ""),
+            os.environ.get("REHARNESS_SVF_WPA_TIMEOUT", ""))
+
+
+@lru_cache(maxsize=4)
+def _toolchain_metadata(wpa: str, clang: str, llvm_as: str) -> dict:
+    out = {"wpa": wpa, "clang": clang, "llvm_as": llvm_as}
+    for name, path in (("wpa_version", wpa), ("clang_version", clang),
+                       ("llvm_as_version", llvm_as)):
+        try:
+            run = subprocess.run(
+                [path, "--version"], capture_output=True, text=True, timeout=5)
+            out[name] = (run.stdout or run.stderr).splitlines()[0].strip()
+        except Exception as exc:
+            out[name] = f"unavailable: {exc}"
+    return out
 
 
 def _timeout(name: str, default: int) -> int:
@@ -70,6 +114,11 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
     here = os.path.dirname(os.path.abspath(__file__))
     tools_dir = os.path.normpath(os.path.join(here, "..", "tools"))
     linux = linux_root or os.path.normpath(os.path.join(here, "..", "linux"))
+    default_build = os.path.normpath(os.path.join(here, "..", "kernel", "build"))
+    build = os.environ.get("REHARNESS_KERNEL_BUILD")
+    if not build and os.path.isdir(default_build):
+        build = default_build
+    build = build or linux
 
     modname = os.path.splitext(os.path.basename(source))[0]
 
@@ -86,20 +135,12 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
     bc_path = os.path.join(workdir, "source.bc")
 
     # 1. clang → .ll
+    from .tu import default_include_args
     args = [
         clang, "-S", "-emit-llvm", "-g", "-O0", "-c", "-w",
-        f"-I{linux}/arch/x86/include",
-        f"-I{linux}/arch/x86/include/generated",
-        f"-I{linux}/include",
-        f"-I{linux}/arch/x86/include/uapi",
-        f"-I{linux}/include/uapi",
-        f"-I{linux}/arch/x86/include/generated/uapi",
-        f"-I{linux}/include/generated/uapi",
-        f"-include", f"{linux}/include/linux/compiler-version.h",
-        f"-include", f"{linux}/include/linux/kconfig.h",
-        f"-include", f"{linux}/include/linux/compiler_types.h",
-        "-D__KERNEL__",
+        *default_include_args(linux, build),
         f"-DKBUILD_MODNAME=\"{modname}\"",
+        f"-DKBUILD_MODFILE=\"{modname}\"",
         "-D_Static_assert(x,y)=",
         c_path,
         "-o", ll_path,
@@ -109,7 +150,8 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
         args, capture_output=True, text=True,
         timeout=_timeout("REHARNESS_SVF_CLANG_TIMEOUT", 30), env=e)
     if r.returncode != 0 or not os.path.exists(ll_path):
-        return None
+        detail = (r.stderr or r.stdout or "clang produced no LLVM IR").strip()
+        raise RuntimeError("SVF LLVM IR generation failed: " + detail[-4000:])
 
     # 2. IR stub
     try:
@@ -129,7 +171,8 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
         [llvm_as, ll_path, "-o", bc_path], capture_output=True, text=True,
         timeout=_timeout("REHARNESS_SVF_LLVM_AS_TIMEOUT", 15), env=e)
     if r2.returncode != 0 or not os.path.exists(bc_path):
-        return None
+        detail = (r2.stderr or r2.stdout or "llvm-as produced no bitcode").strip()
+        raise RuntimeError("SVF bitcode assembly failed: " + detail[-4000:])
     return bc_path
 
 
@@ -147,6 +190,9 @@ def _run_wpa(bc_path: str, env: dict, wpa: str) -> str:
         capture_output=True, text=True,
         timeout=_timeout("REHARNESS_SVF_WPA_TIMEOUT", 60), env=env
     )
+    if r.returncode != 0:
+        detail = (r.stderr or r.stdout or "wpa failed").strip()
+        raise RuntimeError("SVF Andersen analysis failed: " + detail[-4000:])
     return r.stdout
 
 
@@ -177,9 +223,10 @@ def _find_mmio_origin_vars(symbol_table: dict, mmio_globals: set[str]) -> set[in
     origins = set()
     for vid, info in symbol_table.items():
         ir = info["ir"]
-        # ioremap/malloc call → fresh MMIO base
+        # Only mappings are MMIO origins. Heap allocations may contain a
+        # mapping field, but the allocation pointer itself is normal memory.
         if any(kw in ir for kw in ['ioremap', 'pci_ioremap_bar', 'devm_ioremap',
-                                    'malloc', 'devm_kmalloc', 'devm_kzalloc']):
+                                    'pci_iomap', 'of_iomap']):
             origins.add(vid)
         # Known mmio_global name in IR
         for g in mmio_globals:
@@ -188,8 +235,9 @@ def _find_mmio_origin_vars(symbol_table: dict, mmio_globals: set[str]) -> set[in
     return origins
 
 
-def _map_var_to_c_name(symbol_table: dict, vid: int, source: str, tu) -> str | None:
-    """Map a SVF var ID to a C variable name via source line + libclang."""
+def _map_var_to_c_name(symbol_table: dict, vid: int, source: str, tu
+                       ) -> dict | None:
+    """Map a SVF var ID to a typed C lvalue via source line + libclang."""
     info = symbol_table.get(vid, {})
     line = info.get("line", 0)
     if line == 0:
@@ -197,9 +245,10 @@ def _map_var_to_c_name(symbol_table: dict, vid: int, source: str, tu) -> str | N
     return _find_lhs_var_at_line(tu, source, line)
 
 
-def _find_lhs_var_at_line(tu, target_file: str, line: int) -> str | None:
-    """Use libclang to find the LHS variable assigned at the given source line."""
+def _find_lhs_var_at_line(tu, target_file: str, line: int) -> dict | None:
+    """Use libclang to find the typed LHS assigned at a source line."""
     import clang.cindex as cx
+    from .ast_model import source_text
     tgt = os.path.abspath(target_file)
     for cursor in tu.cursor.walk_preorder():
         f = cursor.location.file
@@ -210,7 +259,11 @@ def _find_lhs_var_at_line(tu, target_file: str, line: int) -> str | None:
         if cursor.kind == cx.CursorKind.VAR_DECL:
             children = list(cursor.get_children())
             if children:
-                return cursor.spelling
+                return {
+                    "name": cursor.spelling,
+                    "type": cursor.type.spelling if cursor.type else "",
+                    "source": cursor.spelling,
+                }
         if cursor.kind == cx.CursorKind.BINARY_OPERATOR:
             tokens = list(cursor.get_tokens())
             if tokens and any(t.spelling == "=" for t in tokens):
@@ -218,21 +271,44 @@ def _find_lhs_var_at_line(tu, target_file: str, line: int) -> str | None:
                 first = next(lhs, None)
                 if first and first.kind in (cx.CursorKind.DECL_REF_EXPR,
                                             cx.CursorKind.MEMBER_REF):
-                    name = first.spelling or (first.referenced.spelling
-                                              if first.referenced else None)
+                    lhs_text = source_text(tu, first).strip()
+                    name = lhs_text or first.spelling or (
+                        first.referenced.spelling if first.referenced else None)
                     if name:
-                        # 容器: g->base → 返回 g 和 g->base
-                        if "->" in name or "." in name:
-                            return name
-                        return name
+                        return {
+                            "name": name,
+                            "type": first.type.spelling if first.type else "",
+                            "source": lhs_text or name,
+                        }
     return None
 
 
+def _accept_mmio_lvalue(record: dict) -> tuple[bool, str]:
+    name = record.get("name", "")
+    ctype = record.get("type", "")
+    final = re.split(r"->|\.", name)[-1].lower()
+    pointer = "*" in ctype
+    if not pointer:
+        return False, "candidate is not a pointer lvalue"
+    if "__iomem" in ctype:
+        return True, "typed __iomem pointer"
+    if final in {"base", "regs", "reg", "ioaddr", "mmio", "mmio_base",
+                 "reg_base", "gpio_pub_base", "pll_base"}:
+        return True, "recognized MMIO base field"
+    normalized = " ".join(ctype.replace("const", "").split())
+    if normalized in {"void *", "volatile void *"}:
+        return True, "void pointer with SVF mapping provenance"
+    return False, f"aggregate/non-MMIO pointer type: {ctype or '?'}"
+
+
 def _parse_wpa_aliases(output: str, symbol_table: dict,
-                     mmio_origin_vars: set[int], source: str, tu) -> set[str]:
+                     mmio_origin_vars: set[int], source: str, tu
+                     ) -> tuple[set[str], dict[str, dict], list[dict]]:
     """Parse MayAlias pairs, find vars aliasing with MMIO origins,
     map back to C variable names."""
     aliases: set[str] = set()
+    facts: dict[str, dict] = {}
+    candidates: list[dict] = []
 
     for line in output.splitlines():
         m = _ALIAS_RE.match(line.strip())
@@ -259,25 +335,34 @@ def _parse_wpa_aliases(output: str, symbol_table: dict,
 
         if alias_id is not None:
             # 映射回 C 变量名
-            c_name = _map_var_to_c_name(symbol_table, alias_id, source, tu)
-            if c_name:
-                aliases.add(c_name)
-                # 容器: priv->mmio → 加 priv 和 priv->mmio
-                if "->" in c_name:
+            record = _map_var_to_c_name(symbol_table, alias_id, source, tu)
+            if record:
+                accepted, reason = _accept_mmio_lvalue(record)
+                candidate = {
+                    **record,
+                    "kind": "MayAlias",
+                    "alias_var": alias_id,
+                    "origin_vars": sorted(
+                        value for value in (left_id, right_id)
+                        if value in mmio_origin_vars),
+                    "engine": "SVF Andersen",
+                    "accepted": accepted,
+                    "reason": reason,
+                }
+                candidates.append(candidate)
+                if accepted:
+                    c_name = record["name"]
                     aliases.add(c_name)
-                    aliases.add(c_name.split("->")[0])
-                elif "." in c_name:
-                    aliases.add(c_name)
-                    aliases.add(c_name.split(".")[0])
+                    facts[c_name] = candidate
 
-    return aliases
+    return aliases, facts, candidates
 
 
 # ── 主接口 ──
 
 def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
                       mmio_globals: set[str] | None = None,
-                      required: bool = False) -> set[str]:
+                      required: bool = False) -> AliasAnalysisResult:
     """Find C variable names that alias MMIO base pointers using SVF.
 
     Args:
@@ -293,11 +378,15 @@ def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
         mmio_globals = set()
 
     setup, wpa, clang, llvm_as = _tool_paths()
+    toolchain = _toolchain_metadata(wpa, clang, llvm_as)
     missing = [p for p in (wpa, clang, llvm_as) if not os.path.isfile(p)]
     if missing:
         if required:
             raise RuntimeError("SVF tools missing: " + ", ".join(missing))
-        return set()
+        return AliasAnalysisResult(
+            status="missing_tools",
+            diagnostics=["SVF tools missing: " + ", ".join(missing)],
+            toolchain=toolchain)
 
     env = _source_svf_env(setup)
     try:
@@ -307,11 +396,6 @@ def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
             bc_path = _generate_stubbed_bc(
                 source, linux_root, env, workdir=tmp, clang=clang,
                 llvm_as=llvm_as)
-            if bc_path is None:
-                if required:
-                    raise RuntimeError("SVF LLVM IR generation failed")
-                return set()
-
             # 2. 运行 wpa
             stdout = _run_wpa(bc_path, env, wpa)
 
@@ -322,13 +406,20 @@ def find_mmio_aliases(source: str, tu, linux_root: str | None = None,
             origin_vars = _find_mmio_origin_vars(sym_tab, mmio_globals)
 
             # 5. 解析 alias pairs → C 变量名
-            aliases = _parse_wpa_aliases(stdout, sym_tab, origin_vars, source, tu)
+            aliases, facts, candidates = _parse_wpa_aliases(
+                stdout, sym_tab, origin_vars, source, tu)
 
             # The caller already has mmio_globals.  Return only new knowledge
             # so success reporting and metrics are not misleading.
-            return aliases - mmio_globals
+            aliases -= mmio_globals
+            facts = {name: fact for name, fact in facts.items()
+                     if name in aliases}
+            return AliasAnalysisResult(
+                aliases=aliases, facts=facts, candidates=candidates,
+                toolchain=toolchain)
 
-    except Exception:
+    except Exception as exc:
         if required:
             raise
-        return set()
+        return AliasAnalysisResult(
+            status="failed", diagnostics=[str(exc)], toolchain=toolchain)
