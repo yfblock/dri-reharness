@@ -224,10 +224,15 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unbound_callbacks:
         blockers.append(f"callback entry without table binding: {', '.join(unbound_callbacks)}")
 
+    has_register_access = (
+        met["symbolic"] + met["fixed"] + met["computed"] > 0)
+    if not has_register_access:
+        blockers.append("no MMIO register accesses")
+
     baremetal_ready = (met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                        and ris_quality >= 0.7)
     linux_ready = (baremetal_ready and function_spec_quality >= 0.6
-                   and not unbound_callbacks and len(device_spec.registers) > 0)
+                   and not unbound_callbacks and has_register_access)
     harness_ready = baremetal_ready  # trace check applied below if gen_results present
 
     # Tighten readiness with actual generated-code quality (recom.md §"Make
@@ -254,7 +259,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                and not lx.get("unsupported")
                                and lx.get("compiled", False)
                                and lx.get("syntax_ok", False)
-                               and len(device_spec.registers) > 0)
+                               and has_register_access)
             if lx.get("unsupported"):
                 blockers.append("linux backend has unsupported semantic bindings")
 

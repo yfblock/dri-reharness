@@ -915,6 +915,21 @@ def test_callback_binding_covers_irq_pm_and_clock_forms():
     assert got["clk_set_rate"]["field"] == "set_rate"
 
 
+def test_callback_binding_dynamic_gpio_irq_chip_init_hw():
+    from extractor.spec_infer import parse_callback_bindings
+    src = textwrap.dedent("""
+        static int gpio_init_hw(struct gpio_chip *gc) { return 0; }
+        static int probe(struct platform_device *pdev) {
+            struct gpio_irq_chip *girq;
+            girq->init_hw = gpio_init_hw;
+            return 0;
+        }
+    """)
+    got = parse_callback_bindings(src, {"gpio_init_hw", "probe"})
+    assert got["gpio_init_hw"]["table"] == "gpio_irq_chip"
+    assert got["gpio_init_hw"]["field"] == "init_hw"
+
+
 def test_source_private_state_is_preserved_in_specs_and_codegen():
     from extractor.spec import default_bind
     from generator import linux as linux_gen
@@ -945,7 +960,24 @@ def test_source_private_state_is_preserved_in_specs_and_codegen():
         clock.formal, clock.device_spec,
         default_bind(clock.device_spec, "linux"), clock.facts)
     assert "struct clk_hw hw;" in clock_code
-    assert "static const struct clk_ops" in clock_code
+    assert "REHARNESS_UNSUPPORTED" not in clock_code
+    assert "return vco_freq / (1 << divq);" in clock_code
+    assert "clk_pll_calc(rate, parent_rate, &divq, &divf);" in clock_code
+    assert "static const struct clk_ops clk_highbank_clk_pll_ops" in clock_code
+    assert "static const struct clk_ops clk_highbank_periclk_ops" in clock_code
+    assert 'compatible = "calxeda,hb-pll-clock"' in clock_code
+    assert 'compatible = "calxeda,hb-emmc-clock"' in clock_code
+    assert "devm_of_clk_add_hw_provider" in clock_code
+    assert "devm_clk_get_optional_enabled" not in clock_code
+
+    idt = extract_ris(ExtractorConfig(source=os.path.join(
+        REHARNESS, "drivers", "test", "gpio-idt3243x.c")))
+    idt_code = linux_gen.generate(
+        idt.formal, idt.device_spec,
+        default_bind(idt.device_spec, "linux"), idt.facts)
+    assert "REHARNESS_UNSUPPORTED" not in idt_code
+    assert "static int idt_gpio_irq_init_hw(struct gpio_chip *gc)" in idt_code
+    assert "g->gc.irq.init_hw = idt_gpio_irq_init_hw;" in idt_code
 
 
 def test_source_private_normalization_keeps_bitwise_and_valid():

@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：54 passed, 0 failed。
+预期：55 passed, 0 failed。
 
 ## 3. 19-driver 确定性矩阵
 
@@ -47,7 +47,7 @@ python3 verification/run_matrix.py
 drivers=19 ops=425 symbolic=314 fixed=64 computed=33
 rmw=71 conditions=58 registers=141 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
-strict_ready: harness=6 baremetal=6 linux=4
+strict_ready: harness=6 baremetal=6 linux=6
 llm_synthesis_ready=12
 ~~~
 

@@ -270,10 +270,16 @@ def infer_device_spec(formal: dict, funcs: list[Func],
             cls = c
             break
 
-    # state: base + (clk if clk ops present) + num_irqs if irq callbacks
+    # State models resources owned by this generated device.  A clock provider
+    # has clk_ops/clk_hw callbacks but does not necessarily consume a struct
+    # clk; require an actual acquisition call or source field before adding the
+    # consumer-side Clock state.
     state: list[StateField] = [StateField("base", "MmioBase")]
     has_irq = any(fs.role.startswith("interrupt") or fs.role == "set_irq_type" for fs in fn_specs)
-    has_clk = "clk" in source_text.lower() or any("clk" in fs.name.lower() for fs in fn_specs)
+    has_clk = bool(re.search(
+        r"\b(?:(?:devm_)?clk_get(?:_optional)?(?:_enabled)?|"
+        r"devm_clk_get_optional_enabled)\s*\(", source_text))
+    has_clk |= bool(re.search(r"\bstruct\s+clk\s*\*", source_text))
     if has_clk:
         state.append(StateField("clk", "Clock"))
     if has_irq:
@@ -513,6 +519,11 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
         m = re.search(
             rf"\b{re.escape(fname)}\s*\((.*?)\)\s*\{{", src, flags=re.S)
         params = m.group(1) if m else ""
+        # gpio_irq_chip callbacks such as init_hw receive a gpio_chip pointer,
+        # so the parameter type alone is ambiguous.  Prefer the field's
+        # authoritative table class before applying the broad gpio_chip rule.
+        if field in {"init_hw", "parent_handler"}:
+            return "gpio_irq_chip"
         if "struct gpio_chip" in params:
             return "gpio_chip"
         if "struct irq_data" in params:
@@ -681,6 +692,12 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
     # names referenced by RIS / callbacks / resources / errors / helpers — these
     # constants are reconstruction-relevant even without a driver prefix
     referenced: set[str] = set(register_names)
+    # Source-local numeric defines are part of the driver's semantics even
+    # when they appear only in pure scalar callback arithmetic (and therefore
+    # never enter the MMIO-only RIS).  Header-wide constants remain filtered
+    # below; this adds only macros defined by the target source itself.
+    referenced |= set(re.findall(
+        r"^\s*#\s*define\s+([A-Za-z_]\w*)", source_text, flags=re.M))
     if formal is not None:
         from .formal import walk_all_ops
         for m in formal["modules"]:
@@ -722,7 +739,7 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
     # resources: scan for acquisition calls
     resources: list[ResourceFact] = []
     for i, (call, _kind, binds) in enumerate(_RESOURCE_CALLS):
-        if call in source_text:
+        if re.search(rf"\b{re.escape(call)}\s*\(", source_text):
             resources.append(ResourceFact(f"{_kind.lower()[:4]}{i}", call, binds))
     # dedupe by acquisition, keep first, renumber
     seen = set()

@@ -153,6 +153,210 @@ def _bind_state_text(text: str, state_prefix: str | None) -> str:
                   rf"{state_prefix}->\1", text)
 
 
+def _mask_c_source(source: str) -> str:
+    """Mask comments and literals while preserving offsets and newlines."""
+    pattern = re.compile(
+        r"//[^\n]*|/\*.*?\*/|\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'",
+        re.S)
+
+    def mask(match):
+        return "".join("\n" if ch == "\n" else " " for ch in match.group(0))
+
+    return pattern.sub(mask, source)
+
+
+def _matching_delimiter(masked: str, start: int, opening: str,
+                        closing: str) -> int | None:
+    depth = 0
+    for index in range(start, len(masked)):
+        char = masked[index]
+        if char == opening:
+            depth += 1
+        elif char == closing:
+            depth -= 1
+            if depth == 0:
+                return index
+    return None
+
+
+def _source_function(source: str, name: str) -> dict | None:
+    """Return an exact source function definition with balanced delimiters."""
+    masked = _mask_c_source(source)
+    for match in re.finditer(rf"\b{re.escape(name)}\s*\(", masked):
+        open_paren = masked.find("(", match.start())
+        close_paren = _matching_delimiter(masked, open_paren, "(", ")")
+        if close_paren is None:
+            continue
+        brace = close_paren + 1
+        while brace < len(masked) and masked[brace].isspace():
+            brace += 1
+        if brace >= len(masked) or masked[brace] != "{":
+            continue
+        close_brace = _matching_delimiter(masked, brace, "{", "}")
+        if close_brace is None:
+            continue
+        header_start = source.rfind("\n", 0, match.start()) + 1
+        return {
+            "header": source[header_start:brace].strip(),
+            "params": source[open_paren + 1:close_paren],
+            "body": source[brace + 1:close_brace],
+            "text": source[header_start:close_brace + 1].strip(),
+        }
+    return None
+
+
+def _parameter_names(params: str) -> list[str]:
+    names = []
+    for param in params.split(","):
+        param = param.strip()
+        if not param or param == "void":
+            continue
+        match = re.search(r"([A-Za-z_]\w*)\s*(?:\[[^]]*\])?\s*$", param)
+        if match:
+            names.append(match.group(1))
+    return names
+
+
+def _parse_clk_ops_groups(source: str) -> dict[str, dict[str, str]]:
+    """Preserve individual clk_ops instances instead of last-field-wins."""
+    masked = _mask_c_source(source)
+    groups: dict[str, dict[str, str]] = {}
+    pattern = re.compile(
+        r"\b(?:static\s+)?(?:const\s+)?struct\s+clk_ops\s+"
+        r"([A-Za-z_]\w*)\s*=\s*\{")
+    for match in pattern.finditer(masked):
+        brace = masked.find("{", match.start())
+        close = _matching_delimiter(masked, brace, "{", "}")
+        if close is None:
+            continue
+        block = source[brace + 1:close]
+        fields = {
+            field: function for field, function in re.findall(
+                r"\.([A-Za-z_]\w*)\s*=\s*&?\s*([A-Za-z_]\w*)", block)
+        }
+        if fields:
+            groups[match.group(1)] = fields
+    return groups
+
+
+def _lower_clock_source_callback(source: str, name: str, priv: str) -> str | None:
+    """Lower a clock callback while preserving its scalar C semantics.
+
+    The original callback body is retained, but the source-private container
+    pointer is rebound to the generated private object's MMIO base.  This
+    captures arithmetic and early returns that the MMIO-only RIS does not yet
+    represent; lowering is rejected if any private member remains unbound.
+    """
+    function = _source_function(source, name)
+    if function is None:
+        return None
+    body = function["body"]
+    private = re.search(
+        r"\bstruct\s+[A-Za-z_]\w*\s*\*\s*([A-Za-z_]\w*)\s*=\s*"
+        r"[A-Za-z_]\w*\s*\([^;]*\)\s*;", body, re.S)
+    prelude: list[str] = []
+    if private:
+        private_name = private.group(1)
+        body = body[:private.start()] + body[private.end():]
+        body = re.sub(rf"\b{re.escape(private_name)}\s*->\s*reg\b",
+                      "base", body)
+        if re.search(rf"\b{re.escape(private_name)}\s*->", body):
+            return None
+        params = _parameter_names(function["params"])
+        if not params:
+            return None
+        prelude = [
+            f"\tstruct {priv} *g = container_of({params[0]}, struct {priv}, hw);",
+            "\tvoid __iomem *base = g->base;",
+        ]
+    # A source callback may legitimately access framework-owned request state,
+    # but no driver-private aggregate may survive the explicit rebind above.
+    residual = re.findall(r"\b([A-Za-z_]\w*)\s*->\s*([A-Za-z_]\w*)", body)
+    allowed_roots = {"req"}
+    if any(root not in allowed_roots for root, _field in residual):
+        return None
+    body = body.strip("\n")
+    lines = [function["header"], "{", *prelude]
+    if body.strip():
+        lines.append(body)
+    lines.append("}")
+    return "\n".join(lines)
+
+
+def _clock_source_model(facts, priv: str) -> dict | None:
+    source_path = getattr(facts, "source", None) if facts is not None else None
+    if not source_path or not source_path.endswith(".c") or not os.path.isfile(source_path):
+        return None
+    source = open(source_path, "r", encoding="utf-8", errors="replace").read()
+    groups = _parse_clk_ops_groups(source)
+    if not groups:
+        return None
+    functions = {function for fields in groups.values() for function in fields.values()}
+    lowered: dict[str, str] = {}
+    for function in sorted(functions):
+        code = _lower_clock_source_callback(source, function, priv)
+        if code is None:
+            return None
+        lowered[function] = code
+
+    # Retain pure source helpers called by the callbacks (for example PLL rate
+    # calculation).  Only helpers without aggregate member access are accepted.
+    known_calls = {
+        "BIT", "GENMASK", "FIELD_GET", "FIELD_PREP", "readl", "writel",
+        "readb", "writeb", "readw", "writew", "container_of",
+        "if", "for", "while", "switch", "sizeof", "return",
+    }
+    helper_names: set[str] = set()
+    for code in lowered.values():
+        for called in re.findall(r"\b([A-Za-z_]\w*)\s*\(", code):
+            if called not in functions and called not in known_calls:
+                helper = _source_function(source, called)
+                if helper is not None:
+                    helper_names.add(called)
+    helpers: list[str] = []
+    for helper_name in sorted(helper_names):
+        helper = _source_function(source, helper_name)
+        if helper is None or "->" in helper["body"]:
+            return None
+        helpers.append(helper["text"])
+
+    variants: list[tuple[str, str]] = []
+    for compatible, init_function in re.findall(
+            r"CLK_OF_DECLARE\s*\(\s*[A-Za-z_]\w*\s*,\s*"
+            r'"([^\"]+)"\s*,\s*([A-Za-z_]\w*)\s*\)', source):
+        init = _source_function(source, init_function)
+        if init is None:
+            continue
+        candidates = [group for group in groups
+                      if re.search(rf"&\s*{re.escape(group)}\b", init["body"])]
+        if len(candidates) == 1:
+            variants.append((compatible, candidates[0]))
+    if variants and {group for _compatible, group in variants} != set(groups):
+        return None
+    return {
+        "groups": groups,
+        "callbacks": lowered,
+        "helpers": helpers,
+        "variants": variants,
+    }
+
+
+def _source_object_macros(facts) -> dict[str, str]:
+    """Return target-source object macros, including symbolic expressions."""
+    source_path = getattr(facts, "source", None) if facts is not None else None
+    if not source_path or not source_path.endswith(".c") or not os.path.isfile(source_path):
+        return {}
+    source = open(source_path, "r", encoding="utf-8", errors="replace").read()
+    macros: dict[str, str] = {}
+    for match in re.finditer(
+            r"^\s*#\s*define\s+([A-Za-z_]\w*)[ \t]+([^\n\\]+?)\s*$",
+            source, flags=re.M):
+        name, value = match.group(1), match.group(2).strip()
+        if value:
+            macros[name] = value
+    return macros
+
+
 def _normalize_expr(expr, state_prefix: str | None = None):
     if not isinstance(expr, dict):
         return expr, False
@@ -617,7 +821,7 @@ def _pci_ids(device_spec, facts) -> tuple[int, int] | None:
 
 def _emit_platform(formal, device_spec, bind, facts, priv, regs,
                    callbacks: dict[str, str], callback_code: list[str],
-                   unsupported: list[str]) -> str:
+                   unsupported: list[str], clock_model: dict | None = None) -> str:
     dev = device_spec.name
     cid = _cid(dev)
     _, probe_module = _probe_ops(device_spec, formal)
@@ -628,14 +832,28 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         f.startswith("gpio_chip.") for f in by_field)
     has_irq = any(f.startswith("irq_chip.") for f in by_field)
     has_clk = any(s.name == "clk" for s in device_spec.state)
-    has_clk_ops = any(f.startswith("clk_ops.") for f in by_field)
+    has_clk_ops = bool(clock_model) or any(
+        f.startswith("clk_ops.") for f in by_field)
     pm_fields = {
         field.split(".", 1)[1]: fn for field, fn in by_field.items()
         if field.startswith("dev_pm_ops.")
     }
 
     L = callback_code[:] + _emit_usb_callback_tables(dev, callbacks)
-    if has_clk_ops:
+    clock_table_names: dict[str, str] = {}
+    if clock_model:
+        for group, fields in clock_model["groups"].items():
+            table_name = f"{cid}_{_cid(group)}"
+            clock_table_names[group] = table_name
+            L += [f"static const struct clk_ops {table_name} = {{"]
+            for field in ("prepare", "unprepare", "enable", "disable",
+                          "is_enabled", "recalc_rate", "determine_rate",
+                          "round_rate", "set_rate"):
+                function = fields.get(field)
+                if function:
+                    L.append(f"\t.{field} = {function},")
+            L += ["};", ""]
+    elif has_clk_ops:
         L += [f"static const struct clk_ops {cid}_clk_ops = {{"]
         for field in ("prepare", "unprepare", "enable", "disable",
                       "is_enabled", "recalc_rate", "determine_rate",
@@ -654,6 +872,8 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         L += ["};", ""]
     L += [f"static int {cid}_probe(struct platform_device *pdev)", "{",
           f"\tstruct {priv} *g;", "\tint ret;"]
+    if clock_model:
+        L.append("\tconst struct clk_ops *clock_ops;")
     L += ["\tg = devm_kzalloc(&pdev->dev, sizeof(*g), GFP_KERNEL);",
           "\tif (!g)", "\t\treturn -ENOMEM;",
           "\tg->dev = &pdev->dev;",
@@ -667,7 +887,23 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
     if has_clk:
         L += ["\tg->clk = devm_clk_get_optional_enabled(&pdev->dev, NULL);",
               "\tif (IS_ERR(g->clk))", "\t\treturn PTR_ERR(g->clk);"]
-    if has_clk_ops:
+    if clock_model:
+        first_group = next(iter(clock_model["groups"]))
+        first_table = clock_table_names[first_group]
+        L += ["\tclock_ops = device_get_match_data(&pdev->dev);",
+              f"\tif (!clock_ops)\n\t\tclock_ops = &{first_table};",
+              "\tg->parent_data.index = 0;",
+              "\tg->init.name = dev_name(&pdev->dev);",
+              "\tg->init.ops = clock_ops;",
+              "\tg->init.parent_data = &g->parent_data;",
+              "\tg->init.num_parents = 1;",
+              "\tg->hw.init = &g->init;",
+              "\tret = devm_clk_hw_register(&pdev->dev, &g->hw);",
+              "\tif (ret)", "\t\treturn ret;"]
+        L += ["\tret = devm_of_clk_add_hw_provider(&pdev->dev,",
+              "\t\t\tof_clk_hw_simple_get, &g->hw);",
+              "\tif (ret)", "\t\treturn ret;"]
+    elif has_clk_ops:
         L += [f"\tg->hw.init = &{cid}_clk_init;",
               "\tret = devm_clk_hw_register(&pdev->dev, &g->hw);",
               "\tif (ret)", "\t\treturn ret;"]
@@ -704,8 +940,14 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
     L += [f'\tdev_info(&pdev->dev, "{dev} probed\\n");', "\treturn 0;", "}", "",
           f"static void {cid}_remove(struct platform_device *pdev)", "{",
           "\t(void)pdev;", "}", "",
-          f"static const struct of_device_id {cid}_of_match[] = {{",
-          f'\t{{ .compatible = "reharness,{dev}" }},', "\t{ }", "};",
+          f"static const struct of_device_id {cid}_of_match[] = {{"]
+    if clock_model and clock_model["variants"]:
+        for compatible, group in clock_model["variants"]:
+            L.append(f'\t{{ .compatible = "{compatible}", '
+                     f'.data = &{clock_table_names[group]} }},')
+    else:
+        L.append(f'\t{{ .compatible = "reharness,{dev}" }},')
+    L += ["\t{ }", "};",
           f"MODULE_DEVICE_TABLE(of, {cid}_of_match);", "",
           f"static struct platform_driver {cid}_driver = {{",
           f"\t.probe = {cid}_probe,", f"\t.remove = {cid}_remove,",
@@ -837,6 +1079,15 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
 
     callback_code: list[str] = []
     unsupported: list[str] = []
+    clock_model = (_clock_source_model(facts, priv)
+                   if device_spec.cls == "clock" else None)
+    if clock_model:
+        callback_code.extend(clock_model["helpers"])
+        if clock_model["helpers"]:
+            callback_code.append("")
+        for function in sorted(clock_model["callbacks"]):
+            callback_code.append(clock_model["callbacks"][function])
+            callback_code.append("")
     if device_spec.cls == "ahci":
         unsupported.append("AHCI probe requires libata host/port state bindings")
     if device_spec.cls == "sdhci":
@@ -871,6 +1122,9 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     for fn in device_spec.functions:
         field = callbacks.get(fn.name)
         if not field or field.endswith(".probe") or field.endswith(".remove"):
+            continue
+        if (clock_model and field.startswith("clk_ops.")
+                and fn.name in clock_model["callbacks"]):
             continue
         if dev == "edu" and field.startswith("file_operations."):
             # The edu PCI backend supplies checked raw-MMIO file operations
@@ -915,9 +1169,13 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
          "// SPDX-License-Identifier: GPL-2.0", *includes, ""]
     for name, off in regs.items():
         L.append(f"#define {name}\t0x{off:x}")
+    source_macros = _source_object_macros(facts)
+    for name, value in source_macros.items():
+        if name not in regs:
+            L.append(f"#ifndef {name}\n#define {name}\t{value}\n#endif")
     if facts is not None:
         for name, value in sorted(facts.constants.items()):
-            if name not in regs:
+            if name not in regs and name not in source_macros:
                 L.append(f"#ifndef {name}\n#define {name}\t0x{value:x}\n#endif")
     known_constants = set(regs)
     if facts is not None:
@@ -941,8 +1199,12 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     else:
         L += ["\tstruct gpio_chip gc;", "\tstruct irq_chip irqchip;",
               "\tstruct clk *clk;"]
-        if any(field.startswith("clk_ops.") for field in callbacks.values()):
+        if (clock_model or any(
+                field.startswith("clk_ops.") for field in callbacks.values())):
             L.append("\tstruct clk_hw hw;")
+        if clock_model:
+            L += ["\tstruct clk_init_data init;",
+                  "\tstruct clk_parent_data parent_data;"]
     if any(field.startswith("usb_ep_ops.") for field in callbacks.values()):
         L.append("\tstruct usb_ep ep;")
     if any(field.startswith("usb_gadget_ops.") for field in callbacks.values()):
@@ -964,7 +1226,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
                          callbacks, callback_code, unsupported)
     else:
         body = _emit_platform(formal, device_spec, bind, facts, priv, regs,
-                              callbacks, callback_code, unsupported)
+                              callbacks, callback_code, unsupported,
+                              clock_model)
     L += [body, "", 'MODULE_LICENSE("GPL");',
           f'MODULE_DESCRIPTION("reharness generated driver for {dev}");']
     return "\n".join(L) + "\n"
