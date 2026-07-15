@@ -1,14 +1,14 @@
 {
   "aggregate": {
     "clang_diagnostics": 3,
-    "computed": 35,
-    "conditions": 58,
-    "fixed": 62,
-    "loops": 0,
-    "ops": 425,
-    "registers": 141,
-    "rmw": 71,
-    "symbolic": 314,
+    "computed": 25,
+    "conditions": 70,
+    "fixed": 73,
+    "loops": 24,
+    "ops": 429,
+    "registers": 144,
+    "rmw": 69,
+    "symbolic": 317,
     "unknown_value": 0
   },
   "alias_mode": "off",
@@ -26,7 +26,7 @@
         "computed": 0,
         "conditions": 10,
         "fixed": 1,
-        "loops": 0,
+        "loops": 2,
         "ops": 20,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.95,
@@ -41,6 +41,9 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "10 source register/opaque access site(s) unsupported",
+          "6 unsupported control-flow transfer(s)",
+          "1 conservative loop summary/summaries require validation",
           "callback entry without table binding: ahci_pci_device_runtime_suspend, ahci_pci_device_runtime_resume, ahci_pci_device_suspend, ahci_pci_device_resume",
           "linux backend has unsupported semantic bindings"
         ],
@@ -48,9 +51,9 @@
         "facts_quality": 0.4,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.965
+        "ris_quality": 0.99
       },
-      "seconds": 7.072,
+      "seconds": 7.344,
       "source_sha256": "ea6533b6e12e49982d0b11195a3ed7b94746cb302bc212eb9067e9cf4b6a65a2"
     },
     {
@@ -63,10 +66,10 @@
       "driver": "ahci_ceva",
       "metrics": {
         "clang_diagnostics": 0,
-        "computed": 2,
-        "conditions": 4,
-        "fixed": 0,
-        "loops": 0,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 2,
+        "loops": 2,
         "ops": 26,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.923,
@@ -88,9 +91,9 @@
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.896
+        "ris_quality": 0.985
       },
-      "seconds": 6.769,
+      "seconds": 6.757,
       "source_sha256": "f1877cae1d91cacb85ad83973d17e20f48b9e7d73cbe61aef04b459725d77987"
     },
     {
@@ -104,15 +107,15 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 2,
+        "conditions": 0,
         "fixed": 0,
-        "loops": 0,
-        "ops": 9,
+        "loops": 1,
+        "ops": 3,
         "pct_non_top": 1.0,
         "pct_symbolic": 1.0,
         "registers": 5,
-        "rmw": 2,
-        "symbolic": 9,
+        "rmw": 0,
+        "symbolic": 3,
         "unknown_value": 0
       },
       "pipeline_exit": 0,
@@ -121,6 +124,8 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "6 source MMIO access site(s) unaccounted",
+          "1 conservative loop summary/summaries require validation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 0.812,
@@ -129,7 +134,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 7.137,
+      "seconds": 7.727,
       "source_sha256": "b539d16daf929ae15e69040553f52708898ae7dc8f17391e1e65f1e5482970ae"
     },
     {
@@ -145,7 +150,7 @@
         "computed": 0,
         "conditions": 1,
         "fixed": 6,
-        "loops": 0,
+        "loops": 2,
         "ops": 15,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.6,
@@ -160,6 +165,7 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "1 conservative loop summary/summaries require validation",
           "missing role for: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine",
           "callback entry without table binding: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine",
           "linux backend has unsupported semantic bindings"
@@ -168,9 +174,9 @@
         "facts_quality": 0.7,
         "function_spec_quality": 0.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.72
+        "ris_quality": 0.92
       },
-      "seconds": 6.643,
+      "seconds": 6.608,
       "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf"
     },
     {
@@ -184,9 +190,9 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 2,
+        "conditions": 0,
         "fixed": 4,
-        "loops": 0,
+        "loops": 4,
         "ops": 18,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.5,
@@ -201,6 +207,8 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "3 source MMIO access site(s) unaccounted",
+          "4 conservative loop summary/summaries require validation",
           "missing role for: ahci_sunxi_start_engine",
           "callback entry without table binding: ahci_sunxi_start_engine, ahci_sunxi_resume",
           "linux backend has unsupported semantic bindings"
@@ -209,9 +217,9 @@
         "facts_quality": 0.4,
         "function_spec_quality": 0.667,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.65
+        "ris_quality": 0.9
       },
-      "seconds": 6.766,
+      "seconds": 6.639,
       "source_sha256": "464349c5dcf3fe20ddad4b73535a0da345c9c78ea0aedcd30d1135c32c866683"
     },
     {
@@ -225,9 +233,9 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 6,
+        "conditions": 2,
         "fixed": 25,
-        "loops": 0,
+        "loops": 4,
         "ops": 25,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.0,
@@ -238,17 +246,19 @@
       },
       "pipeline_exit": 0,
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": true,
-        "blockers": [],
+        "blockers": [
+          "4 conservative loop summary/summaries require validation"
+        ],
         "device_spec_quality": 0.5,
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.3
+        "ris_quality": 0.8
       },
-      "seconds": 3.516,
+      "seconds": 3.626,
       "source_sha256": "77a6ff180b7f16aabc7380cb583e6b1fc87c8eb09cadd6aa41be1c39d03d5c09"
     },
     {
@@ -262,9 +272,9 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 5,
-        "conditions": 13,
+        "conditions": 11,
         "fixed": 0,
-        "loops": 0,
+        "loops": 2,
         "ops": 33,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.848,
@@ -279,6 +289,7 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "2 conservative loop summary/summaries require validation",
           "callback entry without table binding: nomadik_clk_reboot_handler, nomadik_src_clk_init_debugfs",
           "linux backend has unsupported semantic bindings"
         ],
@@ -286,9 +297,9 @@
         "facts_quality": 0.7,
         "function_spec_quality": 0.692,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.844
+        "ris_quality": 0.92
       },
-      "seconds": 4.596,
+      "seconds": 4.707,
       "source_sha256": "57ee47118f6dadbde5f35d6f0be21d0be5f1473c7391b7900c6d45240901758f"
     },
     {
@@ -323,9 +334,9 @@
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.72
+        "ris_quality": 0.92
       },
-      "seconds": 5.453,
+      "seconds": 5.405,
       "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
     },
     {
@@ -339,7 +350,7 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 2,
+        "conditions": 4,
         "fixed": 0,
         "loops": 0,
         "ops": 21,
@@ -362,7 +373,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 4.999,
+      "seconds": 5.045,
       "source_sha256": "8bd222fffd641e7d0f13b2fe46c9b795d1da11351a797eaaa44ee25c76b64f2f"
     },
     {
@@ -376,7 +387,7 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 1,
+        "conditions": 2,
         "fixed": 0,
         "loops": 0,
         "ops": 22,
@@ -399,7 +410,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 5.018,
+      "seconds": 5.045,
       "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
     },
     {
@@ -436,7 +447,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 4.947,
+      "seconds": 4.878,
       "source_sha256": "a693a4f7e2993a805d75ceb89b1ead93119e8792e0e3071d1b13954042045952"
     },
     {
@@ -476,7 +487,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.25
       },
-      "seconds": 5.271,
+      "seconds": 5.216,
       "source_sha256": "de532c264a6b7e15f70b332e3b2339f43c522d9ac867b2a21d0192b3c029ada5"
     },
     {
@@ -490,7 +501,7 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 4,
-        "conditions": 0,
+        "conditions": 1,
         "fixed": 0,
         "loops": 0,
         "ops": 31,
@@ -511,9 +522,9 @@
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.86
+        "ris_quality": 0.924
       },
-      "seconds": 5.749,
+      "seconds": 5.874,
       "source_sha256": "85ae65ac39b37f7b665e805155c6b8ef7d67c7be10b6d81a1a3efa6b282222a0"
     },
     {
@@ -527,7 +538,7 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 2,
-        "conditions": 1,
+        "conditions": 2,
         "fixed": 0,
         "loops": 0,
         "ops": 7,
@@ -548,9 +559,9 @@
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.75
+        "ris_quality": 0.893
       },
-      "seconds": 5.707,
+      "seconds": 5.691,
       "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109"
     },
     {
@@ -589,7 +600,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 3.618,
+      "seconds": 3.792,
       "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492"
     },
     {
@@ -603,15 +614,15 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 3,
-        "fixed": 18,
-        "loops": 0,
+        "conditions": 7,
+        "fixed": 17,
+        "loops": 1,
         "ops": 23,
         "pct_non_top": 1.0,
-        "pct_symbolic": 0.143,
-        "registers": 2,
+        "pct_symbolic": 0.19,
+        "registers": 3,
         "rmw": 0,
-        "symbolic": 3,
+        "symbolic": 4,
         "unknown_value": 0
       },
       "pipeline_exit": 0,
@@ -620,17 +631,19 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "6 unsupported control-flow transfer(s)",
+          "1 conservative loop summary/summaries require validation",
           "missing role for: esdhc_mcf_writeb_be, esdhc_mcf_writew_be, esdhc_mcf_writel_be, esdhc_mcf_readb_be, esdhc_mcf_readw_be, esdhc_mcf_readl_be, esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width",
           "callback entry without table binding: esdhc_mcf_writeb_be, esdhc_mcf_writew_be, esdhc_mcf_writel_be, esdhc_mcf_readb_be, esdhc_mcf_readw_be, esdhc_mcf_readl_be, esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width",
           "linux backend has unsupported semantic bindings"
         ],
-        "device_spec_quality": 0.625,
+        "device_spec_quality": 0.688,
         "facts_quality": 1.0,
         "function_spec_quality": 0.1,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.4
+        "ris_quality": 0.838
       },
-      "seconds": 5.505,
+      "seconds": 5.619,
       "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396"
     },
     {
@@ -644,15 +657,15 @@
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 3,
-        "fixed": 0,
-        "loops": 0,
-        "ops": 26,
+        "conditions": 6,
+        "fixed": 2,
+        "loops": 1,
+        "ops": 36,
         "pct_non_top": 1.0,
-        "pct_symbolic": 1.0,
-        "registers": 9,
+        "pct_symbolic": 0.944,
+        "registers": 11,
         "rmw": 6,
-        "symbolic": 26,
+        "symbolic": 34,
         "unknown_value": 0
       },
       "pipeline_exit": 0,
@@ -661,16 +674,19 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "callback entry without table binding: sdhci_at91_runtime_resume",
+          "3 unsupported control-flow transfer(s)",
+          "1 conservative loop summary/summaries require validation",
+          "missing role for: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling",
+          "callback entry without table binding: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling, sdhci_at91_runtime_resume",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
-        "function_spec_quality": 1.0,
+        "function_spec_quality": 0.6,
         "llm_synthesis_ready": true,
-        "ris_quality": 1.0
+        "ris_quality": 0.989
       },
-      "seconds": 5.748,
+      "seconds": 6.134,
       "source_sha256": "22906899fc5fbd31e698b4bf958ea41e9ffe52b5866fbe6b3099874d7c6861f8"
     },
     {
@@ -683,10 +699,10 @@
       "driver": "virtio_mmio",
       "metrics": {
         "clang_diagnostics": 0,
-        "computed": 9,
-        "conditions": 9,
-        "fixed": 6,
-        "loops": 0,
+        "computed": 1,
+        "conditions": 22,
+        "fixed": 14,
+        "loops": 4,
         "ops": 59,
         "pct_non_top": 1.0,
         "pct_symbolic": 0.746,
@@ -701,7 +717,9 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "1 unsafe dynamic register address(es) (9 computed total)",
+          "4 unsupported control-flow transfer(s)",
+          "1 unsafe dynamic register address(es) (1 computed total)",
+          "4 conservative loop summary/summaries require validation",
           "missing role for: vm_get_features, vm_finalize_features, virtio_mmio_restore",
           "callback entry without table binding: vm_get_features, vm_finalize_features, vm_notify, virtio_mmio_restore",
           "linux backend has unsupported semantic bindings"
@@ -710,9 +728,9 @@
         "facts_quality": 1.0,
         "function_spec_quality": 0.812,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.772
+        "ris_quality": 0.891
       },
-      "seconds": 5.741,
+      "seconds": 5.949,
       "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5"
     },
     {
@@ -726,9 +744,9 @@
       "metrics": {
         "clang_diagnostics": 3,
         "computed": 0,
-        "conditions": 1,
+        "conditions": 0,
         "fixed": 0,
-        "loops": 0,
+        "loops": 1,
         "ops": 33,
         "pct_non_top": 1.0,
         "pct_symbolic": 1.0,
@@ -744,6 +762,7 @@
         "backend_linux_ready": false,
         "blockers": [
           "3 clang error diagnostic(s)",
+          "1 conservative loop summary/summaries require validation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
@@ -752,7 +771,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.97
       },
-      "seconds": 5.971,
+      "seconds": 5.961,
       "source_sha256": "b1d7894f2d3a41780709a049861a7468575864c3d1ed6815893f3090499a60c5"
     }
   ],
@@ -761,8 +780,8 @@
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "reharness_commit": "7ab0cf20526e62e8806617585463f1b8a513a80f"
+    "reharness_commit": "e3e1d48bd677c08e58dfc51bdd206bad3c226560"
   },
-  "generated_at": "2026-07-15T13:12:49.444318+00:00",
+  "generated_at": "2026-07-15T15:53:42.790269+00:00",
   "schema": 1
 }

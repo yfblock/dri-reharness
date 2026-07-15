@@ -2,7 +2,7 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-论文制品的 v6 冻结入口为 annotated tag `paper-artifact-v6`。结果 JSON 中的 `reharness_commit` 固定为 `7ab0cf20526e62e8806617585463f1b8a513a80f`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
+论文制品的 v7 冻结入口为 annotated tag `paper-artifact-v7`。结果 JSON 中的 `reharness_commit` 固定为 `e3e1d48bd677c08e58dfc51bdd206bad3c226560`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
 
 ## 环境
 
@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：58 passed, 0 failed。
+预期：78 passed, 0 failed。
 
 ## 3. 19-driver 确定性矩阵
 
@@ -44,18 +44,27 @@ python3 verification/run_matrix.py
 当前冻结聚合值：
 
 ~~~text
-drivers=19 ops=425 symbolic=314 fixed=62 computed=35
-rmw=71 conditions=58 registers=141 unknown_value=0
+drivers=19 ops=429 symbolic=317 fixed=73 computed=25
+rmw=69 conditions=70 registers=144 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
-strict_ready: harness=7 baremetal=7 linux=7
+strict_ready: harness=6 baremetal=6 linux=7
 llm_synthesis_ready=12
 ~~~
 
-*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定；可精确 lowering 的 computed address（例如 PL061 banked GPIO）不再被误判为 blocker。
+*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定；可精确 lowering 的 computed address（例如 PL061 banked GPIO）不再被误判为 blocker。Highbank 只有 Linux 专用 clock lowering ready；其轮询循环仍阻止通用 harness/bare-metal readiness。
 
 实验内核配置固定启用 `CONFIG_COMMON_CLK=y`，用于验证生成的 clock framework 注册路径；该配置随 artifact 版本化。
 
-## 3a. Clock 算术 oracle 与泛化边界
+## 3a. 机器可读可靠性报告
+
+~~~bash
+python3 verification/reliability_report.py \
+  --output experiments/results/reliability.json
+~~~
+
+报告逐驱动记录 source access accounting、control accounting、SMT path validation、op ID/evidence 覆盖和 alias/toolchain 范围。当前 scoped strict 为 8/19，但报告固定声明 `whole_program_complete=false`：它只覆盖已识别寄存器访问与结构化控制流，不是 linked whole-program SVF/CFG 证明。
+
+## 3b. Clock 算术 oracle 与泛化边界
 
 ~~~bash
 python3 verification/run_clock_model_boundary.py
@@ -67,7 +76,7 @@ Highbank 的生成 callback 会在独立 userspace MMIO shim 中执行并与 Pyt
 
 同一分析器必须保守拒绝 Visconti PLL；JSON 会记录 `pll_base`、`rate_table/rate_count`、`lock` 和未绑定 private value 等原因。这个负例用于防止把 Highbank 的受限语法 lowering 错写成通用 clock source-private 支持。
 
-## 3b. 真实多源 Linux 驱动矩阵
+## 3c. 真实多源 Linux 驱动矩阵
 
 ~~~bash
 python3 verification/run_multisource_matrix.py
@@ -76,18 +85,18 @@ python3 verification/run_multisource_matrix.py
 该实验只接受至少 4 个 C 文件的 manifest，并检查所有文件确实出现在固定 Linux 源码的同一 Kbuild `*-y` 对象列表中。验证器还会在临时副本中调用原始 Kbuild，不修改 Linux submodule；记录严格 modpost 结果及 USB core 外部符号缺失时的 warning-only 重试。当前规模阶梯：
 
 ~~~text
-c67x00:      4 TUs,  2239 lines,  89 functions,   12 ops
+c67x00:      4 TUs,  2239 lines,  89 functions,   38 ops
 aspeed-vhub: 5 TUs,  3540 lines,  92 functions,  154 ops
-dwc2:       10 TUs, 21668 lines, 445 functions, 3955 ops
-aggregate:  19 TUs, 27447 lines, 626 functions, 4121 ops, 858 RMW
-calls:      974 internal, 223 cross-TU, 223 resolved, 568 MMIO-propagating
-MMIO:       907 source primitives, 927 direct AST ops, 3469 emitted RIS ops
-compile:    harness=3/3 bare-metal=3/3 Linux=3/3 original-Kbuild=3/3
+dwc2:       10 TUs, 21668 lines, 445 functions, 4202 ops
+aggregate:  19 TUs, 27447 lines, 626 functions, 4394 ops, 891 RMW
+calls:      974 internal, 223 cross-TU, 223 resolved, 578 MMIO-propagating
+MMIO:       907 source primitives, 1084 direct AST ops, 3742 emitted RIS ops
+compile:    harness=3/3 bare-metal=3/3 Linux=1/3 original-Kbuild=3/3
 ~~~
 
 固定实验内核未启用 usbcore，因此三个原始模块的严格 modpost 都会报告未解析的 USB 导出符号。验证器只在确认失败属于该类外部符号后，以 `KBUILD_MODPOST_WARN=1` 完成 `.ko` 链接，并在 JSON 中保留 `strict_success=false`、符号列表和完整日志。
 
-权威输出：`experiments/results/multisource-matrix.json`。多源 compile 表示聚合生成物可构建；USB endpoint/gadget/HCD 生命周期和部分动态地址仍未达到 strict readiness，因此不会把规模实验写成语义完整。
+权威输出：`experiments/results/multisource-matrix.json`。DWC2 的生成 Linux 聚合模块通过；Aspeed-vHub 和 C67x00 因 endpoint/HCD 生命周期、动态地址、路径与 control accounting blocker 保守失败。该非零退出是当前预期边界，不能改写成 3/3 Linux compile。
 
 ## 4. 确定性 QEMU 实验
 
@@ -154,6 +163,9 @@ python3 verification/run_matrix.py
 python3 verification/run_multisource_matrix.py
 python3 verification/run_clock_model_boundary.py
 verification/run_qemu_experiments.sh
+python3 verification/ris_mutation_oracle.py
+python3 verification/ris_trace_oracle.py
+python3 verification/ftgpio_trace_oracle.py
 python3 tools/generate_paper_results.py
 (cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
 ~~~
