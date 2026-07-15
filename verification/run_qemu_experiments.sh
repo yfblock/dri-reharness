@@ -28,6 +28,10 @@ build_exerciser() {
     "${CC:-cc}" -static -O2 -Wall -Wextra -o "$output" "$source"
 }
 
+normalize_log() {
+    tr -d '\r' | sed 's/[[:blank:]]*$//'
+}
+
 build_exerciser test/edu_trace_test.c test/edu_trace_test
 build_exerciser test/gpio_trace_test.c test/gpio_trace_test
 
@@ -41,8 +45,9 @@ RH_QEMU_OUT=/tmp/reharness_qemu_edu_deterministic.txt \
     bash qemu_run.sh edu_drv -b pci -d edu \
       -e test/edu_trace_test -a /dev/edu_drv \
       -p 'probed|edu device id|edu probed' -t 90 \
-      | tee "$RESULTS/qemu-edu-judge.txt"
-cp /tmp/reharness_qemu_edu_deterministic.txt "$RESULTS/qemu-edu-serial.log"
+      | normalize_log | tee "$RESULTS/qemu-edu-judge.txt"
+normalize_log < /tmp/reharness_qemu_edu_deterministic.txt \
+    > "$RESULTS/qemu-edu-serial.log"
 grep -q EDU_TRACE_OK "$RESULTS/qemu-edu-serial.log"
 
 # ── gpio-ftgpio010: offset/order trace oracle ───────────────────────
@@ -62,8 +67,9 @@ python3 -m extractor spec -s drivers/test/gpio-ftgpio010.c \
 RH_QEMU_OUT=/tmp/reharness_qemu_ftgpio_deterministic.txt \
     bash qemu_run.sh gpio_ftgpio010 -b platform -r gpio-ftgpio010 \
       -p 'probed|registered|gpiochip' -t 90 \
-      | tee "$RESULTS/qemu-ftgpio010-judge.txt"
-cp /tmp/reharness_qemu_ftgpio_deterministic.txt "$RESULTS/qemu-ftgpio010-serial.log"
+      | normalize_log | tee "$RESULTS/qemu-ftgpio010-judge.txt"
+normalize_log < /tmp/reharness_qemu_ftgpio_deterministic.txt \
+    > "$RESULTS/qemu-ftgpio010-serial.log"
 python3 tools/trace_match.py "$RESULTS/qemu-ftgpio010-serial.log" \
     "$FT_SPEC/gpio-ftgpio010.ris" "$FT_SPEC/gpio-ftgpio010.dspec" \
     --exercised probe 2>&1 | tee "$RESULTS/qemu-ftgpio010-trace.txt"
