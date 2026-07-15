@@ -1,0 +1,232 @@
+{
+  "acceptance": {
+    "access_accounting_strict": true,
+    "all_backends_compile": true,
+    "function_inventory_stable": true,
+    "guard_passed": true,
+    "imported_context_found": true,
+    "no_target_source_errors": true,
+    "semantic_regression_free": true
+  },
+  "baseline_without_importer": {
+    "access_accounting_strict": true,
+    "compile_context": {
+      "arguments": [
+        "-x",
+        "c",
+        "-D__KERNEL__",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/include/generated/autoconf.h",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/compiler-version.h",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/kconfig.h",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/compiler_types.h",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/arch/x86/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/arch/x86/include/generated",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/include/generated",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/arch/x86/include/generated/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/include/generated/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/include/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/mmc/host",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/video/fbdev",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/clk/visconti",
+        "-Wno-implicit-function-declaration",
+        "-Wno-int-conversion",
+        "-DKBUILD_MODNAME=\"gpio_altera\"",
+        "-DKBUILD_MODFILE=\"gpio_altera\"",
+        "-D_Static_assert(x,y)=",
+        "-Wno-ignored-attributes"
+      ],
+      "directory": "/home/yfblock/Code/dri-trans-paper/reharness",
+      "effective_argument_count": 31,
+      "effective_arguments_sha256": "fc8334886a3120fe58109c8c486d69586ed3d06873a91a900dc9c3d0f6badc4f",
+      "origin": "fallback-disabled",
+      "parser_overrides": [
+        "-D_Static_assert(x,y)=",
+        "-Wno-ignored-attributes"
+      ],
+      "provenance": "extractor.tu.default_include_args",
+      "source": "/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio/gpio-altera.c"
+    },
+    "device_spec_sha256": "4e2f5b2ea3bdc76698142dc7ab1953efc40ddae345ca18c53c5e1a3b53ad2ce9",
+    "functions_analyzed": 13,
+    "generation": {
+      "baremetal": {
+        "compiled": true,
+        "has_todo": false,
+        "unsupported": true
+      },
+      "harness": {
+        "compiled": true,
+        "has_todo": false,
+        "trace_passed": true,
+        "unsupported": true
+      },
+      "linux": {
+        "compiled": true,
+        "has_todo": false,
+        "syntax_ok": true,
+        "unsupported": true
+      }
+    },
+    "pipeline_exit": 0,
+    "readiness": {
+      "backend_bare_metal_ready": false,
+      "backend_harness_ready": false,
+      "backend_linux_ready": false,
+      "blockers": [
+        "1 conservative loop summary/summaries require validation",
+        "linux backend has unsupported semantic bindings"
+      ],
+      "device_spec_quality": 0.75,
+      "facts_quality": 1.0,
+      "function_spec_quality": 1.0,
+      "llm_synthesis_ready": true,
+      "ris_quality": 1.0
+    },
+    "ris_sha256": "86f327f994b82d4e57c3956c4035dba9ec15c5a0d957ef797765f2ebb540aaee",
+    "source_accesses": 18,
+    "target_source_diagnostics": [
+      "clang diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio/gpio-altera.c:246: passing 'int *' to parameter of type 'u32 *' (aka 'unsigned int *') converts between pointers to integer types with different sign",
+      "clang diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio/gpio-altera.c:279: passing 'int *' to parameter of type 'u32 *' (aka 'unsigned int *') converts between pointers to integer types with different sign"
+    ],
+    "target_source_error_count": 0,
+    "total_ops": 18
+  },
+  "case": "gpio-altera",
+  "environment": {
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "reharness_commit": "80f2c2bfdaf81a3c90209bb7d63233e12be8a656"
+  },
+  "generated_at": "2026-07-15T19:19:24.268290+00:00",
+  "guard": {
+    "cases": 12,
+    "first_run": "gpio-altera",
+    "holdout": "zero-shot-v1",
+    "issues": [],
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "passed": true,
+    "schema": 1,
+    "specialization_inventory": {
+      "device_name_equals": [
+        "edu"
+      ],
+      "private_mmio_layouts": [
+        "dwc2_readl",
+        "dwc2_writel"
+      ],
+      "source_basename_equals": [
+        "sdhci-esdhc-mcf.c"
+      ]
+    }
+  },
+  "holdout": "zero-shot-v1",
+  "schema": 1,
+  "semantic_outputs_equal": true,
+  "source": "linux/drivers/gpio/gpio-altera.c",
+  "source_sha256": "23f36f26c9c10ffcbeb11f2c06d142ab4876a3d38cd09ddd37bbabdc5bfc670a",
+  "with_compile_context_importer": {
+    "access_accounting_strict": true,
+    "compile_context": {
+      "argument_count": 33,
+      "arguments": [
+        "-x",
+        "c",
+        "-nostdinc",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/arch/x86/include/generated",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/include",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/arch/x86/include/generated/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/include/uapi",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/include/generated/uapi",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/compiler-version.h",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/kconfig.h",
+        "-include",
+        "/home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/compiler_types.h",
+        "-D__KERNEL__",
+        "-fshort-wchar",
+        "-funsigned-char",
+        "-fno-common",
+        "-fno-strict-aliasing",
+        "-std=gnu11",
+        "-fms-extensions",
+        "-m64",
+        "-DCC_USING_FENTRY",
+        "-fstrict-flex-arrays=3",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio",
+        "-I/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/drivers/gpio",
+        "-DMODULE",
+        "-DKBUILD_BASENAME=\"gpio_altera\"",
+        "-DKBUILD_MODNAME=\"gpio_altera\"",
+        "-D__KBUILD_MODNAME=gpio_altera"
+      ],
+      "arguments_sha256": "bb306e05a33b3a3e661971b6a29712823506c273e7c05f72475ffd55ad21dc8a",
+      "directory": "/home/yfblock/Code/dri-trans-paper/reharness/kernel/build",
+      "effective_argument_count": 36,
+      "effective_arguments_sha256": "8216ef9bb9ef03869b9a4ec7289fbb193c6efcd19f04f0a560128ae39c034687",
+      "origin": "kbuild-cmd",
+      "parser_overrides": [
+        "-D_Static_assert(x,y)=",
+        "-Wno-ignored-attributes"
+      ],
+      "provenance": "/home/yfblock/Code/dri-trans-paper/reharness/kernel/build/drivers/gpio/.gpio-altera.o.cmd",
+      "raw_command_sha256": "9e516b6ddeffd9d23b62217ba40e3f1a248c7108f58cc5cfaa59926d69479e0d",
+      "source": "/home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio/gpio-altera.c"
+    },
+    "device_spec_sha256": "4e2f5b2ea3bdc76698142dc7ab1953efc40ddae345ca18c53c5e1a3b53ad2ce9",
+    "functions_analyzed": 13,
+    "generation": {
+      "baremetal": {
+        "compiled": true,
+        "has_todo": false,
+        "unsupported": true
+      },
+      "harness": {
+        "compiled": true,
+        "has_todo": false,
+        "trace_passed": true,
+        "unsupported": true
+      },
+      "linux": {
+        "compiled": true,
+        "has_todo": false,
+        "syntax_ok": true,
+        "unsupported": true
+      }
+    },
+    "pipeline_exit": 0,
+    "readiness": {
+      "backend_bare_metal_ready": false,
+      "backend_harness_ready": false,
+      "backend_linux_ready": false,
+      "blockers": [
+        "1 conservative loop summary/summaries require validation",
+        "linux backend has unsupported semantic bindings"
+      ],
+      "device_spec_quality": 0.75,
+      "facts_quality": 1.0,
+      "function_spec_quality": 1.0,
+      "llm_synthesis_ready": true,
+      "ris_quality": 1.0
+    },
+    "ris_sha256": "86f327f994b82d4e57c3956c4035dba9ec15c5a0d957ef797765f2ebb540aaee",
+    "source_accesses": 18,
+    "target_source_diagnostics": [
+      "clang diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio/gpio-altera.c:246: passing 'int *' to parameter of type 'u32 *' (aka 'unsigned int *') converts between pointers to integer types with different sign",
+      "clang diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/drivers/gpio/gpio-altera.c:279: passing 'int *' to parameter of type 'u32 *' (aka 'unsigned int *') converts between pointers to integer types with different sign"
+    ],
+    "target_source_error_count": 0,
+    "total_ops": 18
+  }
+}
