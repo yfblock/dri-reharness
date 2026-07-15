@@ -138,7 +138,7 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
     loc = func.cursor.location
     actual_source = (loc.file.name if loc and loc.file else source_path)
     return FunctionSpec(
-        name=func.name, signature=sig, role=role, context=context,
+        name=module["name"], signature=sig, role=role, context=context,
         source=f"{os.path.basename(actual_source)}:{func.line}",
         binds=binds, requires=requires, ensures=ensures, effects=effects,
         ris_ref=module["name"], is_callback_entry=is_callback_entry,
@@ -150,25 +150,31 @@ def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
                          source_path: str,
                          callback_entries: set[str]) -> tuple[list[FunctionSpec], dict]:
     names = {f.name for f in funcs}
-    cb_bindings =  parse_callback_bindings(source_text, names)
-    module_by_name = {m["name"]: m for m in formal["modules"]}
-    func_by_name = {f.name: f for f in funcs}
+    cb_bindings = parse_callback_bindings(source_text, names)
+    name_counts: dict[str, int] = {}
+    for func in funcs:
+        name_counts[func.name] = name_counts.get(func.name, 0) + 1
+    func_by_module = {(f.module_name or f.name): f for f in funcs}
 
     specs: list[FunctionSpec] = []
     for m in formal["modules"]:
-        fn = func_by_name.get(m["name"])
+        fn = func_by_module.get(m["name"])
         if fn is None:
             continue
-        cb = cb_bindings.get(m["name"])
+        # Name-only callback parsing is authoritative only when the original C
+        # function name is unique across the selected translation units.
+        cb = (cb_bindings.get(fn.name)
+              if name_counts.get(fn.name, 0) == 1 else None)
         if cb:
             role, context = cb["role"], cb["context"]
             table = f"{cb['table']}.{cb['field']}"
         else:
-            hint =  name_role_hints(m["name"])
-            role = hint or ("helper" if m["name"] not in callback_entries else "unknown")
+            hint = name_role_hints(fn.name)
+            symbol = fn.symbol_id or fn.name
+            role = hint or ("helper" if symbol not in callback_entries else "unknown")
             context = "irq" if role.startswith("interrupt") or role == "set_irq_type" else "thread"
             table = None
-        is_entry = m["name"] in callback_entries
+        is_entry = (fn.symbol_id or fn.name) in callback_entries
         specs.append(infer_function_spec(fn, m, role, context, is_entry, table, source_path))
     return specs, cb_bindings
 
@@ -191,6 +197,29 @@ _MODELED_STATE_FIELDS = {
     "gpio_ie": "UInt",
     "version": "UInt",
     "features": "UInt64",
+    # Common USB controller / endpoint private state.
+    "enabled": "Bool",
+    "suspended": "Bool",
+    "connected": "Bool",
+    "remote_wakeup_allowed": "Bool",
+    "halted": "Bool",
+    "wedged": "Bool",
+    "dir_in": "Bool",
+    "periodic": "Bool",
+    "isochronous": "Bool",
+    "num_eps": "UInt",
+    "num_channels": "UInt",
+    "op_state": "UInt",
+    "lx_state": "UInt",
+    "fifo_size": "UInt",
+    "fifo_load": "UInt",
+    "desc_count": "UInt",
+    "next_desc": "UInt",
+    "compl_desc": "UInt",
+    "total_data": "UInt",
+    "target_frame": "UInt",
+    "frame_number": "UInt",
+    "dma": "UInt64",
 }
 
 
@@ -329,6 +358,46 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "determine_rate": ("read_config", "thread"),
     "round_rate": ("read_config", "thread"),
     "set_rate": ("write_config", "thread"),
+    # usb_ep_ops
+    "alloc_request": ("init", "thread"),
+    "free_request": ("remove", "thread"),
+    "queue": ("setup_queue", "thread"),
+    "dequeue": ("remove", "thread"),
+    "set_halt": ("write_config", "thread"),
+    "set_wedge": ("write_config", "thread"),
+    "fifo_status": ("get_status", "thread"),
+    "fifo_flush": ("write_config", "thread"),
+    # usb_gadget_ops
+    "get_frame": ("get_status", "thread"),
+    "wakeup": ("resume", "thread"),
+    "func_wakeup": ("resume", "thread"),
+    "set_remote_wakeup": ("write_config", "thread"),
+    "set_selfpowered": ("write_config", "thread"),
+    "vbus_session": ("write_config", "thread"),
+    "vbus_draw": ("write_config", "thread"),
+    "pullup": ("write_config", "thread"),
+    "udc_start": ("init", "thread"),
+    "udc_stop": ("remove", "thread"),
+    "udc_set_speed": ("write_config", "thread"),
+    "match_ep": ("read_config", "thread"),
+    # hc_driver
+    "irq": ("interrupt_handler", "irq"),
+    "start": ("init", "thread"),
+    "stop": ("remove", "thread"),
+    "urb_enqueue": ("setup_queue", "thread"),
+    "urb_dequeue": ("remove", "thread"),
+    "endpoint_disable": ("remove", "thread"),
+    "endpoint_reset": ("reset", "thread"),
+    "get_frame_number": ("get_status", "thread"),
+    "hub_status_data": ("get_status", "thread"),
+    "hub_control": ("write_config", "thread"),
+    "clear_tt_buffer_complete": ("remove", "thread"),
+    "bus_suspend": ("suspend", "sleepable"),
+    "bus_resume": ("resume", "sleepable"),
+    "map_urb_for_dma": ("setup_queue", "thread"),
+    "unmap_urb_for_dma": ("remove", "thread"),
+    "free_dev": ("remove", "thread"),
+    "reset_device": ("reset", "thread"),
     # gpio_chip (beyond irq)
     "get_direction": ("read_config", "thread"),
     "direction_input": ("write_config", "thread"),
@@ -365,6 +434,23 @@ FIELD_TABLE = {
     "request": "gpio_chip", "free": "gpio_chip",
     "get_direction": "gpio_chip", "direction_input": "gpio_chip",
     "direction_output": "gpio_chip", "set_config": "gpio_chip",
+    "alloc_request": "usb_ep_ops", "free_request": "usb_ep_ops",
+    "queue": "usb_ep_ops", "dequeue": "usb_ep_ops",
+    "set_halt": "usb_ep_ops", "set_wedge": "usb_ep_ops",
+    "fifo_status": "usb_ep_ops", "fifo_flush": "usb_ep_ops",
+    "get_frame": "usb_gadget_ops", "wakeup": "usb_gadget_ops",
+    "set_remote_wakeup": "usb_gadget_ops",
+    "set_selfpowered": "usb_gadget_ops", "pullup": "usb_gadget_ops",
+    "udc_start": "usb_gadget_ops", "udc_stop": "usb_gadget_ops",
+    "match_ep": "usb_gadget_ops",
+    "urb_enqueue": "hc_driver", "urb_dequeue": "hc_driver",
+    "endpoint_disable": "hc_driver", "endpoint_reset": "hc_driver",
+    "get_frame_number": "hc_driver", "hub_status_data": "hc_driver",
+    "hub_control": "hc_driver", "bus_suspend": "hc_driver",
+    "bus_resume": "hc_driver", "map_urb_for_dma": "hc_driver",
+    "unmap_urb_for_dma": "hc_driver", "free_dev": "hc_driver",
+    "reset_device": "hc_driver",
+    "start": "hc_driver", "stop": "hc_driver", "irq": "hc_driver",
 }
 
 
@@ -380,6 +466,7 @@ _KNOWN_CALLBACK_TABLES = {
     "irq_chip", "gpio_chip", "platform_driver", "pci_driver", "amba_driver",
     "virtio_config_ops", "clk_ops", "dev_pm_ops", "file_operations",
     "gpio_irq_chip",
+    "usb_ep_ops", "usb_gadget_ops", "hc_driver",
 }
 
 
@@ -434,6 +521,12 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
             return "clk_ops"
         if "struct virtio_device" in params:
             return "virtio_config_ops"
+        if "struct usb_ep" in params:
+            return "usb_ep_ops"
+        if "struct usb_gadget" in params:
+            return "usb_gadget_ops"
+        if "struct usb_hcd" in params:
+            return "hc_driver"
         if "struct device" in params and field in {
                 "suspend", "resume", "freeze", "thaw", "poweroff", "restore"}:
             return "dev_pm_ops"

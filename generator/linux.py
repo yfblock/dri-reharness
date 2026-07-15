@@ -21,6 +21,11 @@ _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
     "gpio_dir", "gpio_is", "gpio_ibe", "gpio_iev", "gpio_ie",
     "version", "features",
+    "enabled", "suspended", "connected", "remote_wakeup_allowed",
+    "halted", "wedged", "dir_in", "periodic", "isochronous",
+    "num_eps", "num_channels", "op_state", "lx_state",
+    "fifo_size", "fifo_load", "desc_count", "next_desc", "compl_desc",
+    "total_data", "target_frame", "frame_number", "dma",
 }
 
 
@@ -50,6 +55,12 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     readiness falsely claiming exact reconstruction.
     """
     unsupported = False
+    original = text
+    # String/character literals can leak into a recovered expression through
+    # macro-expanded logging calls. They are never meaningful MMIO values.
+    text = re.sub(r'"(?:\\.|[^"\\])*"', "0", text)
+    text = re.sub(r"'(?:\\.|[^'\\])*'", "0", text)
+    unsupported |= text != original
     text = re.sub(r"\bd->hwirq\b", "irqd_to_hwirq(d)", text)
     text = re.sub(r"\b[A-Za-z_]\w*->(?:base|reg|regs|ioaddr)\b", "base", text)
     text = re.sub(r"\b[A-Za-z_]\w*_base\b", "base", text)
@@ -62,16 +73,23 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     safe_calls = {
         "BIT", "GENMASK", "FIELD_GET", "FIELD_PREP",
         "lower_32_bits", "upper_32_bits", "cpu_to_le32", "le32_to_cpu",
-        "cpu_to_le16", "le16_to_cpu",
+        "cpu_to_le16", "le16_to_cpu", "irqd_to_hwirq",
+        "readb", "readw", "readl", "readq",
+        "ioread8", "ioread16", "ioread32", "ioread64",
+        "readb_relaxed", "readw_relaxed", "readl_relaxed", "readq_relaxed",
     }
-    call_re = re.compile(r"\b([A-Z][A-Z0-9_]*)\s*\([^()]*\)")
+    call_re = re.compile(r"\b([A-Za-z_]\w*)\s*\([^()]*\)")
     def replace_call(match):
         nonlocal unsupported
         if match.group(1) in safe_calls:
             return match.group(0)
         unsupported = True
         return "0"
-    text = call_re.sub(replace_call, text)
+    for _ in range(8):
+        replaced = call_re.sub(replace_call, text)
+        if replaced == text:
+            break
+        text = replaced
     if re.fullmatch(r"\s*scoped_guard\s*\(.*\)\s*", text):
         text = "1"
     # Statement-like iteration macros are not C expressions.  A partially
@@ -82,6 +100,12 @@ def _normalize_text(text: str) -> tuple[str, bool]:
         text = "0"
     # Remaining source-private fields have no DeviceSpec binding yet.  Use a
     # neutral value and force backend readiness false via the marker.
+    complex_member_re = re.compile(
+        r"\b[A-Za-z_]\w*(?:\[[^]]+\])?"
+        r"(?:(?:->|\.)[A-Za-z_]\w*(?:\[[^]]+\])?)+")
+    if complex_member_re.search(text):
+        unsupported = True
+        text = complex_member_re.sub("0", text)
     member_re = re.compile(
         r"\b[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)+(?:\[[^]]+\])?")
     if member_re.search(text):
@@ -96,6 +120,29 @@ def _normalize_text(text: str) -> tuple[str, bool]:
     # address-of, never a legitimate bitwise `value & 0` expression.
     text = re.sub(r"^\s*&\s*0\b", "0", text)
     text = re.sub(r"(?<=[=(,])\s*&\s*0\b", " 0", text)
+    text = re.sub(r"(?P<op>==|!=|\?|:)\s*&\s*0\b",
+                  lambda match: match.group("op") + " 0", text)
+    if re.search(r"\b0\s*->", text):
+        unsupported = True
+        text = "0"
+    depth = 0
+    balanced = True
+    for char in text:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth < 0:
+                balanced = False
+                break
+    if depth != 0 or not balanced:
+        unsupported = True
+        text = "0"
+    # Residual source fragments from macro-expanded diagnostics or incomplete
+    # ternaries are not valid standalone C expressions.
+    if re.search(r'["\'\\%;{}]|\+\+|--|\?|:', text):
+        unsupported = True
+        text = "0"
     return text, unsupported
 
 
@@ -170,6 +217,11 @@ def _normalize_ops(ops, state_prefix: str | None = None):
                 body["var"], a = _normalize_text(body["var"])
                 body["var"] = _bind_state_text(body["var"], state_prefix)
                 changed |= a
+                if (body["var"] in {"true", "false"}
+                        or re.fullmatch(r"[A-Z][A-Za-z0-9_]*",
+                                        body["var"] or "")):
+                    body["var"] = ""
+                    changed = True
             key = "value" if "Write" in op else "transform" if "ReadModifyWrite" in op else None
             if key:
                 body[key], a = _normalize_expr(body.get(key), state_prefix)
@@ -190,6 +242,9 @@ def _callback_signature(table_field: str, priv: str):
     direct_irq_pre = f"\tstruct {priv} *g = data;\n\t(void)irq;"
     pm_pre = f"\tstruct {priv} *g = dev_get_drvdata(dev);"
     clk_pre = f"\tstruct {priv} *g = container_of(hw, struct {priv}, hw);"
+    ep_pre = f"\tstruct {priv} *g = ep->driver_data;"
+    gadget_pre = f"\tstruct {priv} *g = container_of(gadget, struct {priv}, gadget);"
+    hcd_pre = f"\tstruct {priv} *g = dev_get_drvdata(hcd->self.controller);"
     specs = {
         "irq_chip.irq_ack": ("void", "struct irq_data *d", irq_pre),
         "irq_chip.irq_mask": ("void", "struct irq_data *d", irq_pre),
@@ -227,6 +282,78 @@ def _callback_signature(table_field: str, priv: str):
         "clk_ops.set_rate": (
             "int", "struct clk_hw *hw, unsigned long rate, unsigned long parent_rate",
             clk_pre),
+        "usb_ep_ops.enable": (
+            "int", "struct usb_ep *ep, const struct usb_endpoint_descriptor *desc",
+            ep_pre),
+        "usb_ep_ops.disable": ("int", "struct usb_ep *ep", ep_pre),
+        "usb_ep_ops.alloc_request": (
+            "struct usb_request *", "struct usb_ep *ep, gfp_t gfp_flags", ep_pre),
+        "usb_ep_ops.free_request": (
+            "void", "struct usb_ep *ep, struct usb_request *req", ep_pre),
+        "usb_ep_ops.queue": (
+            "int", "struct usb_ep *ep, struct usb_request *req, gfp_t gfp_flags",
+            ep_pre),
+        "usb_ep_ops.dequeue": (
+            "int", "struct usb_ep *ep, struct usb_request *req", ep_pre),
+        "usb_ep_ops.set_halt": (
+            "int", "struct usb_ep *ep, int value", ep_pre),
+        "usb_ep_ops.set_wedge": ("int", "struct usb_ep *ep", ep_pre),
+        "usb_ep_ops.fifo_status": ("int", "struct usb_ep *ep", ep_pre),
+        "usb_ep_ops.fifo_flush": ("void", "struct usb_ep *ep", ep_pre),
+        "usb_gadget_ops.get_frame": (
+            "int", "struct usb_gadget *gadget", gadget_pre),
+        "usb_gadget_ops.wakeup": (
+            "int", "struct usb_gadget *gadget", gadget_pre),
+        "usb_gadget_ops.set_selfpowered": (
+            "int", "struct usb_gadget *gadget, int is_selfpowered", gadget_pre),
+        "usb_gadget_ops.vbus_session": (
+            "int", "struct usb_gadget *gadget, int is_active", gadget_pre),
+        "usb_gadget_ops.vbus_draw": (
+            "int", "struct usb_gadget *gadget, unsigned int mA", gadget_pre),
+        "usb_gadget_ops.pullup": (
+            "int", "struct usb_gadget *gadget, int is_on", gadget_pre),
+        "usb_gadget_ops.udc_start": (
+            "int", "struct usb_gadget *gadget, struct usb_gadget_driver *driver",
+            gadget_pre),
+        "usb_gadget_ops.udc_stop": (
+            "int", "struct usb_gadget *gadget", gadget_pre),
+        "usb_gadget_ops.udc_set_speed": (
+            "void", "struct usb_gadget *gadget, enum usb_device_speed speed",
+            gadget_pre),
+        "usb_gadget_ops.match_ep": (
+            "struct usb_ep *",
+            "struct usb_gadget *gadget, struct usb_endpoint_descriptor *desc, "
+            "struct usb_ss_ep_comp_descriptor *comp_desc", gadget_pre),
+        "hc_driver.irq": ("irqreturn_t", "struct usb_hcd *hcd", hcd_pre),
+        "hc_driver.start": ("int", "struct usb_hcd *hcd", hcd_pre),
+        "hc_driver.stop": ("void", "struct usb_hcd *hcd", hcd_pre),
+        "hc_driver.urb_enqueue": (
+            "int", "struct usb_hcd *hcd, struct urb *urb, gfp_t mem_flags", hcd_pre),
+        "hc_driver.urb_dequeue": (
+            "int", "struct usb_hcd *hcd, struct urb *urb, int status", hcd_pre),
+        "hc_driver.endpoint_disable": (
+            "void", "struct usb_hcd *hcd, struct usb_host_endpoint *ep", hcd_pre),
+        "hc_driver.endpoint_reset": (
+            "void", "struct usb_hcd *hcd, struct usb_host_endpoint *ep", hcd_pre),
+        "hc_driver.get_frame_number": (
+            "int", "struct usb_hcd *hcd", hcd_pre),
+        "hc_driver.hub_status_data": (
+            "int", "struct usb_hcd *hcd, char *buf", hcd_pre),
+        "hc_driver.hub_control": (
+            "int", "struct usb_hcd *hcd, u16 typeReq, u16 wValue, u16 wIndex, "
+            "char *buf, u16 wLength", hcd_pre),
+        "hc_driver.clear_tt_buffer_complete": (
+            "void", "struct usb_hcd *hcd, struct usb_host_endpoint *ep", hcd_pre),
+        "hc_driver.bus_suspend": ("int", "struct usb_hcd *hcd", hcd_pre),
+        "hc_driver.bus_resume": ("int", "struct usb_hcd *hcd", hcd_pre),
+        "hc_driver.map_urb_for_dma": (
+            "int", "struct usb_hcd *hcd, struct urb *urb, gfp_t mem_flags", hcd_pre),
+        "hc_driver.unmap_urb_for_dma": (
+            "void", "struct usb_hcd *hcd, struct urb *urb", hcd_pre),
+        "hc_driver.free_dev": (
+            "void", "struct usb_hcd *hcd, struct usb_device *udev", hcd_pre),
+        "hc_driver.reset_device": (
+            "int", "struct usb_hcd *hcd, struct usb_device *udev", hcd_pre),
     }
     return specs.get(table_field)
 
@@ -277,6 +404,81 @@ def _canonical_args(table_field: str):
         "clk_ops.set_rate": [
             ("hw", "struct clk_hw *"), ("rate", "unsigned long"),
             ("parent_rate", "unsigned long")],
+        "usb_ep_ops.enable": [
+            ("ep", "struct usb_ep *"),
+            ("desc", "const struct usb_endpoint_descriptor *")],
+        "usb_ep_ops.disable": [("ep", "struct usb_ep *")],
+        "usb_ep_ops.alloc_request": [
+            ("ep", "struct usb_ep *"), ("gfp_flags", "gfp_t")],
+        "usb_ep_ops.free_request": [
+            ("ep", "struct usb_ep *"), ("req", "struct usb_request *")],
+        "usb_ep_ops.queue": [
+            ("ep", "struct usb_ep *"), ("req", "struct usb_request *"),
+            ("gfp_flags", "gfp_t")],
+        "usb_ep_ops.dequeue": [
+            ("ep", "struct usb_ep *"), ("req", "struct usb_request *")],
+        "usb_ep_ops.set_halt": [
+            ("ep", "struct usb_ep *"), ("value", "int")],
+        "usb_ep_ops.set_wedge": [("ep", "struct usb_ep *")],
+        "usb_ep_ops.fifo_status": [("ep", "struct usb_ep *")],
+        "usb_ep_ops.fifo_flush": [("ep", "struct usb_ep *")],
+        "usb_gadget_ops.get_frame": [("gadget", "struct usb_gadget *")],
+        "usb_gadget_ops.wakeup": [("gadget", "struct usb_gadget *")],
+        "usb_gadget_ops.set_selfpowered": [
+            ("gadget", "struct usb_gadget *"), ("is_selfpowered", "int")],
+        "usb_gadget_ops.vbus_session": [
+            ("gadget", "struct usb_gadget *"), ("is_active", "int")],
+        "usb_gadget_ops.vbus_draw": [
+            ("gadget", "struct usb_gadget *"), ("mA", "unsigned int")],
+        "usb_gadget_ops.pullup": [
+            ("gadget", "struct usb_gadget *"), ("is_on", "int")],
+        "usb_gadget_ops.udc_start": [
+            ("gadget", "struct usb_gadget *"),
+            ("driver", "struct usb_gadget_driver *")],
+        "usb_gadget_ops.udc_stop": [("gadget", "struct usb_gadget *")],
+        "usb_gadget_ops.udc_set_speed": [
+            ("gadget", "struct usb_gadget *"),
+            ("speed", "enum usb_device_speed")],
+        "usb_gadget_ops.match_ep": [
+            ("gadget", "struct usb_gadget *"),
+            ("desc", "struct usb_endpoint_descriptor *"),
+            ("comp_desc", "struct usb_ss_ep_comp_descriptor *")],
+        "hc_driver.irq": [("hcd", "struct usb_hcd *")],
+        "hc_driver.start": [("hcd", "struct usb_hcd *")],
+        "hc_driver.stop": [("hcd", "struct usb_hcd *")],
+        "hc_driver.urb_enqueue": [
+            ("hcd", "struct usb_hcd *"), ("urb", "struct urb *"),
+            ("mem_flags", "gfp_t")],
+        "hc_driver.urb_dequeue": [
+            ("hcd", "struct usb_hcd *"), ("urb", "struct urb *"),
+            ("status", "int")],
+        "hc_driver.endpoint_disable": [
+            ("hcd", "struct usb_hcd *"),
+            ("ep", "struct usb_host_endpoint *")],
+        "hc_driver.endpoint_reset": [
+            ("hcd", "struct usb_hcd *"),
+            ("ep", "struct usb_host_endpoint *")],
+        "hc_driver.get_frame_number": [("hcd", "struct usb_hcd *")],
+        "hc_driver.hub_status_data": [
+            ("hcd", "struct usb_hcd *"), ("buf", "char *")],
+        "hc_driver.hub_control": [
+            ("hcd", "struct usb_hcd *"), ("typeReq", "u16"),
+            ("wValue", "u16"), ("wIndex", "u16"), ("buf", "char *"),
+            ("wLength", "u16")],
+        "hc_driver.clear_tt_buffer_complete": [
+            ("hcd", "struct usb_hcd *"),
+            ("ep", "struct usb_host_endpoint *")],
+        "hc_driver.bus_suspend": [("hcd", "struct usb_hcd *")],
+        "hc_driver.bus_resume": [("hcd", "struct usb_hcd *")],
+        "hc_driver.map_urb_for_dma": [
+            ("hcd", "struct usb_hcd *"), ("urb", "struct urb *"),
+            ("mem_flags", "gfp_t")],
+        "hc_driver.unmap_urb_for_dma": [
+            ("hcd", "struct usb_hcd *"), ("urb", "struct urb *")],
+        "hc_driver.free_dev": [
+            ("hcd", "struct usb_hcd *"), ("udev", "struct usb_device *")],
+        "hc_driver.reset_device": [
+            ("hcd", "struct usb_hcd *"), ("udev", "struct usb_device *")],
     }.get(table_field, [])
 
 
@@ -288,12 +490,12 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     safe_ops, normalized = _normalize_ops(module["ops"], "g")
     ret, params, prelude = spec
     declared = {p.name for p in fn.signature.params} | {"base"}
+    canonical_args = _canonical_args(table_field)
+    declared.update(name for name, _ctype in canonical_args)
     declared.update({"d", "gc", "offset", "type", "value", "config"})
     lines = [f"static {ret} {fn.name}({params})", "{", prelude]
     for param, (canonical, ctype) in zip(
-            fn.signature.params, _canonical_args(table_field)):
-        if param.type == "DeviceState":
-            continue
+            fn.signature.params, canonical_args):
         if param.name != canonical:
             lines.append(f"\t{ctype} {param.name} = {canonical};")
     decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
@@ -305,10 +507,14 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
         lines.append(body.replace("    ", "\t"))
     if ret == "irqreturn_t":
         lines.append("\treturn IRQ_HANDLED;")
+    elif "*" in ret:
+        lines.append("\treturn NULL;")
     elif ret in {"int", "long", "unsigned long"}:
         result = _last_read_var(module) if table_field in {
             "gpio_chip.get", "gpio_chip.get_direction",
-            "clk_ops.is_enabled", "clk_ops.recalc_rate"} else None
+            "clk_ops.is_enabled", "clk_ops.recalc_rate",
+            "usb_ep_ops.fifo_status", "usb_gadget_ops.get_frame",
+            "hc_driver.get_frame_number", "hc_driver.hub_status_data"} else None
         lines.append(f"\treturn {result or 0};")
     lines.extend(["}", ""])
     problem = f"{fn.name} source-private expressions normalized" if normalized else None
@@ -316,6 +522,60 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
             "clk_ops.recalc_rate", "clk_ops.determine_rate", "clk_ops.round_rate"}:
         problem = f"{fn.name} requires non-MMIO clock arithmetic"
     return "\n".join(lines), problem
+
+
+def _emit_usb_callback_tables(device_name: str,
+                              callbacks: dict[str, str]) -> list[str]:
+    """Emit correctly typed USB ops tables without claiming lifecycle glue."""
+    cid = _cid(device_name)
+    by_field = {field: fn for fn, field in callbacks.items()}
+    out: list[str] = []
+
+    ep_fields = (
+        "enable", "disable", "alloc_request", "free_request", "queue",
+        "dequeue", "set_halt", "set_wedge", "fifo_status", "fifo_flush")
+    if any(f"usb_ep_ops.{field}" in by_field for field in ep_fields):
+        out.append(
+            f"static const struct usb_ep_ops {cid}_ep_ops __maybe_unused = {{")
+        for field in ep_fields:
+            fn = by_field.get(f"usb_ep_ops.{field}")
+            if fn:
+                out.append(f"\t.{field} = {fn},")
+        out += ["};", ""]
+
+    gadget_fields = (
+        "get_frame", "wakeup", "set_selfpowered", "vbus_session",
+        "vbus_draw", "pullup", "udc_start", "udc_stop", "udc_set_speed",
+        "match_ep")
+    if any(f"usb_gadget_ops.{field}" in by_field for field in gadget_fields):
+        out.append(
+            f"static const struct usb_gadget_ops {cid}_gadget_ops __maybe_unused = {{")
+        for field in gadget_fields:
+            fn = by_field.get(f"usb_gadget_ops.{field}")
+            if fn:
+                out.append(f"\t.{field} = {fn},")
+        out += ["};", ""]
+
+    hcd_fields = (
+        "irq", "start", "stop", "urb_enqueue", "urb_dequeue",
+        "endpoint_disable", "endpoint_reset", "get_frame_number",
+        "hub_status_data", "hub_control", "clear_tt_buffer_complete",
+        "bus_suspend", "bus_resume", "map_urb_for_dma",
+        "unmap_urb_for_dma", "free_dev", "reset_device")
+    if any(f"hc_driver.{field}" in by_field for field in hcd_fields):
+        out += [
+            f"static const struct hc_driver {cid}_hc_driver __maybe_unused = {{",
+            f'\t.description = "{device_name}",',
+            f'\t.product_desc = "reharness {device_name}",',
+            "\t.hcd_priv_size = 0,",
+            "\t.flags = HCD_MEMORY | HCD_USB2,",
+        ]
+        for field in hcd_fields:
+            fn = by_field.get(f"hc_driver.{field}")
+            if fn:
+                out.append(f"\t.{field} = {fn},")
+        out += ["};", ""]
+    return out
 
 
 def _probe_ops(device_spec, formal: dict):
@@ -374,7 +634,7 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         if field.startswith("dev_pm_ops.")
     }
 
-    L = callback_code[:]
+    L = callback_code[:] + _emit_usb_callback_tables(dev, callbacks)
     if has_clk_ops:
         L += [f"static const struct clk_ops {cid}_clk_ops = {{"]
         for field in ("prepare", "unprepare", "enable", "disable",
@@ -478,7 +738,7 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
     has_irq = any(field.startswith("irq_chip.") for field in by_field)
     direct_handler = by_field.get("irq_handler.handler")
 
-    L = callback_code[:]
+    L = callback_code[:] + _emit_usb_callback_tables(dev, callbacks)
     if misc:
         L += [f"static int {cid}_open(struct inode *inode, struct file *file)", "{",
               f"\tstruct {priv} *g = container_of(file->private_data, struct {priv}, misc);",
@@ -583,6 +843,13 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         unsupported.append("SDHCI probe requires mmc/host state bindings")
     if device_spec.cls == "virtio_mmio":
         unsupported.append("virtio-mmio probe requires virtio core state bindings")
+    usb_callback_fields = {
+        field for field in callbacks.values()
+        if field.startswith(("usb_ep_ops.", "usb_gadget_ops.", "hc_driver."))
+    }
+    if usb_callback_fields:
+        unsupported.append(
+            "USB callback tables require endpoint/gadget/HCD lifecycle registration")
     if any(_normalize_ops(m.get("ops", []))[1] for m in formal.get("modules", [])):
         unsupported.append("source-private expressions require explicit state bindings")
 
@@ -596,11 +863,11 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         for module in formal.get("modules", []):
             safe_ops, _ = _normalize_ops(module.get("ops", []))
             fallback_refs |= {name for name in value_var_names(safe_ops)
-                              if re.fullmatch(r"[A-Z][A-Z0-9_]*", name)}
+                              if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name)}
             fallback_refs |= set(re.findall(
-                r"\b[A-Z][A-Z0-9_]{2,}\b", repr(safe_ops)))
+                r"\b[A-Z][A-Za-z0-9_]{2,}\b", repr(safe_ops)))
             fallback_calls |= set(re.findall(
-                r"\b([A-Z][A-Z0-9_]{2,})\s*\(", repr(safe_ops)))
+                r"\b([A-Z][A-Za-z0-9_]{2,})\s*\(", repr(safe_ops)))
     for fn in device_spec.functions:
         field = callbacks.get(fn.name)
         if not field or field.endswith(".probe") or field.endswith(".remove"):
@@ -638,6 +905,11 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         includes += ["#include <linux/gpio/driver.h>", "#include <linux/irq.h>"]
     if any(field.startswith("clk_ops.") for field in callbacks.values()):
         includes += ["#include <linux/clk-provider.h>"]
+    if any(field.startswith(("usb_ep_ops.", "usb_gadget_ops."))
+           for field in callbacks.values()):
+        includes += ["#include <linux/usb/gadget.h>"]
+    if any(field.startswith("hc_driver.") for field in callbacks.values()):
+        includes += ["#include <linux/usb.h>", "#include <linux/usb/hcd.h>"]
 
     L = [f"// Auto-generated deterministic Linux driver for {dev} (reharness)",
          "// SPDX-License-Identifier: GPL-2.0", *includes, ""]
@@ -671,6 +943,10 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
               "\tstruct clk *clk;"]
         if any(field.startswith("clk_ops.") for field in callbacks.values()):
             L.append("\tstruct clk_hw hw;")
+    if any(field.startswith("usb_ep_ops.") for field in callbacks.values()):
+        L.append("\tstruct usb_ep ep;")
+    if any(field.startswith("usb_gadget_ops.") for field in callbacks.values()):
+        L.append("\tstruct usb_gadget gadget;")
     for state in device_spec.state:
         if state.name in {"base", "clk", "num_irqs"}:
             continue

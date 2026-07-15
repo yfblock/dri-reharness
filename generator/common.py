@@ -72,7 +72,7 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
     for v in extra:
         # Upper-case identifiers are C/kernel constants, not locals.  Declaring
         # them would collide with macros such as PCI_VENDOR_ID_INTEL.
-        if re.fullmatch(r"[A-Z][A-Z0-9_]*", v):
+        if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v):
             continue
         lines.append(f"{pad}{ctype} {v} = 0;")
     return "\n".join(lines)

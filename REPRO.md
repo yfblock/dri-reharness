@@ -29,7 +29,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：51 passed, 0 failed。
+预期：54 passed, 0 failed。
 
 ## 3. 19-driver 确定性矩阵
 
@@ -59,16 +59,21 @@ llm_synthesis_ready=12
 python3 verification/run_multisource_matrix.py
 ~~~
 
-该实验只接受至少 4 个 C 文件的 manifest，并检查所有文件确实出现在固定 Linux 源码的同一 Kbuild `*-y` 对象列表中。当前规模阶梯：
+该实验只接受至少 4 个 C 文件的 manifest，并检查所有文件确实出现在固定 Linux 源码的同一 Kbuild `*-y` 对象列表中。验证器还会在临时副本中调用原始 Kbuild，不修改 Linux submodule；记录严格 modpost 结果及 USB core 外部符号缺失时的 warning-only 重试。当前规模阶梯：
 
 ~~~text
-c67x00:      4 translation units, 2239 lines, 89 functions, 12 ops
-aspeed-vhub: 5 translation units, 3540 lines, 92 functions, 154 ops
-aggregate:   9 translation units, 5779 lines, 166 ops, 14 RMW
-compile:     harness=2/2 bare-metal=2/2 Linux=2/2
+c67x00:      4 TUs,  2239 lines,  89 functions,   12 ops
+aspeed-vhub: 5 TUs,  3540 lines,  92 functions,  154 ops
+dwc2:       10 TUs, 21668 lines, 445 functions, 3955 ops
+aggregate:  19 TUs, 27447 lines, 626 functions, 4121 ops, 858 RMW
+calls:      974 internal, 223 cross-TU, 223 resolved, 568 MMIO-propagating
+MMIO:       907 source primitives, 927 direct AST ops, 3469 emitted RIS ops
+compile:    harness=3/3 bare-metal=3/3 Linux=3/3 original-Kbuild=3/3
 ~~~
 
-权威输出：`experiments/results/multisource-matrix.json`。多源 compile 表示聚合生成物可构建；USB callback 与私有状态仍未达到 strict readiness，因此不会把规模实验写成语义完整。
+固定实验内核未启用 usbcore，因此三个原始模块的严格 modpost 都会报告未解析的 USB 导出符号。验证器只在确认失败属于该类外部符号后，以 `KBUILD_MODPOST_WARN=1` 完成 `.ko` 链接，并在 JSON 中保留 `strict_success=false`、符号列表和完整日志。
+
+权威输出：`experiments/results/multisource-matrix.json`。多源 compile 表示聚合生成物可构建；USB endpoint/gadget/HCD 生命周期和部分动态地址仍未达到 strict readiness，因此不会把规模实验写成语义完整。
 
 ## 4. 确定性 QEMU 实验
 

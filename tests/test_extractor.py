@@ -56,6 +56,7 @@ def test_macro_eval_bit_and_expr():
     assert M._eval_int_expr("(1 << 5)") == 32
     assert M._eval_int_expr("0x1 | 0x2") == 3
     assert M._eval_int_expr("~0x0") == 0xFFFFFFFF
+    assert M._eval_int_expr("HSOTG_REG(0x14)") == 0x14
 
 
 def test_macro_table_collect_from_source():
@@ -119,6 +120,7 @@ MB86S7X = os.path.join(REHARNESS, "drivers", "test", "gpio-mb86s7x.c")
 C67X00_MULTI = os.path.join(REHARNESS, "drivers", "multisource", "c67x00.json")
 ASPEED_VHUB_MULTI = os.path.join(
     REHARNESS, "drivers", "multisource", "aspeed-vhub.json")
+DWC2_MULTI = os.path.join(REHARNESS, "drivers", "multisource", "dwc2.json")
 
 
 @_fixture(scope="module")
@@ -352,6 +354,134 @@ def test_four_translation_unit_manifest_inlines_across_sources():
         module_sources = {os.path.basename(module["source"][0])
                           for module in result.formal["modules"]}
         assert module_sources == {"entry.c", "other.c"}
+
+
+def test_multisource_static_symbol_identity_prevents_cross_tu_crosstalk():
+    import json
+    import tempfile
+
+    sources = {
+        "alpha.c": textwrap.dedent("""
+            #define REG_ALPHA 0x10
+            extern void writel(unsigned int value, void *addr);
+            static void helper(void *base) { writel(0xa1, base + REG_ALPHA); }
+            void entry_alpha(void *base) { helper(base); }
+            static void status(void *base) { writel(0xaa, base + REG_ALPHA); }
+            void (*status_alpha)(void *) = status;
+        """),
+        "beta.c": textwrap.dedent("""
+            #define REG_BETA 0x20
+            extern void writel(unsigned int value, void *addr);
+            static void helper(void *base) { writel(0xb2, base + REG_BETA); }
+            void entry_beta(void *base) { helper(base); }
+            static void status(void *base) { writel(0xbb, base + REG_BETA); }
+            void (*status_beta)(void *) = status;
+        """),
+        "gamma.c": "void gamma(void) {}\n",
+        "delta.c": "void delta(void) {}\n",
+    }
+    with tempfile.TemporaryDirectory() as directory:
+        for name, source in sources.items():
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as fh:
+                fh.write(source)
+        manifest = os.path.join(directory, "driver.json")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            json.dump({"schema": 1, "name": "static-collision",
+                       "sources": list(sources)}, fh)
+
+        result = extract_ris(ExtractorConfig(
+            source=manifest, linux_root="/nonexistent"))
+        names = {module["name"] for module in result.formal["modules"]}
+        assert {"entry_alpha", "entry_beta"} <= names
+        assert {"alpha__status", "beta__status"} <= names
+        assert result.stats["duplicate_static_symbols"] == 4
+
+        alpha_ops = []
+        beta_ops = []
+        _leaf_ops(_module(result.formal, "entry_alpha")["ops"], alpha_ops)
+        _leaf_ops(_module(result.formal, "entry_beta")["ops"], beta_ops)
+        alpha_regs = {
+            op["Write"]["addr"]["Symbolic"]["register"]
+            for op in alpha_ops if "Write" in op
+        }
+        beta_regs = {
+            op["Write"]["addr"]["Symbolic"]["register"]
+            for op in beta_ops if "Write" in op
+        }
+        assert alpha_regs == {"REG_ALPHA"}
+        assert beta_regs == {"REG_BETA"}
+
+
+def test_cross_tu_inline_substitutes_formal_parameters_with_call_arguments():
+    import json
+    import tempfile
+
+    sources = {
+        "write.c": textwrap.dedent("""
+            extern void writel(unsigned int value, void *addr);
+            void write_reg(void *dev, unsigned int reg, unsigned int value)
+            {
+                writel(value, dev + reg);
+            }
+        """),
+        "caller.c": textwrap.dedent("""
+            #define REG_A 0x34
+            extern void write_reg(void *dev, unsigned int reg,
+                                  unsigned int value);
+            void caller(void *chip) { write_reg(chip, REG_A, 0x55); }
+        """),
+        "extra1.c": "void extra1(void) {}\n",
+        "extra2.c": "void extra2(void) {}\n",
+    }
+    with tempfile.TemporaryDirectory() as directory:
+        for name, source in sources.items():
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as fh:
+                fh.write(source)
+        manifest = os.path.join(directory, "driver.json")
+        with open(manifest, "w", encoding="utf-8") as fh:
+            json.dump({"schema": 1, "name": "argument-instantiation",
+                       "sources": list(sources)}, fh)
+
+        result = extract_ris(ExtractorConfig(
+            source=manifest, linux_root="/nonexistent"))
+        leaves = []
+        _leaf_ops(_module(result.formal, "caller")["ops"], leaves)
+        write = next(op["Write"] for op in leaves if "Write" in op)
+        assert write["addr"] == {
+            "Symbolic": {"device": "chip", "register": "REG_A"}}
+        assert write["value"] == {"Const": 0x55}
+        rendered = formal_display(result.formal)
+        assert "dev" not in rendered
+        assert " value" not in rendered
+        assert result.stats["cross_tu_call_edges"] >= 1
+        assert result.stats["resolved_cross_tu_call_edges"] >= 1
+        assert result.stats["propagated_mmio_edges"] >= 1
+
+
+def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
+    result = extract_ris(ExtractorConfig(source=DWC2_MULTI))
+    assert result.stats["translation_units"] == 10
+    assert result.stats["source_lines"] >= 21000
+    assert result.stats["functions_analyzed"] >= 400
+    assert result.stats["cross_tu_call_edges"] >= 100
+    assert result.stats["resolved_cross_tu_call_edges"] == \
+        result.stats["cross_tu_call_edges"]
+    assert result.stats["propagated_mmio_edges"] >= 400
+    assert result.stats["total_ops"] >= 3000
+    assert result.stats["mmio_writes"] >= 800
+
+    callback_tables = {
+        fn.callback_table for fn in result.device_spec.functions
+        if fn.callback_table
+    }
+    assert any(table.startswith("usb_ep_ops.") for table in callback_tables)
+    assert any(table.startswith("usb_gadget_ops.") for table in callback_tables)
+    assert any(table.startswith("hc_driver.") for table in callback_tables)
+    state = {field.name: field.type for field in result.device_spec.state}
+    assert state["enabled"] == "Bool"
+    assert state["halted"] == "Bool"
+    assert state["dma"] == "UInt64"
+    assert state["frame_number"] == "UInt"
 
 
 def test_real_linux_c67x00_multisource_driver():

@@ -70,7 +70,7 @@ def _module(func: Func, ex: FuncExtraction, id_counter: list[int]) -> dict:
     source = None
     if src and src.file:
         source = [src.file.name, func.line, func.line]
-    return {"name": func.name, "ops": ops, "source": source}
+    return {"name": func.module_name or func.name, "ops": ops, "source": source}
 
 
 def _register_map(funcs, extractions, macros) -> list[dict]:
@@ -78,7 +78,7 @@ def _register_map(funcs, extractions, macros) -> list[dict]:
     (reg_name values appearing in extracted ops), resolved to their offsets."""
     seen: dict[str, int] = {}   # name -> width (bits)
     for f in funcs:
-        ex = extractions.get(f.name)
+        ex = extractions.get(f.symbol_id or f.name)
         if not ex:
             continue
         for op in ex.ops:
@@ -109,9 +109,10 @@ def build_formal_ris(driver_name: str, source_path: str,
     id_counter = [0]
     modules = []
     for f in funcs:
-        if f.name in inlined_names:
+        symbol = f.symbol_id or f.name
+        if symbol in inlined_names:
             continue   # inlined into a caller — avoid duplicate module
-        ex = extractions.get(f.name)
+        ex = extractions.get(symbol)
         if not ex or not ex.ops:
             continue
         modules.append(_module(f, ex, id_counter))

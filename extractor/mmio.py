@@ -23,6 +23,18 @@ MMIO_WRITE_FNS = {
     "writeb_relaxed", "writew_relaxed", "writel_relaxed", "writeq_relaxed",
 }
 
+# Driver-private wrappers whose argument layout is semantically equivalent to
+# Linux MMIO primitives. The tuple is (device/state arg, offset arg, base
+# field); writes additionally identify the value arg. Keeping this explicit
+# avoids treating arbitrary functions named read/write as MMIO.
+PRIVATE_MMIO_READ_LAYOUTS = {
+    "dwc2_readl": (0, 1, "regs"),
+}
+
+PRIVATE_MMIO_WRITE_LAYOUTS = {
+    "dwc2_writel": (0, 1, 2, "regs"),
+}
+
 DELAY_FNS = {"mdelay", "udelay", "ndelay", "msleep", "ssleep"}
 
 # Functions that return an MMIO base pointer (taint sources).
@@ -87,11 +99,34 @@ def infer_width(name: str) -> int:
 
 
 def is_mmio_read(name: str) -> bool:
-    return name in MMIO_READ_FNS
+    return name in MMIO_READ_FNS or name in PRIVATE_MMIO_READ_LAYOUTS
 
 
 def is_mmio_write(name: str) -> bool:
-    return name in MMIO_WRITE_FNS
+    return name in MMIO_WRITE_FNS or name in PRIVATE_MMIO_WRITE_LAYOUTS
+
+
+def read_addr_expr(name: str, args: list[str]) -> str:
+    layout = PRIVATE_MMIO_READ_LAYOUTS.get(name)
+    if layout is None:
+        return args[0] if args else ""
+    state_arg, offset_arg, base_field = layout
+    if max(state_arg, offset_arg) >= len(args):
+        return ""
+    return f"{args[state_arg]}->{base_field} + {args[offset_arg]}"
+
+
+def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
+    layout = PRIVATE_MMIO_WRITE_LAYOUTS.get(name)
+    if layout is None:
+        if len(args) >= 2:
+            return args[0], args[1]
+        return (args[0] if args else ""), ""
+    state_arg, value_arg, offset_arg, base_field = layout
+    if max(state_arg, value_arg, offset_arg) >= len(args):
+        return "", ""
+    addr = f"{args[state_arg]}->{base_field} + {args[offset_arg]}"
+    return args[value_arg], addr
 
 
 def is_delay(name: str) -> bool:

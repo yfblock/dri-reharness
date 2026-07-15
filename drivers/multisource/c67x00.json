@@ -3,6 +3,10 @@
   "name": "c67x00",
   "description": "Pinned Linux Cypress C67X00 USB host-controller module",
   "kbuild": "../../linux/drivers/usb/c67x00/Makefile",
+  "kbuild_target": "c67x00.ko",
+  "kconfig": [
+    "CONFIG_USB_C67X00_HCD=m"
+  ],
   "sources": [
     "../../linux/drivers/usb/c67x00/c67x00-drv.c",
     "../../linux/drivers/usb/c67x00/c67x00-ll-hpi.c",

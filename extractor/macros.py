@@ -28,6 +28,12 @@ def _eval_int_expr(text: str) -> int | None:
     m = re.fullmatch(r"BIT\s*\(\s*(\d+)\s*\)", t, re.I)
     if m:
         return 1 << int(m.group(1))
+    # Some drivers wrap register offsets in an identity macro to document the
+    # address space (DWC2 uses HSOTG_REG(x)). Preserve the symbolic register
+    # name while evaluating its numeric offset.
+    m = re.fullmatch(r"HSOTG_REG\s*\((.+)\)", t, re.I)
+    if m:
+        return _eval_int_expr(m.group(1))
     m = re.fullmatch(r"\(\s*1\s*<<\s*(\d+)\s*\)", t, re.I)
     if m:
         return 1 << int(m.group(1))

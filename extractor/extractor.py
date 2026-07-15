@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import datetime
 import json
-from collections import Counter
+import re
 from dataclasses import dataclass, field
 
 from . import tu as tu_mod
@@ -40,6 +40,61 @@ class ExtractionResult:
 
 
 _extraction_cache: dict[tuple, ExtractionResult] = {}
+
+
+def _c_identifier(text: str) -> str:
+    value = re.sub(r"[^A-Za-z0-9_]", "_", text)
+    if not value or value[0].isdigit():
+        value = "tu_" + value
+    return value
+
+
+def _assign_multi_module_names(funcs) -> dict[str, int]:
+    """Assign collision-free RIS module names without conflating C symbols."""
+    groups: dict[str, list] = {}
+    for func in funcs:
+        groups.setdefault(func.name, []).append(func)
+
+    link_conflicts = sorted(
+        name for name, group in groups.items()
+        if sum(not func.is_static for func in group) > 1)
+    if link_conflicts:
+        raise ValueError("duplicate external function definitions: "
+                         + ", ".join(link_conflicts))
+
+    reserved = {
+        func.name for group in groups.values() for func in group
+        if len(group) == 1 or not func.is_static
+    }
+    assigned = set(reserved)
+    duplicate_static_symbols = 0
+    duplicate_static_names = 0
+    for name, group in sorted(groups.items()):
+        if len(group) == 1:
+            group[0].module_name = name
+            continue
+        statics = [func for func in group if func.is_static]
+        if statics:
+            duplicate_static_names += 1
+            duplicate_static_symbols += len(statics)
+        for func in group:
+            if not func.is_static:
+                func.module_name = name
+                continue
+            stem = _c_identifier(os.path.splitext(
+                os.path.basename(func.source_path))[0])
+            base = f"{stem}__{_c_identifier(name)}"
+            candidate = base
+            suffix = 2
+            while candidate in assigned:
+                candidate = f"{base}__{suffix}"
+                suffix += 1
+            func.module_name = candidate
+            assigned.add(candidate)
+    return {
+        "duplicate_static_symbols": duplicate_static_symbols,
+        "duplicate_static_names": duplicate_static_names,
+    }
 
 
 def _resolve_sources(config: ExtractorConfig) -> tuple[list[str], str, str]:
@@ -173,19 +228,16 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         })
 
     funcs = [f for unit in units for f in unit["funcs"]]
-    duplicates = sorted(name for name, count in
-                        Counter(f.name for f in funcs).items() if count > 1)
-    if duplicates:
-        raise ValueError("duplicate function names across translation units: "
-                         + ", ".join(duplicates))
+    symbol_stats = _assign_multi_module_names(funcs)
     if not funcs:
         warnings.append("No function definitions found in target files")
 
-    extractions, inlined_names, callback_entries = extract_multi_with_inlining(
-        units, max_depth=config.max_inline_depth,
-        include_framework=config.include_framework,
-        extra_blacklist=set(config.extra_blacklist),
-    )
+    (extractions, inlined_names, callback_entries,
+     call_stats) = extract_multi_with_inlining(
+         units, max_depth=config.max_inline_depth,
+         include_framework=config.include_framework,
+         extra_blacklist=set(config.extra_blacklist),
+     )
     stats = {
         "extracted_at": datetime.datetime.now().isoformat(timespec="seconds"),
         "functions_analyzed": len(funcs),
@@ -195,6 +247,8 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         "translation_units": len(units),
         "source_files": list(sources),
         "source_lines": sum(len(unit["source_lines"]) for unit in units),
+        **symbol_stats,
+        **call_stats,
     }
     formal = build_formal_ris(
         driver_name, descriptor, funcs, extractions, combined_macros,

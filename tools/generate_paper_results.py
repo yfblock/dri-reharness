@@ -70,6 +70,16 @@ def main() -> None:
         "MultiSourceOps": multi_agg.get("ops", 0),
         "MultiSourceRMW": multi_agg.get("rmw", 0),
         "MultiSourceRegisters": multi_agg.get("registers", 0),
+        "MultiSourceFunctions": sum(
+            row.get("functions_analyzed", 0) for row in multi_rows),
+        "MultiSourceCallEdges": multi_agg.get("call_edges", 0),
+        "MultiSourceCrossTUEdges": multi_agg.get("cross_tu_call_edges", 0),
+        "MultiSourceResolvedCrossTUEdges": multi_agg.get(
+            "resolved_cross_tu_call_edges", 0),
+        "MultiSourcePropagatedEdges": multi_agg.get(
+            "propagated_mmio_edges", 0),
+        "MultiSourceSourceMMIO": multi_agg.get("source_mmio_primitives", 0),
+        "MultiSourceRISMMIO": multi_agg.get("ris_mmio_ops", 0),
     }
     for key, value in macros.items():
         lines.append(f"\\newcommand{{\\{key}}}{{{value}}}")
@@ -112,18 +122,24 @@ def main() -> None:
     lines += [r"\hline", r"\end{tabular}", r"}", ""]
 
     lines += [r"\newcommand{\MultiSourceResultsTable}{%",
-              r"\begin{tabular}{lrrrrrrc}", r"\hline",
+              r"\begin{tabular}{lrrrrrrrrcc}", r"\hline",
               r"\textbf{Driver module} & \textbf{TUs} & \textbf{LoC} & "
-              r"\textbf{Funcs} & \textbf{Ops} & \textbf{RMW} & \textbf{Regs} & "
-              r"\textbf{H/B/L}\\", r"\hline"]
+              r"\textbf{Funcs} & \textbf{X-TU} & \textbf{Prop} & "
+              r"\textbf{Src MMIO} & \textbf{RIS MMIO} & \textbf{Ops} & "
+              r"\textbf{H/B/L} & \textbf{Orig. Kbuild}\\", r"\hline"]
     for row in multi_rows:
         m, b = row["metrics"], row["backends"]
         comp = "/".join(yn(b[key]) for key in
                         ("harness_compile", "baremetal_compile", "linux_compile"))
+        kbuild = row.get("original_kbuild", {})
+        original = (r"\checkmark" if kbuild.get("strict_success") else
+                    r"\checkmark$^\dagger$" if kbuild.get("success") else "--")
         lines.append(
             f"{esc(row['driver'])} & {row['source_count']} & {row['source_lines']} & "
-            f"{row['functions_analyzed']} & {m['ops']} & {m['rmw']} & "
-            f"{m['registers']} & {comp}\\\\")
+            f"{row['functions_analyzed']} & {row.get('cross_tu_call_edges', 0)} & "
+            f"{row.get('propagated_mmio_edges', 0)} & "
+            f"{row.get('source_mmio_primitives', {}).get('total', 0)} & "
+            f"{row.get('ris_mmio_ops', 0)} & {m['ops']} & {comp} & {original}\\\\")
     lines += [r"\hline", r"\end{tabular}", r"}", "",
               "% QEMU evidence: " + json.dumps(qemu_experiments, sort_keys=True)]
 

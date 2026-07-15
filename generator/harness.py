@@ -113,9 +113,9 @@ def generate(formal: dict, device_spec, bind) -> str:
         safe_ops, changed = _normalize_ops(module["ops"])
         normalized_any |= changed
         upper_refs |= {v for v in value_var_names(safe_ops)
-                       if re.fullmatch(r"[A-Z][A-Z0-9_]*", v)}
-        upper_refs |= set(re.findall(r"\b[A-Z][A-Z0-9_]{2,}\b", repr(safe_ops)))
-        upper_calls |= set(re.findall(r"\b([A-Z][A-Z0-9_]{2,})\s*\(", repr(safe_ops)))
+                       if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v)}
+        upper_refs |= set(re.findall(r"\b[A-Z][A-Za-z0-9_]{2,}\b", repr(safe_ops)))
+        upper_calls |= set(re.findall(r"\b([A-Z][A-Za-z0-9_]{2,})\s*\(", repr(safe_ops)))
     for name in sorted(upper_calls - set(regs)):
         L.append(f"#ifndef {name}\n#define {name}(...) 0\n#endif")
     for name in sorted(upper_refs - upper_calls - set(regs) - {"MMIO", "TODO"}):

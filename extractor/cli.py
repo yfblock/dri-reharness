@@ -308,6 +308,14 @@ def main(argv: list[str] | None = None) -> int:
                                     else "kernel compile FAILED")
             gen_results[backend] = gr
 
+        # Persist backend evidence separately from readiness: a backend may
+        # compile while remaining explicitly unsupported/strict-unready.
+        _w(ver_dir, "analysis.json", json.dumps({
+            "stats": res.stats,
+            "warnings": res.warnings,
+            "generation": gen_results,
+        }, indent=2, sort_keys=True))
+
         # merged .bind (recom.md §"Merge Backend Bind Files")
         _w(outdir, f"{name}.bind", display_bind_set(binds))
 

@@ -324,9 +324,61 @@ def resolve_addr(text: str, store: dict, macros) -> tuple[dict, Optional[str]]:
 @dataclass
 class FuncExtraction:
     name: str
+    params: list[str] = field(default_factory=list)
     ops: list[Op] = field(default_factory=list)
     calls: list = field(default_factory=list)   # CallSite list (for call graph)
     warnings: list[str] = field(default_factory=list)
+
+
+def _substitute_text(text: Optional[str], mapping: dict[str, str]) -> Optional[str]:
+    if not text or not mapping:
+        return text
+    names = sorted(mapping, key=len, reverse=True)
+    pattern = re.compile(r"\b(?:" + "|".join(re.escape(name) for name in names) + r")\b")
+
+    def replace(match):
+        before = text[:match.start()].rstrip()
+        # A field token named like a parameter is not a parameter reference.
+        if before.endswith(("->", ".")):
+            return match.group(0)
+        return mapping.get(match.group(0), match.group(0))
+
+    return pattern.sub(replace, text)
+
+
+def _substitute_addr(addr: dict, mapping: dict[str, str]) -> dict:
+    import copy
+    out = copy.deepcopy(addr)
+    if "Offset" in out:
+        out["Offset"]["base"] = _substitute_text(
+            out["Offset"].get("base"), mapping) or ""
+    elif "Indirect" in out:
+        out["Indirect"]["base_reg"] = _substitute_text(
+            out["Indirect"].get("base_reg"), mapping) or ""
+        if out["Indirect"].get("expr"):
+            out["Indirect"]["expr"] = _substitute_text(
+                out["Indirect"]["expr"], mapping)
+    return out
+
+
+def _instantiate_op(op: Op, mapping: dict[str, str], macros=None) -> Op:
+    import copy
+    out = copy.copy(op)
+    out.addr = _substitute_addr(op.addr, mapping)
+    out.value = _substitute_text(op.value, mapping)
+    out.condition = _substitute_text(op.condition, mapping)
+    out.cond_stack = [
+        _substitute_text(condition, mapping) or condition
+        for condition in op.cond_stack]
+    out.var = _substitute_text(op.var, mapping)
+    indirect = out.addr.get("Indirect")
+    if indirect and macros is not None:
+        expr = (indirect.get("expr") or "").strip()
+        offset = macros.offset(expr) if expr else None
+        if offset is not None:
+            out.addr = addr_offset(indirect.get("base_reg", ""), offset)
+            out.reg_name = expr
+    return out
 
 
 def _assign_target(lhs_text: str) -> Optional[str]:
@@ -493,7 +545,8 @@ def extract_function(func: Func, macros, tu, *,
                      include_framework: bool = False,
                      extra_blacklist: Optional[set[str]] = None) -> FuncExtraction:
     """Extract register ops for one function (with wrapper inlining)."""
-    result = FuncExtraction(name=func.name)
+    result = FuncExtraction(
+        name=func.name, params=[name for name, _type in func.params if name])
     store: dict[str, AbsVal] = {}
     read_origins: dict[str, tuple[dict, int]] = {}
     read_initial: dict[str, str] = {}
@@ -544,7 +597,7 @@ def extract_function(func: Func, macros, tu, *,
             continue
 
         if mmio.is_mmio_read(name):
-            addr_arg = cs.arg_text[0] if cs.arg_text else ""
+            addr_arg = mmio.read_addr_expr(name, cs.arg_text)
             addr, reg_name = resolve_addr(addr_arg, store, macros)
             op = Op(
                 kind="Read", addr=addr, width=mmio.infer_width(name),
@@ -562,11 +615,9 @@ def extract_function(func: Func, macros, tu, *,
             continue
 
         if mmio.is_mmio_write(name):
-            # writel(val, addr) — Linux convention
-            if len(cs.arg_text) >= 2:
-                val_text, addr_text = cs.arg_text[0], cs.arg_text[1]
-            else:
-                val_text, addr_text = (cs.arg_text[0] if cs.arg_text else ""), ""
+            # Generic Linux writel(val, addr), plus explicitly modeled
+            # driver-private wrappers such as dwc2_writel(state, val, off).
+            val_text, addr_text = mmio.write_value_addr(name, cs.arg_text)
             addr, reg_name = resolve_addr(addr_text, store, macros)
             val = eval_expr(val_text, store, macros)
             kind = "Write"
@@ -610,14 +661,19 @@ def extract_function(func: Func, macros, tu, *,
             continue
 
         # wrapper function inlining
-        if (inline_cache and depth < max_depth and name in inline_cache):
-            inlined = inline_cache[name]
+        callee_key = cs.symbol_id or name
+        inlined = ((inline_cache or {}).get(callee_key)
+                   or (inline_cache or {}).get(name))
+        if inlined is not None and depth < max_depth:
             if inlined.ops:
-                import copy
+                mapping = {
+                    param: arg for param, arg in zip(inlined.params, cs.arg_text)
+                    if param and arg
+                }
                 for op in inlined.ops:
-                    o2 = copy.copy(op)
-                    o2.condition = cond or op.condition
-                    o2.cond_stack = cond_stack or op.cond_stack
+                    o2 = _instantiate_op(op, mapping, macros)
+                    o2.condition = cond or o2.condition
+                    o2.cond_stack = cond_stack or o2.cond_stack
                     o2.source_loc = f"{func.name}:{cs.line} (↳ {op.source_loc})"
                     result.ops.append(o2)
 

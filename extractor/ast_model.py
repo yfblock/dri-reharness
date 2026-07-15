@@ -47,6 +47,7 @@ def source_text(tu, cursor) -> str:
 @dataclass
 class CallSite:
     name: str                       # callee spelling ("" if unresolved)
+    symbol_id: str                  # linker/static source-qualified identity
     args: list                      # list of arg cursors
     line: int
     cursor: object
@@ -59,6 +60,37 @@ class Func:
     line: int
     cursor: object
     params: list[tuple[str, str]] = field(default_factory=list)  # (name, type)
+    source_path: str = ""
+    symbol_id: str = ""
+    module_name: str = ""
+    is_static: bool = False
+
+
+def function_symbol_id(cursor) -> str:
+    """Return linker identity, qualifying file-local static functions."""
+    if cursor is None or cursor.kind != cx.CursorKind.FUNCTION_DECL:
+        return ""
+    name = cursor.spelling or ""
+    if not name:
+        return ""
+    if cursor.storage_class == cx.StorageClass.STATIC:
+        loc = cursor.location
+        path = _abs(loc.file.name) if loc and loc.file else "?"
+        return f"{path}::{name}"
+    return name
+
+
+def call_symbol_id(call_cursor) -> str:
+    ref = call_cursor.referenced
+    if ref is not None and ref.kind == cx.CursorKind.FUNCTION_DECL:
+        return function_symbol_id(ref)
+    children = list(call_cursor.get_children())
+    if children:
+        for sub in children[0].walk_preorder():
+            ref = sub.referenced
+            if ref is not None and ref.kind == cx.CursorKind.FUNCTION_DECL:
+                return function_symbol_id(ref)
+    return callee_name(call_cursor)
 
 
 def callee_name(call_cursor) -> str:
@@ -97,6 +129,7 @@ def function_calls(func_cursor) -> list[CallSite]:
             line = c.location.line if c.location and c.location.file else 0
             cs = CallSite(
                 name=callee_name(c),
+                symbol_id=call_symbol_id(c),
                 args=args,
                 line=line,
                 cursor=c,
@@ -117,8 +150,13 @@ def target_functions(tu, target_file: str) -> list[Func]:
             for p in c.get_children():
                 if p.kind == cx.CursorKind.PARM_DECL:
                     params.append((p.spelling, p.type.spelling if p.type else ""))
-            funcs.append(Func(name=c.spelling, line=c.location.line,
-                              cursor=c, params=params))
+            source_path = _abs(c.location.file.name) if c.location.file else ""
+            symbol_id = function_symbol_id(c)
+            funcs.append(Func(
+                name=c.spelling, line=c.location.line, cursor=c, params=params,
+                source_path=source_path, symbol_id=symbol_id,
+                module_name=c.spelling,
+                is_static=c.storage_class == cx.StorageClass.STATIC))
     funcs.sort(key=lambda f: f.line)
     return funcs
 
@@ -200,6 +238,38 @@ def callback_entry_functions(tu, target_names: set[str]) -> set[str]:
         if key is not None and key in call_callee_extents:
             continue
         entries.add(ref.spelling)
+    return entries
+
+
+def callback_entry_symbols(tu, target_symbols: set[str]) -> set[str]:
+    """Source-qualified counterpart of callback_entry_functions."""
+    call_callee_extents: set[tuple] = set()
+    for c in tu.cursor.walk_preorder():
+        if c.kind != cx.CursorKind.CALL_EXPR:
+            continue
+        children = list(c.get_children())
+        if not children:
+            continue
+        for sub in children[0].walk_preorder():
+            if sub.kind == cx.CursorKind.DECL_REF_EXPR:
+                start, end = sub.extent.start, sub.extent.end
+                if start.offset is not None and end.offset is not None:
+                    call_callee_extents.add((start.offset, end.offset))
+
+    entries: set[str] = set()
+    for c in tu.cursor.walk_preorder():
+        if c.kind != cx.CursorKind.DECL_REF_EXPR:
+            continue
+        ref = c.referenced
+        symbol_id = function_symbol_id(ref)
+        if not symbol_id or symbol_id not in target_symbols:
+            continue
+        start, end = c.extent.start, c.extent.end
+        key = ((start.offset, end.offset)
+               if start.offset is not None and end.offset is not None else None)
+        if key is not None and key in call_callee_extents:
+            continue
+        entries.add(symbol_id)
     return entries
 
 
