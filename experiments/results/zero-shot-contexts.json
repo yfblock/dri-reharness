@@ -1,0 +1,376 @@
+{
+  "compile_database": "output/zero-shot-contexts/compile_commands.json",
+  "compile_database_sha256": "345c1b0fcb3d63390da73fcc734784eeec274e8d8e24a67c2e2b745c90ad0908",
+  "contexts": [
+    {
+      "arch": "arm",
+      "case": "clk-fixed-mmio",
+      "command_file": "output/zero-shot-contexts/build/arm-v7/drivers/clk/.clk-fixed-mmio.o.cmd",
+      "command_file_sha256": "56c9c7f8228a5ce845fc2f5cb4c868f46f08681db0d8cb457cbf2955c25c9026",
+      "context_note": null,
+      "defconfig": "multi_v7_defconfig",
+      "profile": "arm-v7",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "b79f0c34f98d47e6af3dd69bc28aa6fcb94a2b65b84c949a0d18d654fa22022d",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "d6bd28d0e96bf4955d789319cc9b38d41d367bbaa9c19a67b940af289149aced",
+        "directory": "output/zero-shot-contexts/build/arm-v7",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "b79f0c34f98d47e6af3dd69bc28aa6fcb94a2b65b84c949a0d18d654fa22022d",
+        "source": "linux/drivers/clk/clk-fixed-mmio.c"
+      },
+      "source": "linux/drivers/clk/clk-fixed-mmio.c",
+      "target": "drivers/clk/clk-fixed-mmio.o"
+    },
+    {
+      "arch": "arm",
+      "case": "clk-moxart",
+      "command_file": "output/zero-shot-contexts/build/arm-moxart/drivers/clk/.clk-moxart.o.cmd",
+      "command_file_sha256": "6697f44b6b9818e22cd02a1168d34523ad8ed9527cf44f46d58b417d906882df",
+      "context_note": null,
+      "defconfig": "moxart_defconfig",
+      "profile": "arm-moxart",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "37785e82334dd08948f005a5469da3943bb7e21e5d0d6c9d38e4702cbb8cdc7b",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "f17d0634490efb965f187e1c756a7c81ba5307317e90c159d773fc45a2fea111",
+        "directory": "output/zero-shot-contexts/build/arm-moxart",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "37785e82334dd08948f005a5469da3943bb7e21e5d0d6c9d38e4702cbb8cdc7b",
+        "source": "linux/drivers/clk/clk-moxart.c"
+      },
+      "source": "linux/drivers/clk/clk-moxart.c",
+      "target": "drivers/clk/clk-moxart.o"
+    },
+    {
+      "arch": "arm",
+      "case": "clk-nspire",
+      "command_file": "output/zero-shot-contexts/build/arm-v4t/drivers/clk/.clk-nspire.o.cmd",
+      "command_file_sha256": "dd22413555fd2c41f55f70300a77e6db87a80e12695a4202a1473b9876df8701",
+      "context_note": null,
+      "defconfig": "multi_v4t_defconfig",
+      "profile": "arm-v4t",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "074d0c54db45ba023667ac838fd3ed0f476922fe4d9bb15433c713e931e396ed",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "712fa6b20a83e8e55f3b89a6561fdbe31a42662fc8a85a3417a8a8b9c90efd58",
+        "directory": "output/zero-shot-contexts/build/arm-v4t",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "074d0c54db45ba023667ac838fd3ed0f476922fe4d9bb15433c713e931e396ed",
+        "source": "linux/drivers/clk/clk-nspire.c"
+      },
+      "source": "linux/drivers/clk/clk-nspire.c",
+      "target": "drivers/clk/clk-nspire.o"
+    },
+    {
+      "arch": "x86",
+      "case": "gpio-altera",
+      "command_file": "kernel/build/drivers/gpio/.gpio-altera.o.cmd",
+      "command_file_sha256": "94736ed59823e0906e11d9147a05ba7e3b6b8781593c07088976bed66884f40f",
+      "context_note": null,
+      "defconfig": null,
+      "profile": "x86-pinned",
+      "profile_kind": "pinned-experiment-build",
+      "raw_command_sha256": "9e516b6ddeffd9d23b62217ba40e3f1a248c7108f58cc5cfaa59926d69479e0d",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "bb306e05a33b3a3e661971b6a29712823506c273e7c05f72475ffd55ad21dc8a",
+        "directory": "kernel/build",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "9e516b6ddeffd9d23b62217ba40e3f1a248c7108f58cc5cfaa59926d69479e0d",
+        "source": "linux/drivers/gpio/gpio-altera.c"
+      },
+      "source": "linux/drivers/gpio/gpio-altera.c",
+      "target": "drivers/gpio/gpio-altera.o"
+    },
+    {
+      "arch": "arm",
+      "case": "gpio-clps711x",
+      "command_file": "output/zero-shot-contexts/build/arm-v4t/drivers/gpio/.gpio-clps711x.o.cmd",
+      "command_file_sha256": "b9244719eb06a1878d3bbc5ce0f883e33e1e211567a1fb55e3b87d24732e2d82",
+      "context_note": null,
+      "defconfig": "multi_v4t_defconfig",
+      "profile": "arm-v4t",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "52e6b0287d45705060589ab25002e88bc4016ba9ca900087f3b6ada5ad720e0a",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "ca8a01b32db79cf9ecd07ab8e47bfae3ba9596f4ad409e7cf3a79de351c2aac9",
+        "directory": "output/zero-shot-contexts/build/arm-v4t",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "52e6b0287d45705060589ab25002e88bc4016ba9ca900087f3b6ada5ad720e0a",
+        "source": "linux/drivers/gpio/gpio-clps711x.c"
+      },
+      "source": "linux/drivers/gpio/gpio-clps711x.c",
+      "target": "drivers/gpio/gpio-clps711x.o"
+    },
+    {
+      "arch": "arm",
+      "case": "gpio-dwapb",
+      "command_file": "output/zero-shot-contexts/build/arm-v7/drivers/gpio/.gpio-dwapb.o.cmd",
+      "command_file_sha256": "fa43835d99fcbcc18b492621dec518cf3b82c15e65e53501120a4df6d9cff4b5",
+      "context_note": null,
+      "defconfig": "multi_v7_defconfig",
+      "profile": "arm-v7",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "1f388796f77f36dca559117a46d342c243ea19d1479d708dc11e5a966e44f190",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "ec52278780706400ef8376f4d2444b086b49a5daacfea7fc0e4d0d2416305e9e",
+        "directory": "output/zero-shot-contexts/build/arm-v7",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "1f388796f77f36dca559117a46d342c243ea19d1479d708dc11e5a966e44f190",
+        "source": "linux/drivers/gpio/gpio-dwapb.c"
+      },
+      "source": "linux/drivers/gpio/gpio-dwapb.c",
+      "target": "drivers/gpio/gpio-dwapb.o"
+    },
+    {
+      "arch": "x86",
+      "case": "gpio-ge",
+      "command_file": "kernel/build/drivers/gpio/.gpio-ge.o.cmd",
+      "command_file_sha256": "eda33013bd313b24ec4b1eee18a6c90555e53c84db6a78a958ed918c30975964",
+      "context_note": "Explicit x86 object context; clang-18 rejects the native 85xx -mcpu=8540 profile.",
+      "defconfig": null,
+      "profile": "x86-pinned",
+      "profile_kind": "pinned-experiment-build",
+      "raw_command_sha256": "bc90e1767413cc5ec23b674f55700a7d7035a5e7701ed7da0e492bfdbce19a85",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "d8765644fdf58d443153992f859caf342a3687bb07e0dfd864d7e780f7bf2b88",
+        "directory": "kernel/build",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "bc90e1767413cc5ec23b674f55700a7d7035a5e7701ed7da0e492bfdbce19a85",
+        "source": "linux/drivers/gpio/gpio-ge.c"
+      },
+      "source": "linux/drivers/gpio/gpio-ge.c",
+      "target": "drivers/gpio/gpio-ge.o"
+    },
+    {
+      "arch": "arm",
+      "case": "gpio-ts4800",
+      "command_file": "output/zero-shot-contexts/build/arm-v7/drivers/gpio/.gpio-ts4800.o.cmd",
+      "command_file_sha256": "eb5c2d626d4ea8d176367f6482b2d1c2798218b8676171ba462b189f94d94b49",
+      "context_note": null,
+      "defconfig": "multi_v7_defconfig",
+      "profile": "arm-v7",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "dbbeb1e2cb823d902c2e25e1ef1271355c442e172e3d16a761587e92d07c7305",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "e5b908655e49ea3a5fbce8bdbaf9a3c5a2f1429b0084c3daeb74cf5e6e533764",
+        "directory": "output/zero-shot-contexts/build/arm-v7",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "dbbeb1e2cb823d902c2e25e1ef1271355c442e172e3d16a761587e92d07c7305",
+        "source": "linux/drivers/gpio/gpio-ts4800.c"
+      },
+      "source": "linux/drivers/gpio/gpio-ts4800.c",
+      "target": "drivers/gpio/gpio-ts4800.o"
+    },
+    {
+      "arch": "arm",
+      "case": "sdhci-dove",
+      "command_file": "output/zero-shot-contexts/build/arm-dove/drivers/mmc/host/.sdhci-dove.o.cmd",
+      "command_file_sha256": "aa44947db32fc26ddc1effaa668d431ce2808cab13aa7c74b01803219885b097",
+      "context_note": null,
+      "defconfig": "dove_defconfig",
+      "profile": "arm-dove",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "ef6180b11c9f25375af02ae507ced50c5607bb2dbd7f2a1ef2c840c19dd1439b",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "5b4bbd85f45be30e84d6557c2ca780b0122ce2ee77f9e954732edc47df2c58b6",
+        "directory": "output/zero-shot-contexts/build/arm-dove",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "ef6180b11c9f25375af02ae507ced50c5607bb2dbd7f2a1ef2c840c19dd1439b",
+        "source": "linux/drivers/mmc/host/sdhci-dove.c"
+      },
+      "source": "linux/drivers/mmc/host/sdhci-dove.c",
+      "target": "drivers/mmc/host/sdhci-dove.o"
+    },
+    {
+      "arch": "arm",
+      "case": "sdhci-npcm",
+      "command_file": "output/zero-shot-contexts/build/arm-v5/drivers/mmc/host/.sdhci-npcm.o.cmd",
+      "command_file_sha256": "af45d970647ef17dc0bb47c0edfda47fc31e305cba7b9e2f7612e7a54e3d3de1",
+      "context_note": null,
+      "defconfig": "multi_v5_defconfig",
+      "profile": "arm-v5",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "cfc5990331ccde7b5e7359b6461602bd4f400e38fd14308d5e24b5bab9619127",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "f8d62bab68ae78e811916ab85857603fca881c92e123c7d9a4486512b91b995f",
+        "directory": "output/zero-shot-contexts/build/arm-v5",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "cfc5990331ccde7b5e7359b6461602bd4f400e38fd14308d5e24b5bab9619127",
+        "source": "linux/drivers/mmc/host/sdhci-npcm.c"
+      },
+      "source": "linux/drivers/mmc/host/sdhci-npcm.c",
+      "target": "drivers/mmc/host/sdhci-npcm.o"
+    },
+    {
+      "arch": "powerpc",
+      "case": "sdhci-of-hlwd",
+      "command_file": "output/zero-shot-contexts/build/powerpc-wii/drivers/mmc/host/.sdhci-of-hlwd.o.cmd",
+      "command_file_sha256": "6f45b65147ef92c9b518da0fceb4644705d288438d12a864c06829a69ec5827c",
+      "context_note": null,
+      "defconfig": "wii_defconfig",
+      "profile": "powerpc-wii",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "5f6624dc90288a494bf1795f92b16371fb0c28cd466b07fc6d184101cb19619a",
+      "resolved_context": {
+        "argument_count": 35,
+        "arguments_sha256": "42645910d21aa7c4f5b681977d266210e7bd0a94393012fbad992c91ac9a6e8b",
+        "directory": "output/zero-shot-contexts/build/powerpc-wii",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "5f6624dc90288a494bf1795f92b16371fb0c28cd466b07fc6d184101cb19619a",
+        "source": "linux/drivers/mmc/host/sdhci-of-hlwd.c"
+      },
+      "source": "linux/drivers/mmc/host/sdhci-of-hlwd.c",
+      "target": "drivers/mmc/host/sdhci-of-hlwd.o"
+    },
+    {
+      "arch": "x86",
+      "case": "virtio-input",
+      "command_file": "kernel/build/drivers/virtio/.virtio_input.o.cmd",
+      "command_file_sha256": "62678db113457e92435c1b9c71e18ff89960bde45b9acb204683ec56fa4c69c7",
+      "context_note": null,
+      "defconfig": null,
+      "profile": "x86-pinned",
+      "profile_kind": "pinned-experiment-build",
+      "raw_command_sha256": "a8f07aaf3550ad98632f2dd9b2316a4dcb11b6e3d933b8b1d9f869b10fc9d8ab",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "00888532cf253f14314ff0c8fd2378ff47ff5a54ea344bf57606074a0b27805c",
+        "directory": "kernel/build",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-contexts/compile_commands.json",
+        "raw_command_sha256": "a8f07aaf3550ad98632f2dd9b2316a4dcb11b6e3d933b8b1d9f869b10fc9d8ab",
+        "source": "linux/drivers/virtio/virtio_input.c"
+      },
+      "source": "linux/drivers/virtio/virtio_input.c",
+      "target": "drivers/virtio/virtio_input.o"
+    }
+  ],
+  "environment": {
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "reharness_commit": "290c875d953587d0392c852e8ed1cdaec0fb5456"
+  },
+  "exact_contexts": 12,
+  "expected_contexts": 12,
+  "generated_at": "2026-07-16T04:58:23.458172+00:00",
+  "guard": {
+    "cases": 12,
+    "first_run": "gpio-altera",
+    "holdout": "zero-shot-v1",
+    "issues": [],
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "passed": true,
+    "schema": 1,
+    "specialization_inventory": {
+      "device_name_equals": [
+        "edu"
+      ],
+      "private_mmio_layouts": [
+        "dwc2_readl",
+        "dwc2_writel"
+      ],
+      "source_basename_equals": [
+        "sdhci-esdhc-mcf.c"
+      ]
+    }
+  },
+  "holdout": "zero-shot-v1",
+  "profiles": {
+    "arm-dove": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-dove",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "d0e5e9eaf159afe878a4900b3b95c688a76af67b81e37de96d7d38140364e33d",
+      "defconfig": "dove_defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": null
+    },
+    "arm-moxart": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-moxart",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "2d0c7baaa8c80addfa9a5c87fe9119853483d6a9fc51f6cc10b5641016960c9e",
+      "defconfig": "moxart_defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": null
+    },
+    "arm-v4t": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-v4t",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "aa9d3bde14fe58745b8decd8ab9fcff8a8781c8b809ab27658b435149e947736",
+      "defconfig": "multi_v4t_defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": null
+    },
+    "arm-v5": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-v5",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "957689e0899b07ea222e52cc955d7b4035d3a9cfb80768fe9d6d8584c0d1da2f",
+      "defconfig": "multi_v5_defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": null
+    },
+    "arm-v7": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-v7",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "5c6edc1c6d1e5e4772bad78ecf7988018c8af21937ca652dd018aa4705f186b1",
+      "defconfig": "multi_v7_defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": null
+    },
+    "powerpc-wii": {
+      "arch": "powerpc",
+      "build_dir": "output/zero-shot-contexts/build/powerpc-wii",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "14ba095b07eb403fbab91e0795f015f65ed1f9f10fdd4abfdc30cdb47f6163bb",
+      "defconfig": "wii_defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": "/home/yfblock/.rustup/toolchains/1.78.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld"
+    },
+    "x86-pinned": {
+      "arch": "x86",
+      "build_dir": "kernel/build",
+      "cc": "gcc",
+      "cc_version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "config_sha256": "3ebb5e43781c83c4177826c2d075a3846d0e1e7f58ae5aa94d9fd1f9c5529256",
+      "defconfig": null,
+      "kind": "pinned-experiment-build",
+      "lld": null
+    }
+  },
+  "recipe_validation": {
+    "issues": [],
+    "passed": true
+  },
+  "schema": 1
+}
