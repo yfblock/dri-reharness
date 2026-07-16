@@ -205,6 +205,12 @@ def test_unrelated_chip_initializer_does_not_trigger_gpio_summary():
             source=str(source), compile_context_mode="off"))
     assert result.stats["synthetic_subsystem_functions"] == 0
     assert result.formal["modules"] == []
+    from extractor.spec import default_bind
+    from generator import harness
+    code = harness.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    assert "reharness_run_subsystem_callbacks" not in code
 
 
 def test_sdhci_ops_summary_models_accessors_and_reports_unknown_core_callbacks():
@@ -488,6 +494,8 @@ def test_resolve_addr_offset_with_macro_name():
 FTGPIO = os.path.join(REHARNESS, "drivers", "test", "gpio-ftgpio010.c")
 EDU = os.path.join(REHARNESS, "drivers", "test", "edu.c")
 PL061 = os.path.join(REHARNESS, "drivers", "test", "gpio-pl061.c")
+TS4800 = os.path.join(REHARNESS, "linux", "drivers", "gpio", "gpio-ts4800.c")
+GPIO_GE = os.path.join(REHARNESS, "linux", "drivers", "gpio", "gpio-ge.c")
 MB86S7X = os.path.join(REHARNESS, "drivers", "test", "gpio-mb86s7x.c")
 C67X00_MULTI = os.path.join(REHARNESS, "drivers", "multisource", "c67x00.json")
 ASPEED_VHUB_MULTI = os.path.join(
@@ -1459,9 +1467,11 @@ def test_harness_trace_matches_ris():
     r = subprocess.run(["cc", "-o", binp, path], capture_output=True, text=True)
     assert r.returncode == 0, f"harness compile failed:\n{r.stderr}"
     out = subprocess.run([binp], capture_output=True, text=True).stdout
+    probe_out = out.split("[reharness-callback-begin]", 1)[0]
 
     # parse trace lines: [trace N] (R|W) 0xOFF = 0xVAL
-    traced = re.findall(r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", out)
+    traced = re.findall(
+        r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", probe_out)
     traced_ops = [(k, int(off, 16)) for k, off in traced]
 
     # Expected: gpio_generic_chip_init's two summarized state reads followed by
@@ -1477,6 +1487,97 @@ def test_harness_trace_matches_ris():
             reg = o["Write"]["addr"]["Symbolic"]["register"]
             expected.append(("W", regs[reg]))
     assert traced_ops == expected, f"trace {traced_ops} != expected {expected}"
+
+
+def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
+    import subprocess
+    import tempfile
+    from extractor.metrics import score
+    from extractor.spec import default_bind
+    from generator import baremetal, harness, linux as linux_gen
+    from verification.subsystem_callback_oracle import verify_subsystem_callbacks
+
+    def compile_run(code, *, defines=()):
+        with tempfile.TemporaryDirectory() as directory:
+            source = os.path.join(directory, "runner.c")
+            binary = os.path.join(directory, "runner")
+            with open(source, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            command = ["cc", *defines, "-Wall", "-Wextra", "-o", binary, source]
+            compiled = subprocess.run(command, capture_output=True, text=True)
+            assert compiled.returncode == 0, compiled.stdout + compiled.stderr
+            return subprocess.run(
+                [binary], capture_output=True, text=True, check=True).stdout
+
+    results = {}
+    for source in (TS4800, GPIO_GE):
+        result = extract_ris(ExtractorConfig(source=source))
+        h_code = harness.generate(
+            result.formal, result.device_spec,
+            default_bind(result.device_spec, "harness"))
+        h_output = compile_run(h_code)
+        h_oracle = verify_subsystem_callbacks(
+            result.formal, result.device_spec, h_output)
+        assert h_oracle["subsystem_callback_oracle_passed"], h_oracle
+        assert h_oracle["subsystem_callbacks_executed"] == 7
+
+        b_code = baremetal.generate(
+            result.formal, result.device_spec,
+            default_bind(result.device_spec, "baremetal"))
+        with tempfile.TemporaryDirectory() as directory:
+            baremetal_path = os.path.join(directory, "baremetal.c")
+            with open(baremetal_path, "w", encoding="utf-8") as handle:
+                handle.write(b_code)
+            compiled = subprocess.run(
+                ["cc", "-ffreestanding", "-Wall", "-c", "-o", "/dev/null",
+                 baremetal_path], capture_output=True, text=True)
+            assert compiled.returncode == 0, compiled.stdout + compiled.stderr
+        b_output = compile_run(
+            b_code, defines=("-DREHARNESS_BAREMETAL_ORACLE",))
+        b_oracle = verify_subsystem_callbacks(
+            result.formal, result.device_spec, b_output)
+        assert b_oracle["subsystem_callback_oracle_passed"], b_oracle
+        assert b_oracle["subsystem_callbacks_executed"] == 7
+
+        linux_code = linux_gen.generate(
+            result.formal, result.device_spec,
+            default_bind(result.device_spec, "linux"), result.facts)
+        results[source] = (result, h_code, h_oracle, b_oracle, linux_code)
+
+        readiness = score(
+            result.device_spec, result.formal, result.warnings, result.facts,
+            gen_results={
+                "harness": {
+                    "compiled": True, "trace_passed": True,
+                    "has_todo": False, "unsupported": False, **h_oracle},
+                "baremetal": {
+                    "compiled": True, "has_todo": False,
+                    "unsupported": False, **b_oracle},
+                "linux": {
+                    "compiled": True, "syntax_ok": True,
+                    "has_todo": False, "unsupported": False},
+            })
+        assert readiness["backend_harness_ready"] is True
+        assert readiness["backend_bare_metal_ready"] is True
+        assert not any("generic-backend execution oracle" in blocker
+                       for blocker in readiness["blockers"])
+
+    assert "harness_read16" in results[TS4800][1]
+    assert "mmio_read16" in baremetal.generate(
+        results[TS4800][0].formal, results[TS4800][0].device_spec,
+        default_bind(results[TS4800][0].device_spec, "baremetal"))
+    assert "ioread32be" in results[GPIO_GE][4]
+    assert "iowrite32be" in results[GPIO_GE][4]
+
+    ts_result, ts_code, *_rest = results[TS4800]
+    mutated = ts_code.replace(
+        "base + OUTPUT_REG_OFFSET", "base + DIRECTION_REG_OFFSET", 1)
+    mutated_output = compile_run(mutated)
+    mutation_oracle = verify_subsystem_callbacks(
+        ts_result.formal, ts_result.device_spec, mutated_output)
+    assert mutation_oracle["subsystem_callback_oracle_passed"] is False
+    assert any("trace" in error
+               for error in mutation_oracle["subsystem_callback_oracle_errors"])
 
 
 def test_readiness_score():

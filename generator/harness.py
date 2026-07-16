@@ -10,6 +10,7 @@ from extractor.formal import walk_leaf_ops, walk_all_ops
 from .common import ops_to_c, local_decls, value_var_names
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
+from .subsystem_runner import emit_gpio_callback_runner, gpio_callback_plan
 
 _VAR_RE = re.compile(r"\b[A-Za-z_]\w*\b")
 _KEYWORDS = {"if", "else", "for", "while", "return", "uint32_t", "uint16_t",
@@ -77,12 +78,12 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define ENOMEM (-12)")
     L.append("#define ENODEV (-19)")
     L.append("#define readl(a) harness_read32((uintptr_t)(a))")
-    L.append("#define readw(a) ((uint16_t)harness_read32((uintptr_t)(a)))")
-    L.append("#define readb(a) ((uint8_t)harness_read32((uintptr_t)(a)))")
+    L.append("#define readw(a) harness_read16((uintptr_t)(a))")
+    L.append("#define readb(a) harness_read8((uintptr_t)(a))")
     L.append("#define ioread32(a) harness_read32((uintptr_t)(a))")
     L.append("#define writel(v, a) harness_write32((uint32_t)(v), (uintptr_t)(a))")
-    L.append("#define writew(v, a) harness_write32((uint16_t)(v), (uintptr_t)(a))")
-    L.append("#define writeb(v, a) harness_write32((uint8_t)(v), (uintptr_t)(a))")
+    L.append("#define writew(v, a) harness_write16((uint16_t)(v), (uintptr_t)(a))")
+    L.append("#define writeb(v, a) harness_write8((uint8_t)(v), (uintptr_t)(a))")
     L.append("#define mdelay(n) (0)")
     L.append("#define pci_resource_len(p, b) (0u)")
     L.append("#define mmc_gpio_get_cd(m) (0)")
@@ -90,18 +91,44 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define of_property_read_bool(np, name) (0)")
     L.append("")
     L.append(f"#define MMIO_SIZE 0x1000")
-    L.append("static uint32_t mmio_region[MMIO_SIZE / 4];")
+    L.append("static uint8_t mmio_region[MMIO_SIZE];")
     L.append("static unsigned long trace_count = 0;")
     L.append("")
-    L.append("static inline uint32_t harness_read32(uintptr_t a) {")
-    L.append("    uint32_t v = mmio_region[(a & 0xfff) / 4];")
-    L.append('    printf("[trace %lu] R 0x%03lx = 0x%08x\\n", trace_count++, (a & 0xfff), v);')
-    L.append("    return v;")
+    L.append("static void harness_seed_mmio(void) {")
+    L.append("    for (unsigned int i = 0; i < MMIO_SIZE; ++i)")
+    L.append("        mmio_region[i] = (uint8_t)(0x5aU + 37U * i);")
     L.append("}")
-    L.append("static inline void harness_write32(uint32_t v, uintptr_t a) {")
-    L.append('    printf("[trace %lu] W 0x%03lx = 0x%08x\\n", trace_count++, (a & 0xfff), v);')
-    L.append("    mmio_region[(a & 0xfff) / 4] = v;")
+    L.append("static uint32_t harness_read_width(uintptr_t a, unsigned int width, int be) {")
+    L.append("    uintptr_t off = a & 0xfff;")
+    L.append("    uint32_t value = 0;")
+    L.append("    for (unsigned int i = 0; i < width; ++i) {")
+    L.append("        unsigned int shift = be ? 8U * (width - i - 1U) : 8U * i;")
+    L.append("        value |= (uint32_t)mmio_region[off + i] << shift;")
+    L.append("    }")
+    L.append('    printf("[trace %lu] R 0x%03lx = 0x%08x\\n", trace_count++, off, value);')
+    L.append("    return value;")
     L.append("}")
+    L.append("static void harness_write_width(uint32_t value, uintptr_t a, unsigned int width, int be) {")
+    L.append("    uintptr_t off = a & 0xfff;")
+    L.append('    printf("[trace %lu] W 0x%03lx = 0x%08x\\n", trace_count++, off, value);')
+    L.append("    for (unsigned int i = 0; i < width; ++i) {")
+    L.append("        unsigned int shift = be ? 8U * (width - i - 1U) : 8U * i;")
+    L.append("        mmio_region[off + i] = (uint8_t)(value >> shift);")
+    L.append("    }")
+    L.append("}")
+    L.append("static inline uint8_t harness_read8(uintptr_t a) { return (uint8_t)harness_read_width(a, 1, 0); }")
+    L.append("static inline uint16_t harness_read16(uintptr_t a) { return (uint16_t)harness_read_width(a, 2, 0); }")
+    L.append("static inline uint32_t harness_read32(uintptr_t a) { return harness_read_width(a, 4, 0); }")
+    L.append("static inline uint16_t harness_read16be(uintptr_t a) { return (uint16_t)harness_read_width(a, 2, 1); }")
+    L.append("static inline uint32_t harness_read32be(uintptr_t a) { return harness_read_width(a, 4, 1); }")
+    L.append("static inline void harness_write8(uint8_t v, uintptr_t a) { harness_write_width(v, a, 1, 0); }")
+    L.append("static inline void harness_write16(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 0); }")
+    L.append("static inline void harness_write32(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 0); }")
+    L.append("static inline void harness_write16be(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 1); }")
+    L.append("static inline void harness_write32be(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 1); }")
+    L.append('#define REHARNESS_CALLBACK_BEGIN(n) printf("[reharness-callback-begin] %u\\n", (unsigned)(n))')
+    L.append('#define REHARNESS_CALLBACK_MARKER(name) printf("[reharness-callback] %s\\n", (name))')
+    L.append('#define REHARNESS_CALLBACK_END() printf("[reharness-callback-end]\\n")')
     L.append("")
     # register macros
     for name, off in regs.items():
@@ -173,6 +200,9 @@ def generate(formal: dict, device_spec, bind) -> str:
         L.append("}")
         L.append("")
 
+    L.extend(emit_gpio_callback_runner(
+        formal, device_spec, priv, static=True))
+
     # test main: call probe (or first function) and dump trace
     entry = next((fn for fn in device_spec.functions if fn.role == "probe"), None)
     entry = entry or (device_spec.functions[0] if device_spec.functions else None)
@@ -187,6 +217,9 @@ def generate(formal: dict, device_spec, bind) -> str:
         keep = [p for p in entry.signature.params if p.type != "DeviceState"]
         call_args = ", ".join(["0"] * len(keep)) + (", " if keep else "") + "&dev"
         L.append(f"    {entry.name}({call_args});")
+    if gpio_callback_plan(formal, device_spec):
+        L.append("    harness_seed_mmio();")
+        L.append("    reharness_run_subsystem_callbacks(&dev);")
     L.append('    printf("harness done: %lu MMIO ops traced\\n", trace_count);')
     L.append("    return 0;")
     L.append("}")

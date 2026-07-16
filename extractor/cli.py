@@ -208,6 +208,9 @@ def main(argv: list[str] | None = None) -> int:
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
+        from generator.subsystem_runner import gpio_callback_plan
+        from verification.subsystem_callback_oracle import (
+            verify_subsystem_callbacks)
 
         res = extract_ris(_config_from_args(args))
         name = res.formal["driver"]
@@ -253,8 +256,12 @@ def main(argv: list[str] | None = None) -> int:
                 r = subprocess.run(["cc", "-o", binp, cpath], capture_output=True, text=True)
                 gr["compiled"] = r.returncode == 0
                 if r.returncode == 0:
-                    out = subprocess.run([binp], capture_output=True, text=True).stdout
+                    executed = subprocess.run(
+                        [binp], capture_output=True, text=True)
+                    out = executed.stdout
                     _w(ver_dir, "harness.trace.txt", out)
+                    gr.update(verify_subsystem_callbacks(
+                        res.formal, res.device_spec, out))
                     # trace equivalence vs RIS entry (probe) module. Only the
                     # UNCONDITIONAL (top-level) ops are compared — ops inside a
                     # Cond/Loop may or may not run at runtime (RIS is path-
@@ -292,8 +299,9 @@ def main(argv: list[str] | None = None) -> int:
                               _re.findall(r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", out)]
                     # runtime trace must contain the unconditional ops as a
                     # subsequence (conditional ops may appear interleaved)
-                    gr["trace_passed"] = (not untraceable and
-                                          _is_subsequence(expected, traced))
+                    gr["trace_passed"] = (
+                        executed.returncode == 0 and not untraceable
+                        and _is_subsequence(expected, traced))
                     results[backend] = f"compiled+ran ({out.count('[trace')} ops, trace {'✓' if gr['trace_passed'] else '✗'})"
                 else:
                     _w(ver_dir, "harness.compile.log", r.stderr)
@@ -302,6 +310,36 @@ def main(argv: list[str] | None = None) -> int:
                 r = subprocess.run(["cc", "-ffreestanding", "-Wall", "-c", "-o", "/dev/null", cpath],
                                    capture_output=True, text=True)
                 gr["compiled"] = r.returncode == 0
+                plan = gpio_callback_plan(res.formal, res.device_spec)
+                if r.returncode == 0 and plan:
+                    oracle_bin = os.path.join(tmp_dir, "baremetal-oracle.bin")
+                    oracle_compile = subprocess.run(
+                        ["cc", "-DREHARNESS_BAREMETAL_ORACLE", "-Wall",
+                         "-Wextra", "-o", oracle_bin, cpath],
+                        capture_output=True, text=True)
+                    if oracle_compile.returncode == 0:
+                        oracle_run = subprocess.run(
+                            [oracle_bin], capture_output=True, text=True)
+                        _w(ver_dir, "baremetal.callback.trace.txt",
+                           oracle_run.stdout)
+                        gr.update(verify_subsystem_callbacks(
+                            res.formal, res.device_spec, oracle_run.stdout))
+                        if oracle_run.returncode != 0:
+                            gr["subsystem_callback_oracle_passed"] = False
+                            gr["subsystem_callback_oracle_errors"].append(
+                                f"host oracle exited {oracle_run.returncode}")
+                    else:
+                        gr.update({
+                            "subsystem_callbacks_total": res.stats.get(
+                                "synthetic_subsystem_functions", 0),
+                            "subsystem_callbacks_executed": 0,
+                            "subsystem_callback_oracle_passed": False,
+                            "subsystem_callback_oracle_errors": [
+                                oracle_compile.stderr[-2000:]],
+                        })
+                else:
+                    gr.update(verify_subsystem_callbacks(
+                        res.formal, res.device_spec, ""))
                 if r.returncode != 0:
                     _w(ver_dir, "baremetal.compile.log", r.stderr)
                 results[backend] = "compiles freestanding" if r.returncode == 0 else "compile FAILED"

@@ -70,6 +70,7 @@ class Func:
     synthetic_context: str = ""
     synthetic_callback_table: str = ""
     synthetic_return_type: str = "void"
+    synthetic_param_types: dict[str, str] = field(default_factory=dict)
 
 
 def function_symbol_id(cursor) -> str:

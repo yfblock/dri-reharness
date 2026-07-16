@@ -168,6 +168,10 @@ def _synthetic_func(owner: Func, suffix: str, params: list[tuple[str, str]],
         is_static=True, synthetic_role=role, synthetic_context="thread",
         synthetic_callback_table=f"gpio_chip.{table}",
         synthetic_return_type=return_type,
+        synthetic_param_types={
+            name: ("DeviceState" if name == "gc" else "UInt")
+            for name, _ctype in params
+        },
     )
 
 
@@ -205,38 +209,87 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
             variant = any(len(fields.get(name, [])) > 1
                           for name in ("dat", "set", "clr", "dirout", "dirin"))
             variant = variant or bool(fields.get("dirout") and fields.get("dirin"))
-            domain = "gpio_generic_config_variant" if variant else "mmio"
+            flag_text = " ".join(
+                entry.get("expr", "") for entry in fields.get("flags", []))
+            flag_value = 0
+            if fields.get("flags"):
+                evaluated_flags = eval_expr(
+                    fields["flags"][-1].get("expr", ""), {}, macros)
+                flag_value = (evaluated_flags.n
+                              if isinstance(evaluated_flags, Const) else None)
+            flag_byte_order = 1 << 3
+            flag_read_output_set = 1 << 4
+            supported_flag_mask = flag_byte_order | flag_read_output_set
+            if flag_value is None:
+                flag_tokens = {
+                    token.strip() for token in re.sub(r"[()]", "", flag_text).split("|")
+                    if token.strip()
+                }
+                flag_constants = {
+                    "GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER": flag_byte_order,
+                    "GPIO_GENERIC_READ_OUTPUT_REG_SET": flag_read_output_set,
+                }
+                if flag_tokens <= {"0", "0x0", *flag_constants}:
+                    flag_value = 0
+                    for token in flag_tokens:
+                        flag_value |= flag_constants.get(token, 0)
+            unsupported_flags = (
+                flag_value is None
+                or bool(flag_value & ~supported_flag_mask)
+                or bool(flag_value & flag_byte_order and width == 8))
+            domain = (
+                "gpio_generic_config_variant" if variant
+                else "gpio_generic_flags_variant" if unsupported_flags
+                else "mmio")
+            byte_order = (
+                "big" if (flag_value is not None
+                          and flag_value & flag_byte_order) or re.search(
+                    r"\bGPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER\b", flag_text)
+                else "native")
+            read_output_set = bool(
+                flag_value is not None and flag_value & flag_read_output_set)
+
+            def evidence(callback: str) -> dict:
+                item = _summary_evidence(
+                    owner, call, width, callback, domain)
+                item["byte_order"] = byte_order
+                return item
 
             # gpio_generic_chip_init reads the initial data/direction state.
-            init_evidence = _summary_evidence(
-                owner, call, width, "gpio_generic_chip_init", domain)
+            init_evidence = evidence("gpio_generic_chip_init")
             owner_extraction = extractions.get(owner.symbol_id or owner.name)
             if owner_extraction is not None:
-                for entry in dat + fields.get("dirout", []) + fields.get("dirin", []):
+                init_entries = list(dat)
+                if read_output_set:
+                    init_entries.extend(fields.get("set", []))
+                init_entries.extend(fields.get("dirout", []))
+                init_entries.extend(fields.get("dirin", []))
+                for entry in init_entries:
                     owner_extraction.ops.append(_op_for_entry(
                         "Read", entry, store, macros, width, init_evidence,
                         var="gpio_initial_state"))
                 owner_extraction.ops.sort(key=lambda op: op.line)
 
             callbacks: list[tuple[Func, FuncExtraction]] = []
-            get_evidence = _summary_evidence(owner, call, width, "gpio_chip.get", domain)
+            get_evidence = evidence("gpio_chip.get")
+            get_entries = (fields.get("set", []) if read_output_set else dat)
             callbacks.append(_make_callback(
                 owner, "get",
                 [("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
                 "read_config", "get",
                 [_op_for_entry("Read", entry, store, macros, width,
-                               get_evidence, var="value") for entry in dat]))
+                               get_evidence, var="value") for entry in get_entries]))
             callbacks.append(_make_callback(
                 owner, "get_multiple",
                 [("gc", "struct gpio_chip *"), ("mask", "unsigned long *"),
                  ("bits", "unsigned long *")],
                 "read_config", "get_multiple",
                 [_op_for_entry("Read", entry, store, macros, width,
-                               get_evidence, var="value") for entry in dat]))
+                               get_evidence, var="value") for entry in get_entries]))
 
             set_entries = fields.get("set", []) or dat
             clr_entries = fields.get("clr", [])
-            set_evidence = _summary_evidence(owner, call, width, "gpio_chip.set", domain)
+            set_evidence = evidence("gpio_chip.set")
             if clr_entries and fields.get("set"):
                 set_ops = [
                     _op_for_entry("Write", entry, store, macros, width,
@@ -274,8 +327,7 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
 
             direction_entries = fields.get("dirout", []) + fields.get("dirin", [])
             if direction_entries:
-                dir_evidence = _summary_evidence(
-                    owner, call, width, "gpio_chip.direction", domain)
+                dir_evidence = evidence("gpio_chip.direction")
                 input_ops = []
                 output_ops = []
                 for entry in fields.get("dirout", []):
@@ -322,6 +374,9 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                 "fields": {name: [entry["expr"] for entry in entries]
                            for name, entries in sorted(fields.items())},
                 "variant": variant,
+                "flags_value": flag_value,
+                "byte_order": byte_order,
+                "read_output_set": read_output_set,
                 "callbacks": [func.synthetic_callback_table
                               for func, extraction in callbacks if extraction.ops],
             })

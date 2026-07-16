@@ -294,7 +294,11 @@ def default_bind(device_spec, backend: str) -> BindSpec:
                         PrimitiveMap("MmioRead", "B2", "readw"),
                         PrimitiveMap("MmioWrite", "B2", "writew"),
                         PrimitiveMap("MmioRead", "B1", "readb"),
-                        PrimitiveMap("MmioWrite", "B1", "writeb")]
+                        PrimitiveMap("MmioWrite", "B1", "writeb"),
+                        PrimitiveMap("MmioReadBE", "B2", "ioread16be"),
+                        PrimitiveMap("MmioWriteBE", "B2", "iowrite16be"),
+                        PrimitiveMap("MmioReadBE", "B4", "ioread32be"),
+                        PrimitiveMap("MmioWriteBE", "B4", "iowrite32be")]
         b.state = [StateMap("dev.base", base_expr)]
         for fn in device_spec.functions:
             if fn.is_callback_entry and fn.callback_table:
@@ -317,7 +321,11 @@ def default_bind(device_spec, backend: str) -> BindSpec:
                         PrimitiveMap("MmioRead", "B2", "mmio_read16"),
                         PrimitiveMap("MmioWrite", "B2", "mmio_write16"),
                         PrimitiveMap("MmioRead", "B1", "mmio_read8"),
-                        PrimitiveMap("MmioWrite", "B1", "mmio_write8")]
+                        PrimitiveMap("MmioWrite", "B1", "mmio_write8"),
+                        PrimitiveMap("MmioReadBE", "B2", "mmio_read16be"),
+                        PrimitiveMap("MmioWriteBE", "B2", "mmio_write16be"),
+                        PrimitiveMap("MmioReadBE", "B4", "mmio_read32be"),
+                        PrimitiveMap("MmioWriteBE", "B4", "mmio_write32be")]
         b.state = [StateMap("dev.base", "dev->base")]
         for fn in device_spec.functions:
             b.exports.append(ExportMap(fn.role, f"{device_spec.name}_{fn.role}"))
@@ -325,7 +333,15 @@ def default_bind(device_spec, backend: str) -> BindSpec:
         b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "uintptr_t"),
                    TypeMap("LogicalIRQ", "unsigned int"), TypeMap("UInt", "uint32_t")]
         b.primitives = [PrimitiveMap("MmioRead", "B4", "harness_read32"),
-                        PrimitiveMap("MmioWrite", "B4", "harness_write32")]
+                        PrimitiveMap("MmioWrite", "B4", "harness_write32"),
+                        PrimitiveMap("MmioRead", "B2", "harness_read16"),
+                        PrimitiveMap("MmioWrite", "B2", "harness_write16"),
+                        PrimitiveMap("MmioRead", "B1", "harness_read8"),
+                        PrimitiveMap("MmioWrite", "B1", "harness_write8"),
+                        PrimitiveMap("MmioReadBE", "B2", "harness_read16be"),
+                        PrimitiveMap("MmioWriteBE", "B2", "harness_write16be"),
+                        PrimitiveMap("MmioReadBE", "B4", "harness_read32be"),
+                        PrimitiveMap("MmioWriteBE", "B4", "harness_write32be")]
         b.state = [StateMap("dev.base", "dev->base")]
     return b
 

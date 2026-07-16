@@ -304,10 +304,6 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             f"{unmodeled_subsystem} subsystem library callback(s) lack semantic summary")
     unvalidated_subsystem = met.get("subsystem_summary", {}).get(
         "generic_backend_unvalidated", 0)
-    if unvalidated_subsystem:
-        blockers.append(
-            f"{unvalidated_subsystem} synthesized subsystem callback(s) "
-            "lack generic-backend execution oracle")
     if met["unsafe_computed"] > 0:
         blockers.append(
             f"{met['unsafe_computed']} unsafe dynamic register address(es) "
@@ -340,6 +336,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     linux_subsystem_ready = unmodeled_subsystem == 0
     generic_subsystem_ready = (
         linux_subsystem_ready and unvalidated_subsystem == 0)
+    harness_subsystem_ready = generic_subsystem_ready
+    baremetal_subsystem_ready = generic_subsystem_ready
     baremetal_ready = (accounting_ready and path_ready and has_register_access
                        and generic_subsystem_ready
                        and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
@@ -366,9 +364,14 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             return gen_results.get(backend, {})
         h = _gr("harness")
         if h:
+            harness_subsystem_ready = bool(
+                linux_subsystem_ready
+                and (unvalidated_subsystem == 0
+                     or h.get("subsystem_callback_oracle_passed")))
             harness_ready = bool(accounting_ready and path_ready and has_register_access
-                                 and generic_subsystem_ready
+                                 and harness_subsystem_ready
                                  and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+                                 and unsupported_ops == 0
                                  and unsupported_control == 0
                                  and met["conservative_loop"] == 0
                                  and h.get("compiled") and h.get("trace_passed")
@@ -376,9 +379,14 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                  and not h.get("unsupported"))
         bm = _gr("baremetal")
         if bm:
+            baremetal_subsystem_ready = bool(
+                linux_subsystem_ready
+                and (unvalidated_subsystem == 0
+                     or bm.get("subsystem_callback_oracle_passed")))
             baremetal_ready = bool(accounting_ready and path_ready and has_register_access
-                                   and generic_subsystem_ready
+                                   and baremetal_subsystem_ready
                                    and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
+                                   and unsupported_ops == 0
                                    and unsupported_control == 0
                                    and met["conservative_loop"] == 0
                                    and bm.get("compiled") and not bm.get("has_todo")
@@ -405,6 +413,12 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                and has_register_access)
             if lx.get("unsupported"):
                 blockers.append("linux backend has unsupported semantic bindings")
+
+    if (unvalidated_subsystem
+            and not (harness_subsystem_ready and baremetal_subsystem_ready)):
+        blockers.append(
+            f"{unvalidated_subsystem} synthesized subsystem callback(s) "
+            "lack generic-backend execution oracle")
 
     # LLM synthesis gate (plan M9): artifacts sufficient to ask an LLM to
     # synthesize/repair a candidate under verification feedback. Distinct from

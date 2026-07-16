@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：100 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：101 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -71,11 +71,11 @@ exact compile context=12/12
 pipeline completed=12/12
 harness/bare-metal/Linux compile=12/12
 no_register_access=0/12
-strict-ready: harness=3/12 bare-metal=3/12 Linux=5/12
-first common semantic blocker=subsystem_validation (5/12)
+strict-ready: harness=5/12 bare-metal=5/12 Linux=5/12
+first common semantic blocker=conservative_loop (3/12)
 ~~~
 
-三个后端共同 strict-ready 的案例仍是 `clk-fixed-mmio`、`clk-moxart` 和 `clk-nspire`；Linux 另外支持 fixed-config 的 `gpio-ts4800` 与 `gpio-ge`。四个 GPIO、两个 SDHCI 和一个 virtio 案例都已有 subsystem evidence，不再生成空 RIS。GPIO variant、未建模 SDHCI core callback、virtio domain、computed address、loop 和 clang diagnostics 仍按真实结果阻塞。
+三个 clock 案例以及 `gpio-ts4800`、`gpio-ge` 现在三个后端共同 strict-ready。后两个案例的 harness 与 bare-metal 分别执行 7/7 合成 callbacks，并由独立解释器核对每次访问的类型、offset 和值；GE 额外验证 big-endian byte order，TS4800 验证 16-bit accessor。DW APB 的 callback oracle 也通过，但 computed address 与 loop blocker 仍保留；CLPS711x variant、未建模 SDHCI core callback、virtio domain 和 clang diagnostics 同样不会被 runner 掩盖。
 
 权威输出：`experiments/results/zero-shot-contexts.json` 和 `experiments/results/zero-shot-matrix.json`。详细设计与问题记录见 `docs/zero-shot-matrix-c10.md`。
 
@@ -93,7 +93,7 @@ python3 verification/run_matrix.py
 drivers=19 ops=469 symbolic=356 fixed=74 computed=25
 rmw=88 conditions=117 registers=157 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
-strict_ready: harness=2 baremetal=2 linux=7
+strict_ready: harness=6 baremetal=6 linux=7
 llm_synthesis_ready=13
 ~~~
 

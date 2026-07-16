@@ -92,7 +92,10 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
                         is_callback_entry: bool, callback_table: Optional[str],
                         source_path: str) -> FunctionSpec:
     # signature
-    params = [Param(name=p[0], type=_abstract_param_type(p[1], role))
+    params = [Param(
+        name=p[0],
+        type=func.synthetic_param_types.get(
+            p[0], _abstract_param_type(p[1], role)))
               for p in func.params if p[0]]
     result_type = func.synthetic_return_type
     if func.cursor is not None and func.cursor.result_type:

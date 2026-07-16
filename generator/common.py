@@ -101,6 +101,22 @@ def _width_suffix(width: str) -> str:
     return {"B1": "8", "B2": "16", "B4": "32", "B8": "64"}.get(width, "32")
 
 
+def _mmio_primitive(bind, operation: str, body: dict) -> str:
+    byte_order = body.get("evidence", {}).get("byte_order", "native")
+    semantic = operation + ("BE" if byte_order == "big" else "")
+    primitive = bind.prim(semantic, body["width"])
+    if primitive:
+        return primitive
+    native = {
+        ("MmioRead", "B1"): "readb", ("MmioRead", "B2"): "readw",
+        ("MmioRead", "B4"): "readl", ("MmioRead", "B8"): "readl",
+        ("MmioWrite", "B1"): "writeb", ("MmioWrite", "B2"): "writew",
+        ("MmioWrite", "B4"): "writel", ("MmioWrite", "B8"): "writel",
+    }
+    return native.get((operation, body["width"]),
+                      "readl" if operation == "MmioRead" else "writel")
+
+
 def _replace_expr_var(expr, name: str | None, replacement: str):
     if not isinstance(expr, dict) or not name:
         return expr
@@ -188,7 +204,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                                 register_macros, indent, word_type))
         elif "Read" in op:
             o = op["Read"]
-            r = bind.prim("MmioRead", o["width"]) or "readl"
+            r = _mmio_primitive(bind, "MmioRead", o)
             a = addr_to_c(o["addr"], base_expr, register_macros)
             var = o["var"]
             if (_is_simple_id(var)
@@ -200,14 +216,14 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                 out.append(f"{pad}(void){r}({a});")
         elif "Write" in op:
             o = op["Write"]
-            w = bind.prim("MmioWrite", o["width"]) or "writel"
+            w = _mmio_primitive(bind, "MmioWrite", o)
             a = addr_to_c(o["addr"], base_expr, register_macros)
             v = expr_to_c(o["value"])
             out.append(f"{pad}{w}({v}, {a});")
         elif "ReadModifyWrite" in op:
             o = op["ReadModifyWrite"]
-            r = bind.prim("MmioRead", o["width"]) or "readl"
-            w = bind.prim("MmioWrite", o["width"]) or "writel"
+            r = _mmio_primitive(bind, "MmioRead", o)
+            w = _mmio_primitive(bind, "MmioWrite", o)
             a = addr_to_c(o["addr"], base_expr, register_macros)
             t = _replace_expr_var(o.get("transform"), o.get("read_var"), "v")
             t_c = "v" if isinstance(t, dict) and "Top" in t else expr_to_c(t)
