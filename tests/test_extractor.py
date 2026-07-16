@@ -2113,6 +2113,107 @@ def test_ahci_linux_backend_builds_with_explicit_limitation():
     assert "REHARNESS_UNSUPPORTED" in code
 
 
+def _write_trace_formal(path):
+    import json
+    document = {
+        "driver": "trace-test",
+        "register_map": [
+            {"name": "STATUS", "offset": 4},
+            {"name": "CONTROL", "offset": 8},
+            {"name": "DATA", "offset": 16},
+        ],
+        "modules": [
+            {"name": "probe", "ops": [
+                {"Read": {"addr": {"Symbolic": {"register": "STATUS"}}}},
+                {"Write": {"addr": {"Symbolic": {"register": "CONTROL"}}}},
+            ]},
+            {"name": "callback", "ops": [
+                {"ReadModifyWrite": {
+                    "addr": {"Symbolic": {"register": "DATA"}}}},
+            ]},
+        ],
+    }
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+
+def _run_structured_trace(log, calls):
+    import subprocess
+    import tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        formal = root / "formal.json"
+        serial = root / "serial.log"
+        _write_trace_formal(formal)
+        serial.write_text(log, encoding="utf-8")
+        return subprocess.run(
+            [sys.executable, os.path.join(REHARNESS, "tools", "trace_match.py"),
+             str(serial), "--formal-json", str(formal),
+             "--exercised-calls", calls],
+            cwd=REHARNESS, text=True, capture_output=True)
+
+
+def test_structured_trace_matches_reads_writes_and_rmw():
+    result = _run_structured_trace("""
+[rhfn] runtime_probe
+[rh] R 0x4 0x0
+[rh] W 0x8 0x1
+[rhfn] runtime_callback
+[rh] R 0x10 0x0
+[rh] W 0x10 0x1
+""", "probe=runtime_probe,callback=runtime_callback")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "TRACE_MATCH_OK" in result.stdout
+    assert "op 覆盖: 4/4" in result.stderr
+    assert "寄存器覆盖: 3/3" in result.stderr
+
+
+def test_structured_trace_does_not_reuse_one_callback_segment():
+    result = _run_structured_trace("""
+[rhfn] runtime_probe
+[rh] R 0x4 0x0
+[rh] W 0x8 0x1
+[rhfn] runtime_callback
+[rh] R 0x10 0x0
+[rh] W 0x10 0x1
+""", "probe=runtime_probe,callback=runtime_callback,callback=runtime_callback")
+    assert result.returncode == 1
+    assert "call#3" in result.stdout
+    assert "TRACE_MATCH_FAIL" in result.stdout
+
+
+def test_structured_trace_uses_exact_runtime_function_names():
+    result = _run_structured_trace("""
+[rhfn] runtime_probe__callback
+[rh] R 0x4 0x0
+[rh] W 0x8 0x1
+""", "probe=runtime_probe")
+    assert result.returncode == 1
+    assert "probe=>runtime_probe" in result.stdout
+
+
+def test_instrument_mmio_adds_idempotent_function_boundaries():
+    import subprocess
+    import tempfile
+    from pathlib import Path
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "driver.c"
+        source.write_text("""#include <linux/io.h>
+static int callback(void *base)
+{
+    return readl(base + 4);
+}
+""", encoding="utf-8")
+        for _ in range(2):
+            result = subprocess.run(
+                [sys.executable, os.path.join(REHARNESS, "tools", "instrument_mmio.py"),
+                 str(source)], cwd=REHARNESS, text=True, capture_output=True)
+            assert result.returncode == 0, result.stderr
+        text = source.read_text(encoding="utf-8")
+        assert text.count('RH_TRACE_FN("callback");') == 1
+        assert text.count("reharness MMIO trace instrumentation") == 1
+
+
 # ── standalone runner (no pytest required) ───────────────────────────
 
 def _run_standalone():

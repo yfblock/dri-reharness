@@ -61,18 +61,22 @@ write_makefile "$FT_DIR" gpio_ftgpio010
 build_module "$FT_DIR"
 make -C verification/device-registrar KERNELDIR="$KERNELDIR" >/dev/null
 python3 -m extractor extract -s drivers/test/gpio-ftgpio010.c \
-    -o "$FT_SPEC/gpio-ftgpio010.ris" >/dev/null
+    -o "$FT_SPEC/gpio-ftgpio010.ris" \
+    --json-output "$FT_SPEC/gpio-ftgpio010.formal.json" >/dev/null
 python3 -m extractor spec -s drivers/test/gpio-ftgpio010.c \
     -o "$FT_SPEC/gpio-ftgpio010.dspec" >/dev/null
 RH_QEMU_OUT=/tmp/reharness_qemu_ftgpio_deterministic.txt \
     bash qemu_run.sh gpio_ftgpio010 -b platform -r gpio-ftgpio010 \
+      -e test/gpio_trace_test -a /dev/gpiochip0 \
       -p 'probed|registered|gpiochip' -t 90 \
       | normalize_log | tee "$RESULTS/qemu-ftgpio010-judge.txt"
 normalize_log < /tmp/reharness_qemu_ftgpio_deterministic.txt \
     > "$RESULTS/qemu-ftgpio010-serial.log"
+FT_CALLS='ftgpio_gpio_probe=gpio_ftgpio010_probe,ftgpio_gpio_probe__gpio_generic_get_direction,ftgpio_gpio_probe__gpio_generic_direction_output,ftgpio_gpio_probe__gpio_generic_get_multiple,ftgpio_gpio_probe__gpio_generic_set_multiple,ftgpio_gpio_probe__gpio_generic_set_multiple,ftgpio_gpio_probe__gpio_generic_direction_input'
 python3 tools/trace_match.py "$RESULTS/qemu-ftgpio010-serial.log" \
-    "$FT_SPEC/gpio-ftgpio010.ris" "$FT_SPEC/gpio-ftgpio010.dspec" \
-    --exercised probe 2>&1 | tee "$RESULTS/qemu-ftgpio010-trace.txt"
+    --formal-json "$FT_SPEC/gpio-ftgpio010.formal.json" \
+    --exercised-calls "$FT_CALLS" \
+    2>&1 | tee "$RESULTS/qemu-ftgpio010-trace.txt"
 grep -q TRACE_MATCH_OK "$RESULTS/qemu-ftgpio010-trace.txt"
 
 python3 - "$RESULTS/qemu.json" "$RESULTS/qemu-ftgpio010-trace.txt" <<'PY'
@@ -98,6 +102,7 @@ data = {
             "probe": True,
             "trace_oracle": "TRACE_MATCH_OK",
             "module_coverage": coverage(r"模块覆盖:\s*(\d+/\d+)"),
+            "call_coverage": coverage(r"调用覆盖:\s*(\d+/\d+)"),
             "op_coverage": coverage(r"op 覆盖:\s*(\d+/\d+)"),
             "register_coverage": coverage(r"寄存器覆盖:\s*(\d+/\d+)"),
         },

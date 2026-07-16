@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：96 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：100 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -172,16 +172,18 @@ verification/run_qemu_experiments.sh
 3. 检查 ID、live-check 和 factorial 的值级 oracle；
 4. 生成并 instrument gpio-ftgpio010 模块；
 5. 构建 platform device registrar；
-6. 启动 QEMU 并按 RIS 比对 probe 的 MMIO offset/order。
+6. 启动 QEMU，运行 GPIO chardev exerciser，触发 `get_direction`、方向切换、`get_multiple` 与 `set_multiple`；
+7. 由 instrumentation 记录精确 `[rhfn]` 函数边界，并按结构化 Formal RIS JSON 逐调用比对 MMIO offset/order。每个 trace segment 只能匹配一个预期调用，不允许跨 callback 重复计数。
 
 成功标志：
 
 ~~~text
 EDU_TRACE_OK
 TRACE_MATCH_OK
-module coverage 1/1
-op coverage 4/4
-register coverage 4/4
+module coverage 6/6
+call coverage 7/7
+op coverage 16/16
+register coverage 7/7
 QEMU_EXPERIMENTS_OK
 ~~~
 

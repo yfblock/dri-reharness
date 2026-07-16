@@ -1,180 +1,311 @@
 #!/usr/bin/env python3
-"""reharness trace 一致性比对 + 覆盖率报告 (gpio/clk/generic, 偏移级)。
-解析 QEMU 串口里的 [rh] R/W 0xOFF 行 → traced ops; 解析 .ris 的所有模块 + .dspec
-寄存器偏移映射 → 每个模块的 expected ops; 对每个模块做子序列匹配 (expected ⊆ traced, 按序)。
-用法: python3 tools/trace_match.py <serial_log> <ris_file> <dspec_file> [--exercised kw1,kw2]
-输出: TRACE_MATCH_OK 或 TRACE_MATCH_FAIL:<缺失的模块/ops>
-      + 覆盖率报告到 stderr"""
-import re, sys
+"""Compare instrumented MMIO traces with RIS operations.
 
-# ── 健壮的错误处理 ──
-if len(sys.argv) < 4:
-    print("用法: trace_match.py <serial_log> <ris_file> <dspec_file> [--exercised kw1,kw2]", file=sys.stderr)
-    sys.exit(2)
+The reliable mode consumes structured Formal RIS JSON and an ordered list of
+``formal_module=runtime_function`` calls.  ``[rhfn]`` events delimit runtime
+functions, so one MMIO event cannot be credited to several callbacks.
 
-try:
-    log = open(sys.argv[1]).read()
-except (IOError, OSError) as e:
-    print(f"TRACE_MATCH_FAIL: 无法读 serial_log: {e}")
-    sys.exit(1)
-try:
-    ris = open(sys.argv[2]).read()
-except (IOError, OSError) as e:
-    print(f"TRACE_MATCH_FAIL: 无法读 .ris: {e}")
-    sys.exit(1)
-try:
-    dspec = open(sys.argv[3]).read()
-except (IOError, OSError) as e:
-    print(f"TRACE_MATCH_FAIL: 无法读 .dspec: {e}")
-    sys.exit(1)
+The historical text-RIS mode remains available for old artifacts, but new
+experiments should use ``--formal-json`` and ``--exercised-calls``.
+"""
+from __future__ import annotations
 
-# 1) 寄存器名 → 偏移
-reg_off = {}
-for m in re.finditer(r'register\s+(\w+):\s*B\d+\s+at\s+base\s+\+\s+(0x[0-9a-fA-F]+)', dspec):
-    reg_off[m.group(1)] = int(m.group(2), 16)
+import argparse
+import json
+import re
+import sys
+from dataclasses import dataclass
 
-# 2) 解析 .ris 所有模块 → {module_name: [(op, offset), ...]}
-#    地址格式:
-#    - Symbolic: R(B4, g->base.GPIO_INT_EN) → 寄存器名 → .dspec 查偏移
-#    - Fixed:    R(B4, hbclk->reg[0x0])     → 直接取 [0x0] 偏移
-#    - Computed: R(B4, [mmio])              → 无确定偏移, 跳过
-modules = {}
-for m in re.finditer(r'module\s+(\w+)\s*\{(.*?)\n  \}', ris, re.S):
-    name, body = m.group(1), m.group(2)
-    ops = []
-    for line in body.split('\n'):
-        line = re.sub(r'--.*$', '', line).strip()
-        if not line:
+
+TraceOp = tuple[str, int]
+
+
+@dataclass
+class RuntimeSegment:
+    function: str
+    ops: list[TraceOp]
+
+
+def _offset(addr: dict, registers: dict[str, int]) -> int | None:
+    if "Symbolic" in addr:
+        return registers.get(addr["Symbolic"]["register"])
+    if "Fixed" in addr:
+        return int(addr["Fixed"]["offset"])
+    return None
+
+
+def _formal_ops(ops: list[dict], registers: dict[str, int]) -> tuple[list[TraceOp], bool]:
+    """Return unconditional top-level MMIO ops and whether all were traceable."""
+    result: list[TraceOp] = []
+    traceable = True
+    for op in ops:
+        body = op.get("Read")
+        kind = "R"
+        if body is None:
+            body = op.get("Write")
+            kind = "W"
+        if body is None:
+            body = op.get("ReadModifyWrite")
+            kind = "RMW"
+        if body is None:
+            # Conditional/loop bodies are path dependent.  Exact call oracles
+            # validate the unconditional contract and leave path validation to
+            # the dedicated CFG/mutation checks.
             continue
-        op = None
-        off = None
-        # Symbolic: R(B4, g->base.REG) → .REG → .dspec offset
-        sym_m = re.match(r'(R|W|RMW)\(B\d+,\s*.*?\.(\w+)\)', line)
-        if sym_m:
-            op, reg = sym_m.group(1), sym_m.group(2)
-            off = reg_off.get(reg)
+        off = _offset(body.get("addr", {}), registers)
+        if off is None:
+            traceable = False
+            continue
+        if kind == "RMW":
+            result.extend((("R", off), ("W", off)))
         else:
-            # Fixed: R(B4, base[0xOFF]) → direct offset
-            fixed_m = re.match(r'(R|W|RMW)\(B\d+,\s*.*?\[(0x[0-9a-fA-F]+)\]', line)
-            if fixed_m:
-                op = fixed_m.group(1)
-                off = int(fixed_m.group(2), 16)
-        if off is not None and op is not None:
-            if op == 'RMW':
-                ops.append(('R', off)); ops.append(('W', off))
+            result.append((kind, off))
+    return result, traceable
+
+
+def load_formal_modules(path: str) -> tuple[dict[str, list[TraceOp]], set[str]]:
+    with open(path, encoding="utf-8") as handle:
+        formal = json.load(handle)
+    registers = {item["name"]: int(item["offset"])
+                 for item in formal.get("register_map", [])}
+    modules: dict[str, list[TraceOp]] = {}
+    untraceable: set[str] = set()
+    for module in formal.get("modules", []):
+        ops, complete = _formal_ops(module.get("ops", []), registers)
+        if ops:
+            modules[module["name"]] = ops
+        if not complete:
+            untraceable.add(module["name"])
+    return modules, untraceable
+
+
+def load_legacy_modules(ris_path: str, dspec_path: str) -> dict[str, list[TraceOp]]:
+    """Best-effort compatibility parser for pre-structured artifacts."""
+    with open(ris_path, encoding="utf-8") as handle:
+        ris = handle.read()
+    with open(dspec_path, encoding="utf-8") as handle:
+        dspec = handle.read()
+    registers = {
+        match.group(1): int(match.group(2), 16)
+        for match in re.finditer(
+            r"register\s+(\w+):\s*B\d+\s+at\s+base\s+\+\s+(0x[0-9a-fA-F]+)",
+            dspec)
+    }
+    modules: dict[str, list[TraceOp]] = {}
+    for match in re.finditer(r"module\s+(\w+)\s*\{(.*?)\n  \}", ris, re.S):
+        name, body = match.groups()
+        ops: list[TraceOp] = []
+        for raw_line in body.splitlines():
+            line = re.sub(r"--.*$", "", raw_line).strip()
+            symbolic = re.search(
+                r"\b(R|W|RMW)\(B\d+,\s*.*?\.(\w+)\)", line)
+            fixed = re.search(
+                r"\b(R|W|RMW)\(B\d+,\s*.*?\[(0x[0-9a-fA-F]+)\]", line)
+            if symbolic:
+                kind, reg = symbolic.groups()
+                off = registers.get(reg)
+            elif fixed:
+                kind, raw_off = fixed.groups()
+                off = int(raw_off, 16)
             else:
-                ops.append((op, off))
-    if ops:
-        modules[name] = ops
+                continue
+            if off is None:
+                continue
+            if kind == "RMW":
+                ops.extend((("R", off), ("W", off)))
+            else:
+                ops.append((kind, off))
+        if ops:
+            modules[name] = ops
+    return modules
 
-# 3) traced ops
-traced = []
-for m in re.finditer(r'\[rh\]\s+(R|W)\s+0x([0-9a-fA-F]+)', log):
-    traced.append((m.group(1), int(m.group(2), 16)))
 
-# 4) 子序列匹配
-def subseq(sub, seq):
-    it = iter(seq)
-    return all(x in it for x in sub)
+def parse_trace(log: str) -> tuple[list[TraceOp], list[RuntimeSegment]]:
+    traced: list[TraceOp] = []
+    segments: list[RuntimeSegment] = []
+    current: RuntimeSegment | None = None
+    for line in log.splitlines():
+        function = re.search(r"\[rhfn\]\s+([A-Za-z_]\w*)", line)
+        if function:
+            current = RuntimeSegment(function.group(1), [])
+            segments.append(current)
+            continue
+        operation = re.search(r"\[rh\]\s+(R|W)\s+0x([0-9a-fA-F]+)", line)
+        if operation:
+            op = (operation.group(1), int(operation.group(2), 16))
+            traced.append(op)
+            if current is not None:
+                current.ops.append(op)
+    return traced, segments
 
-# 5) 模块过滤: 默认检查所有非 IRQ 模块; --exercised 可限定子集
-IRQ_KEYWORDS = ('irq', 'ack', 'mask', 'unmask', 'handler', 'interrupt')
 
-exercised_keywords = None
-if '--exercised' in sys.argv:
-    idx = sys.argv.index('--exercised')
-    if idx + 1 < len(sys.argv):
-        exercised_keywords = [k.strip() for k in sys.argv[idx+1].split(',')]
+def subsequence_match(expected: list[TraceOp], actual: list[TraceOp]) -> tuple[int, list[TraceOp]]:
+    cursor = 0
+    matched = 0
+    missing: list[TraceOp] = []
+    for item in expected:
+        while cursor < len(actual) and actual[cursor] != item:
+            cursor += 1
+        if cursor == len(actual):
+            missing.append(item)
+        else:
+            matched += 1
+            cursor += 1
+    return matched, missing
 
-def is_checkable(name):
-    if any(kw in name.lower() for kw in IRQ_KEYWORDS):
-        return False
-    if exercised_keywords:
-        return any(kw in name for kw in exercised_keywords)
-    return True
 
-# 分类所有模块
-checkable_modules = {n: ops for n, ops in modules.items() if is_checkable(n)}
-irq_modules = {n: ops for n, ops in modules.items() if not is_checkable(n)
-               and any(kw in n.lower() for kw in IRQ_KEYWORDS)}
-skipped_modules = {n: ops for n, ops in modules.items()
-                   if not is_checkable(n) and n not in irq_modules}
+def parse_calls(text: str) -> list[tuple[str, str]]:
+    calls: list[tuple[str, str]] = []
+    for item in text.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        formal, separator, runtime = item.partition("=")
+        calls.append((formal.strip(), runtime.strip() if separator else formal.strip()))
+    return calls
 
-# 边界处理
-if not checkable_modules:
-    print(f"[trace_match] 0 个可校验模块 (共 {len(modules)}), traced={len(traced)} ops — vacuous pass", file=sys.stderr)
+
+def exact_call_report(modules: dict[str, list[TraceOp]], untraceable: set[str],
+                      calls: list[tuple[str, str]], segments: list[RuntimeSegment],
+                      traced_count: int) -> int:
+    missing_modules = sorted({formal for formal, _ in calls if formal not in modules})
+    if missing_modules:
+        print("TRACE_MATCH_FAIL: Formal RIS 缺少模块: " + ", ".join(missing_modules))
+        return 1
+    selected_untraceable = sorted({formal for formal, _ in calls if formal in untraceable})
+    if selected_untraceable:
+        print("TRACE_MATCH_FAIL: 模块含不可追踪地址: " + ", ".join(selected_untraceable))
+        return 1
+    if not segments:
+        print("TRACE_MATCH_FAIL: trace 缺少 [rhfn] 函数边界")
+        return 1
+
+    cursor = 0
+    results: list[tuple[str, str, list[TraceOp], int, list[TraceOp]]] = []
+    for formal, runtime in calls:
+        while cursor < len(segments) and segments[cursor].function != runtime:
+            cursor += 1
+        expected = modules[formal]
+        if cursor == len(segments):
+            results.append((formal, runtime, expected, 0, list(expected)))
+            continue
+        matched, missing = subsequence_match(expected, segments[cursor].ops)
+        results.append((formal, runtime, expected, matched, missing))
+        cursor += 1
+
+    passed_calls = sum(not missing for _, _, _, _, missing in results)
+    expected_ops = sum(len(expected) for _, _, expected, _, _ in results)
+    matched_ops = sum(matched for _, _, _, matched, _ in results)
+    expected_offsets = {off for _, _, expected, _, _ in results for _, off in expected}
+    matched_offsets = {
+        off for _, _, expected, matched, missing in results
+        if matched and not missing for _, off in expected
+    }
+    unique_modules = {formal for formal, _ in calls}
+    failed_modules = {formal for formal, _, _, _, missing in results if missing}
+    passed_modules = len(unique_modules - failed_modules)
+
+    print(f"[trace_match] {len(calls)} 个精确调用 / {len(unique_modules)} 个模块 "
+          f"({passed_calls} call pass, {len(calls) - passed_calls} call fail), "
+          f"traced={traced_count} ops", file=sys.stderr)
+    failures: list[str] = []
+    for index, (formal, runtime, expected, _, missing) in enumerate(results, 1):
+        status = "✓" if not missing else "✗"
+        print(f"  {status} call#{index} {formal} => {runtime}: "
+              f"{len(expected)} ops {expected}", file=sys.stderr)
+        if missing:
+            failures.append(f"call#{index} {formal}=>{runtime}: 缺失 {missing}")
+
+    print("", file=sys.stderr)
+    print(f"[coverage] 模块覆盖: {passed_modules}/{len(unique_modules)} 精确模块通过", file=sys.stderr)
+    print(f"[coverage] 调用覆盖: {passed_calls}/{len(calls)} 预期调用通过", file=sys.stderr)
+    print(f"[coverage] op 覆盖: {matched_ops}/{expected_ops} ops 命中", file=sys.stderr)
+    print(f"[coverage] 寄存器覆盖: {len(matched_offsets)}/{len(expected_offsets)} "
+          "寄存器偏移被验证", file=sys.stderr)
+    print("[coverage] trace 级别: 函数边界+偏移级+exerciser", file=sys.stderr)
+    if failures:
+        print("TRACE_MATCH_FAIL: " + "; ".join(failures))
+        return 1
     print("TRACE_MATCH_OK")
-    sys.exit(0)
+    return 0
 
-if not traced and checkable_modules:
-    print(f"[trace_match] {len(checkable_modules)} 个可校验模块但 traced=0 ops — 可能 instrumentation 未生效", file=sys.stderr)
-    print(f"TRACE_MATCH_FAIL: trace 为空 (检查 instrument_mmio 是否生效)")
-    sys.exit(1)
 
-# 匹配 + 收集覆盖率数据
-failed = []
-passed_modules = []
-total_expected_ops = 0
-total_matched_ops = 0
-for name, expected in checkable_modules.items():
-    total_expected_ops += len(expected)
-    if subseq(expected, traced):
-        passed_modules.append(name)
-        # 计算匹配的 ops 数 (子序列匹配, 统计命中的)
-        it = iter(traced)
-        matched = 0
-        for x in expected:
-            for y in it:
-                if x == y:
-                    matched += 1
-                    break
-        total_matched_ops += matched
-    else:
-        it = iter(traced)
-        missing = []
-        for x in expected:
-            found = False
-            for y in it:
-                if x == y:
-                    found = True
-                    break
-            if not found:
-                missing.append(x)
-        total_matched_ops += (len(expected) - len(missing))
-        failed.append(f"{name}: 缺失 {missing}")
+def legacy_report(modules: dict[str, list[TraceOp]], traced: list[TraceOp],
+                  exercised: list[str] | None) -> int:
+    irq_keywords = ("irq", "ack", "mask", "unmask", "handler", "interrupt")
+    def checkable(name: str) -> bool:
+        if any(keyword in name.lower() for keyword in irq_keywords):
+            return False
+        return not exercised or any(keyword in name for keyword in exercised)
 
-# ── 覆盖率报告 ──
-total_modules = len(modules)
-checkable_count = len(checkable_modules)
-passed_count = len(passed_modules)
-irq_count = len(irq_modules)
-traced_offsets = set(off for _, off in traced)
-expected_offsets = set(off for ops in checkable_modules.values() for _, off in ops)
-reg_map_count = len(reg_off)
-covered_offsets = traced_offsets & expected_offsets
-
-print(f"[trace_match] {checkable_count} 个可校验模块 (共 {total_modules}: "
-      f"{passed_count} pass, {len(failed)} fail, {irq_count} IRQ skip, "
-      f"{total_modules - checkable_count - irq_count} other skip), "
-      f"traced={len(traced)} ops", file=sys.stderr)
-for name, ops in checkable_modules.items():
-    status = "✓" if subseq(ops, traced) else "✗"
-    print(f"  {status} {name}: {len(ops)} ops {ops}", file=sys.stderr)
-
-# 覆盖率汇总
-print(f"", file=sys.stderr)
-print(f"[coverage] 模块覆盖: {passed_count}/{checkable_count} 可校验模块通过 "
-      f"({passed_count*100//checkable_count if checkable_count else 0}%); "
-      f"{irq_count} IRQ 模块未行使; 共 {total_modules} 模块", file=sys.stderr)
-print(f"[coverage] op 覆盖: {total_matched_ops}/{total_expected_ops} ops 命中 "
-      f"({total_matched_ops*100//total_expected_ops if total_expected_ops else 0}%)", file=sys.stderr)
-print(f"[coverage] 寄存器覆盖: {len(covered_offsets)}/{len(expected_offsets)} 寄存器偏移被访问 "
-      f"({len(covered_offsets)*100//len(expected_offsets) if expected_offsets else 0}%)", file=sys.stderr)
-print(f"[coverage] trace 级别: {'偏移级+exerciser' if exercised_keywords else '偏移级(probe-only)' if not traced else '偏移级'}", file=sys.stderr)
-
-if not failed:
+    selected = {name: ops for name, ops in modules.items() if checkable(name)}
+    if not selected:
+        print(f"[trace_match] 0 个可校验模块 (共 {len(modules)}) — vacuous pass",
+              file=sys.stderr)
+        print("TRACE_MATCH_OK")
+        return 0
+    if not traced:
+        print("TRACE_MATCH_FAIL: trace 为空 (检查 instrument_mmio 是否生效)")
+        return 1
+    failures = []
+    matched_total = 0
+    expected_total = 0
+    for name, expected in selected.items():
+        matched, missing = subsequence_match(expected, traced)
+        matched_total += matched
+        expected_total += len(expected)
+        if missing:
+            failures.append(f"{name}: 缺失 {missing}")
+    passed = len(selected) - len(failures)
+    print(f"[trace_match] {len(selected)} 个兼容模式模块 "
+          f"({passed} pass, {len(failures)} fail), traced={len(traced)} ops",
+          file=sys.stderr)
+    print(f"[coverage] 模块覆盖: {passed}/{len(selected)} 可校验模块通过", file=sys.stderr)
+    print(f"[coverage] op 覆盖: {matched_total}/{expected_total} ops 命中", file=sys.stderr)
+    if failures:
+        print("TRACE_MATCH_FAIL: " + "; ".join(failures))
+        return 1
     print("TRACE_MATCH_OK")
-    sys.exit(0)
-else:
-    print(f"TRACE_MATCH_FAIL: {'; '.join(failed)}")
-    sys.exit(1)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("serial_log")
+    parser.add_argument("ris_file", nargs="?")
+    parser.add_argument("dspec_file", nargs="?")
+    parser.add_argument("--formal-json")
+    parser.add_argument("--exercised", help="legacy module-name keyword filter")
+    parser.add_argument(
+        "--exercised-calls",
+        help="ordered formal_module=runtime_function calls; duplicates are allowed")
+    args = parser.parse_args(argv)
+
+    try:
+        with open(args.serial_log, encoding="utf-8") as handle:
+            log = handle.read()
+        if args.formal_json:
+            modules, untraceable = load_formal_modules(args.formal_json)
+        else:
+            if not args.ris_file or not args.dspec_file:
+                parser.error("text mode requires ris_file and dspec_file")
+            modules = load_legacy_modules(args.ris_file, args.dspec_file)
+            untraceable = set()
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        print(f"TRACE_MATCH_FAIL: 无法读取 oracle 输入: {error}")
+        return 1
+
+    traced, segments = parse_trace(log)
+    if args.exercised_calls:
+        if not args.formal_json:
+            print("TRACE_MATCH_FAIL: --exercised-calls 要求 --formal-json")
+            return 1
+        return exact_call_report(
+            modules, untraceable, parse_calls(args.exercised_calls), segments, len(traced))
+    exercised = ([item.strip() for item in args.exercised.split(",") if item.strip()]
+                 if args.exercised else None)
+    return legacy_report(modules, traced, exercised)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

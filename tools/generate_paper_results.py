@@ -62,6 +62,7 @@ def main() -> None:
         "EduQEMUOracle": esc(edu_qemu["value_oracle"]),
         "FTQEMUOracle": esc(ft_qemu["trace_oracle"]),
         "FTQEMUModuleCoverage": ft_qemu["module_coverage"],
+        "FTQEMUCallCoverage": ft_qemu["call_coverage"],
         "FTQEMUOpCoverage": ft_qemu["op_coverage"],
         "FTQEMURegisterCoverage": ft_qemu["register_coverage"],
         "MultiSourceDrivers": multi_agg.get("drivers", 0),
