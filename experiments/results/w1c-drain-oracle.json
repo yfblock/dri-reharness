@@ -1,0 +1,26 @@
+{
+  "contract": {
+    "w1c_drain_contract_passed": true,
+    "w1c_drain_loops": 1,
+    "w1c_drain_oracle_errors": [],
+    "w1c_drain_oracle_required": true
+  },
+  "environment_assumption": "no new pending bits arrive while the generated handler drains the observed pending-and-mask snapshot",
+  "mutation": {
+    "caught": true,
+    "errors": [
+      "altera_gpio_irq_edge_handler: ack does not target pending register"
+    ],
+    "name": "acknowledge_mask_register"
+  },
+  "runtime": {
+    "w1c_drain_calls_executed": 1,
+    "w1c_drain_contract_passed": true,
+    "w1c_drain_loops": 1,
+    "w1c_drain_oracle_errors": [],
+    "w1c_drain_oracle_required": true,
+    "w1c_drain_runtime_passed": true
+  },
+  "schema": 1,
+  "source": "linux/drivers/gpio/gpio-altera.c"
+}

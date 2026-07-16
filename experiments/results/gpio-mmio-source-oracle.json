@@ -1,0 +1,98 @@
+{
+  "cases": {
+    "cadence": {
+      "calls": 8,
+      "passed": true,
+      "source": "linux/drivers/gpio/gpio-cadence.c"
+    },
+    "ftgpio": {
+      "calls": 8,
+      "passed": true,
+      "source": "drivers/test/gpio-ftgpio010.c"
+    },
+    "ge": {
+      "calls": 8,
+      "passed": true,
+      "source": "linux/drivers/gpio/gpio-ge.c"
+    },
+    "idt3243x": {
+      "calls": 8,
+      "passed": true,
+      "source": "linux/drivers/gpio/gpio-idt3243x.c"
+    },
+    "sodaville": {
+      "calls": 8,
+      "passed": true,
+      "source": "linux/drivers/gpio/gpio-sodaville.c"
+    },
+    "ts4800": {
+      "calls": 8,
+      "passed": true,
+      "source": "linux/drivers/gpio/gpio-ts4800.c"
+    }
+  },
+  "mutations": {
+    "byte_order": {
+      "caught": true,
+      "errors": [
+        "initial shadow state {'gpio_sdata': 4056721282, 'gpio_sdir': 911966373} != source {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}",
+        "call#1 gpio_chip.get Formal RIS {'table': 'gpio_chip.get', 'trace': [('R', 4, 1563956206)], 'result': 1, 'outputs': {}, 'state': {'gpio_sdata': 4056721282, 'gpio_sdir': 911966373}} != source {'table': 'gpio_chip.get', 'trace': [('R', 4, 3994237021)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#2 gpio_chip.get_multiple Formal RIS {'table': 'gpio_chip.get_multiple', 'trace': [('R', 4, 1563956206)], 'result': 0, 'outputs': {'mask': 3, 'bits': 2}, 'state': {'gpio_sdata': 4056721282, 'gpio_sdir': 911966373}} != source {'table': 'gpio_chip.get_multiple', 'trace': [('R', 4, 3994237021)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#3 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 8, 4056721282)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 4056721282, 'gpio_sdir': 911966373}} != source {'table': 'gpio_chip.set', 'trace': [('W', 8, 2192035059)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 2776652598}}",
+        "call#4 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 8, 4056721280)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 4056721280, 'gpio_sdir': 911966373}} != source {'table': 'gpio_chip.set', 'trace': [('W', 8, 2192035057)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#5 gpio_chip.set_multiple Formal RIS {'table': 'gpio_chip.set_multiple', 'trace': [('W', 8, 4056721281)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 4056721281, 'gpio_sdir': 911966373}} != source {'table': 'gpio_chip.set_multiple', 'trace': [('W', 8, 2192035057)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#6 gpio_chip.direction_input Formal RIS {'table': 'gpio_chip.direction_input', 'trace': [('W', 0, 3383000922)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 4056721281, 'gpio_sdir': 911966373}} != source {'table': 'gpio_chip.direction_input', 'trace': [('W', 0, 1518314699)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652596}}",
+        "call#7 gpio_chip.direction_output Formal RIS {'table': 'gpio_chip.direction_output', 'trace': [('W', 8, 4056721283), ('W', 0, 3383000920)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 4056721283, 'gpio_sdir': 911966375}} != source {'table': 'gpio_chip.direction_output', 'trace': [('W', 8, 2192035059), ('W', 0, 1518314697)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 2776652598}}",
+        "call#8 gpio_chip.get_direction Formal RIS {'table': 'gpio_chip.get_direction', 'trace': [('R', 0, 3383000920)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 4056721283, 'gpio_sdir': 911966375}} != source {'table': 'gpio_chip.get_direction', 'trace': [('R', 0, 1518314697)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 2776652598}}"
+      ]
+    },
+    "direction_set_order": {
+      "caught": true,
+      "errors": [
+        "call#7 gpio_chip.direction_output Formal RIS {'table': 'gpio_chip.direction_output', 'trace': [('W', 4, 2), ('W', 2, 51623)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51623, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.direction_output', 'trace': [('W', 2, 51623), ('W', 4, 5102)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51623, 'gpio_sdir': 5102}}",
+        "call#8 gpio_chip.get_direction Formal RIS {'table': 'gpio_chip.get_direction', 'trace': [('R', 4, 2)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51623, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.get_direction', 'trace': [('R', 4, 5102)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51623, 'gpio_sdir': 5102}}"
+      ]
+    },
+    "dirin_inversion": {
+      "caught": true,
+      "errors": [
+        "initial shadow state {'gpio_sdata': 2192035057, 'gpio_sdir': 1518314697} != source {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}",
+        "call#1 gpio_chip.get Formal RIS {'table': 'gpio_chip.get', 'trace': [('R', 4, 3994237021)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 1518314697}} != source {'table': 'gpio_chip.get', 'trace': [('R', 4, 3994237021)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#2 gpio_chip.get_multiple Formal RIS {'table': 'gpio_chip.get_multiple', 'trace': [('R', 4, 3994237021)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 1518314697}} != source {'table': 'gpio_chip.get_multiple', 'trace': [('R', 4, 3994237021)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#3 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 8, 2192035059)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 1518314697}} != source {'table': 'gpio_chip.set', 'trace': [('W', 8, 2192035059)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 2776652598}}",
+        "call#4 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 8, 2192035057)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 1518314697}} != source {'table': 'gpio_chip.set', 'trace': [('W', 8, 2192035057)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#5 gpio_chip.set_multiple Formal RIS {'table': 'gpio_chip.set_multiple', 'trace': [('W', 8, 2192035057)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 1518314697}} != source {'table': 'gpio_chip.set_multiple', 'trace': [('W', 8, 2192035057)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652598}}",
+        "call#6 gpio_chip.direction_input Formal RIS {'table': 'gpio_chip.direction_input', 'trace': [('W', 0, 2776652598)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 1518314697}} != source {'table': 'gpio_chip.direction_input', 'trace': [('W', 0, 1518314699)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035057, 'gpio_sdir': 2776652596}}",
+        "call#7 gpio_chip.direction_output Formal RIS {'table': 'gpio_chip.direction_output', 'trace': [('W', 8, 2192035059), ('W', 0, 2776652596)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 1518314699}} != source {'table': 'gpio_chip.direction_output', 'trace': [('W', 8, 2192035059), ('W', 0, 1518314697)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 2776652598}}",
+        "call#8 gpio_chip.get_direction Formal RIS {'table': 'gpio_chip.get_direction', 'trace': [('R', 0, 2776652596)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 1518314699}} != source {'table': 'gpio_chip.get_direction', 'trace': [('R', 0, 1518314697)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 2192035059, 'gpio_sdir': 2776652598}}"
+      ]
+    },
+    "multiple_mask_value": {
+      "caught": true,
+      "errors": [
+        "call#5 gpio_chip.set_multiple Formal RIS {'table': 'gpio_chip.set_multiple', 'trace': [('W', 2, 0)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 51621, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.set_multiple', 'trace': [('W', 2, 51621)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 51621, 'gpio_sdir': 5102}}"
+      ]
+    },
+    "set_clear_swapped": {
+      "caught": true,
+      "errors": [
+        "call#3 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 20, 2)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 1563956206, 'gpio_sdir': 4056721282}} != source {'table': 'gpio_chip.set', 'trace': [('W', 16, 2)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 1563956206, 'gpio_sdir': 4056721282}}",
+        "call#4 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 16, 2)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 1563956206, 'gpio_sdir': 4056721282}} != source {'table': 'gpio_chip.set', 'trace': [('W', 20, 2)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 1563956206, 'gpio_sdir': 4056721282}}"
+      ]
+    },
+    "shadow_state_not_updated": {
+      "caught": true,
+      "errors": [
+        "call#3 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 2, 51622)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 0, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.set', 'trace': [('W', 2, 51622)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51622, 'gpio_sdir': 5102}}",
+        "call#4 gpio_chip.set Formal RIS {'table': 'gpio_chip.set', 'trace': [('W', 2, 0)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 0, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.set', 'trace': [('W', 2, 51620)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51620, 'gpio_sdir': 5102}}",
+        "call#5 gpio_chip.set_multiple Formal RIS {'table': 'gpio_chip.set_multiple', 'trace': [('W', 2, 1)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 1, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.set_multiple', 'trace': [('W', 2, 51621)], 'result': 0, 'outputs': {'mask': 3, 'bits': 1}, 'state': {'gpio_sdata': 51621, 'gpio_sdir': 5102}}",
+        "call#6 gpio_chip.direction_input Formal RIS {'table': 'gpio_chip.direction_input', 'trace': [('W', 4, 5100)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 1, 'gpio_sdir': 5100}} != source {'table': 'gpio_chip.direction_input', 'trace': [('W', 4, 5100)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51621, 'gpio_sdir': 5100}}",
+        "call#7 gpio_chip.direction_output Formal RIS {'table': 'gpio_chip.direction_output', 'trace': [('W', 2, 3), ('W', 4, 5102)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 3, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.direction_output', 'trace': [('W', 2, 51623), ('W', 4, 5102)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51623, 'gpio_sdir': 5102}}",
+        "call#8 gpio_chip.get_direction Formal RIS {'table': 'gpio_chip.get_direction', 'trace': [('R', 4, 5102)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 3, 'gpio_sdir': 5102}} != source {'table': 'gpio_chip.get_direction', 'trace': [('R', 4, 5102)], 'result': 0, 'outputs': {}, 'state': {'gpio_sdata': 51623, 'gpio_sdir': 5102}}"
+      ]
+    }
+  },
+  "mutations_caught": 6,
+  "schema": 1,
+  "source": "linux/drivers/gpio/gpio-mmio.c"
+}

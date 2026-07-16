@@ -7,15 +7,15 @@
     "gpio-ftgpio010": {
       "call_coverage": "7/7",
       "module_coverage": "6/6",
-      "op_coverage": "16/16",
+      "op_coverage": "13/13",
       "probe": true,
-      "register_coverage": "7/7",
+      "register_coverage": "8/8",
       "trace_oracle": "TRACE_MATCH_OK"
     }
   },
-  "generated_at": "2026-07-16T10:00:10.920312+00:00",
+  "generated_at": "2026-07-16T14:23:13.960783+00:00",
   "kernel_release": "7.1.0-rc7-gacb7500801e9",
   "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-  "reharness_commit": "a4531457962f5c600f9d2ebe5fcbaf0a6f6b8ffd",
+  "reharness_commit": "b12809e4d701b7fffdac93572ac4e813a882555e",
   "schema": 1
 }

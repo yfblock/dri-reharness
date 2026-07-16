@@ -13,8 +13,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "b79f0c34f98d47e6af3dd69bc28aa6fcb94a2b65b84c949a0d18d654fa22022d",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "d6bd28d0e96bf4955d789319cc9b38d41d367bbaa9c19a67b940af289149aced",
+        "argument_count": 34,
+        "arguments_sha256": "f8b7b71b096bcd14473ebc37412270fb7630b3d77017582b8ba86d0ce7b77d28",
         "directory": "output/zero-shot-contexts/build/arm-v7",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -35,8 +35,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "37785e82334dd08948f005a5469da3943bb7e21e5d0d6c9d38e4702cbb8cdc7b",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "f17d0634490efb965f187e1c756a7c81ba5307317e90c159d773fc45a2fea111",
+        "argument_count": 34,
+        "arguments_sha256": "abc9a4da43d096f055064c43bc7944ff27d32562e87d78b4e2e6d1179b653bdf",
         "directory": "output/zero-shot-contexts/build/arm-moxart",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -57,8 +57,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "074d0c54db45ba023667ac838fd3ed0f476922fe4d9bb15433c713e931e396ed",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "712fa6b20a83e8e55f3b89a6561fdbe31a42662fc8a85a3417a8a8b9c90efd58",
+        "argument_count": 34,
+        "arguments_sha256": "008c1df9e737bf437f2a159e1a40c967edc5dbd4dbdcd3ea4659d2de94232c00",
         "directory": "output/zero-shot-contexts/build/arm-v4t",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -101,8 +101,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "52e6b0287d45705060589ab25002e88bc4016ba9ca900087f3b6ada5ad720e0a",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "ca8a01b32db79cf9ecd07ab8e47bfae3ba9596f4ad409e7cf3a79de351c2aac9",
+        "argument_count": 34,
+        "arguments_sha256": "58fae198b33e6596f8baea73dcfb3db7f3b623ab200fbb0e0e6a90d246e59fad",
         "directory": "output/zero-shot-contexts/build/arm-v4t",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -123,8 +123,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "1f388796f77f36dca559117a46d342c243ea19d1479d708dc11e5a966e44f190",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "ec52278780706400ef8376f4d2444b086b49a5daacfea7fc0e4d0d2416305e9e",
+        "argument_count": 34,
+        "arguments_sha256": "8604694687d2bd9b553439a0f207004721a2276d334c9d501bd07f1243b43553",
         "directory": "output/zero-shot-contexts/build/arm-v7",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -167,8 +167,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "dbbeb1e2cb823d902c2e25e1ef1271355c442e172e3d16a761587e92d07c7305",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "e5b908655e49ea3a5fbce8bdbaf9a3c5a2f1429b0084c3daeb74cf5e6e533764",
+        "argument_count": 34,
+        "arguments_sha256": "3892a95dfcfe31a495de97dbe5574fcaf943826a9e3d6eccd8540228546e23aa",
         "directory": "output/zero-shot-contexts/build/arm-v7",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -189,8 +189,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "ef6180b11c9f25375af02ae507ced50c5607bb2dbd7f2a1ef2c840c19dd1439b",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "5b4bbd85f45be30e84d6557c2ca780b0122ce2ee77f9e954732edc47df2c58b6",
+        "argument_count": 34,
+        "arguments_sha256": "34abb4f50d34a95456c9a1354bb9dd2866b1342d73dbc9e88514eb2d21538801",
         "directory": "output/zero-shot-contexts/build/arm-dove",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -211,8 +211,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "cfc5990331ccde7b5e7359b6461602bd4f400e38fd14308d5e24b5bab9619127",
       "resolved_context": {
-        "argument_count": 33,
-        "arguments_sha256": "f8d62bab68ae78e811916ab85857603fca881c92e123c7d9a4486512b91b995f",
+        "argument_count": 34,
+        "arguments_sha256": "358fc61a4abf9b1645ccc8df1dd332570ee65a1b3930ca2411e301f749572ea1",
         "directory": "output/zero-shot-contexts/build/arm-v5",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -233,8 +233,8 @@
       "profile_kind": "native-architecture-defconfig",
       "raw_command_sha256": "5f6624dc90288a494bf1795f92b16371fb0c28cd466b07fc6d184101cb19619a",
       "resolved_context": {
-        "argument_count": 35,
-        "arguments_sha256": "42645910d21aa7c4f5b681977d266210e7bd0a94393012fbad992c91ac9a6e8b",
+        "argument_count": 36,
+        "arguments_sha256": "8ef2d55c963f4349acf09e0572ffbc708069bd85f24af769fbd9e9069f9019f1",
         "directory": "output/zero-shot-contexts/build/powerpc-wii",
         "origin": "compile-commands",
         "provenance": "output/zero-shot-contexts/compile_commands.json",
@@ -269,11 +269,11 @@
   ],
   "environment": {
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "a4531457962f5c600f9d2ebe5fcbaf0a6f6b8ffd"
+    "reharness_commit": "b12809e4d701b7fffdac93572ac4e813a882555e"
   },
   "exact_contexts": 12,
   "expected_contexts": 12,
-  "generated_at": "2026-07-16T09:53:48.234593+00:00",
+  "generated_at": "2026-07-16T14:16:37.213533+00:00",
   "guard": {
     "cases": 12,
     "first_run": "gpio-altera",

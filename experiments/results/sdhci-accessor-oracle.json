@@ -1,0 +1,42 @@
+{
+  "cases": {
+    "dove": {
+      "contract_passed": true,
+      "contract_required": false,
+      "errors": [],
+      "operations": 0,
+      "portable": false,
+      "source": "linux/drivers/mmc/host/sdhci-dove.c"
+    },
+    "hlwd": {
+      "contract_passed": false,
+      "contract_required": true,
+      "errors": [
+        "source does not bind host through sdhci_pltfm_init",
+        "source platform data may install private SDHCI accessors",
+        "unknown SDHCI accessor sdhci_be32bs_writel",
+        "unknown SDHCI accessor sdhci_be32bs_writew",
+        "unknown SDHCI accessor sdhci_be32bs_writeb"
+      ],
+      "operations": 3,
+      "portable": false,
+      "source": "linux/drivers/mmc/host/sdhci-of-hlwd.c"
+    },
+    "npcm": {
+      "contract_passed": true,
+      "contract_required": true,
+      "errors": [],
+      "operations": 1,
+      "portable": true,
+      "source": "linux/drivers/mmc/host/sdhci-npcm.c"
+    }
+  },
+  "mutation": {
+    "caught": true,
+    "errors": [
+      "sdhci_readl lowered as ('Read', 'B2'), expected ('Read', 'B4')"
+    ],
+    "name": "npcm_accessor_width"
+  },
+  "schema": 1
+}
