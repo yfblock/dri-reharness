@@ -2,7 +2,7 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-`paper-artifact-v8` 保留此前论文基线。当前 C11 结果 JSON 中的 `reharness_commit` 固定为 `15a87954461ed7652f3271ead47f2b1119797ba8`，表示 subsystem summaries 与精确 callback trace oracle 的实现提交；随后纳入结果、日志和论文 PDF 的提交只封存制品，不改变该实现 SHA。
+`paper-artifact-v8` 保留此前论文基线。当前 C12 结果 JSON 中的 `reharness_commit` 固定为 `a4531457962f5c600f9d2ebe5fcbaf0a6f6b8ffd`，表示 portable GPIO callback runner、值级 oracle 与 width/endianness lowering 的实现提交；随后纳入结果、日志和论文 PDF 的提交只封存制品，不改变该实现 SHA。
 
 ## 环境
 
@@ -90,7 +90,7 @@ python3 verification/run_matrix.py
 当前冻结聚合值：
 
 ~~~text
-drivers=19 ops=469 symbolic=356 fixed=74 computed=25
+drivers=19 ops=470 symbolic=357 fixed=74 computed=25
 rmw=88 conditions=117 registers=157 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
 strict_ready: harness=6 baremetal=6 linux=7

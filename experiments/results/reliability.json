@@ -20808,13 +20808,14 @@
             "ris_ops": [
               "op_17",
               "op_18",
-              "op_24",
+              "op_19",
               "op_25",
               "op_26",
               "op_27",
               "op_28",
               "op_29",
-              "op_30"
+              "op_30",
+              "op_31"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:236:8:6409:gpio_generic_chip_init",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20835,7 +20836,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_19"
+              "op_20"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:288:23:7796:ioread32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20855,7 +20856,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_20"
+              "op_21"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:294:3:7942:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20875,7 +20876,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_21"
+              "op_22"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:296:3:8020:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20895,7 +20896,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_22"
+              "op_23"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:303:2:8140:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20915,7 +20916,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_23"
+              "op_24"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:312:2:8341:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20940,11 +20941,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 30,
-        "max_site_fanout": 9,
-        "ops_with_evidence": 30,
+        "leaf_register_ops": 31,
+        "max_site_fanout": 10,
+        "ops_with_evidence": 31,
         "unique_evidence_sites": 22,
-        "unique_op_ids": 30
+        "unique_op_ids": 31
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -22793,8 +22794,8 @@
             "module": "cdns_gpio_probe",
             "pct_symbolic": 1.0,
             "rmw": 1,
-            "symbolic": 8,
-            "total_ops": 8,
+            "symbolic": 9,
+            "total_ops": 9,
             "unknown_value": 0,
             "unsafe_computed": 0
           },
@@ -22923,7 +22924,7 @@
         "register_map": 12,
         "reliability": {
           "Conservative": 8,
-          "Exact": 22,
+          "Exact": 23,
           "Unknown": 0,
           "Unsupported": 0
         },
@@ -22934,8 +22935,8 @@
           "unmodeled": [],
           "unmodeled_callbacks": 0
         },
-        "symbolic": 30,
-        "total_ops": 30,
+        "symbolic": 31,
+        "total_ops": 31,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -43413,7 +43414,7 @@
       ]
     }
   ],
-  "generated_at": "2026-07-16T06:45:45.621626+00:00",
-  "reharness_commit": "15a87954461ed7652f3271ead47f2b1119797ba8",
+  "generated_at": "2026-07-16T09:59:20.479608+00:00",
+  "reharness_commit": "a4531457962f5c600f9d2ebe5fcbaf0a6f6b8ffd",
   "schema": 1
 }

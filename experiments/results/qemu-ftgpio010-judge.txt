@@ -1,35 +1,35 @@
 === QEMU run: module=gpio_ftgpio010 bus=platform timeout=90s ===
 === QEMU 退出码: 0 ===
-[    1.303179] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303227] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303276] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303324] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303373] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303421] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303476] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303524] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303572] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303621] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303689] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303737] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303785] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303834] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303882] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303932] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.303982] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.304035] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.305274] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
-[    1.652469] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.653375] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_output
-[    1.653964] [rhfn] ftgpio_gpio_probe__gpio_generic_get_multiple
-[    1.654438] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
-[    1.654634] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
-[    1.654876] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.315305] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315356] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315409] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315461] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315512] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315564] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315615] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315666] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315725] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315776] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315843] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315895] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315947] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.315998] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.316049] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.316100] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.316152] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.316203] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.317466] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
+[    1.655281] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.656188] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_output
+[    1.656707] [rhfn] ftgpio_gpio_probe__gpio_generic_get_multiple
+[    1.657199] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
+[    1.657381] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
+[    1.657580] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
 GPIO_TRACE_DONE
 EXERCISER_RC=0
 === rmmod gpio_ftgpio010 ===
 === QEMU_RUN_DONE ===
-[    1.905619] Call Trace:
+[    1.901073] Call Trace:
 
 === 成功判定 ===
   done=1 probe=11 real_oops=0
