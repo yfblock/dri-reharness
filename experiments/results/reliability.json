@@ -1,10 +1,10 @@
 {
   "aggregate": {
     "drivers": 19,
-    "source_accesses": 368,
+    "source_accesses": 385,
     "strict_reliable": 8,
     "unsupported_accesses": 10,
-    "unsupported_control": 2
+    "unsupported_control": 6
   },
   "alias_mode": "off",
   "drivers": [
@@ -7133,6 +7133,12 @@
           "Unsupported": 0
         },
         "rmw": 5,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 19,
         "total_ops": 20,
         "unknown_value": 0,
@@ -10825,6 +10831,12 @@
           "Unsupported": 0
         },
         "rmw": 4,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 24,
         "total_ops": 26,
         "unknown_value": 0,
@@ -12795,6 +12807,12 @@
           "Unsupported": 0
         },
         "rmw": 0,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 3,
         "total_ops": 3,
         "unknown_value": 0,
@@ -13973,6 +13991,12 @@
           "Unsupported": 0
         },
         "rmw": 3,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 9,
         "total_ops": 15,
         "unknown_value": 0,
@@ -15986,6 +16010,12 @@
           "Unsupported": 0
         },
         "rmw": 2,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 4,
         "total_ops": 18,
         "unknown_value": 0,
@@ -17197,6 +17227,12 @@
           "Unsupported": 0
         },
         "rmw": 6,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 0,
         "total_ops": 25,
         "unknown_value": 0,
@@ -18898,6 +18934,12 @@
           "Unsupported": 0
         },
         "rmw": 11,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 28,
         "total_ops": 33,
         "unknown_value": 0,
@@ -20347,6 +20389,12 @@
           "Unsupported": 0
         },
         "rmw": 0,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 3,
         "total_ops": 5,
         "unknown_value": 0,
@@ -20420,7 +20468,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 21,
+        "emitted": 22,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -20747,6 +20795,36 @@
           },
           {
             "access_domain": "mmio",
+            "access_kind": "summary",
+            "ast_kind": "CALL_EXPR",
+            "callee": "gpio_generic_chip_init",
+            "column": 8,
+            "effective_callee": "gpio_generic_chip_init",
+            "function": "cdns_gpio_probe",
+            "line": 236,
+            "offset": 6409,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_17",
+              "op_18",
+              "op_24",
+              "op_25",
+              "op_26",
+              "op_27",
+              "op_28",
+              "op_29",
+              "op_30"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:236:8:6409:gpio_generic_chip_init",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
+            "status": "emitted",
+            "subsystem_summary": "gpio_generic_chip",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c::cdns_gpio_probe",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
             "access_kind": "read",
             "ast_kind": "CALL_EXPR",
             "callee": "ioread32",
@@ -20757,7 +20835,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_17"
+              "op_19"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:288:23:7796:ioread32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20777,7 +20855,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_18"
+              "op_20"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:294:3:7942:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20797,7 +20875,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_19"
+              "op_21"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:296:3:8020:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20817,7 +20895,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_20"
+              "op_22"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:303:2:8140:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20837,7 +20915,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_21"
+              "op_23"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c:312:2:8341:iowrite32",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-cadence.c",
@@ -20846,7 +20924,7 @@
             "width_bytes": 4
           }
         ],
-        "source_accesses": 21,
+        "source_accesses": 22,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -20862,11 +20940,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 21,
-        "max_site_fanout": 1,
-        "ops_with_evidence": 21,
-        "unique_evidence_sites": 21,
-        "unique_op_ids": 21
+        "leaf_register_ops": 30,
+        "max_site_fanout": 9,
+        "ops_with_evidence": 30,
+        "unique_evidence_sites": 22,
+        "unique_op_ids": 30
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -22601,10 +22679,10 @@
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 21,
+          "emitted": 22,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 21,
+          "source_accesses": 22,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -22715,8 +22793,8 @@
             "module": "cdns_gpio_probe",
             "pct_symbolic": 1.0,
             "rmw": 1,
-            "symbolic": 6,
-            "total_ops": 6,
+            "symbolic": 8,
+            "total_ops": 8,
             "unknown_value": 0,
             "unsafe_computed": 0
           },
@@ -22727,6 +22805,104 @@
             "fixed": 0,
             "loop": 0,
             "module": "cdns_gpio_remove",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_get",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_get_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_set",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_set_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_direction_input",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_direction_output",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "cdns_gpio_probe__gpio_generic_get_direction",
             "pct_symbolic": 1.0,
             "rmw": 0,
             "symbolic": 1,
@@ -22744,16 +22920,22 @@
         },
         "pct_non_top_value": 1.0,
         "pct_symbolic": 1.0,
-        "register_map": 10,
+        "register_map": 12,
         "reliability": {
           "Conservative": 8,
-          "Exact": 13,
+          "Exact": 22,
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 4,
-        "symbolic": 21,
-        "total_ops": 21,
+        "rmw": 8,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 7,
+          "synthetic_functions": 7,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
+        "symbolic": 30,
+        "total_ops": 30,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -22864,10 +23046,12 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": true,
-        "blockers": [],
+        "blockers": [
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
@@ -22894,7 +23078,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 22,
+        "emitted": 23,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -23261,6 +23445,37 @@
           },
           {
             "access_domain": "mmio",
+            "access_kind": "summary",
+            "ast_kind": "CALL_EXPR",
+            "callee": "gpio_generic_chip_init",
+            "column": 8,
+            "effective_callee": "gpio_generic_chip_init",
+            "function": "ftgpio_gpio_probe",
+            "line": 276,
+            "offset": 7361,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_19",
+              "op_20",
+              "op_25",
+              "op_26",
+              "op_27",
+              "op_28",
+              "op_29",
+              "op_30",
+              "op_31",
+              "op_32"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c",
+            "status": "emitted",
+            "subsystem_summary": "gpio_generic_chip",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c::ftgpio_gpio_probe",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
             "access_kind": "write",
             "ast_kind": "CALL_EXPR",
             "callee": "writel",
@@ -23271,7 +23486,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_19"
+              "op_21"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c:304:2:8183:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c",
@@ -23291,7 +23506,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_20"
+              "op_22"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c:305:2:8220:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c",
@@ -23311,7 +23526,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_21"
+              "op_23"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c:306:2:8259:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c",
@@ -23331,7 +23546,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_22"
+              "op_24"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c:309:2:8332:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-ftgpio010.c",
@@ -23340,7 +23555,7 @@
             "width_bytes": 4
           }
         ],
-        "source_accesses": 22,
+        "source_accesses": 23,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -23356,11 +23571,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 22,
-        "max_site_fanout": 1,
-        "ops_with_evidence": 22,
-        "unique_evidence_sites": 22,
-        "unique_op_ids": 22
+        "leaf_register_ops": 32,
+        "max_site_fanout": 10,
+        "ops_with_evidence": 32,
+        "unique_evidence_sites": 23,
+        "unique_op_ids": 32
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -24226,10 +24441,10 @@
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 22,
+          "emitted": 23,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 22,
+          "source_accesses": 23,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -24340,8 +24555,106 @@
             "module": "ftgpio_gpio_probe",
             "pct_symbolic": 1.0,
             "rmw": 0,
-            "symbolic": 4,
-            "total_ops": 4,
+            "symbolic": 6,
+            "total_ops": 6,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_get",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_set",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 2,
+            "total_ops": 2,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_direction_input",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_direction_output",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ftgpio_gpio_probe__gpio_generic_get_direction",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
             "unknown_value": 0,
             "unsafe_computed": 0
           }
@@ -24355,16 +24668,22 @@
         },
         "pct_non_top_value": 1.0,
         "pct_symbolic": 1.0,
-        "register_map": 9,
+        "register_map": 13,
         "reliability": {
           "Conservative": 5,
-          "Exact": 17,
+          "Exact": 27,
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 7,
-        "symbolic": 22,
-        "total_ops": 22,
+        "rmw": 10,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 7,
+          "synthetic_functions": 7,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
+        "symbolic": 32,
+        "total_ops": 32,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -24402,10 +24721,12 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": true,
-        "blockers": [],
+        "blockers": [
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
@@ -24432,7 +24753,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 7,
+        "emitted": 8,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -24576,9 +24897,39 @@
             "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-idt3243x.c::idt_gpio_irq_init_hw",
             "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "summary",
+            "ast_kind": "CALL_EXPR",
+            "callee": "gpio_generic_chip_init",
+            "column": 8,
+            "effective_callee": "gpio_generic_chip_init",
+            "function": "idt_gpio_probe",
+            "line": 157,
+            "offset": 3966,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_10",
+              "op_11",
+              "op_12",
+              "op_13",
+              "op_14",
+              "op_15",
+              "op_16",
+              "op_8",
+              "op_9"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-idt3243x.c:157:8:3966:gpio_generic_chip_init",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-idt3243x.c",
+            "status": "emitted",
+            "subsystem_summary": "gpio_generic_chip",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-idt3243x.c::idt_gpio_probe",
+            "width_bytes": 4
           }
         ],
-        "source_accesses": 7,
+        "source_accesses": 8,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -24594,11 +24945,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 7,
-        "max_site_fanout": 1,
-        "ops_with_evidence": 7,
-        "unique_evidence_sites": 7,
-        "unique_op_ids": 7
+        "leaf_register_ops": 16,
+        "max_site_fanout": 9,
+        "ops_with_evidence": 16,
+        "unique_evidence_sites": 8,
+        "unique_op_ids": 16
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -24901,10 +25252,10 @@
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 7,
+          "emitted": 8,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 7,
+          "source_accesses": 8,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -25005,6 +25356,118 @@
             "total_ops": 1,
             "unknown_value": 0,
             "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 2,
+            "total_ops": 2,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_get",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_get_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_set",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_set_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_direction_input",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_direction_output",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "idt_gpio_probe__gpio_generic_get_direction",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
           }
         ],
         "path_validation": {
@@ -25016,16 +25479,22 @@
         },
         "pct_non_top_value": 1.0,
         "pct_symbolic": 1.0,
-        "register_map": 4,
+        "register_map": 6,
         "reliability": {
           "Conservative": 0,
-          "Exact": 7,
+          "Exact": 16,
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 1,
-        "symbolic": 7,
-        "total_ops": 7,
+        "rmw": 5,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 7,
+          "synthetic_functions": 7,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
+        "symbolic": 16,
+        "total_ops": 16,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -25039,11 +25508,13 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": true,
-        "blockers": [],
-        "device_spec_quality": 0.75,
+        "blockers": [
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 0.875,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
@@ -25513,6 +25984,12 @@
           "Unsupported": 0
         },
         "rmw": 6,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 0,
         "total_ops": 13,
         "unknown_value": 0,
@@ -26461,6 +26938,12 @@
           "Unsupported": 0
         },
         "rmw": 7,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 27,
         "total_ops": 31,
         "unknown_value": 0,
@@ -26524,7 +27007,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 7,
+        "emitted": 8,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -26621,7 +27104,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_6"
+              "op_5"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c:138:2:2769:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
@@ -26641,7 +27124,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_7"
+              "op_6"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c:139:2:2811:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
@@ -26661,16 +27144,46 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_5"
+              "op_7"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c:209:3:4690:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
             "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c::sdv_gpio_probe",
             "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "summary",
+            "ast_kind": "CALL_EXPR",
+            "callee": "gpio_generic_chip_init",
+            "column": 8,
+            "effective_callee": "gpio_generic_chip_init",
+            "function": "sdv_gpio_probe",
+            "line": 219,
+            "offset": 4940,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_10",
+              "op_11",
+              "op_12",
+              "op_13",
+              "op_14",
+              "op_15",
+              "op_16",
+              "op_8",
+              "op_9"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c:219:8:4940:gpio_generic_chip_init",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
+            "status": "emitted",
+            "subsystem_summary": "gpio_generic_chip",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c::sdv_gpio_probe",
+            "width_bytes": 4
           }
         ],
-        "source_accesses": 7,
+        "source_accesses": 8,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -26686,11 +27199,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 7,
-        "max_site_fanout": 1,
-        "ops_with_evidence": 7,
-        "unique_evidence_sites": 7,
-        "unique_op_ids": 7
+        "leaf_register_ops": 16,
+        "max_site_fanout": 9,
+        "ops_with_evidence": 16,
+        "unique_evidence_sites": 8,
+        "unique_op_ids": 16
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -27499,10 +28012,10 @@
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 7,
+          "emitted": 8,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 7,
+          "source_accesses": 8,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -27557,8 +28070,106 @@
             "module": "sdv_gpio_probe",
             "pct_symbolic": 1.0,
             "rmw": 0,
-            "symbolic": 3,
-            "total_ops": 3,
+            "symbolic": 5,
+            "total_ops": 5,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_get",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_get_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_set",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_set_multiple",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_direction_input",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_direction_output",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 1,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "sdv_gpio_probe__gpio_generic_get_direction",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 1,
+            "total_ops": 1,
             "unknown_value": 0,
             "unsafe_computed": 0
           }
@@ -27571,17 +28182,23 @@
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
-        "pct_symbolic": 0.714,
-        "register_map": 3,
+        "pct_symbolic": 0.875,
+        "register_map": 6,
         "reliability": {
           "Conservative": 2,
-          "Exact": 5,
+          "Exact": 14,
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 1,
-        "symbolic": 5,
-        "total_ops": 7,
+        "rmw": 5,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 7,
+          "synthetic_functions": 7,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
+        "symbolic": 14,
+        "total_ops": 16,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -27619,15 +28236,17 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": true,
-        "blockers": [],
-        "device_spec_quality": 0.688,
+        "blockers": [
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 0.875,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.893
+        "ris_quality": 0.925
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
       "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109",
@@ -28574,6 +29193,12 @@
           "Unsupported": 0
         },
         "rmw": 6,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 30,
         "total_ops": 32,
         "unknown_value": 0,
@@ -28617,7 +29242,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 15,
+        "emitted": 17,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -28636,8 +29261,8 @@
             "ris_ops": [
               "op_13",
               "op_15",
-              "op_18",
-              "op_22"
+              "op_20",
+              "op_24"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:58:2:1223:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -28659,8 +29284,8 @@
             "ris_ops": [
               "op_14",
               "op_16",
-              "op_19",
-              "op_23"
+              "op_21",
+              "op_25"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:58:10:1231:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -28910,6 +29535,50 @@
           },
           {
             "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writel",
+            "column": 2,
+            "effective_callee": "sdhci_writel",
+            "function": "esdhc_mcf_reset",
+            "line": 201,
+            "offset": 4667,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_17"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:201:2:4667:sdhci_writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c::esdhc_mcf_reset",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writel",
+            "column": 2,
+            "effective_callee": "sdhci_writel",
+            "function": "esdhc_mcf_reset",
+            "line": 202,
+            "offset": 4717,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_18"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:202:2:4717:sdhci_writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c::esdhc_mcf_reset",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
             "access_kind": "read",
             "ast_kind": "CALL_EXPR",
             "callee": "readl",
@@ -28920,7 +29589,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_17"
+              "op_19"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:248:9:5901:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -28929,7 +29598,7 @@
             "width_bytes": 4
           }
         ],
-        "source_accesses": 15,
+        "source_accesses": 17,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -28945,11 +29614,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 21,
+        "leaf_register_ops": 23,
         "max_site_fanout": 4,
-        "ops_with_evidence": 21,
-        "unique_evidence_sites": 15,
-        "unique_op_ids": 21
+        "ops_with_evidence": 23,
+        "unique_evidence_sites": 17,
+        "unique_op_ids": 23
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -31421,10 +32090,10 @@
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 15,
+          "emitted": 17,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 15,
+          "source_accesses": 17,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -31547,10 +32216,10 @@
             "fixed": 2,
             "loop": 0,
             "module": "esdhc_mcf_reset",
-            "pct_symbolic": 0.0,
+            "pct_symbolic": 0.5,
             "rmw": 0,
-            "symbolic": 0,
-            "total_ops": 2,
+            "symbolic": 2,
+            "total_ops": 4,
             "unknown_value": 0,
             "unsafe_computed": 0
           },
@@ -31591,17 +32260,23 @@
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
-        "pct_symbolic": 0.19,
-        "register_map": 3,
+        "pct_symbolic": 0.261,
+        "register_map": 5,
         "reliability": {
           "Conservative": 12,
-          "Exact": 9,
+          "Exact": 11,
           "Unknown": 0,
           "Unsupported": 0
         },
         "rmw": 0,
-        "symbolic": 4,
-        "total_ops": 23,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
+        "symbolic": 6,
+        "total_ops": 25,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -31705,14 +32380,14 @@
         "backend_linux_ready": false,
         "blockers": [
           "1 conservative loop summary/summaries require validation",
-          "missing role for: esdhc_mcf_writeb_be, esdhc_mcf_writew_be, esdhc_mcf_writel_be, esdhc_mcf_readb_be, esdhc_mcf_readw_be, esdhc_mcf_readl_be, esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width",
-          "callback entry without table binding: esdhc_mcf_writeb_be, esdhc_mcf_writew_be, esdhc_mcf_writel_be, esdhc_mcf_readb_be, esdhc_mcf_readw_be, esdhc_mcf_readl_be, esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width"
+          "missing role for: esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width",
+          "callback entry without table binding: esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width"
         ],
-        "device_spec_quality": 0.688,
+        "device_spec_quality": 0.812,
         "facts_quality": 1.0,
-        "function_spec_quality": 0.1,
-        "llm_synthesis_ready": false,
-        "ris_quality": 0.838
+        "function_spec_quality": 0.7,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.852
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
       "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396",
@@ -31733,7 +32408,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 13,
+        "emitted": 23,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -31779,6 +32454,226 @@
             "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_force_card_detect",
             "width_bytes": 1
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "read",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_readw",
+            "column": 8,
+            "effective_callee": "sdhci_readw",
+            "function": "sdhci_at91_set_clock",
+            "line": 76,
+            "offset": 1957,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_1"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:76:8:1957:sdhci_readw",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
+            "width_bytes": 2
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writew",
+            "column": 2,
+            "effective_callee": "sdhci_writew",
+            "function": "sdhci_at91_set_clock",
+            "line": 78,
+            "offset": 2026,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_2"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:78:2:2026:sdhci_writew",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
+            "width_bytes": 2
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writew",
+            "column": 2,
+            "effective_callee": "sdhci_writew",
+            "function": "sdhci_at91_set_clock",
+            "line": 86,
+            "offset": 2193,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_3"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:86:2:2193:sdhci_writew",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
+            "width_bytes": 2
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "read",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_readw",
+            "column": 6,
+            "effective_callee": "sdhci_readw",
+            "function": "sdhci_at91_set_clock",
+            "line": 89,
+            "offset": 2267,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_4"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:89:6:2267:sdhci_readw",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
+            "width_bytes": 2
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writew",
+            "column": 2,
+            "effective_callee": "sdhci_writew",
+            "function": "sdhci_at91_set_clock",
+            "line": 97,
+            "offset": 2524,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_5"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:97:2:2524:sdhci_writew",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
+            "width_bytes": 2
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "read",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_readb",
+            "column": 10,
+            "effective_callee": "sdhci_readb",
+            "function": "sdhci_at91_set_uhs_signaling",
+            "line": 106,
+            "offset": 2727,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_6"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:106:10:2727:sdhci_readb",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_uhs_signaling",
+            "width_bytes": 1
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writeb",
+            "column": 3,
+            "effective_callee": "sdhci_writeb",
+            "function": "sdhci_at91_set_uhs_signaling",
+            "line": 108,
+            "offset": 2786,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_7"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:108:3:2786:sdhci_writeb",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_uhs_signaling",
+            "width_bytes": 1
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "read",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_readl",
+            "column": 15,
+            "effective_callee": "sdhci_readl",
+            "function": "sdhci_at91_reset",
+            "line": 126,
+            "offset": 3301,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_10"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:126:15:3301:sdhci_readl",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_writel",
+            "column": 3,
+            "effective_callee": "sdhci_writel",
+            "function": "sdhci_at91_reset",
+            "line": 128,
+            "offset": 3336,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_11"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:128:3:3336:sdhci_writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "read",
+            "ast_kind": "CALL_EXPR",
+            "callee": "sdhci_readl",
+            "column": 7,
+            "effective_callee": "sdhci_readl",
+            "function": "sdhci_at91_reset",
+            "line": 131,
+            "offset": 3430,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_12"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:131:7:3430:sdhci_readl",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "status": "emitted",
+            "subsystem_summary": "sdhci_accessor",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset",
+            "width_bytes": 4
           },
           {
             "access_domain": "mmio",
@@ -32012,7 +32907,7 @@
             "width_bytes": 2
           }
         ],
-        "source_accesses": 13,
+        "source_accesses": 23,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -32029,9 +32924,9 @@
       "audit": {
         "duplicate_op_ids": [],
         "leaf_register_ops": 36,
-        "max_site_fanout": 3,
+        "max_site_fanout": 2,
         "ops_with_evidence": 36,
-        "unique_evidence_sites": 19,
+        "unique_evidence_sites": 23,
         "unique_op_ids": 36
       },
       "claim_scope": {
@@ -34768,7 +35663,7 @@
           "representation": "source-statement-blocks",
           "schema": 1
         },
-        "complete": true,
+        "complete": false,
         "modeled_early_returns": 8,
         "modeled_forward_gotos": 3,
         "modeled_sites": [
@@ -34812,17 +35707,70 @@
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_probe"
           }
         ],
-        "sites": [],
-        "unsupported": 0
+        "sites": [
+          {
+            "column": 6,
+            "function": "sdhci_at91_set_clock",
+            "kind": "break",
+            "line": 89,
+            "offset": 2267,
+            "reason": "loop break requires CFG fixpoint semantics",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:89:6:2267:break",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "source_text": "read_poll_timeout(sdhci_readw, clk, (clk & SDHCI_CLOCK_INT_STABLE),\n\t\t\t      1000, 20000, false, host, SDHCI_CLOCK_CONTROL)",
+            "status": "unsupported",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock"
+          },
+          {
+            "column": 6,
+            "function": "sdhci_at91_set_clock",
+            "kind": "break",
+            "line": 89,
+            "offset": 2267,
+            "reason": "loop break requires CFG fixpoint semantics",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:89:6:2267:break",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "source_text": "read_poll_timeout(sdhci_readw, clk, (clk & SDHCI_CLOCK_INT_STABLE),\n\t\t\t      1000, 20000, false, host, SDHCI_CLOCK_CONTROL)",
+            "status": "unsupported",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock"
+          },
+          {
+            "column": 7,
+            "function": "sdhci_at91_reset",
+            "kind": "break",
+            "line": 131,
+            "offset": 3430,
+            "reason": "loop break requires CFG fixpoint semantics",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:131:7:3430:break",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "source_text": "read_poll_timeout(sdhci_readl, tmp, !(tmp & SDMMC_CALCR_EN),\n\t\t\t\t      10, 20000, false, host, SDMMC_CALCR)",
+            "status": "unsupported",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset"
+          },
+          {
+            "column": 7,
+            "function": "sdhci_at91_reset",
+            "kind": "break",
+            "line": 131,
+            "offset": 3430,
+            "reason": "loop break requires CFG fixpoint semantics",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c:131:7:3430:break",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
+            "source_text": "read_poll_timeout(sdhci_readl, tmp, !(tmp & SDMMC_CALCR_EN),\n\t\t\t\t      10, 20000, false, host, SDMMC_CALCR)",
+            "status": "unsupported",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset"
+          }
+        ],
+        "unsupported": 4
       },
       "driver": "sdhci-of-at91",
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 13,
+          "emitted": 23,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 13,
+          "source_accesses": 23,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -34833,9 +35781,9 @@
         "conservative_loop": 1,
         "control_accounting": {
           "assumed_framework_error_gotos": 0,
-          "complete": true,
+          "complete": false,
           "modeled_early_returns": 8,
-          "unsupported": 0
+          "unsupported": 4
         },
         "fixed": 2,
         "loop": 1,
@@ -34848,7 +35796,7 @@
             "loop": 1,
             "module": "sdhci_at91_set_clock",
             "pct_symbolic": 0.8,
-            "rmw": 0,
+            "rmw": 3,
             "symbolic": 4,
             "total_ops": 5,
             "unknown_value": 0,
@@ -34862,7 +35810,7 @@
             "loop": 0,
             "module": "sdhci_at91_set_uhs_signaling",
             "pct_symbolic": 1.0,
-            "rmw": 0,
+            "rmw": 1,
             "symbolic": 2,
             "total_ops": 2,
             "unknown_value": 0,
@@ -34927,7 +35875,28 @@
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 6,
+        "rmw": 10,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [
+            {
+              "callee": "sdhci_set_bus_width",
+              "field": "set_bus_width",
+              "line": 137,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_at91_sama5d2_ops"
+            },
+            {
+              "callee": "sdhci_set_power_and_bus_voltage",
+              "field": "set_power",
+              "line": 141,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_at91_sama5d2_ops"
+            }
+          ],
+          "unmodeled_callbacks": 2
+        },
         "symbolic": 34,
         "total_ops": 36,
         "unknown_value": 0,
@@ -35043,6 +36012,8 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "4 unsupported control-flow transfer(s)",
+          "2 subsystem library callback(s) lack semantic summary",
           "1 conservative loop summary/summaries require validation",
           "missing role for: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling",
           "callback entry without table binding: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling, sdhci_at91_runtime_resume"
@@ -35072,7 +36043,7 @@
     {
       "access_accounting": {
         "complete": true,
-        "emitted": 59,
+        "emitted": 60,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -35798,6 +36769,28 @@
             "width_bytes": 4
           },
           {
+            "access_domain": "virtqueue",
+            "access_kind": "read",
+            "ast_kind": "CALL_EXPR",
+            "callee": "virtqueue_get_vring_size",
+            "column": 9,
+            "effective_callee": "virtqueue_get_vring_size",
+            "function": "vm_setup_vq",
+            "line": 391,
+            "offset": 9685,
+            "origin": "subsystem_summary",
+            "reason": null,
+            "ris_ops": [
+              "op_37"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:391:9:9685:virtqueue_get_vring_size",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
+            "status": "emitted",
+            "subsystem_summary": "virtqueue",
+            "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c::vm_setup_vq",
+            "width_bytes": 4
+          },
+          {
             "access_domain": "mmio",
             "access_kind": "write",
             "ast_kind": "CALL_EXPR",
@@ -35809,7 +36802,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_37"
+              "op_38"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:408:3:10223:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35829,7 +36822,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_38"
+              "op_39"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:409:3:10284:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35849,7 +36842,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_39"
+              "op_40"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:414:3:10400:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35869,7 +36862,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_40"
+              "op_41"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:415:3:10464:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35889,7 +36882,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_41"
+              "op_42"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:419:3:10581:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35909,7 +36902,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_42"
+              "op_43"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:420:3:10646:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35929,7 +36922,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_43"
+              "op_44"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:424:3:10763:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35949,7 +36942,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_44"
+              "op_45"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:425:3:10827:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35969,7 +36962,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_45"
+              "op_46"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:428:3:10905:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -35989,7 +36982,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_46"
+              "op_47"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:437:3:11066:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36009,7 +37002,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_47"
+              "op_48"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:439:3:11127:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36029,7 +37022,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_48"
+              "op_49"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:440:3:11180:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36049,7 +37042,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_49"
+              "op_50"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:499:2:12555:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36069,7 +37062,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_50"
+              "op_51"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:502:14:12645:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36089,7 +37082,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_51"
+              "op_52"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:503:15:12706:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36109,7 +37102,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_52"
+              "op_53"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:514:15:13014:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36129,7 +37122,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_53"
+              "op_54"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:515:16:13077:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36149,7 +37142,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_54"
+              "op_55"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:551:3:13944:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36169,7 +37162,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_55"
+              "op_56"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:594:10:14963:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36189,7 +37182,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_56"
+              "op_57"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:602:20:15218:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36209,7 +37202,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_57"
+              "op_58"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:610:27:15453:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36229,7 +37222,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_58"
+              "op_59"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:619:27:15735:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36249,7 +37242,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_59"
+              "op_60"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c:622:3:15812:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -36258,7 +37251,7 @@
             "width_bytes": 4
           }
         ],
-        "source_accesses": 59,
+        "source_accesses": 60,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
@@ -36274,11 +37267,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 59,
+        "leaf_register_ops": 60,
         "max_site_fanout": 1,
-        "ops_with_evidence": 59,
-        "unique_evidence_sites": 59,
-        "unique_op_ids": 59
+        "ops_with_evidence": 60,
+        "unique_evidence_sites": 60,
+        "unique_op_ids": 60
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -40632,10 +41625,10 @@
       "metrics": {
         "access_accounting": {
           "complete": true,
-          "emitted": 59,
+          "emitted": 60,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
-          "source_accesses": 59,
+          "source_accesses": 60,
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
@@ -40650,7 +41643,7 @@
           "modeled_early_returns": 16,
           "unsupported": 0
         },
-        "fixed": 14,
+        "fixed": 15,
         "loop": 4,
         "modules": [
           {
@@ -40825,13 +41818,13 @@
             "computed": 1,
             "cond": 19,
             "conservative_loop": 1,
-            "fixed": 1,
+            "fixed": 2,
             "loop": 1,
             "module": "vm_find_vqs",
-            "pct_symbolic": 0.875,
+            "pct_symbolic": 0.824,
             "rmw": 0,
             "symbolic": 14,
-            "total_ops": 16,
+            "total_ops": 17,
             "unknown_value": 0,
             "unsafe_computed": 1
           },
@@ -40886,17 +41879,23 @@
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
-        "pct_symbolic": 0.746,
+        "pct_symbolic": 0.733,
         "register_map": 31,
         "reliability": {
           "Conservative": 39,
           "Exact": 20,
           "Unknown": 0,
-          "Unsupported": 0
+          "Unsupported": 1
         },
         "rmw": 0,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 44,
-        "total_ops": 59,
+        "total_ops": 60,
         "unknown_value": 0,
         "unsafe_computed": 1
       },
@@ -41501,6 +42500,7 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "1 register operation(s) use unsupported access domain",
           "1 unsafe dynamic register address(es) (1 computed total)",
           "4 conservative loop summary/summaries require validation",
           "missing role for: vm_get_features, vm_finalize_features, virtio_mmio_restore",
@@ -41510,7 +42510,7 @@
         "facts_quality": 1.0,
         "function_spec_quality": 0.812,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.891
+        "ris_quality": 0.888
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
       "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5",
@@ -42346,6 +43346,12 @@
           "Unsupported": 0
         },
         "rmw": 0,
+        "subsystem_summary": {
+          "generic_backend_unvalidated": 0,
+          "synthetic_functions": 0,
+          "unmodeled": [],
+          "unmodeled_callbacks": 0
+        },
         "symbolic": 33,
         "total_ops": 33,
         "unknown_value": 0,
@@ -42407,7 +43413,7 @@
       ]
     }
   ],
-  "generated_at": "2026-07-15T18:29:13.128509+00:00",
-  "reharness_commit": "85c576862274f5062cfdf956692be20a6a20b3c4",
+  "generated_at": "2026-07-16T06:45:45.621626+00:00",
+  "reharness_commit": "15a87954461ed7652f3271ead47f2b1119797ba8",
   "schema": 1
 }

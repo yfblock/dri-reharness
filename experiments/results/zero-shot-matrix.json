@@ -1,6 +1,7 @@
 {
   "acceptance": {
     "all_cases_completed": true,
+    "all_cases_have_hardware_interactions": true,
     "all_contexts_exact": true,
     "common_semantic_blocker_found": true,
     "guard_passed": true,
@@ -10,60 +11,27 @@
     "access_accounting_strict": 12,
     "all_backends_compile": 12,
     "cases": 12,
+    "cases_with_hardware_interactions": 12,
     "exact_compile_contexts": 12,
     "pipeline_completed": 12,
     "strict_ready": {
       "all_backends": 3,
-      "any_backend": 3,
+      "any_backend": 5,
       "baremetal": 3,
       "harness": 3,
-      "linux": 3
-    }
+      "linux": 5
+    },
+    "subsystem_summarized_cases": 7
   },
   "blocker_clustering": {
     "clusters": [
       {
-        "category": "no_register_access",
+        "category": "linux_semantic_binding",
         "driver_count": 7,
         "drivers": [
+          "gpio-altera",
           "gpio-clps711x",
           "gpio-dwapb",
-          "gpio-ge",
-          "gpio-ts4800",
-          "sdhci-npcm",
-          "sdhci-of-hlwd",
-          "virtio-input"
-        ],
-        "evidence": {
-          "gpio-clps711x": [
-            "no MMIO register accesses"
-          ],
-          "gpio-dwapb": [
-            "no MMIO register accesses"
-          ],
-          "gpio-ge": [
-            "no MMIO register accesses"
-          ],
-          "gpio-ts4800": [
-            "no MMIO register accesses"
-          ],
-          "sdhci-npcm": [
-            "no MMIO register accesses"
-          ],
-          "sdhci-of-hlwd": [
-            "no MMIO register accesses"
-          ],
-          "virtio-input": [
-            "no MMIO register accesses"
-          ]
-        },
-        "umbrella": false
-      },
-      {
-        "category": "linux_semantic_binding",
-        "driver_count": 5,
-        "drivers": [
-          "gpio-altera",
           "sdhci-dove",
           "sdhci-npcm",
           "sdhci-of-hlwd",
@@ -71,6 +39,12 @@
         ],
         "evidence": {
           "gpio-altera": [
+            "linux backend has unsupported semantic bindings"
+          ],
+          "gpio-clps711x": [
+            "linux backend has unsupported semantic bindings"
+          ],
+          "gpio-dwapb": [
             "linux backend has unsupported semantic bindings"
           ],
           "sdhci-dove": [
@@ -89,18 +63,51 @@
         "umbrella": true
       },
       {
-        "category": "callback_binding",
-        "driver_count": 2,
+        "category": "subsystem_validation",
+        "driver_count": 5,
         "drivers": [
-          "sdhci-dove",
+          "gpio-clps711x",
+          "gpio-dwapb",
+          "gpio-ge",
+          "gpio-ts4800",
           "sdhci-of-hlwd"
         ],
         "evidence": {
-          "sdhci-dove": [
-            "callback entry without table binding: sdhci_dove_readw, sdhci_dove_readl"
+          "gpio-clps711x": [
+            "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+          ],
+          "gpio-dwapb": [
+            "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+          ],
+          "gpio-ge": [
+            "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+          ],
+          "gpio-ts4800": [
+            "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
           ],
           "sdhci-of-hlwd": [
-            "callback entry without table binding: sdhci_hlwd_writel, sdhci_hlwd_writew, sdhci_hlwd_writeb"
+            "3 synthesized subsystem callback(s) lack generic-backend execution oracle"
+          ]
+        },
+        "umbrella": false
+      },
+      {
+        "category": "conservative_loop",
+        "driver_count": 3,
+        "drivers": [
+          "gpio-altera",
+          "gpio-dwapb",
+          "virtio-input"
+        ],
+        "evidence": {
+          "gpio-altera": [
+            "1 conservative loop summary/summaries require validation"
+          ],
+          "gpio-dwapb": [
+            "2 conservative loop summary/summaries require validation"
+          ],
+          "virtio-input": [
+            "26 conservative loop summary/summaries require validation"
           ]
         },
         "umbrella": false
@@ -123,7 +130,7 @@
         "umbrella": false
       },
       {
-        "category": "missing_role",
+        "category": "subsystem_summary",
         "driver_count": 2,
         "drivers": [
           "sdhci-dove",
@@ -131,39 +138,58 @@
         ],
         "evidence": {
           "sdhci-dove": [
-            "missing role for: sdhci_dove_readw, sdhci_dove_readl"
+            "4 subsystem library callback(s) lack semantic summary"
           ],
           "sdhci-of-hlwd": [
-            "missing role for: sdhci_hlwd_writel, sdhci_hlwd_writew, sdhci_hlwd_writeb"
+            "4 subsystem library callback(s) lack semantic summary"
           ]
         },
         "umbrella": false
       },
       {
-        "category": "conservative_loop",
-        "driver_count": 1,
+        "category": "unsafe_dynamic_address",
+        "driver_count": 2,
         "drivers": [
-          "gpio-altera"
+          "gpio-dwapb",
+          "virtio-input"
         ],
         "evidence": {
-          "gpio-altera": [
-            "1 conservative loop summary/summaries require validation"
+          "gpio-dwapb": [
+            "40 unsafe dynamic register address(es) (40 computed total)"
+          ],
+          "virtio-input": [
+            "6 unsafe dynamic register address(es) (6 computed total)"
+          ]
+        },
+        "umbrella": false
+      },
+      {
+        "category": "unsupported_access",
+        "driver_count": 2,
+        "drivers": [
+          "gpio-clps711x",
+          "virtio-input"
+        ],
+        "evidence": {
+          "gpio-clps711x": [
+            "13 register operation(s) use unsupported access domain"
+          ],
+          "virtio-input": [
+            "43 register operation(s) use unsupported access domain"
           ]
         },
         "umbrella": false
       }
     ],
     "first_common_semantic_blocker": {
-      "category": "no_register_access",
-      "driver_count": 7,
+      "category": "subsystem_validation",
+      "driver_count": 5,
       "drivers": [
         "gpio-clps711x",
         "gpio-dwapb",
         "gpio-ge",
         "gpio-ts4800",
-        "sdhci-npcm",
-        "sdhci-of-hlwd",
-        "virtio-input"
+        "sdhci-of-hlwd"
       ]
     }
   },
@@ -171,7 +197,7 @@
     "database": "output/zero-shot-contexts/compile_commands.json",
     "database_sha256": "345c1b0fcb3d63390da73fcc734784eeec274e8d8e24a67c2e2b745c90ad0908",
     "report": "experiments/results/zero-shot-contexts.json",
-    "report_sha256": "d23bb77cf6ea5fc59963dadab10a559957d52bd754e67100dfbfe843495cc589"
+    "report_sha256": "625cb2b044c965b31be2593ab5544efd1d75597d340af8be20022f0ffe00366e"
   },
   "drivers": [
     {
@@ -186,7 +212,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "e2baad654be3c9687be429272016b6daf6646a879c512e35af80e75e0bb19d39",
+        "analysis_sha256": "2bc208c9a6154a20c68ffc5a7e7314d2255935ac9ace32bed0e6057bc85ca942",
         "device_spec_sha256": "4e2f5b2ea3bdc76698142dc7ab1953efc40ddae345ca18c53c5e1a3b53ad2ce9",
         "ris_sha256": "86f327f994b82d4e57c3956c4035dba9ec15c5a0d957ef797765f2ebb540aaee"
       },
@@ -270,7 +296,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 4.872,
+      "seconds": 4.815,
       "source": "linux/drivers/gpio/gpio-altera.c",
       "source_sha256": "23f36f26c9c10ffcbeb11f2c06d142ab4876a3d38cd09ddd37bbabdc5bfc670a",
       "stderr_tail": "",
@@ -283,6 +309,16 @@
         "linux": false
       },
       "subsystem": "gpio",
+      "subsystem_summary": {
+        "kinds": [],
+        "source_sites": 0,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 0
+      },
       "total_ops": 18,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
@@ -296,19 +332,19 @@
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 1,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 1,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "d356a7c6b46e809e1459ad2bc59428e07ca70982d47777c1e6913662a39b49c3",
-        "device_spec_sha256": "60f112442bc8a15eaddb6296e6ce027092297e1ef0ff0a500f11d5d21610bda1",
-        "ris_sha256": "4ea4164953333ec3f85a2501dfb300cbc4024cb89eeab6f47ca839f7600965b3"
+        "analysis_sha256": "28f39e48d3d0fd72f1b0dbd31dffed3edc5798db9ccb063a12f7f7cbab90c88f",
+        "device_spec_sha256": "bfdfcac29cf129bc22a949f97ad1b9c58ae8a78cd6ef02238b46c0fc6b0c1b2a",
+        "ris_sha256": "72eb8757b8228fa636737b594ac00bc5990beeb1fd424f7ca9630e9abdf621bf"
       },
       "backend_compile": {
         "baremetal": true,
@@ -316,7 +352,7 @@
         "linux": true
       },
       "blockers": [
-        "no MMIO register accesses"
+        "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
       ],
       "clang_diagnostics": {
         "error_count": 0,
@@ -362,43 +398,86 @@
         "conditions": 0,
         "fixed": 0,
         "loops": 0,
-        "ops": 0,
-        "pct_non_top": null,
-        "pct_symbolic": null,
-        "registers": 0,
-        "rmw": 0,
-        "symbolic": 0,
+        "ops": 9,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 3,
+        "rmw": 4,
+        "symbolic": 9,
         "unknown_value": 0
       },
       "normalized_blockers": [
-        "no_register_access"
+        "subsystem_validation"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
       "readiness_score": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
-        "backend_linux_ready": false,
-        "device_spec_quality": 0.5,
+        "backend_linux_ready": true,
+        "device_spec_quality": 0.688,
         "facts_quality": 0.7,
-        "function_spec_quality": 0.0,
-        "llm_synthesis_ready": false,
-        "ris_quality": 0.8
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
       },
-      "seconds": 3.917,
+      "seconds": 3.854,
       "source": "linux/drivers/gpio/gpio-ts4800.c",
       "source_sha256": "790ca27597cabc7fce8a4a77064ceef1ab42c583d49c0c91cf6a950a5bccdfe9",
       "stderr_tail": "",
       "stdout_tail": "",
       "strict_readiness": {
         "all_backends": false,
-        "any_backend": false,
+        "any_backend": true,
         "baremetal": false,
         "harness": false,
-        "linux": false
+        "linux": true
       },
       "subsystem": "gpio",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "gpio_generic_chip"
+        ],
+        "source_sites": 1,
+        "summaries": {
+          "gpio_generic": [
+            {
+              "callbacks": [
+                "gpio_chip.get",
+                "gpio_chip.get_multiple",
+                "gpio_chip.set",
+                "gpio_chip.set_multiple",
+                "gpio_chip.direction_input",
+                "gpio_chip.direction_output",
+                "gpio_chip.get_direction"
+              ],
+              "config": "config",
+              "fields": {
+                "dat": [
+                  "base_addr + INPUT_REG_OFFSET"
+                ],
+                "dirout": [
+                  "base_addr + DIRECTION_REG_OFFSET"
+                ],
+                "set": [
+                  "base_addr + OUTPUT_REG_OFFSET"
+                ],
+                "sz": [
+                  "2"
+                ]
+              },
+              "function": "ts4800_gpio_probe",
+              "line": 42,
+              "variant": false,
+              "width_bytes": 2
+            }
+          ],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 7
+      },
+      "total_ops": 9,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
         "unsupported_backends": [],
@@ -407,19 +486,19 @@
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 1,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 1,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "4a5e122c508c10d26d1524bfc345bc61ef2910028ff079731feea620ce62a422",
-        "device_spec_sha256": "b70f2b778495e037ad773e046542b848038f00becb98ca10f0b7b1ce266705d0",
-        "ris_sha256": "8cbbbac10d103fed2ac7d68eafa49ce8a8dbcaed11f3b826f118c97b8491c16e"
+        "analysis_sha256": "7b7f3dffb421913c850d178ceedc72410168ccd5aef4ec8578b43db8c6e241ea",
+        "device_spec_sha256": "e09605e579913220cb48f81bad82fef509de7d3fafef3aedfee7e9c33eb8ed98",
+        "ris_sha256": "ea503f888d9b3efbceb8b6868c8cd1680da226f350b2b5f1e7016d9587704bfc"
       },
       "backend_compile": {
         "baremetal": true,
@@ -427,7 +506,9 @@
         "linux": true
       },
       "blockers": [
-        "no MMIO register accesses"
+        "13 register operation(s) use unsupported access domain",
+        "7 synthesized subsystem callback(s) lack generic-backend execution oracle",
+        "linux backend has unsupported semantic bindings"
       ],
       "clang_diagnostics": {
         "error_count": 0,
@@ -452,37 +533,39 @@
         "baremetal": {
           "compiled": true,
           "has_todo": false,
-          "unsupported": false
+          "unsupported": true
         },
         "harness": {
           "compiled": true,
           "has_todo": false,
-          "trace_passed": true,
-          "unsupported": false
+          "trace_passed": false,
+          "unsupported": true
         },
         "linux": {
           "compiled": true,
           "has_todo": false,
           "syntax_ok": true,
-          "unsupported": false
+          "unsupported": true
         }
       },
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
-        "conditions": 0,
-        "fixed": 0,
+        "conditions": 8,
+        "fixed": 13,
         "loops": 0,
-        "ops": 0,
-        "pct_non_top": null,
-        "pct_symbolic": null,
+        "ops": 13,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
         "registers": 0,
-        "rmw": 0,
+        "rmw": 6,
         "symbolic": 0,
         "unknown_value": 0
       },
       "normalized_blockers": [
-        "no_register_access"
+        "linux_semantic_binding",
+        "subsystem_validation",
+        "unsupported_access"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
@@ -492,11 +575,11 @@
         "backend_linux_ready": false,
         "device_spec_quality": 0.5,
         "facts_quality": 0.7,
-        "function_spec_quality": 0.0,
+        "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 3.618,
+      "seconds": 3.613,
       "source": "linux/drivers/gpio/gpio-clps711x.c",
       "source_sha256": "1ff3cd5ad47d9d72d5d4c8c74aa23458ee3e5d53d92a2e49ee87f8ccd15ed731",
       "stderr_tail": "",
@@ -509,10 +592,57 @@
         "linux": false
       },
       "subsystem": "gpio",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "gpio_generic_chip"
+        ],
+        "source_sites": 1,
+        "summaries": {
+          "gpio_generic": [
+            {
+              "callbacks": [
+                "gpio_chip.get",
+                "gpio_chip.get_multiple",
+                "gpio_chip.set",
+                "gpio_chip.set_multiple",
+                "gpio_chip.direction_input",
+                "gpio_chip.direction_output",
+                "gpio_chip.get_direction"
+              ],
+              "config": "config",
+              "fields": {
+                "dat": [
+                  "dat"
+                ],
+                "dirin": [
+                  "dir"
+                ],
+                "dirout": [
+                  "dir"
+                ],
+                "sz": [
+                  "1"
+                ]
+              },
+              "function": "clps711x_gpio_probe",
+              "line": 55,
+              "variant": true,
+              "width_bytes": 1
+            }
+          ],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 7
+      },
+      "total_ops": 13,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
-        "unsupported_backends": [],
+        "unsupported_backends": [
+          "baremetal",
+          "harness",
+          "linux"
+        ],
         "unsupported_source_accesses": 0
       }
     },
@@ -528,7 +658,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "91c58110a4ffd4aec33d258f1522d7d3eaf7946be87d26cd421a33081d3c8307",
+        "analysis_sha256": "4a8c78262386ca20e79244ec13ac637992660cd66f2d77bb2ba9d1d44ab6bd9f",
         "device_spec_sha256": "46a6011200ea0d9e5e7ba0a0ed1b057eaecd00dc702ad56088aeed0d312107ab",
         "ris_sha256": "efbe000bddb9a2dcf1e0c6fcfa3390e5a5fbe215321119f598201bb5b1a185e0"
       },
@@ -603,7 +733,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 3.262,
+      "seconds": 3.217,
       "source": "linux/drivers/clk/clk-fixed-mmio.c",
       "source_sha256": "31817c354ab7ff566159177eb15461ffdb160b72c2e2fe5d9e328a8339669785",
       "stderr_tail": "",
@@ -616,6 +746,16 @@
         "linux": true
       },
       "subsystem": "clock",
+      "subsystem_summary": {
+        "kinds": [],
+        "source_sites": 0,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 0
+      },
       "total_ops": 2,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
@@ -635,7 +775,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "0c957ad45a8894f734eba383cce5567926f2524c937fdb0f6cc15140ca4924af",
+        "analysis_sha256": "757e9138c565290b4fb94a5938beadbcbe6cac47140e1f53aff1ae2fd919de7c",
         "device_spec_sha256": "5fda88c1d4ac905780321138fd767b825a235ef026be370a0e98968591a00077",
         "ris_sha256": "ee377b582d7471a375faf00663322992dad2a434904efdac2b90dc43066fbe81"
       },
@@ -710,7 +850,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 3.206,
+      "seconds": 3.15,
       "source": "linux/drivers/clk/clk-moxart.c",
       "source_sha256": "5fd9cee20d655e277c7a4f8f0c5f99a6d68f924d3d1312dc1d3c9da45810f6fe",
       "stderr_tail": "",
@@ -723,6 +863,16 @@
         "linux": true
       },
       "subsystem": "clock",
+      "subsystem_summary": {
+        "kinds": [],
+        "source_sites": 0,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 0
+      },
       "total_ops": 2,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
@@ -732,19 +882,19 @@
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 3,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 3,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "93401bad8457ad05d7a823bd2fd2c6872fc869b149eb943dfb1e83719085bc2b",
-        "device_spec_sha256": "0d3898df3ce891d365e3fb6c502d76d80d52516bda019f6a07816a4cbd64a83d",
-        "ris_sha256": "130fbde11265116a3931d791c9ed327533a51726b0e33cda04f5c14805acd988"
+        "analysis_sha256": "a829bcbfd6a2446bb3209657fa362aa0306ced78ac8f51ff82dc0a7a2e0c1ac3",
+        "device_spec_sha256": "756363209b85c04f75ecab11e0f0240a3533fc112d67219b3c56145bb9c894d5",
+        "ris_sha256": "d5a2b168e0f8bc6ff72fa687d59bfe602019068c9df3ca800f7cd037ea7480b1"
       },
       "backend_compile": {
         "baremetal": true,
@@ -752,7 +902,10 @@
         "linux": true
       },
       "blockers": [
-        "no MMIO register accesses"
+        "7 synthesized subsystem callback(s) lack generic-backend execution oracle",
+        "40 unsafe dynamic register address(es) (40 computed total)",
+        "2 conservative loop summary/summaries require validation",
+        "linux backend has unsupported semantic bindings"
       ],
       "clang_diagnostics": {
         "error_count": 0,
@@ -777,37 +930,40 @@
         "baremetal": {
           "compiled": true,
           "has_todo": false,
-          "unsupported": false
+          "unsupported": true
         },
         "harness": {
           "compiled": true,
           "has_todo": false,
-          "trace_passed": true,
-          "unsupported": false
+          "trace_passed": false,
+          "unsupported": true
         },
         "linux": {
           "compiled": true,
           "has_todo": false,
           "syntax_ok": true,
-          "unsupported": false
+          "unsupported": true
         }
       },
       "metrics": {
         "clang_diagnostics": 0,
-        "computed": 0,
-        "conditions": 0,
-        "fixed": 0,
-        "loops": 0,
-        "ops": 0,
-        "pct_non_top": null,
-        "pct_symbolic": null,
+        "computed": 40,
+        "conditions": 3,
+        "fixed": 9,
+        "loops": 2,
+        "ops": 49,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
         "registers": 0,
-        "rmw": 0,
+        "rmw": 4,
         "symbolic": 0,
         "unknown_value": 0
       },
       "normalized_blockers": [
-        "no_register_access"
+        "conservative_loop",
+        "linux_semantic_binding",
+        "subsystem_validation",
+        "unsafe_dynamic_address"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
@@ -817,11 +973,11 @@
         "backend_linux_ready": false,
         "device_spec_quality": 0.5,
         "facts_quality": 1.0,
-        "function_spec_quality": 0.0,
+        "function_spec_quality": 0.789,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.8
+        "ris_quality": 0.342
       },
-      "seconds": 4.837,
+      "seconds": 4.821,
       "source": "linux/drivers/gpio/gpio-dwapb.c",
       "source_sha256": "9179790f3067c4245f12896d6c0e38ee4790d99b08562a02e51f93771904c8ee",
       "stderr_tail": "",
@@ -834,28 +990,76 @@
         "linux": false
       },
       "subsystem": "gpio-irq",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "gpio_generic_accessor",
+          "gpio_generic_chip"
+        ],
+        "source_sites": 3,
+        "summaries": {
+          "gpio_generic": [
+            {
+              "callbacks": [
+                "gpio_chip.get",
+                "gpio_chip.get_multiple",
+                "gpio_chip.set",
+                "gpio_chip.set_multiple",
+                "gpio_chip.direction_input",
+                "gpio_chip.direction_output",
+                "gpio_chip.get_direction"
+              ],
+              "config": "config",
+              "fields": {
+                "dat": [
+                  "dat"
+                ],
+                "dirout": [
+                  "dirout"
+                ],
+                "set": [
+                  "set"
+                ],
+                "sz": [
+                  "4"
+                ]
+              },
+              "function": "dwapb_gpio_add_port",
+              "line": 529,
+              "variant": false,
+              "width_bytes": 4
+            }
+          ],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 7
+      },
+      "total_ops": 49,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
-        "unsupported_backends": [],
+        "unsupported_backends": [
+          "baremetal",
+          "harness",
+          "linux"
+        ],
         "unsupported_source_accesses": 0
       }
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 1,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 1,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "b61466e21c20a91eed98e57f090643609c8267a39e7d8c5b4e8fb8eb7a96e664",
-        "device_spec_sha256": "fb7bb518999efb1743c0356f9153b62558fdfd6453b910a69670717df191c0e2",
-        "ris_sha256": "6b314a81c422ba0e68d9e06e2666f8a3d60ce4898e5fee17d7469cc2125038d6"
+        "analysis_sha256": "5c65f1a05970c31d4e2d9ad0a06891b695684bfb0f655119b0848c9b22fd7e74",
+        "device_spec_sha256": "3299894519f75d78b3f1220b4c10893714079744234f618291a1ccf378112742",
+        "ris_sha256": "1f87ba0bb4c163379911c733821d4d974c51311bbdc548c3d5425d6f7149ad47"
       },
       "backend_compile": {
         "baremetal": true,
@@ -863,7 +1067,7 @@
         "linux": true
       },
       "blockers": [
-        "no MMIO register accesses"
+        "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
       ],
       "clang_diagnostics": {
         "error_count": 0,
@@ -909,43 +1113,89 @@
         "conditions": 0,
         "fixed": 0,
         "loops": 0,
-        "ops": 0,
-        "pct_non_top": null,
-        "pct_symbolic": null,
-        "registers": 0,
-        "rmw": 0,
-        "symbolic": 0,
+        "ops": 9,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 3,
+        "rmw": 4,
+        "symbolic": 9,
         "unknown_value": 0
       },
       "normalized_blockers": [
-        "no_register_access"
+        "subsystem_validation"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
       "readiness_score": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
-        "backend_linux_ready": false,
-        "device_spec_quality": 0.5,
-        "facts_quality": 0.4,
-        "function_spec_quality": 0.0,
-        "llm_synthesis_ready": false,
-        "ris_quality": 0.8
+        "backend_linux_ready": true,
+        "device_spec_quality": 0.688,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
       },
-      "seconds": 4.721,
+      "seconds": 4.695,
       "source": "linux/drivers/gpio/gpio-ge.c",
       "source_sha256": "8c940be2699e07b48aaa952c65c7261184819beefcbbc6c99da4f3bb2ed289b2",
       "stderr_tail": "",
       "stdout_tail": "",
       "strict_readiness": {
         "all_backends": false,
-        "any_backend": false,
+        "any_backend": true,
         "baremetal": false,
         "harness": false,
-        "linux": false
+        "linux": true
       },
       "subsystem": "gpio",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "gpio_generic_chip"
+        ],
+        "source_sites": 1,
+        "summaries": {
+          "gpio_generic": [
+            {
+              "callbacks": [
+                "gpio_chip.get",
+                "gpio_chip.get_multiple",
+                "gpio_chip.set",
+                "gpio_chip.set_multiple",
+                "gpio_chip.direction_input",
+                "gpio_chip.direction_output",
+                "gpio_chip.get_direction"
+              ],
+              "config": "config",
+              "fields": {
+                "dat": [
+                  "regs + GEF_GPIO_IN"
+                ],
+                "dirin": [
+                  "regs + GEF_GPIO_DIRECT"
+                ],
+                "flags": [
+                  "GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER"
+                ],
+                "set": [
+                  "regs + GEF_GPIO_OUT"
+                ],
+                "sz": [
+                  "4"
+                ]
+              },
+              "function": "gef_gpio_probe",
+              "line": 79,
+              "variant": false,
+              "width_bytes": 4
+            }
+          ],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 7
+      },
+      "total_ops": 9,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
         "unsupported_backends": [],
@@ -964,7 +1214,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "78350f7c6b018b9d0988a94428ce1812d62eddd68b50bf6ad0603bee44f6620b",
+        "analysis_sha256": "57f03c8782fdf6a39b589cc95dc921c895d15471779a3cef0c072562848f589b",
         "device_spec_sha256": "69d9c12c4564b497b7924dd4b5cb39d36fab44444df91f29f286d6cb2b25e970",
         "ris_sha256": "01b34233d99fd589a5cea28e19f922659fb419b72d8a5c4032224abdf2b8cdde"
       },
@@ -1039,7 +1289,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 2.906,
+      "seconds": 2.838,
       "source": "linux/drivers/clk/clk-nspire.c",
       "source_sha256": "74b521bfd437fc4432501873fe462241c248253a19a77a87e2ef6a97cc608ab9",
       "stderr_tail": "",
@@ -1052,6 +1302,16 @@
         "linux": true
       },
       "subsystem": "clock",
+      "subsystem_summary": {
+        "kinds": [],
+        "source_sites": 0,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 0
+      },
       "total_ops": 4,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
@@ -1061,19 +1321,19 @@
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 1,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 1,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "adb4081b371041e1a69382d85ab3c58bef9e045dee13f81ee28c3deacac1a3b5",
-        "device_spec_sha256": "10ac16afaac7d61a8dc76a14280614a260aec5e769b11c3a9722525c2a088bb6",
-        "ris_sha256": "0b6dc2945f90ff0341267c5df5f2d591aa096384af28ed85c76863059d912719"
+        "analysis_sha256": "21905536b54f26a99479057e551fa064cdb7735238e307441f403914debd1572",
+        "device_spec_sha256": "be1a03fad5e57a5c0bfda8da47ac99eac81b3115b78a053ea2f6b22267ea96ad",
+        "ris_sha256": "3f77f357a330b3be574a3b55641dbde73ec988a66c9fc68273ff4aa621f8a5b7"
       },
       "backend_compile": {
         "baremetal": true,
@@ -1082,7 +1342,6 @@
       },
       "blockers": [
         "1 clang error diagnostic(s)",
-        "no MMIO register accesses",
         "linux backend has unsupported semantic bindings"
       ],
       "clang_diagnostics": {
@@ -1113,7 +1372,7 @@
         "harness": {
           "compiled": true,
           "has_todo": false,
-          "trace_passed": true,
+          "trace_passed": false,
           "unsupported": true
         },
         "linux": {
@@ -1129,18 +1388,17 @@
         "conditions": 0,
         "fixed": 0,
         "loops": 0,
-        "ops": 0,
-        "pct_non_top": null,
-        "pct_symbolic": null,
-        "registers": 0,
+        "ops": 1,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 1,
         "rmw": 0,
-        "symbolic": 0,
+        "symbolic": 1,
         "unknown_value": 0
       },
       "normalized_blockers": [
         "clang_diagnostics",
-        "linux_semantic_binding",
-        "no_register_access"
+        "linux_semantic_binding"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
@@ -1148,13 +1406,13 @@
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
         "backend_linux_ready": false,
-        "device_spec_quality": 0.5,
+        "device_spec_quality": 0.562,
         "facts_quality": 0.4,
-        "function_spec_quality": 0.0,
+        "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.79
+        "ris_quality": 0.99
       },
-      "seconds": 4.852,
+      "seconds": 4.778,
       "source": "linux/drivers/mmc/host/sdhci-npcm.c",
       "source_sha256": "a76af224a9de3c800dc243eee7d2af21b8ad2c1b4f1510eaecb3564bfebea3d1",
       "stderr_tail": "",
@@ -1167,7 +1425,19 @@
         "linux": false
       },
       "subsystem": "sdhci",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "sdhci_accessor"
+        ],
+        "source_sites": 1,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 0
+      },
+      "total_ops": 1,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
         "unsupported_backends": [
@@ -1180,19 +1450,19 @@
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 3,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 3,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "1b8ae0d65f1d6f32c599f38a1ba5a980d3732cc3005e33d73dfbd2648665b951",
-        "device_spec_sha256": "8d498f7d962966534803ef38d7d8d690e8af210e42ef071dc732887e562d1df5",
-        "ris_sha256": "8812a4fe7248dafa16dc2903da4da7c37e5b3a13553183b859790a0f0003b120"
+        "analysis_sha256": "26687e435a6b7bc7cc268c1179f6aedfcfc483b9820d62bacd559d317bb91ffa",
+        "device_spec_sha256": "9a11017a95523e2e5059a0fea968159e710eee0fd2916b21b1db1c7aec98e16b",
+        "ris_sha256": "ed0ec456a5132877731689a07a528f9bbc59a6aeabd47ba309d80d58d1ad786a"
       },
       "backend_compile": {
         "baremetal": true,
@@ -1200,9 +1470,8 @@
         "linux": true
       },
       "blockers": [
-        "missing role for: sdhci_hlwd_writel, sdhci_hlwd_writew, sdhci_hlwd_writeb",
-        "callback entry without table binding: sdhci_hlwd_writel, sdhci_hlwd_writew, sdhci_hlwd_writeb",
-        "no MMIO register accesses",
+        "4 subsystem library callback(s) lack semantic summary",
+        "3 synthesized subsystem callback(s) lack generic-backend execution oracle",
         "linux backend has unsupported semantic bindings"
       ],
       "clang_diagnostics": {
@@ -1233,7 +1502,7 @@
         "harness": {
           "compiled": true,
           "has_todo": false,
-          "trace_passed": true,
+          "trace_passed": false,
           "unsupported": true
         },
         "linux": {
@@ -1247,21 +1516,20 @@
         "clang_diagnostics": 0,
         "computed": 0,
         "conditions": 0,
-        "fixed": 0,
+        "fixed": 6,
         "loops": 0,
-        "ops": 3,
+        "ops": 9,
         "pct_non_top": 1.0,
-        "pct_symbolic": null,
+        "pct_symbolic": 0.0,
         "registers": 0,
         "rmw": 0,
         "symbolic": 0,
         "unknown_value": 0
       },
       "normalized_blockers": [
-        "callback_binding",
         "linux_semantic_binding",
-        "missing_role",
-        "no_register_access"
+        "subsystem_summary",
+        "subsystem_validation"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
@@ -1271,11 +1539,11 @@
         "backend_linux_ready": false,
         "device_spec_quality": 0.5,
         "facts_quality": 0.3,
-        "function_spec_quality": 0.0,
+        "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 4.656,
+      "seconds": 4.622,
       "source": "linux/drivers/mmc/host/sdhci-of-hlwd.c",
       "source_sha256": "7d784f1fa53c7377a42000710f27e79a9abb67c42fa467c4b9282c0d86bd8b7c",
       "stderr_tail": "",
@@ -1288,7 +1556,70 @@
         "linux": false
       },
       "subsystem": "sdhci",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "sdhci_accessor"
+        ],
+        "source_sites": 3,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [
+            {
+              "callee": "sdhci_be32bs_readl",
+              "field": "read_l",
+              "module": "sdhci_hlwd_ops__read_l",
+              "table": "sdhci_hlwd_ops",
+              "width_bytes": 4
+            },
+            {
+              "callee": "sdhci_be32bs_readw",
+              "field": "read_w",
+              "module": "sdhci_hlwd_ops__read_w",
+              "table": "sdhci_hlwd_ops",
+              "width_bytes": 2
+            },
+            {
+              "callee": "sdhci_be32bs_readb",
+              "field": "read_b",
+              "module": "sdhci_hlwd_ops__read_b",
+              "table": "sdhci_hlwd_ops",
+              "width_bytes": 1
+            }
+          ],
+          "unmodeled_callbacks": [
+            {
+              "callee": "sdhci_set_clock",
+              "field": "set_clock",
+              "line": 55,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_hlwd_ops"
+            },
+            {
+              "callee": "sdhci_set_bus_width",
+              "field": "set_bus_width",
+              "line": 56,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_hlwd_ops"
+            },
+            {
+              "callee": "sdhci_reset",
+              "field": "reset",
+              "line": 58,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_hlwd_ops"
+            },
+            {
+              "callee": "sdhci_set_uhs_signaling",
+              "field": "set_uhs_signaling",
+              "line": 58,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_hlwd_ops"
+            }
+          ]
+        },
+        "synthetic_functions": 3
+      },
+      "total_ops": 6,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
         "unsupported_backends": [
@@ -1311,8 +1642,8 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "dd19d3dab57fc42e8f71472b093b090012ce9549378194e127e0ff09f5d93298",
-        "device_spec_sha256": "04d710d29b4971b4e70e91ac2a931171d794b9a113d85d951eda3139574b4bcd",
+        "analysis_sha256": "b481db04912bf65de7348ec965573dff1c41dba872a8ad0082ec729e5ba0f662",
+        "device_spec_sha256": "7ac75e51125a10b112b78b5b8e908a84d2e1cfd17a5f78cdc64fce83a2a81072",
         "ris_sha256": "e8c445f0765a9fdd4e2ecae8fdcd160e25c739e829a879500a4c26e3b94ea107"
       },
       "backend_compile": {
@@ -1321,9 +1652,8 @@
         "linux": true
       },
       "blockers": [
+        "4 subsystem library callback(s) lack semantic summary",
         "1 clang error diagnostic(s)",
-        "missing role for: sdhci_dove_readw, sdhci_dove_readl",
-        "callback entry without table binding: sdhci_dove_readw, sdhci_dove_readl",
         "linux backend has unsupported semantic bindings"
       ],
       "clang_diagnostics": {
@@ -1379,10 +1709,9 @@
         "unknown_value": 0
       },
       "normalized_blockers": [
-        "callback_binding",
         "clang_diagnostics",
         "linux_semantic_binding",
-        "missing_role"
+        "subsystem_summary"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
@@ -1392,11 +1721,11 @@
         "backend_linux_ready": false,
         "device_spec_quality": 0.5,
         "facts_quality": 0.6,
-        "function_spec_quality": 0.0,
+        "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
         "ris_quality": 0.79
       },
-      "seconds": 4.719,
+      "seconds": 4.609,
       "source": "linux/drivers/mmc/host/sdhci-dove.c",
       "source_sha256": "6321f42a6ebbb5c2ab211745774949aad0ccf943d2d164abdef33416f8fb72c4",
       "stderr_tail": "",
@@ -1409,6 +1738,45 @@
         "linux": false
       },
       "subsystem": "sdhci",
+      "subsystem_summary": {
+        "kinds": [],
+        "source_sites": 0,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": [
+            {
+              "callee": "sdhci_set_clock",
+              "field": "set_clock",
+              "line": 50,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_dove_ops"
+            },
+            {
+              "callee": "sdhci_set_bus_width",
+              "field": "set_bus_width",
+              "line": 51,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_dove_ops"
+            },
+            {
+              "callee": "sdhci_reset",
+              "field": "reset",
+              "line": 53,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_dove_ops"
+            },
+            {
+              "callee": "sdhci_set_uhs_signaling",
+              "field": "set_uhs_signaling",
+              "line": 53,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_dove_ops"
+            }
+          ]
+        },
+        "synthetic_functions": 0
+      },
       "total_ops": 2,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
@@ -1422,19 +1790,19 @@
     },
     {
       "access_accounting": {
-        "emitted": 0,
+        "emitted": 25,
         "filtered": 0,
         "ris_ops_without_evidence": 0,
-        "source_accesses": 0,
+        "source_accesses": 25,
         "strict_complete": true,
         "unaccounted": 0,
         "unsupported": 0
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "687780985f127f6485a93b5c3ed78e1314c8efc4bc18a7a3e28d8811de7a0517",
-        "device_spec_sha256": "a74af0cfb0c0fc08501d2bdbe606df439df2aa3562583d035280420b621b657e",
-        "ris_sha256": "83e6e1ee4e2feb815b14d1a6155cc713e231a0f2e9ab366f2f3b21648775bd3b"
+        "analysis_sha256": "2dbbe66a81a249a4d6e5208806c0399fe3215c71071f482e497cb12bfde80aec",
+        "device_spec_sha256": "66867c4c68d7596bcc3575c7720674eccc2c7f8ec9d83856867b256d22c948a8",
+        "ris_sha256": "522f3b247eefc5831bf9223de21029cbbd5cbdb08599a9c59f01a01608615322"
       },
       "backend_compile": {
         "baremetal": true,
@@ -1442,7 +1810,9 @@
         "linux": true
       },
       "blockers": [
-        "no MMIO register accesses",
+        "43 register operation(s) use unsupported access domain",
+        "6 unsafe dynamic register address(es) (6 computed total)",
+        "26 conservative loop summary/summaries require validation",
         "linux backend has unsupported semantic bindings"
       ],
       "clang_diagnostics": {
@@ -1485,21 +1855,23 @@
       },
       "metrics": {
         "clang_diagnostics": 0,
-        "computed": 0,
-        "conditions": 0,
-        "fixed": 0,
-        "loops": 0,
-        "ops": 0,
-        "pct_non_top": null,
-        "pct_symbolic": null,
+        "computed": 6,
+        "conditions": 10,
+        "fixed": 37,
+        "loops": 26,
+        "ops": 43,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
         "registers": 0,
         "rmw": 0,
         "symbolic": 0,
         "unknown_value": 0
       },
       "normalized_blockers": [
+        "conservative_loop",
         "linux_semantic_binding",
-        "no_register_access"
+        "unsafe_dynamic_address",
+        "unsupported_access"
       ],
       "pipeline_completed": true,
       "pipeline_exit": 0,
@@ -1509,11 +1881,11 @@
         "backend_linux_ready": false,
         "device_spec_quality": 0.5,
         "facts_quality": 0.8,
-        "function_spec_quality": 0.0,
+        "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.8
+        "ris_quality": 0.68
       },
-      "seconds": 5.637,
+      "seconds": 5.673,
       "source": "linux/drivers/virtio/virtio_input.c",
       "source_sha256": "302e4f073e16dfd902ee06224c72872b5d7f888ed3bedb59dd54de7965353b96",
       "stderr_tail": "",
@@ -1526,7 +1898,20 @@
         "linux": false
       },
       "subsystem": "virtio",
-      "total_ops": 0,
+      "subsystem_summary": {
+        "kinds": [
+          "virtio_config",
+          "virtqueue"
+        ],
+        "source_sites": 25,
+        "summaries": {
+          "gpio_generic": [],
+          "sdhci_ops": [],
+          "unmodeled_callbacks": []
+        },
+        "synthetic_functions": 0
+      },
+      "total_ops": 43,
       "unsupported_or_fallback": {
         "fallback_compile_context": false,
         "unsupported_backends": [
@@ -1542,9 +1927,9 @@
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
     "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "reharness_commit": "290c875d953587d0392c852e8ed1cdaec0fb5456"
+    "reharness_commit": "15a87954461ed7652f3271ead47f2b1119797ba8"
   },
-  "generated_at": "2026-07-16T04:59:19.980389+00:00",
+  "generated_at": "2026-07-16T06:41:46.757833+00:00",
   "guard": {
     "cases": 12,
     "first_run": "gpio-altera",

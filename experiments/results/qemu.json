@@ -5,16 +5,17 @@
       "value_oracle": "EDU_TRACE_OK"
     },
     "gpio-ftgpio010": {
-      "module_coverage": "1/1",
-      "op_coverage": "4/4",
+      "call_coverage": "7/7",
+      "module_coverage": "6/6",
+      "op_coverage": "16/16",
       "probe": true,
-      "register_coverage": "4/4",
+      "register_coverage": "7/7",
       "trace_oracle": "TRACE_MATCH_OK"
     }
   },
-  "generated_at": "2026-07-15T18:31:00.206643+00:00",
+  "generated_at": "2026-07-16T06:46:24.316003+00:00",
   "kernel_release": "7.1.0-rc7-gacb7500801e9",
   "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-  "reharness_commit": "85c576862274f5062cfdf956692be20a6a20b3c4",
+  "reharness_commit": "15a87954461ed7652f3271ead47f2b1119797ba8",
   "schema": 1
 }

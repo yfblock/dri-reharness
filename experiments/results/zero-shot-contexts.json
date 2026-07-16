@@ -269,11 +269,11 @@
   ],
   "environment": {
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "290c875d953587d0392c852e8ed1cdaec0fb5456"
+    "reharness_commit": "15a87954461ed7652f3271ead47f2b1119797ba8"
   },
   "exact_contexts": 12,
   "expected_contexts": 12,
-  "generated_at": "2026-07-16T04:58:23.458172+00:00",
+  "generated_at": "2026-07-16T06:40:32.308461+00:00",
   "guard": {
     "cases": 12,
     "first_run": "gpio-altera",

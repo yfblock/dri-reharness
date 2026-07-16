@@ -1,8 +1,15 @@
-[trace_match] 1 个可校验模块 (共 6: 1 pass, 0 fail, 4 IRQ skip, 1 other skip), traced=4 ops
-  ✓ ftgpio_gpio_probe: 4 ops [('W', 32), ('W', 44), ('W', 48), ('W', 64)]
+[trace_match] 7 个精确调用 / 6 个模块 (7 call pass, 0 call fail), traced=64 ops
+  ✓ call#1 ftgpio_gpio_probe => gpio_ftgpio010_probe: 6 ops [('R', 4), ('R', 8), ('W', 32), ('W', 44), ('W', 48), ('W', 64)]
+  ✓ call#2 ftgpio_gpio_probe__gpio_generic_get_direction => ftgpio_gpio_probe__gpio_generic_get_direction: 1 ops [('R', 8)]
+  ✓ call#3 ftgpio_gpio_probe__gpio_generic_direction_output => ftgpio_gpio_probe__gpio_generic_direction_output: 2 ops [('R', 8), ('W', 8)]
+  ✓ call#4 ftgpio_gpio_probe__gpio_generic_get_multiple => ftgpio_gpio_probe__gpio_generic_get_multiple: 1 ops [('R', 4)]
+  ✓ call#5 ftgpio_gpio_probe__gpio_generic_set_multiple => ftgpio_gpio_probe__gpio_generic_set_multiple: 2 ops [('R', 16), ('W', 16)]
+  ✓ call#6 ftgpio_gpio_probe__gpio_generic_set_multiple => ftgpio_gpio_probe__gpio_generic_set_multiple: 2 ops [('R', 16), ('W', 16)]
+  ✓ call#7 ftgpio_gpio_probe__gpio_generic_direction_input => ftgpio_gpio_probe__gpio_generic_direction_input: 2 ops [('R', 8), ('W', 8)]
 
-[coverage] 模块覆盖: 1/1 可校验模块通过 (100%); 4 IRQ 模块未行使; 共 6 模块
-[coverage] op 覆盖: 4/4 ops 命中 (100%)
-[coverage] 寄存器覆盖: 4/4 寄存器偏移被访问 (100%)
-[coverage] trace 级别: 偏移级+exerciser
+[coverage] 模块覆盖: 6/6 精确模块通过
+[coverage] 调用覆盖: 7/7 预期调用通过
+[coverage] op 覆盖: 16/16 ops 命中
+[coverage] 寄存器覆盖: 7/7 寄存器偏移被验证
+[coverage] trace 级别: 函数边界+偏移级+exerciser
 TRACE_MATCH_OK

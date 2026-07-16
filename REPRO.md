@@ -2,7 +2,7 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-论文制品的 v8 冻结入口为 annotated tag `paper-artifact-v8`。结果 JSON 中的 `reharness_commit` 固定为 `85c576862274f5062cfdf956692be20a6a20b3c4`，表示生成这些结果时使用的实现提交；tag 本身指向随后纳入结果、日志和论文 PDF 的封存提交。
+`paper-artifact-v8` 保留此前论文基线。当前 C11 结果 JSON 中的 `reharness_commit` 固定为 `15a87954461ed7652f3271ead47f2b1119797ba8`，表示 subsystem summaries 与精确 callback trace oracle 的实现提交；随后纳入结果、日志和论文 PDF 的提交只封存制品，不改变该实现 SHA。
 
 ## 环境
 
