@@ -314,7 +314,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     path_ready = (bool(path_validation.get("complete", False))
                   and path_validation.get("infeasible", 0) == 0
                   and path_validation.get("nonexclusive_switch_pairs", 0) == 0)
-    baremetal_ready = (accounting_ready and path_ready
+    baremetal_ready = (accounting_ready and path_ready and has_register_access
                        and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                        and unsupported_ops == 0
                        and unsupported_control == 0
@@ -332,7 +332,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             return gen_results.get(backend, {})
         h = _gr("harness")
         if h:
-            harness_ready = bool(accounting_ready and path_ready
+            harness_ready = bool(accounting_ready and path_ready and has_register_access
                                  and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                  and unsupported_control == 0
                                  and met["conservative_loop"] == 0
@@ -341,7 +341,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                  and not h.get("unsupported"))
         bm = _gr("baremetal")
         if bm:
-            baremetal_ready = bool(accounting_ready and path_ready
+            baremetal_ready = bool(accounting_ready and path_ready and has_register_access
                                    and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                    and unsupported_control == 0
                                    and met["conservative_loop"] == 0

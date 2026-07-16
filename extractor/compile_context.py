@@ -148,7 +148,7 @@ def _from_compile_commands(source: str, path: str) -> CompileContext | None:
     return None
 
 
-def _cmd_path(source: str, linux_root: str, build_root: str) -> str | None:
+def kbuild_cmd_path(source: str, linux_root: str, build_root: str) -> str | None:
     try:
         relative = os.path.relpath(os.path.abspath(source), linux_root)
     except ValueError:
@@ -162,7 +162,7 @@ def _cmd_path(source: str, linux_root: str, build_root: str) -> str | None:
     return os.path.join(build_root, directory, f".{name}.o.cmd")
 
 
-def _from_kbuild_cmd(source: str, path: str, build_root: str) -> CompileContext | None:
+def read_kbuild_command(path: str) -> str | None:
     try:
         text = open(path, encoding="utf-8", errors="replace").read()
     except OSError:
@@ -171,7 +171,13 @@ def _from_kbuild_cmd(source: str, path: str, build_root: str) -> CompileContext 
     if not match:
         return None
     raw = match.group(1).strip()
-    compile_command = raw.split(";", 1)[0].strip()
+    return raw.split(";", 1)[0].strip()
+
+
+def _from_kbuild_cmd(source: str, path: str, build_root: str) -> CompileContext | None:
+    compile_command = read_kbuild_command(path)
+    if not compile_command:
+        return None
     try:
         tokens = shlex.split(compile_command)
     except ValueError:
@@ -197,7 +203,7 @@ def resolve_compile_context(source: str, linux_root: str | None = None,
         context = _from_compile_commands(source, os.path.abspath(database))
         if context:
             return context
-    command_file = _cmd_path(source, linux, build)
+    command_file = kbuild_cmd_path(source, linux, build)
     if command_file and os.path.isfile(command_file):
         return _from_kbuild_cmd(source, command_file, build)
     if mode == "required":
@@ -215,7 +221,7 @@ def compile_context_identity(source: str, linux_root: str | None = None,
     if not database:
         candidate = os.path.join(build, "compile_commands.json")
         database = candidate if os.path.isfile(candidate) else None
-    paths = [database, _cmd_path(source, linux, build)]
+    paths = [database, kbuild_cmd_path(source, linux, build)]
     identity = []
     for path in paths:
         if not path:

@@ -251,8 +251,10 @@ def main(argv: list[str] | None = None) -> int:
                     # insensitive), so they are excluded from the expected seq.
                     regs = {r2["name"]: r2["offset"] for r2 in res.formal["register_map"]}
                     probe_fn = next((fn for fn in res.device_spec.functions if fn.role == "probe"), None)
-                    entry = probe_fn.ris_ref if probe_fn else res.formal["modules"][0]["name"]
-                    mod = next((m for m in res.formal["modules"] if m["name"] == entry), None)
+                    modules = res.formal["modules"]
+                    entry = (probe_fn.ris_ref if probe_fn else
+                             modules[0]["name"] if modules else None)
+                    mod = next((m for m in modules if m["name"] == entry), None)
                     expected = []
                     untraceable = False
                     if mod:

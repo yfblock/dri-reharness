@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "holdout": "zero-shot-v1",
+  "profiles": {
+    "x86-pinned": {
+      "arch": "x86",
+      "build_dir": "kernel/build",
+      "cc": "gcc",
+      "defconfig": null,
+      "kind": "pinned-experiment-build"
+    },
+    "arm-v4t": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-v4t",
+      "cc": "clang-18",
+      "defconfig": "multi_v4t_defconfig",
+      "kind": "native-architecture-defconfig"
+    },
+    "arm-v7": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-v7",
+      "cc": "clang-18",
+      "defconfig": "multi_v7_defconfig",
+      "kind": "native-architecture-defconfig"
+    },
+    "arm-moxart": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-moxart",
+      "cc": "clang-18",
+      "defconfig": "moxart_defconfig",
+      "kind": "native-architecture-defconfig"
+    },
+    "arm-v5": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-v5",
+      "cc": "clang-18",
+      "defconfig": "multi_v5_defconfig",
+      "kind": "native-architecture-defconfig"
+    },
+    "arm-dove": {
+      "arch": "arm",
+      "build_dir": "output/zero-shot-contexts/build/arm-dove",
+      "cc": "clang-18",
+      "defconfig": "dove_defconfig",
+      "kind": "native-architecture-defconfig"
+    },
+    "powerpc-wii": {
+      "arch": "powerpc",
+      "build_dir": "output/zero-shot-contexts/build/powerpc-wii",
+      "cc": "clang-18",
+      "defconfig": "wii_defconfig",
+      "kind": "native-architecture-defconfig",
+      "requires_lld": true
+    }
+  },
+  "cases": {
+    "gpio-altera": {
+      "profile": "x86-pinned",
+      "target": "drivers/gpio/gpio-altera.o"
+    },
+    "gpio-ts4800": {
+      "profile": "arm-v7",
+      "target": "drivers/gpio/gpio-ts4800.o"
+    },
+    "gpio-clps711x": {
+      "profile": "arm-v4t",
+      "target": "drivers/gpio/gpio-clps711x.o"
+    },
+    "clk-fixed-mmio": {
+      "profile": "arm-v7",
+      "target": "drivers/clk/clk-fixed-mmio.o"
+    },
+    "clk-moxart": {
+      "profile": "arm-moxart",
+      "target": "drivers/clk/clk-moxart.o"
+    },
+    "gpio-dwapb": {
+      "profile": "arm-v7",
+      "target": "drivers/gpio/gpio-dwapb.o"
+    },
+    "gpio-ge": {
+      "profile": "x86-pinned",
+      "target": "drivers/gpio/gpio-ge.o",
+      "context_note": "Explicit x86 object context; clang-18 rejects the native 85xx -mcpu=8540 profile."
+    },
+    "clk-nspire": {
+      "profile": "arm-v4t",
+      "target": "drivers/clk/clk-nspire.o"
+    },
+    "sdhci-npcm": {
+      "profile": "arm-v5",
+      "target": "drivers/mmc/host/sdhci-npcm.o"
+    },
+    "sdhci-of-hlwd": {
+      "profile": "powerpc-wii",
+      "target": "drivers/mmc/host/sdhci-of-hlwd.o"
+    },
+    "sdhci-dove": {
+      "profile": "arm-dove",
+      "target": "drivers/mmc/host/sdhci-dove.o"
+    },
+    "virtio-input": {
+      "profile": "x86-pinned",
+      "target": "drivers/virtio/virtio_input.o"
+    }
+  }
+}

@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：88 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：92 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -47,6 +47,36 @@ python3 verification/run_zero_shot_holdout.py
 验收要求：guard 通过、context provenance 可用、目标源码无 clang error、source access accounting strict、三后端编译、函数 inventory 稳定、RIS/DeviceSpec 无语义回退。权威输出：`experiments/results/zero-shot-v1.json`。
 
 该结果不要求新驱动 strict-ready。当前 gpio-altera 的 18 个 source access 全部 accounting，三个后端均编译，但仍有 polling loop 和 Linux source-private/lifecycle blocker；这是保留的泛化边界。
+
+## 2b. 12-driver exact-context 与 zero-shot matrix
+
+~~~bash
+python3 verification/materialize_holdout_contexts.py
+python3 verification/run_zero_shot_matrix.py
+~~~
+
+materializer 按 `drivers/holdout/zero-shot-v1-contexts.json` 构建 7 个 profile：ARM v4t/v5/v7、Moxart、Dove、PowerPC Wii，以及固定的 x86 实验 build。PowerPC profile 需要 `ld.lld`；脚本依次检查 `REHARNESS_LD_LLD`、`PATH` 和 Rust toolchain 的 `gcc-ld/ld.lld`。9 个案例使用对应架构 defconfig，3 个使用 pinned x86 context。`gpio-ge` 的 x86 context 明确是 non-native：clang-18 不接受原生 85xx 的 `-mcpu=8540`，该限制保留在 recipe 和结果中。
+
+每个 object 的 `.cmd`、`.config`、raw command 和合并 compile database 均记录 SHA-256。矩阵对所有案例强制传入：
+
+~~~text
+--compile-commands output/zero-shot-contexts/compile_commands.json
+--compile-context required
+~~~
+
+当前结果：
+
+~~~text
+exact compile context=12/12
+pipeline completed=12/12
+harness/bare-metal/Linux compile=12/12
+strict-ready (each backend)=3/12
+first common semantic blocker=no_register_access (7/12)
+~~~
+
+三个 strict-ready 案例是 `clk-fixed-mmio`、`clk-moxart` 和 `clk-nspire`。7 个 `no_register_access` 案例不是“没有硬件交互”，而是访问隐藏在 GPIO、SDHCI 或 virtio 框架/库路径中，当前单文件 RIS 未恢复这些语义。空 RIS 的生成物虽然能编译，三个 strict readiness 必须保持 false。
+
+权威输出：`experiments/results/zero-shot-contexts.json` 和 `experiments/results/zero-shot-matrix.json`。详细设计与问题记录见 `docs/zero-shot-matrix-c10.md`。
 
 ## 3. 19-driver 确定性矩阵
 

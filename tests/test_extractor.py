@@ -16,11 +16,16 @@ sys.path.insert(0, REHARNESS)
 
 from extractor import macros as M  # noqa: E402
 from extractor import taint as T  # noqa: E402
-from extractor.compile_context import resolve_compile_context  # noqa: E402
+from extractor.compile_context import read_kbuild_command, resolve_compile_context  # noqa: E402
 from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
 from extractor.formal import expr_to_c, formal_display, parse_expr  # noqa: E402
 from verification.check_generalization_guard import check_guard  # noqa: E402
+from verification.materialize_holdout_contexts import validate_recipes  # noqa: E402
+from verification.run_zero_shot_matrix import (  # noqa: E402
+    cluster_blockers,
+    normalize_blocker,
+)
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -31,6 +36,83 @@ def test_zero_shot_holdout_is_frozen_and_not_special_cased():
     assert report["cases"] == 12
     assert report["first_run"] == "gpio-altera"
     assert report["passed"], report["issues"]
+
+
+def test_zero_shot_context_recipe_exactly_matches_frozen_sources():
+    import json
+    from pathlib import Path
+
+    root = Path(REHARNESS)
+    holdout = json.loads((
+        root / "drivers" / "holdout" / "zero-shot-v1.json"
+    ).read_text(encoding="utf-8"))
+    recipes = json.loads((
+        root / "drivers" / "holdout" / "zero-shot-v1-contexts.json"
+    ).read_text(encoding="utf-8"))
+    assert validate_recipes(holdout, recipes) == []
+
+
+def test_kbuild_saved_command_parser_strips_post_compile_tools():
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as directory:
+        command_file = Path(directory) / ".demo.o.cmd"
+        command_file.write_text(
+            "savedcmd_drivers/demo.o := clang -DVALUE=7 -c demo.c "
+            "-o demo.o ; ./tools/objtool demo.o\n",
+            encoding="utf-8")
+        assert read_kbuild_command(str(command_file)) == (
+            "clang -DVALUE=7 -c demo.c -o demo.o")
+
+
+def test_zero_shot_blocker_normalization_and_common_root_selection():
+    assert normalize_blocker(
+        "3 unsafe dynamic register address(es) (4 computed total)"
+    ) == "unsafe_dynamic_address"
+    assert normalize_blocker(
+        "linux backend has unsupported semantic bindings"
+    ) == "linux_semantic_binding"
+    rows = [
+        {"driver": f"case-{index}", "blockers": [
+            "1 conservative loop summary/summaries require validation",
+            "linux backend has unsupported semantic bindings",
+        ]}
+        for index in range(3)
+    ]
+    result = cluster_blockers(rows)
+    assert result["first_common_semantic_blocker"] == {
+        "category": "conservative_loop",
+        "driver_count": 3,
+        "drivers": ["case-0", "case-1", "case-2"],
+    }
+
+
+def test_no_register_access_blocks_every_strict_backend_even_if_code_compiles():
+    import tempfile
+    from pathlib import Path
+    from extractor.metrics import score
+
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "no_mmio.c"
+        source.write_text(
+            "static int no_mmio_probe(void) { return 0; }\n",
+            encoding="utf-8")
+        result = extract_ris(ExtractorConfig(source=str(source)))
+        readiness = score(
+            result.device_spec, result.formal, result.warnings, result.facts,
+            gen_results={
+                "harness": {"compiled": True, "trace_passed": True,
+                            "has_todo": False, "unsupported": False},
+                "baremetal": {"compiled": True, "has_todo": False,
+                              "unsupported": False},
+                "linux": {"compiled": True, "syntax_ok": True,
+                          "has_todo": False, "unsupported": False},
+            })
+        assert "no MMIO register accesses" in readiness["blockers"]
+        assert readiness["backend_harness_ready"] is False
+        assert readiness["backend_bare_metal_ready"] is False
+        assert readiness["backend_linux_ready"] is False
 
 
 def test_kbuild_cmd_compile_context_imports_only_parser_relevant_flags():
