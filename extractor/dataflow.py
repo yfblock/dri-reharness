@@ -826,9 +826,11 @@ def extract_function(func: Func, macros, tu, *,
     result.calls = calls
 
     def evidence_for(cs, kind: str, addr: dict,
-                     source_address: str = "") -> dict:
+                     source_address: str = "",
+                     effective_name: str | None = None) -> dict:
         from .accounting import callsite_evidence
-        evidence = callsite_evidence(func, cs, kind)
+        evidence = callsite_evidence(
+            func, cs, kind, effective_name=effective_name)
         base = addr_base_of(addr) or ""
         for alias, fact in (mmio_alias_facts or {}).items():
             referenced = bool(re.search(
@@ -889,6 +891,8 @@ def extract_function(func: Func, macros, tu, *,
                     cond = cond or frame["guard"]
 
         lhs = _bind_lhs(source_lines or [], cs.line, name)
+        access_name = mmio.effective_access_name(name, cs.callee_text)
+        access_args = mmio.access_args(access_name, cs)
         call_store = dict(store)
         call_store.update(_general_assignment_store(
             general_assignments, call_offset, call_store, macros))
@@ -901,20 +905,24 @@ def extract_function(func: Func, macros, tu, *,
                 store[_norm_key(lhs)] = BasePtr(lhs)
             continue
 
-        if mmio.is_mmio_read(name):
-            addr_arg = mmio.read_addr_expr(name, cs.arg_text)
+        if mmio.is_mmio_read(access_name):
+            addr_arg = mmio.read_addr_expr(access_name, access_args)
             addr, reg_name = resolve_addr(addr_arg, call_store, macros)
             op = Op(
-                kind="Read", addr=addr, width=mmio.infer_width(name),
+                kind="Read", addr=addr,
+                width=mmio.infer_call_width(access_name, cs),
                 value=None, condition=cond, cond_stack=cond_stack,
                 control_stack=control_stack,
                 reg_name=reg_name,
-                var=mmio.read_result_var(name, cs.arg_text, lhs) or None,
+                var=mmio.read_result_var(
+                    access_name, access_args, lhs) or None,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
-                evidence=evidence_for(cs, "read", addr, addr_arg),
+                evidence=evidence_for(
+                    cs, "read", addr, addr_arg, access_name),
             )
             result.ops.append(op)
-            result_var = mmio.read_result_var(name, cs.arg_text, lhs)
+            result_var = mmio.read_result_var(
+                access_name, access_args, lhs)
             if result_var:
                 key = _norm_key(result_var)
                 store[key] = ReadTaint(addr=addr, reg_name=reg_name)
@@ -943,10 +951,11 @@ def extract_function(func: Func, macros, tu, *,
                 evidence=evidence_for(cs, "rmw", addr, address_text)))
             continue
 
-        if mmio.is_mmio_write(name):
+        if mmio.is_mmio_write(access_name):
             # Generic Linux writel(val, addr), plus explicitly modeled
             # driver-private wrappers such as dwc2_writel(state, val, off).
-            val_text, addr_text = mmio.write_value_addr(name, cs.arg_text)
+            val_text, addr_text = mmio.write_value_addr(
+                access_name, access_args)
             addr, reg_name = resolve_addr(addr_text, call_store, macros)
             val = eval_expr(val_text, call_store, macros)
             kind = "Write"
@@ -963,13 +972,15 @@ def extract_function(func: Func, macros, tu, *,
                         key, origin[1], cs.line, source_lines or [],
                         line_to_cond, read_initial.get(key))
             op = Op(
-                kind=kind, addr=addr, width=mmio.infer_width(name),
+                kind=kind, addr=addr,
+                width=mmio.infer_call_width(access_name, cs),
                 value=value, condition=cond, cond_stack=cond_stack,
                 control_stack=control_stack,
                 reg_name=reg_name,
                 var=rmw_var,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
-                evidence=evidence_for(cs, "write", addr, addr_text),
+                evidence=evidence_for(
+                    cs, "write", addr, addr_text, access_name),
             )
             result.ops.append(op)
             continue

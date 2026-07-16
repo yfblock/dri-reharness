@@ -549,12 +549,24 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         include_framework=config.include_framework,
         extra_blacklist=set(config.extra_blacklist),
     )
+    source_funcs = list(funcs)
+    from .subsystem import infer_subsystem_summaries
+    (synthetic_funcs, synthetic_extractions,
+     subsystem_summaries) = infer_subsystem_summaries(
+        source_funcs, extractions, macros, tu)
+    if synthetic_funcs:
+        funcs = source_funcs + synthetic_funcs
+        extractions.update(synthetic_extractions)
+        callback_entries |= {
+            func.symbol_id or func.name for func in synthetic_funcs}
 
     # stats — functions_analyzed / macros_resolved are raw counts; op counts
     # are recomputed from the EMITTED formal modules (excludes inlined helpers)
     stats = {
         "extracted_at": datetime.datetime.now().isoformat(timespec="seconds"),
-        "functions_analyzed": len(funcs),
+        "functions_analyzed": len(source_funcs),
+        "synthetic_subsystem_functions": len(synthetic_funcs),
+        "subsystem_summaries": subsystem_summaries,
         "macros_resolved": sum(1 for n in macros.names() if macros.offset(n) is not None),
         "function_macros": macros.function_macros(),
         "svf_aliases": sorted(svf_aliases),
@@ -571,11 +583,11 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     stats["path_validation"] = path_validation
     from .accounting import build_access_accounting
     accounting = build_access_accounting(
-        funcs, formal, set(config.extra_blacklist))
+        source_funcs, formal, set(config.extra_blacklist))
     formal["metadata"]["access_accounting"] = accounting
     stats["access_accounting"] = accounting
     from .control import build_control_accounting
-    control_accounting = build_control_accounting(funcs)
+    control_accounting = build_control_accounting(source_funcs)
     formal["metadata"]["control_accounting"] = control_accounting
     stats["control_accounting"] = control_accounting
 

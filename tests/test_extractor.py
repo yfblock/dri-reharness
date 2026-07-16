@@ -115,6 +115,190 @@ def test_no_register_access_blocks_every_strict_backend_even_if_code_compiles():
         assert readiness["backend_linux_ready"] is False
 
 
+def test_generic_gpio_library_summary_materializes_callbacks_and_tracks_mutation():
+    import tempfile
+    from pathlib import Path
+    from extractor.formal import walk_leaf_ops
+
+    template = r'''
+        #define DAT 0x00
+        #define SET {set_offset}
+        #define DIR 0x08
+        struct gpio_generic_chip {{ int gc; }};
+        struct gpio_generic_chip_config {{
+            void *dev; unsigned long sz; void *dat; void *set; void *clr;
+            void *dirout; void *dirin; unsigned long flags;
+        }};
+        extern void *devm_platform_ioremap_resource(void *pdev, int index);
+        extern int gpio_generic_chip_init(struct gpio_generic_chip *chip,
+                                          const struct gpio_generic_chip_config *cfg);
+        static int demo_probe(void *pdev) {{
+            struct gpio_generic_chip chip;
+            struct gpio_generic_chip_config config;
+            void *base = devm_platform_ioremap_resource(pdev, 0);
+            config = (struct gpio_generic_chip_config) {{
+                .sz = 4, .dat = base + DAT, .set = base + SET,
+                .dirout = base + DIR,
+            }};
+            return gpio_generic_chip_init(&chip, &config);
+        }}
+    '''
+
+    def run(offset):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "generic_gpio_fixture.c"
+            source.write_text(template.format(set_offset=offset), encoding="utf-8")
+            result = extract_ris(ExtractorConfig(
+                source=str(source), compile_context_mode="off"))
+            return result
+
+    baseline = run("0x04")
+    mutated = run("0x0c")
+    assert baseline.stats["synthetic_subsystem_functions"] == 7
+    summary = baseline.stats["subsystem_summaries"]["gpio_generic"][0]
+    assert summary["callbacks"] == [
+        "gpio_chip.get", "gpio_chip.get_multiple", "gpio_chip.set",
+        "gpio_chip.set_multiple", "gpio_chip.direction_input",
+        "gpio_chip.direction_output", "gpio_chip.get_direction",
+    ]
+    assert all("generic_gpio_fixture" not in repr(item)
+               for item in baseline.stats["subsystem_summaries"].get(
+                   "unmodeled_callbacks", []))
+    set_module = next(module for module in baseline.formal["modules"]
+                      if module["name"].endswith("__gpio_generic_set"))
+    set_op = next(walk_leaf_ops(set_module["ops"]))["ReadModifyWrite"]
+    assert set_op["evidence"]["summary_contract"] == (
+        "linux.gpio_generic_chip_config")
+    assert set_op["evidence"]["origin"] == "subsystem_summary"
+    base_regs = {reg["name"]: reg["offset"]
+                 for reg in baseline.formal["register_map"]}
+    mutated_regs = {reg["name"]: reg["offset"]
+                    for reg in mutated.formal["register_map"]}
+    assert base_regs["SET"] == 0x04
+    assert mutated_regs["SET"] == 0x0c
+
+
+def test_unrelated_chip_initializer_does_not_trigger_gpio_summary():
+    import tempfile
+    from pathlib import Path
+
+    source_text = r'''
+        struct gpio_generic_chip { int gc; };
+        struct gpio_generic_chip_config {
+            void *dev; unsigned long sz; void *dat; void *set; void *clr;
+            void *dirout; void *dirin; unsigned long flags;
+        };
+        extern int unrelated_chip_init(struct gpio_generic_chip *chip,
+                                       const struct gpio_generic_chip_config *cfg);
+        static int demo(void *base) {
+            struct gpio_generic_chip chip;
+            struct gpio_generic_chip_config config = { 0 };
+            config.sz = 4;
+            config.dat = base;
+            return unrelated_chip_init(&chip, &config);
+        }
+    '''
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "negative_gpio_fixture.c"
+        source.write_text(source_text, encoding="utf-8")
+        result = extract_ris(ExtractorConfig(
+            source=str(source), compile_context_mode="off"))
+    assert result.stats["synthetic_subsystem_functions"] == 0
+    assert result.formal["modules"] == []
+
+
+def test_sdhci_ops_summary_models_accessors_and_reports_unknown_core_callbacks():
+    import tempfile
+    from pathlib import Path
+
+    source_text = r'''
+        typedef unsigned int u32;
+        struct sdhci_host { void *ioaddr; };
+        struct sdhci_ops {
+            u32 (*read_l)(struct sdhci_host *, int);
+            void (*write_l)(struct sdhci_host *, u32, int);
+            void (*set_clock)(struct sdhci_host *, unsigned int);
+        };
+        extern u32 sdhci_readl(struct sdhci_host *host, int reg);
+        extern void sdhci_writel(struct sdhci_host *host, u32 value, int reg);
+        extern void sdhci_set_clock(struct sdhci_host *host, unsigned int hz);
+        static void local_writel(struct sdhci_host *host, u32 value, int reg) {
+            sdhci_writel(host, value, reg);
+        }
+        static const struct sdhci_ops demo_ops = {
+            .read_l = sdhci_readl,
+            .write_l = local_writel,
+            .set_clock = sdhci_set_clock,
+        };
+    '''
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "sdhci_ops_fixture.c"
+        source.write_text(source_text, encoding="utf-8")
+        result = extract_ris(ExtractorConfig(
+            source=str(source), compile_context_mode="off"))
+    summaries = result.stats["subsystem_summaries"]
+    assert summaries["sdhci_ops"] == [{
+        "table": "demo_ops", "field": "read_l", "callee": "sdhci_readl",
+        "module": "demo_ops__read_l", "width_bytes": 4,
+    }]
+    assert summaries["unmodeled_callbacks"][0]["field"] == "set_clock"
+    assert any(function.callback_table == "sdhci_ops.read_l"
+               for function in result.device_spec.functions)
+    readiness = __import__("extractor.metrics", fromlist=["score"]).score(
+        result.device_spec, result.formal, result.warnings, result.facts)
+    assert any("subsystem library callback" in blocker
+               for blocker in readiness["blockers"])
+
+
+def test_virtio_config_and_queue_calls_are_distinct_unsupported_domains():
+    import tempfile
+    from pathlib import Path
+    from types import SimpleNamespace
+    from extractor import mmio
+    from extractor.formal import walk_leaf_ops
+
+    fake = SimpleNamespace(
+        callee_text=("virtio_cread_le(vdev, struct demo_config, value, &out)"),
+        arg_text=[])
+    assert mmio.effective_access_name(
+        "__virtio_cread_many", fake.callee_text) == "virtio_cread_le"
+    assert mmio.access_args("virtio_cread_le", fake) == [
+        "vdev", "struct demo_config", "value", "&out"]
+
+    source_text = r'''
+        struct virtio_device { int unused; };
+        struct virtqueue { int unused; };
+        extern void virtio_cread_bytes(struct virtio_device *, unsigned int,
+                                       void *, unsigned int);
+        extern int virtqueue_add_outbuf(struct virtqueue *, void *, unsigned int,
+                                       void *, int);
+        extern void *virtqueue_get_buf(struct virtqueue *, unsigned int *);
+        extern void virtqueue_kick(struct virtqueue *);
+        static void demo(struct virtio_device *vdev, struct virtqueue *vq) {
+            unsigned int value, len;
+            virtio_cread_bytes(vdev, 4, &value, sizeof(value));
+            virtqueue_add_outbuf(vq, 0, 1, &value, 0);
+            (void)virtqueue_get_buf(vq, &len);
+            virtqueue_kick(vq);
+        }
+    '''
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "virtio_domains_fixture.c"
+        source.write_text(source_text, encoding="utf-8")
+        result = extract_ris(ExtractorConfig(
+            source=str(source), compile_context_mode="off"))
+    domains = []
+    for module in result.formal["modules"]:
+        for op in walk_leaf_ops(module["ops"]):
+            body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            if body:
+                domains.append(body["access_domain"])
+                assert body["reliability"] == "Unsupported"
+                assert body["evidence"]["origin"] == "subsystem_summary"
+    assert domains.count("virtio_config") == 1
+    assert domains.count("virtqueue") == 3
+
+
 def test_kbuild_cmd_compile_context_imports_only_parser_relevant_flags():
     import tempfile
     from pathlib import Path
@@ -444,8 +628,8 @@ def test_access_accounting_and_operation_evidence_are_complete():
 
     result = extract_ris(ExtractorConfig(source=FTGPIO))
     accounting = result.formal["metadata"]["access_accounting"]
-    assert accounting["source_accesses"] == 22
-    assert accounting["emitted"] == 22
+    assert accounting["source_accesses"] == 23
+    assert accounting["emitted"] == 23
     assert accounting["unaccounted"] == 0
     assert accounting["ris_ops_without_evidence"] == 0
     assert accounting["complete"] is True
@@ -463,9 +647,9 @@ def test_access_accounting_and_operation_evidence_are_complete():
             assert body["reliability"] in {"Exact", "Conservative", "Unknown"}
             assert body["address_precision"] in {
                 "symbolic", "fixed", "computed", "unknown"}
-    assert len(op_ids) == len(set(op_ids)) == 22
+    assert len(op_ids) == len(set(op_ids)) == 32
     metrics = driver_metrics(result.formal)
-    assert sum(metrics["reliability"].values()) == 22
+    assert sum(metrics["reliability"].values()) == 32
     assert score(result.device_spec, result.formal, result.warnings,
                  result.facts)["backend_linux_ready"] is True
 
@@ -1280,12 +1464,16 @@ def test_harness_trace_matches_ris():
     traced = re.findall(r"\[(?:trace \d+)?\]?\s*(R|W)\s+0x([0-9a-f]+)", out)
     traced_ops = [(k, int(off, 16)) for k, off in traced]
 
-    # expected: probe's 4 writes (the entry the harness calls)
+    # Expected: gpio_generic_chip_init's two summarized state reads followed by
+    # the probe's four direct writes (the entry the harness calls).
     probe = next(m for m in res.formal["modules"] if m["name"] == "ftgpio_gpio_probe")
     regs = {r["name"]: r["offset"] for r in res.formal["register_map"]}
     expected = []
     for o in walk_leaf_ops(probe["ops"]):
-        if "Write" in o:
+        if "Read" in o:
+            reg = o["Read"]["addr"]["Symbolic"]["register"]
+            expected.append(("R", regs[reg]))
+        elif "Write" in o:
             reg = o["Write"]["addr"]["Symbolic"]["register"]
             expected.append(("W", regs[reg]))
     assert traced_ops == expected, f"trace {traced_ops} != expected {expected}"
@@ -1297,9 +1485,11 @@ def test_readiness_score():
     res = extract_ris(ExtractorConfig(source=FTGPIO))
     s = score(res.device_spec, res.formal, res.warnings, res.facts)
     assert s["ris_quality"] >= 0.9
-    assert s["backend_harness_ready"] is True
-    assert s["backend_bare_metal_ready"] is True
+    assert s["backend_harness_ready"] is False
+    assert s["backend_bare_metal_ready"] is False
     assert s["backend_linux_ready"] is True
+    assert any("generic-backend execution oracle" in blocker
+               for blocker in s["blockers"])
     assert not any("unknown (Top)" in b for b in s["blockers"])
     assert 0 <= s["function_spec_quality"] <= 1.0
 
@@ -1592,7 +1782,7 @@ def test_machine_readable_reliability_report_distinguishes_strict_and_opaque():
 
     strict = build_driver_report(FTGPIO)
     assert strict["strict_reliable"] is True
-    assert strict["audit"]["leaf_register_ops"] == 22
+    assert strict["audit"]["leaf_register_ops"] == 32
     assert strict["audit"]["duplicate_op_ids"] == []
     assert strict["claim_scope"]["whole_program_complete"] is False
     opaque = build_driver_report(os.path.join(

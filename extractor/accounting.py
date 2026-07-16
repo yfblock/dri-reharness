@@ -32,12 +32,14 @@ def _cursor_site_id(source: str, cursor, kind: str) -> str:
             f"{getattr(loc, 'offset', 0) or 0}:{kind}")
 
 
-def callsite_evidence(func, call, access_kind: str) -> dict:
+def callsite_evidence(func, call, access_kind: str,
+                      effective_name: str | None = None) -> dict:
     loc = getattr(call.cursor, "location", None)
     source = (os.path.abspath(loc.file.name)
               if loc is not None and loc.file is not None
               else os.path.abspath(func.source_path))
-    return {
+    access_name = effective_name or call.name
+    evidence = {
         "site_id": access_site_id(source, call),
         "source": source,
         "line": getattr(loc, "line", 0) or call.line or 0,
@@ -48,10 +50,16 @@ def callsite_evidence(func, call, access_kind: str) -> dict:
         "callee": call.name,
         "ast_kind": "CALL_EXPR",
         "access_kind": access_kind,
-        "width_bytes": mmio.infer_width(call.name),
+        "width_bytes": mmio.infer_call_width(access_name, call),
         "origin": "direct",
-        "access_domain": mmio.access_domain(call.name),
+        "access_domain": mmio.access_domain(access_name),
     }
+    summary = mmio.summary_kind(access_name)
+    if summary:
+        evidence["origin"] = "subsystem_summary"
+        evidence["subsystem_summary"] = summary
+        evidence["effective_callee"] = access_name
+    return evidence
 
 
 def _is_volatile_lvalue(cursor) -> bool:
@@ -162,17 +170,22 @@ def discover_source_accesses(funcs, extra_blacklist: set[str] | None = None
     seen: set[str] = set()
     for func in funcs:
         for call in function_calls(func.cursor):
-            if mmio.is_mmio_read(call.name):
+            access_name = mmio.effective_access_name(
+                call.name, call.callee_text)
+            if mmio.is_mmio_read(access_name):
                 kind = "read"
-            elif mmio.is_mmio_write(call.name):
+            elif mmio.is_mmio_write(access_name):
                 kind = "write"
-            elif mmio.is_mmio_rmw(call.name):
+            elif mmio.is_mmio_rmw(access_name):
                 kind = "rmw"
-            elif mmio.is_unsupported_register_access(call.name):
+            elif mmio.is_unsupported_register_access(access_name):
                 kind = "unsupported"
+            elif mmio.is_library_summary_call(access_name):
+                kind = "summary"
             else:
                 continue
-            evidence = callsite_evidence(func, call, kind)
+            evidence = callsite_evidence(
+                func, call, kind, effective_name=access_name)
             site_id = evidence["site_id"]
             if site_id in seen:
                 continue

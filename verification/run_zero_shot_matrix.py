@@ -50,6 +50,9 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
     ("path_infeasible", r"contradictory/infeasible RIS path\(s\)"),
     ("switch_exclusivity", r"switch path pair\(s\) not proven exclusive"),
     ("unsupported_control_flow", r"unsupported control-flow transfer\(s\)"),
+    ("subsystem_summary", r"subsystem library callback\(s\) lack semantic summary"),
+    ("subsystem_validation", r"synthesized subsystem callback\(s\) "
+                              r"lack generic-backend execution oracle"),
     ("unsafe_dynamic_address", r"unsafe dynamic register address\(es\)"),
     ("unknown_value", r"unknown \(Top\) value\(s\)"),
     ("clang_diagnostics", r"clang error diagnostic\(s\)"),
@@ -187,6 +190,9 @@ def _run_case(case: dict, manifest_dir: Path, database: Path,
         for backend in ("harness", "baremetal", "linux")
     }
     access = stats.get("access_accounting", {})
+    subsystem_sites = [
+        site for site in access.get("sites", [])
+        if site.get("origin") == "subsystem_summary"]
     return {
         "driver": case["id"],
         "subsystem": case["subsystem"],
@@ -212,6 +218,15 @@ def _run_case(case: dict, manifest_dir: Path, database: Path,
         },
         "functions_analyzed": stats.get("functions_analyzed"),
         "total_ops": stats.get("total_ops"),
+        "subsystem_summary": {
+            "synthetic_functions": stats.get(
+                "synthetic_subsystem_functions", 0),
+            "summaries": stats.get("subsystem_summaries", {}),
+            "source_sites": len(subsystem_sites),
+            "kinds": sorted({site.get("subsystem_summary")
+                             for site in subsystem_sites
+                             if site.get("subsystem_summary")}),
+        },
         "metrics": metrics,
         "access_accounting": {
             key: access.get(key) for key in (
@@ -315,6 +330,12 @@ def main() -> int:
             for row in rows),
         "all_backends_compile": sum(row.get("all_backends_compile") is True
                                     for row in rows),
+        "cases_with_hardware_interactions": sum(
+            (row.get("total_ops") or 0) > 0 for row in rows),
+        "subsystem_summarized_cases": sum(
+            row.get("subsystem_summary", {}).get("source_sites", 0) > 0
+            or row.get("subsystem_summary", {}).get("synthetic_functions", 0) > 0
+            for row in rows),
         "strict_ready": strict_counts,
     }
     acceptance = {
@@ -322,6 +343,8 @@ def main() -> int:
         "recipe_validation_passed": not recipe_issues,
         "all_cases_completed": aggregate["pipeline_completed"] == len(rows),
         "all_contexts_exact": aggregate["exact_compile_contexts"] == len(rows),
+        "all_cases_have_hardware_interactions": (
+            aggregate["cases_with_hardware_interactions"] == len(rows)),
         "common_semantic_blocker_found": (
             clustering["first_common_semantic_blocker"] is not None),
     }

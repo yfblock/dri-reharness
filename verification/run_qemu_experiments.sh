@@ -75,11 +75,17 @@ python3 tools/trace_match.py "$RESULTS/qemu-ftgpio010-serial.log" \
     --exercised probe 2>&1 | tee "$RESULTS/qemu-ftgpio010-trace.txt"
 grep -q TRACE_MATCH_OK "$RESULTS/qemu-ftgpio010-trace.txt"
 
-python3 - "$RESULTS/qemu.json" <<'PY'
-import datetime, json, os, subprocess, sys
+python3 - "$RESULTS/qemu.json" "$RESULTS/qemu-ftgpio010-trace.txt" <<'PY'
+import datetime, json, os, re, subprocess, sys
 root = os.getcwd()
 def run(*args):
     return subprocess.check_output(args, text=True).strip()
+trace_report = open(sys.argv[2], encoding="utf-8").read()
+def coverage(pattern):
+    match = re.search(pattern, trace_report)
+    if not match:
+        raise SystemExit(f"missing QEMU coverage field: {pattern}")
+    return match.group(1)
 data = {
     "schema": 1,
     "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -91,9 +97,9 @@ data = {
         "gpio-ftgpio010": {
             "probe": True,
             "trace_oracle": "TRACE_MATCH_OK",
-            "module_coverage": "1/1",
-            "op_coverage": "4/4",
-            "register_coverage": "4/4",
+            "module_coverage": coverage(r"模块覆盖:\s*(\d+/\d+)"),
+            "op_coverage": coverage(r"op 覆盖:\s*(\d+/\d+)"),
+            "register_coverage": coverage(r"寄存器覆盖:\s*(\d+/\d+)"),
         },
     },
 }

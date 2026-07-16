@@ -184,6 +184,18 @@ def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
             "assumed_framework_error_gotos", 0),
         "unsupported": control.get("unsupported", 0),
     }
+    subsystem = formal.get("metadata", {}).get(
+        "subsystem_summary_analysis", {})
+    summaries = subsystem.get("summaries", {})
+    unmodeled_callbacks = summaries.get(
+        "unmodeled_callbacks", []) if isinstance(summaries, dict) else []
+    synthesized_callbacks = subsystem.get("synthetic_functions", 0)
+    agg["subsystem_summary"] = {
+        "synthetic_functions": synthesized_callbacks,
+        "generic_backend_unvalidated": synthesized_callbacks,
+        "unmodeled_callbacks": len(unmodeled_callbacks),
+        "unmodeled": unmodeled_callbacks,
+    }
     return agg
 
 
@@ -285,6 +297,17 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unsupported_control:
         blockers.append(
             f"{unsupported_control} unsupported control-flow transfer(s)")
+    unmodeled_subsystem = met.get("subsystem_summary", {}).get(
+        "unmodeled_callbacks", 0)
+    if unmodeled_subsystem:
+        blockers.append(
+            f"{unmodeled_subsystem} subsystem library callback(s) lack semantic summary")
+    unvalidated_subsystem = met.get("subsystem_summary", {}).get(
+        "generic_backend_unvalidated", 0)
+    if unvalidated_subsystem:
+        blockers.append(
+            f"{unvalidated_subsystem} synthesized subsystem callback(s) "
+            "lack generic-backend execution oracle")
     if met["unsafe_computed"] > 0:
         blockers.append(
             f"{met['unsafe_computed']} unsafe dynamic register address(es) "
@@ -314,14 +337,25 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     path_ready = (bool(path_validation.get("complete", False))
                   and path_validation.get("infeasible", 0) == 0
                   and path_validation.get("nonexclusive_switch_pairs", 0) == 0)
+    linux_subsystem_ready = unmodeled_subsystem == 0
+    generic_subsystem_ready = (
+        linux_subsystem_ready and unvalidated_subsystem == 0)
     baremetal_ready = (accounting_ready and path_ready and has_register_access
+                       and generic_subsystem_ready
                        and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                        and unsupported_ops == 0
                        and unsupported_control == 0
                        and met["conservative_loop"] == 0
                        and ris_quality >= 0.7)
-    linux_ready = (baremetal_ready and function_spec_quality >= 0.6
-                   and not unbound_callbacks and has_register_access)
+    linux_ready = (accounting_ready and path_ready and has_register_access
+                   and linux_subsystem_ready
+                   and met["unsafe_computed"] == 0
+                   and met["unknown_value"] == 0
+                   and unsupported_ops == 0
+                   and unsupported_control == 0
+                   and met["conservative_loop"] == 0
+                   and function_spec_quality >= 0.6
+                   and not unbound_callbacks)
     harness_ready = baremetal_ready  # trace check applied below if gen_results present
 
     # Tighten readiness with actual generated-code quality (recom.md §"Make
@@ -333,6 +367,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         h = _gr("harness")
         if h:
             harness_ready = bool(accounting_ready and path_ready and has_register_access
+                                 and generic_subsystem_ready
                                  and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                  and unsupported_control == 0
                                  and met["conservative_loop"] == 0
@@ -342,6 +377,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         bm = _gr("baremetal")
         if bm:
             baremetal_ready = bool(accounting_ready and path_ready and has_register_access
+                                   and generic_subsystem_ready
                                    and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                    and unsupported_control == 0
                                    and met["conservative_loop"] == 0
@@ -355,6 +391,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             # generated Linux artifact directly instead of requiring generic
             # backend readiness as a prerequisite.
             linux_ready = bool(accounting_ready and path_ready
+                               and linux_subsystem_ready
                                and met["unsafe_computed"] == 0
                                and met["unknown_value"] == 0
                                and unsupported_ops == 0

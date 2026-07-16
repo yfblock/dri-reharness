@@ -186,10 +186,12 @@ def _module(func: Func, ex: FuncExtraction, id_counter: list[int], macros) -> di
     for op in ex.ops:
         annotate(op, func.name)
     ops = _nest(list(ex.ops), 0, id_counter, macros)
-    src = func.cursor.location
+    src = func.cursor.location if func.cursor is not None else None
     source = None
     if src and src.file:
         source = [src.file.name, func.line, func.line]
+    elif func.source_path:
+        source = [func.source_path, func.line, func.line]
     return {"name": func.module_name or func.name, "ops": ops, "source": source}
 
 
@@ -253,6 +255,11 @@ def build_formal_ris(driver_name: str, source_path: str,
             "wrapper_analysis": {
                 "count": stats.get("wrapper_summary_count", 0),
                 "summaries": stats.get("wrapper_summaries", []),
+            },
+            "subsystem_summary_analysis": {
+                "synthetic_functions": stats.get(
+                    "synthetic_subsystem_functions", 0),
+                "summaries": stats.get("subsystem_summaries", []),
             },
             "function_macros": stats.get("function_macros", {}),
             "assurance_scope": {

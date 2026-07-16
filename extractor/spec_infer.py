@@ -94,8 +94,10 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
     # signature
     params = [Param(name=p[0], type=_abstract_param_type(p[1], role))
               for p in func.params if p[0]]
-    sig = Signature(params=params, return_type=_abstract_return_type(
-        func.cursor.result_type.spelling if func.cursor.result_type else "void"))
+    result_type = func.synthetic_return_type
+    if func.cursor is not None and func.cursor.result_type:
+        result_type = func.cursor.result_type.spelling
+    sig = Signature(params=params, return_type=_abstract_return_type(result_type))
 
     # binds: dev + base from the address expressions
     binds: list[Binding] = []
@@ -135,7 +137,7 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
         if sem[1]:
             ensures.append(sem[1])
 
-    loc = func.cursor.location
+    loc = func.cursor.location if func.cursor is not None else None
     actual_source = (loc.file.name if loc and loc.file else source_path)
     return FunctionSpec(
         name=module["name"], signature=sig, role=role, context=context,
@@ -163,7 +165,17 @@ def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
             continue
         # Name-only callback parsing is authoritative only when the original C
         # function name is unique across the selected translation units.
-        cb = (cb_bindings.get(fn.name)
+        if fn.synthetic_role:
+            cb = {
+                "role": fn.synthetic_role,
+                "context": fn.synthetic_context or "thread",
+                "table": fn.synthetic_callback_table.split(".", 1)[0],
+                "field": (fn.synthetic_callback_table.split(".", 1)[1]
+                          if "." in fn.synthetic_callback_table else fn.name),
+            }
+            cb_bindings[fn.name] = cb
+        else:
+            cb = (cb_bindings.get(fn.name)
               if name_counts.get(fn.name, 0) == 1 else None)
         if cb:
             role, context = cb["role"], cb["context"]
@@ -174,7 +186,8 @@ def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
             role = hint or ("helper" if symbol not in callback_entries else "unknown")
             context = "irq" if role.startswith("interrupt") or role == "set_irq_type" else "thread"
             table = None
-        is_entry = (fn.symbol_id or fn.name) in callback_entries
+        is_entry = bool(fn.synthetic_role) or (
+            (fn.symbol_id or fn.name) in callback_entries)
         specs.append(infer_function_spec(fn, m, role, context, is_entry, table, source_path))
     return specs, cb_bindings
 
@@ -358,7 +371,9 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "restore": ("resume", "sleepable"),
     # virtio_config_ops
     "get": ("read_config", "thread"),
+    "get_multiple": ("read_config", "thread"),
     "set": ("write_config", "thread"),
+    "set_multiple": ("write_config", "thread"),
     "generation": ("get_status", "thread"),
     "get_status": ("get_status", "thread"),
     "set_status": ("set_status", "thread"),
@@ -368,6 +383,15 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "get_shm_region": ("read_config", "thread"),
     "notify_vq": ("notify", "thread"),
     "notify": ("notify", "thread"),
+    "callback": ("interrupt_handler", "irq"),
+    "event": ("write_config", "thread"),
+    # sdhci_ops logical register accessors
+    "read_l": ("read_config", "thread"),
+    "read_w": ("read_config", "thread"),
+    "read_b": ("read_config", "thread"),
+    "write_l": ("write_config", "thread"),
+    "write_w": ("write_config", "thread"),
+    "write_b": ("write_config", "thread"),
     # clk_ops
     "prepare": ("init", "thread"),
     "unprepare": ("remove", "thread"),
@@ -454,6 +478,8 @@ FIELD_TABLE = {
     "request": "gpio_chip", "free": "gpio_chip",
     "get_direction": "gpio_chip", "direction_input": "gpio_chip",
     "direction_output": "gpio_chip", "set_config": "gpio_chip",
+    "get": "gpio_chip", "set": "gpio_chip",
+    "get_multiple": "gpio_chip", "set_multiple": "gpio_chip",
     "alloc_request": "usb_ep_ops", "free_request": "usb_ep_ops",
     "queue": "usb_ep_ops", "dequeue": "usb_ep_ops",
     "set_halt": "usb_ep_ops", "set_wedge": "usb_ep_ops",
@@ -471,6 +497,9 @@ FIELD_TABLE = {
     "unmap_urb_for_dma": "hc_driver", "free_dev": "hc_driver",
     "reset_device": "hc_driver",
     "start": "hc_driver", "stop": "hc_driver", "irq": "hc_driver",
+    "read_l": "sdhci_ops", "read_w": "sdhci_ops", "read_b": "sdhci_ops",
+    "write_l": "sdhci_ops", "write_w": "sdhci_ops", "write_b": "sdhci_ops",
+    "callback": "virtqueue_info", "event": "input_dev",
 }
 
 
@@ -486,7 +515,8 @@ _KNOWN_CALLBACK_TABLES = {
     "irq_chip", "gpio_chip", "platform_driver", "pci_driver", "amba_driver",
     "virtio_config_ops", "clk_ops", "dev_pm_ops", "file_operations",
     "gpio_irq_chip",
-    "usb_ep_ops", "usb_gadget_ops", "hc_driver",
+    "usb_ep_ops", "usb_gadget_ops", "hc_driver", "sdhci_ops",
+    "virtqueue_info",
 }
 
 
@@ -546,6 +576,10 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
             return "clk_ops"
         if "struct virtio_device" in params:
             return "virtio_config_ops"
+        if "struct virtqueue" in params:
+            return "virtqueue_info"
+        if "struct input_dev" in params:
+            return "input_dev"
         if "struct usb_ep" in params:
             return "usb_ep_ops"
         if "struct usb_gadget" in params:
@@ -573,6 +607,16 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
                 "context": ctx,
                 "table": table,
             }
+        if table == "virtqueue_info":
+            for positional in re.finditer(
+                    r"\{\s*(?:\"\"|[A-Za-z_]\w*)\s*,\s*"
+                    r"([A-Za-z_]\w*)\s*\}", block):
+                fname = positional.group(1)
+                if fname in target_names:
+                    out[fname] = {
+                        "field": "callback", "role": "interrupt_handler",
+                        "context": "irq", "table": "virtqueue_info",
+                    }
 
     # Fallback for macro-generated or otherwise nonstandard initializers.
     for m in _DESIGNATED_INIT.finditer(src):
@@ -603,6 +647,18 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
                     "field": field, "role": role, "context": ctx,
                     "table": "dev_pm_ops",
                 }
+
+    # Some platform drivers register the probe callback as a macro argument
+    # instead of storing it in ``struct platform_driver.probe``.
+    for match in re.finditer(
+            r"\bmodule_platform_driver_probe\s*\(\s*[A-Za-z_]\w*\s*,\s*"
+            r"([A-Za-z_]\w*)\s*\)", src):
+        fname = match.group(1)
+        if fname in target_names:
+            out[fname] = {
+                "field": "probe", "role": "probe", "context": "boot",
+                "table": "platform_driver",
+            }
 
     # Direct IRQ registration is a callback binding even though no ops table
     # initializer exists.

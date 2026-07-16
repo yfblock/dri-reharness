@@ -245,7 +245,7 @@ Example expressions:
 
 Listing~\ref{lst:ris_example} shows the extracted \rislang for the \texttt{gpio-ftgpio010} driver, a Faraday FTGPIO010 GPIO controller. Each module corresponds to a callback registered through the Linux \texttt{irq\_chip} and \texttt{gpio\_chip} framework tables.
 
-\begin{lstlisting}[language=ris,label={lst:ris_example},caption={Extracted \rislang specification for gpio-ftgpio010 (7 modules, 22 ops)}]
+\begin{lstlisting}[language=ris,label={lst:ris_example},caption={Excerpt from the extracted \rislang specification for gpio-ftgpio010 (14 modules, 32 ops including generic-library summaries)}]
 driver gpio-ftgpio010 v0.1.0 {
   module ftgpio_gpio_ack_irq {
     W(B4, g->base.GPIO_INT_CLR) = (0x1 << irqd_to_hwirq(d))
@@ -286,7 +286,7 @@ driver gpio-ftgpio010 v0.1.0 {
 }
 \end{lstlisting}
 
-All 22 register operations in this driver are resolved to symbolic addresses (100\% symbolic rate). The mask/unmask callbacks correctly exhibit RMW patterns (read the current interrupt enable mask, modify it, write it back). The \texttt{set\_config} module preserves the conditional guard \texttt{(val == deb\_div)} around the debounce-enable RMW.
+All 22 direct source register operations plus 10 operations recovered from the typed generic-GPIO configuration are resolved to symbolic addresses (100\% symbolic rate). The mask/unmask callbacks correctly exhibit RMW patterns (read the current interrupt enable mask, modify it, write it back). The \texttt{set\_config} module preserves the conditional guard \texttt{(val == deb\_div)} around the debounce-enable RMW.
 
 \section{RIS Extraction via AST Analysis}
 
@@ -498,7 +498,7 @@ Table~\ref{tab:readiness} separates compilation from strict semantic readiness. 
 \resizebox{\columnwidth}{!}{\ReadinessResultsTable}
 \end{table}
 
-Harness, bare-metal, and Linux outputs compile for \EvalDrivers{}/\EvalDrivers{} drivers. In contrast, strict readiness is \HarnessReadyCount{}/\EvalDrivers{} for harness, \BaremetalReadyCount{}/\EvalDrivers{} for bare-metal, and \LinuxReadyCount{}/\EvalDrivers{} for Linux; \LLMReadyCount{}/\EvalDrivers{} have sufficient structured context for assisted synthesis. Highbank illustrates why the backend counts differ: its source-aware Linux clock lowering preserves the polling and arithmetic callbacks, while generic harness/bare-metal lowering continues to reject the unbounded polling loops. Unknown transforms, unsafe computed addresses, target-source clang errors, and normalized source-private state block readiness even when code can be compiled. Lowerable computed expressions, such as PL061's banked GPIO address and Sodaville's two type-register banks, are generated exactly and do not block readiness. For Sodaville, readiness additionally requires the recovered Intel PCI ID, 12-line GPIO configuration, dat/set/dirout operations, and mask/unmask/EOI fasteoi lifecycle; these properties are asserted and the generated module passes the pinned Kbuild. The mean RIS quality is \EvalMeanRIS{}.
+Harness, bare-metal, and Linux outputs compile for \EvalDrivers{}/\EvalDrivers{} drivers. In contrast, strict readiness is \HarnessReadyCount{}/\EvalDrivers{} for harness, \BaremetalReadyCount{}/\EvalDrivers{} for bare-metal, and \LinuxReadyCount{}/\EvalDrivers{} for Linux; \LLMReadyCount{}/\EvalDrivers{} have sufficient structured context for assisted synthesis. Generic GPIO callbacks recovered from \texttt{gpio\_generic\_chip\_config} are compiled and lowered by the Linux backend, but generic harness/bare-metal readiness remains blocked until those synthesized callbacks have an execution oracle; this removes four earlier false-ready cases. Highbank separately illustrates source-aware Linux-only clock lowering. Unknown transforms, unsafe computed addresses, target-source clang errors, unsupported subsystem domains, and normalized source-private state block readiness even when code can be compiled. The mean RIS quality is \EvalMeanRIS{}.
 
 We additionally publish \path{experiments/results/reliability.json}. Each recognized source access receives a stable site identifier, every RIS leaf carries source evidence and precision labels, and path predicates are checked for satisfiability and switch exclusivity with Z3. Direct volatile dereferences, inline assembly, unsupported register domains, and unmodeled control transfers cannot disappear silently. The report explicitly scopes its strict verdict to recognized register-access and control patterns. \texttt{whole\_program\_complete} is now a conjunction over linked analysis, all translation units, internal calls, access accounting, explicit CFG, path validation, switch exclusivity, operation identity/evidence, computed addresses, values, loops, and access domains. Its scope is \texttt{manifest-internal}; it does not claim completeness for external kernel or subsystem semantics. The default single-source evaluation leaves alias analysis off and therefore remains false.
 
@@ -533,9 +533,9 @@ The regex baseline resolves 0\% of macro-defined register offsets because it can
 
 \subsection{Case Study: gpio-ftgpio010}
 
-We examine the FTGPIO010 GPIO controller driver in detail. This driver registers 7 callback functions across two Linux framework tables (\texttt{irq\_chip} and \texttt{gpio\_chip}). The driver defines 13 register macros via \texttt{\#define}, of which 9 are actually accessed by the driver code.
+We examine the FTGPIO010 GPIO controller driver in detail. The target file directly defines 7 MMIO-bearing modules; the generic-GPIO library contract contributes 7 additional synthesized callbacks from the typed configuration. The driver defines 13 register macros, all of which are now referenced by direct or library-summary operations.
 
-\reharness correctly extracts all 22 register operations across 7 modules, resolves all 9 accessed registers to their macro names and numeric offsets, detects 7 RMW patterns (in \texttt{mask\_irq}, \texttt{unmask\_irq}, \texttt{set\_irq\_type}, and \texttt{set\_config}), and records 1 explicit branch condition in \texttt{set\_config}. All 7 functions receive semantic roles and full enclosing-structure callback bindings, including \texttt{gpio\_chip.set\_config} and \texttt{gpio\_irq\_chip.parent\_handler}. The three switch-dependent RMW operations in \texttt{set\_irq\_type} are represented as nested \texttt{Ite} transforms covering edge-both, rising, falling, level-high, and level-low cases; none contains \texttt{Top}.
+\reharness extracts 32 operations across 14 modules: 22 direct operations and 10 typed library-summary operations. It resolves 13 registers, detects 10 RMW patterns, and records 2 conditions. Direct callbacks retain their enclosing-structure bindings, while synthesized callbacks are bound to \texttt{gpio\_chip.get/set/get\_multiple/set\_multiple/direction} fields. The three switch-dependent RMW operations in \texttt{set\_irq\_type} remain nested \texttt{Ite} transforms with no \texttt{Top}.
 
 The generated userspace harness compiles with \texttt{cc -Wall}, the bare-metal C compiles with \texttt{cc -ffreestanding -c}, and the Linux output builds through the pinned kernel's Kbuild interface. In QEMU, a versioned platform-device registrar triggers the generated driver's probe path. Its instrumented trace matches the RIS-derived oracle with \FTQEMUModuleCoverage{} module, \FTQEMUOpCoverage{} operation, and \FTQEMURegisterCoverage{} register coverage (\texttt{\FTQEMUOracle}).
 

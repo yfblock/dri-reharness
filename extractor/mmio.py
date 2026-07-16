@@ -35,6 +35,45 @@ PRIVATE_MMIO_WRITE_LAYOUTS = {
     "dwc2_writel": (0, 1, 2, "regs"),
 }
 
+# Public subsystem accessors with stable, type-defined register contracts.
+# Keep these separate from driver-private layouts: this is Linux library
+# semantics, not a source-name exception.
+SUBSYSTEM_MMIO_READ_LAYOUTS = {
+    "sdhci_readb": (0, 1, "ioaddr"),
+    "sdhci_readw": (0, 1, "ioaddr"),
+    "sdhci_readl": (0, 1, "ioaddr"),
+    "sdhci_be32bs_readb": (0, 1, "ioaddr"),
+    "sdhci_be32bs_readw": (0, 1, "ioaddr"),
+    "sdhci_be32bs_readl": (0, 1, "ioaddr"),
+}
+
+SUBSYSTEM_MMIO_WRITE_LAYOUTS = {
+    "sdhci_writeb": (0, 1, 2, "ioaddr"),
+    "sdhci_writew": (0, 1, 2, "ioaddr"),
+    "sdhci_writel": (0, 1, 2, "ioaddr"),
+    "sdhci_be32bs_writeb": (0, 1, 2, "ioaddr"),
+    "sdhci_be32bs_writew": (0, 1, 2, "ioaddr"),
+    "sdhci_be32bs_writel": (0, 1, 2, "ioaddr"),
+}
+
+DIRECT_ADDRESS_READ_LAYOUTS = {"gpio_generic_read_reg": 1}
+DIRECT_ADDRESS_WRITE_LAYOUTS = {"gpio_generic_write_reg": (2, 1)}
+
+VIRTIO_CONFIG_READ_FNS = {"virtio_cread_le", "virtio_cread_bytes"}
+VIRTIO_CONFIG_WRITE_FNS = {"virtio_cwrite_le"}
+VIRTQUEUE_READ_FNS = {
+    "virtqueue_get_buf": 4,
+    "virtqueue_detach_unused_buf": 4,
+    "virtqueue_get_vring_size": 12,
+}
+VIRTQUEUE_WRITE_FNS = {
+    "virtqueue_add_inbuf_cache_clean": (3, 0),
+    "virtqueue_add_outbuf": (3, 0),
+    "virtqueue_kick": (None, 8),
+}
+
+SUBSYSTEM_LIBRARY_SUMMARY_FNS = {"gpio_generic_chip_init"}
+
 REGMAP_READ_FNS = {"regmap_read": (0, 1, 2)}
 REGMAP_WRITE_FNS = {"regmap_write": (0, 1, 2)}
 REGMAP_RMW_FNS = {"regmap_update_bits": (0, 1, 2, 3)}
@@ -109,13 +148,81 @@ def infer_width(name: str) -> int:
     return 4
 
 
+def effective_access_name(name: str, callee_text: str = "") -> str:
+    """Recover source-level macro accessors from libclang-expanded calls."""
+    compact = (callee_text or "").lstrip()
+    if name == "set" and compact.startswith("virtio_cwrite_le("):
+        return "virtio_cwrite_le"
+    if name == "__virtio_cread_many" and compact.startswith("virtio_cread_le("):
+        return "virtio_cread_le"
+    return name
+
+
+def _split_call_args(text: str) -> list[str]:
+    start = text.find("(")
+    end = text.rfind(")")
+    if start < 0 or end <= start:
+        return []
+    body = text[start + 1:end]
+    out: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in body:
+        if char in "([{":
+            depth += 1
+        elif char in ")]}" and depth:
+            depth -= 1
+        if char == "," and depth == 0:
+            out.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+    out.append("".join(current).strip())
+    return out
+
+
+def access_args(name: str, call) -> list[str]:
+    if name in {"virtio_cread_le", "virtio_cwrite_le"}:
+        parsed = _split_call_args(call.callee_text)
+        if parsed:
+            return parsed
+    return list(call.arg_text)
+
+
+def infer_call_width(name: str, call=None) -> int:
+    if name == "virtio_cread_bytes":
+        return 1
+    if name in {"virtio_cread_le", "virtio_cwrite_le"} and call is not None:
+        temp_name = ("virtio_cread_v" if name == "virtio_cread_le"
+                     else "virtio_cwrite_v")
+        for cursor in call.cursor.walk_preorder():
+            if cursor.spelling != temp_name or cursor.type is None:
+                continue
+            size = cursor.type.get_size()
+            if size in {1, 2, 4, 8}:
+                return int(size)
+    if name == "gpio_generic_read_reg" and call is not None:
+        size = call.cursor.type.get_size() if call.cursor.type is not None else -1
+        if size in {1, 2, 4, 8}:
+            return int(size)
+    return infer_width(name)
+
+
 def is_mmio_read(name: str) -> bool:
     return (name in MMIO_READ_FNS or name in PRIVATE_MMIO_READ_LAYOUTS
+            or name in SUBSYSTEM_MMIO_READ_LAYOUTS
+            or name in DIRECT_ADDRESS_READ_LAYOUTS
+            or name in VIRTIO_CONFIG_READ_FNS
+            or name in VIRTQUEUE_READ_FNS
             or name in REGMAP_READ_FNS)
 
 
 def is_mmio_write(name: str) -> bool:
     return (name in MMIO_WRITE_FNS or name in PRIVATE_MMIO_WRITE_LAYOUTS
+            or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS
+            or name in DIRECT_ADDRESS_WRITE_LAYOUTS
+            or name in VIRTIO_CONFIG_WRITE_FNS
+            or name in VIRTQUEUE_WRITE_FNS
             or name in REGMAP_WRITE_FNS)
 
 
@@ -130,17 +237,50 @@ def is_unsupported_register_access(name: str) -> bool:
 def access_domain(name: str) -> str:
     if name in REGMAP_READ_FNS or name in REGMAP_WRITE_FNS or name in REGMAP_RMW_FNS:
         return "regmap"
+    if name in VIRTIO_CONFIG_READ_FNS or name in VIRTIO_CONFIG_WRITE_FNS:
+        return "virtio_config"
+    if name in VIRTQUEUE_READ_FNS or name in VIRTQUEUE_WRITE_FNS:
+        return "virtqueue"
     return "mmio"
 
 
+def summary_kind(name: str) -> str | None:
+    if (name in SUBSYSTEM_MMIO_READ_LAYOUTS
+            or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS):
+        return "sdhci_accessor"
+    if name in DIRECT_ADDRESS_READ_LAYOUTS or name in DIRECT_ADDRESS_WRITE_LAYOUTS:
+        return "gpio_generic_accessor"
+    if name in VIRTIO_CONFIG_READ_FNS or name in VIRTIO_CONFIG_WRITE_FNS:
+        return "virtio_config"
+    if name in VIRTQUEUE_READ_FNS or name in VIRTQUEUE_WRITE_FNS:
+        return "virtqueue"
+    if name in SUBSYSTEM_LIBRARY_SUMMARY_FNS:
+        return "gpio_generic_chip"
+    return None
+
+
+def is_library_summary_call(name: str) -> bool:
+    return name in SUBSYSTEM_LIBRARY_SUMMARY_FNS
+
+
 def read_addr_expr(name: str, args: list[str]) -> str:
+    if name == "virtio_cread_le" and len(args) >= 3:
+        return f"{args[0]} + offsetof({args[1]}, {args[2]})"
+    if name == "virtio_cread_bytes" and len(args) >= 2:
+        return f"{args[0]} + {args[1]}"
+    if name in VIRTQUEUE_READ_FNS and args:
+        return f"{args[0]} + {VIRTQUEUE_READ_FNS[name]}"
+    direct_arg = DIRECT_ADDRESS_READ_LAYOUTS.get(name)
+    if direct_arg is not None:
+        return args[direct_arg] if direct_arg < len(args) else ""
     regmap = REGMAP_READ_FNS.get(name)
     if regmap is not None:
         state_arg, offset_arg, _result_arg = regmap
         if max(regmap) >= len(args):
             return ""
         return f"{args[state_arg]} + {args[offset_arg]}"
-    layout = PRIVATE_MMIO_READ_LAYOUTS.get(name)
+    layout = (PRIVATE_MMIO_READ_LAYOUTS.get(name)
+              or SUBSYSTEM_MMIO_READ_LAYOUTS.get(name))
     if layout is None:
         return args[0] if args else ""
     state_arg, offset_arg, base_field = layout
@@ -150,13 +290,29 @@ def read_addr_expr(name: str, args: list[str]) -> str:
 
 
 def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
+    if name == "virtio_cwrite_le" and len(args) >= 4:
+        value = args[3].strip().lstrip("&*").strip()
+        return value, f"{args[0]} + offsetof({args[1]}, {args[2]})"
+    queue = VIRTQUEUE_WRITE_FNS.get(name)
+    if queue is not None and args:
+        value_arg, offset = queue
+        value = "1" if value_arg is None else (
+            args[value_arg] if value_arg < len(args) else "")
+        return value, f"{args[0]} + {offset}"
+    direct = DIRECT_ADDRESS_WRITE_LAYOUTS.get(name)
+    if direct is not None:
+        value_arg, address_arg = direct
+        if max(value_arg, address_arg) >= len(args):
+            return "", ""
+        return args[value_arg], args[address_arg]
     regmap = REGMAP_WRITE_FNS.get(name)
     if regmap is not None:
         state_arg, offset_arg, value_arg = regmap
         if max(regmap) >= len(args):
             return "", ""
         return args[value_arg], f"{args[state_arg]} + {args[offset_arg]}"
-    layout = PRIVATE_MMIO_WRITE_LAYOUTS.get(name)
+    layout = (PRIVATE_MMIO_WRITE_LAYOUTS.get(name)
+              or SUBSYSTEM_MMIO_WRITE_LAYOUTS.get(name))
     if layout is None:
         if len(args) >= 2:
             return args[0], args[1]
@@ -169,6 +325,10 @@ def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
 
 
 def read_result_var(name: str, args: list[str], lhs: str | None) -> str | None:
+    if name == "virtio_cread_le" and len(args) >= 4:
+        return args[3].strip().lstrip("&*").strip()
+    if name == "virtio_cread_bytes" and len(args) >= 3:
+        return args[2].strip().lstrip("&*").strip()
     regmap = REGMAP_READ_FNS.get(name)
     if regmap is None:
         return lhs

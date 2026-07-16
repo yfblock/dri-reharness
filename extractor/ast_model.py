@@ -66,6 +66,10 @@ class Func:
     symbol_id: str = ""
     module_name: str = ""
     is_static: bool = False
+    synthetic_role: str = ""
+    synthetic_context: str = ""
+    synthetic_callback_table: str = ""
+    synthetic_return_type: str = "void"
 
 
 def function_symbol_id(cursor) -> str:

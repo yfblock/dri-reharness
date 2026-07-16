@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：92 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：96 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -70,11 +70,12 @@ materializer 按 `drivers/holdout/zero-shot-v1-contexts.json` 构建 7 个 profi
 exact compile context=12/12
 pipeline completed=12/12
 harness/bare-metal/Linux compile=12/12
-strict-ready (each backend)=3/12
-first common semantic blocker=no_register_access (7/12)
+no_register_access=0/12
+strict-ready: harness=3/12 bare-metal=3/12 Linux=5/12
+first common semantic blocker=subsystem_validation (5/12)
 ~~~
 
-三个 strict-ready 案例是 `clk-fixed-mmio`、`clk-moxart` 和 `clk-nspire`。7 个 `no_register_access` 案例不是“没有硬件交互”，而是访问隐藏在 GPIO、SDHCI 或 virtio 框架/库路径中，当前单文件 RIS 未恢复这些语义。空 RIS 的生成物虽然能编译，三个 strict readiness 必须保持 false。
+三个后端共同 strict-ready 的案例仍是 `clk-fixed-mmio`、`clk-moxart` 和 `clk-nspire`；Linux 另外支持 fixed-config 的 `gpio-ts4800` 与 `gpio-ge`。四个 GPIO、两个 SDHCI 和一个 virtio 案例都已有 subsystem evidence，不再生成空 RIS。GPIO variant、未建模 SDHCI core callback、virtio domain、computed address、loop 和 clang diagnostics 仍按真实结果阻塞。
 
 权威输出：`experiments/results/zero-shot-contexts.json` 和 `experiments/results/zero-shot-matrix.json`。详细设计与问题记录见 `docs/zero-shot-matrix-c10.md`。
 
@@ -89,11 +90,11 @@ python3 verification/run_matrix.py
 当前冻结聚合值：
 
 ~~~text
-drivers=19 ops=429 symbolic=317 fixed=73 computed=25
-rmw=69 conditions=117 registers=144 unknown_value=0
+drivers=19 ops=469 symbolic=356 fixed=74 computed=25
+rmw=88 conditions=117 registers=157 unknown_value=0
 harness_compile=19 baremetal_compile=19 linux_compile=19
-strict_ready: harness=6 baremetal=6 linux=7
-llm_synthesis_ready=12
+strict_ready: harness=2 baremetal=2 linux=7
+llm_synthesis_ready=13
 ~~~
 
 *_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定；可精确 lowering 的 computed address（例如 PL061 banked GPIO）不再被误判为 blocker。Highbank 只有 Linux 专用 clock lowering ready；其轮询循环仍阻止通用 harness/bare-metal readiness。

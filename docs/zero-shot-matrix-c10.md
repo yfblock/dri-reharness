@@ -1,5 +1,7 @@
 # C10: 12-driver zero-shot matrix
 
+> 本文记录 C10 当时的冻结结果。C11 已为这里识别出的 7 个零访问案例加入通用 subsystem summaries；当前结果见 `docs/subsystem-library-summaries-c11.md`。
+
 ## 1. 目标与约束
 
 C10 的目标是让冻结的 12-driver holdout 全部获得可审计 compile context，并从统一矩阵中机器识别第一个覆盖至少三个驱动的公共语义 blocker。冻结集合、source SHA、Linux commit 和 specialization guard 均未改变；extractor/ 和 generator/ 没有增加任何 holdout driver-name、basename 或私有前缀特例。

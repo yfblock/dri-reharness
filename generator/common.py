@@ -77,11 +77,17 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
     lines: list[str] = []
     declared = set(already_declared)
     read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(ops)
-                        if "Read" in o and _is_simple_id(o["Read"]["var"])})
+                        if "Read" in o and _is_simple_id(o["Read"]["var"])
+                        and o["Read"]["var"] not in declared})
     declared |= set(read_vars)
     for v in read_vars:
         lines.append(f"{pad}{ctype} {v} = 0;")
-    extra = sorted(value_var_names(ops) - declared - set(regs.keys()))
+    rmw_read_vars = {
+        o["ReadModifyWrite"].get("read_var")
+        for o in walk_leaf_ops(ops) if "ReadModifyWrite" in o
+    }
+    extra = sorted(value_var_names(ops) - declared - set(regs.keys())
+                   - {name for name in rmw_read_vars if name})
     for v in extra:
         # Upper-case identifiers are C/kernel constants, not locals.  Declaring
         # them would collide with macros such as PCI_VENDOR_ID_INTEL.

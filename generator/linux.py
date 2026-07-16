@@ -15,7 +15,8 @@ import re
 import copy
 
 from extractor.formal import walk_leaf_ops
-from .common import ops_to_c, local_decls, value_var_names
+from .common import (ops_to_c, local_decls, value_var_names,
+                     _replace_expr_var)
 
 _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
@@ -660,8 +661,14 @@ def _callback_signature(table_field: str, priv: str):
         "gpio_chip.direction_output": (
             "int", "struct gpio_chip *gc, unsigned int offset, int value", gpio_pre),
         "gpio_chip.get": ("int", "struct gpio_chip *gc, unsigned int offset", gpio_pre),
+        "gpio_chip.get_multiple": (
+            "int", "struct gpio_chip *gc, unsigned long *mask, unsigned long *bits",
+            gpio_pre),
         "gpio_chip.set": (
             "int", "struct gpio_chip *gc, unsigned int offset, int value", gpio_pre),
+        "gpio_chip.set_multiple": (
+            "int", "struct gpio_chip *gc, unsigned long *mask, unsigned long *bits",
+            gpio_pre),
         "gpio_chip.set_config": (
             "int", "struct gpio_chip *gc, unsigned int offset, unsigned long config", gpio_pre),
         "dev_pm_ops.suspend": ("int", "struct device *dev", pm_pre),
@@ -780,9 +787,15 @@ def _canonical_args(table_field: str):
             ("value", "int")],
         "gpio_chip.get": [
             ("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
+        "gpio_chip.get_multiple": [
+            ("gc", "struct gpio_chip *"), ("mask", "unsigned long *"),
+            ("bits", "unsigned long *")],
         "gpio_chip.set": [
             ("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
             ("value", "int")],
+        "gpio_chip.set_multiple": [
+            ("gc", "struct gpio_chip *"), ("mask", "unsigned long *"),
+            ("bits", "unsigned long *")],
         "gpio_chip.set_config": [
             ("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
             ("config", "unsigned long")],
@@ -890,6 +903,14 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
         return None, f"{table_field}={fn.name}"
     safe_ops, normalized = _normalize_ops(
         module["ops"], "g", safe_function_calls)
+    if table_field == "gpio_chip.set_multiple":
+        for op in walk_leaf_ops(safe_ops):
+            body = op.get("ReadModifyWrite") or op.get("Write")
+            if not body:
+                continue
+            key = "transform" if "ReadModifyWrite" in op else "value"
+            body[key] = _replace_expr_var(body.get(key), "mask", "*mask")
+            body[key] = _replace_expr_var(body.get(key), "bits", "*bits")
     ret, params, prelude = spec
     declared = {"base"}
     canonical_args = _canonical_args(table_field)
@@ -914,7 +935,11 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     body = ops_to_c(safe_ops, bind, "base", regs, indent=1, word_type="u32")
     if body:
         lines.append(body.replace("    ", "\t"))
-    if ret == "irqreturn_t":
+    if table_field == "gpio_chip.get_multiple":
+        result = _last_read_var(module) or "0"
+        lines.append(f"\t*bits = (*bits & ~*mask) | ({result} & *mask);")
+        lines.append("\treturn 0;")
+    elif ret == "irqreturn_t":
         lines.append("\treturn IRQ_HANDLED;")
     elif "*" in ret:
         lines.append("\treturn NULL;")
@@ -1338,7 +1363,8 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
                else "\tg->gc.ngpio = 32;"),
               "\tg->gc.can_sleep = false;"]
         for field in ("request", "free", "get_direction", "direction_input",
-                      "direction_output", "get", "set", "set_config"):
+                      "direction_output", "get", "get_multiple", "set",
+                      "set_multiple", "set_config"):
             fn = by_field.get(f"gpio_chip.{field}")
             if fn:
                 L.append(f"\tg->gc.{field} = {fn};")
@@ -1472,7 +1498,8 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
                   "\tg->gc.owner = THIS_MODULE;", "\tg->gc.base = -1;",
                   "\tg->gc.ngpio = 32;", "\tg->gc.can_sleep = false;"]
         for field in ("request", "free", "get_direction", "direction_input",
-                      "direction_output", "get", "set", "set_config"):
+                      "direction_output", "get", "get_multiple", "set",
+                      "set_multiple", "set_config"):
             fn = by_field.get(f"gpio_chip.{field}")
             if fn:
                 L.append(f"\t{gpio_ref}.{field} = {fn};")
