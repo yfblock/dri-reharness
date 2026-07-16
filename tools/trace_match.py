@@ -18,6 +18,7 @@ from dataclasses import dataclass
 
 
 TraceOp = tuple[str, int]
+FormalVariants = list[list[TraceOp]]
 
 
 @dataclass
@@ -34,46 +35,81 @@ def _offset(addr: dict, registers: dict[str, int]) -> int | None:
     return None
 
 
-def _formal_ops(ops: list[dict], registers: dict[str, int]) -> tuple[list[TraceOp], bool]:
-    """Return unconditional top-level MMIO ops and whether all were traceable."""
-    result: list[TraceOp] = []
+def _formal_variants(ops: list[dict],
+                     registers: dict[str, int]) -> tuple[FormalVariants, bool]:
+    """Return branch-sensitive MMIO sequences and address traceability."""
+    variants: FormalVariants = [[]]
     traceable = True
     for op in ops:
-        body = op.get("Read")
-        kind = "R"
-        if body is None:
-            body = op.get("Write")
-            kind = "W"
-        if body is None:
-            body = op.get("ReadModifyWrite")
-            kind = "RMW"
-        if body is None:
-            # Conditional/loop bodies are path dependent.  Exact call oracles
-            # validate the unconditional contract and leave path validation to
-            # the dedicated CFG/mutation checks.
-            continue
-        off = _offset(body.get("addr", {}), registers)
-        if off is None:
-            traceable = False
-            continue
-        if kind == "RMW":
-            result.extend((("R", off), ("W", off)))
+        node_variants: FormalVariants = [[]]
+        if "Cond" in op:
+            cond = op["Cond"]
+            then_variants, then_complete = _formal_variants(
+                cond.get("then_ops", []), registers)
+            else_ops = cond.get("else_ops", [])
+            if else_ops:
+                else_variants, else_complete = _formal_variants(
+                    else_ops, registers)
+            else:
+                else_variants, else_complete = [[]], True
+            node_variants = then_variants + else_variants
+            traceable = traceable and then_complete and else_complete
+        elif "Seq" in op:
+            node_variants, complete = _formal_variants(
+                op["Seq"].get("ops", []), registers)
+            traceable = traceable and complete
+        elif "Loop" in op:
+            # Runtime iteration counts need a dedicated loop oracle.  The
+            # structured call matcher does not guess how many bodies execute.
+            node_variants = [[]]
         else:
-            result.append((kind, off))
+            body = op.get("Read")
+            kind = "R"
+            if body is None:
+                body = op.get("Write")
+                kind = "W"
+            if body is None:
+                body = op.get("ReadModifyWrite")
+                kind = "RMW"
+            if body is not None:
+                off = _offset(body.get("addr", {}), registers)
+                if off is None:
+                    traceable = False
+                    node_variants = [[]]
+                elif kind == "RMW":
+                    node_variants = [[("R", off), ("W", off)]]
+                else:
+                    node_variants = [[(kind, off)]]
+        variants = [prefix + suffix
+                    for prefix in variants for suffix in node_variants]
+
+    unique: FormalVariants = []
+    for variant in variants:
+        if variant not in unique:
+            unique.append(variant)
+    return unique, traceable
+
+
+def _formal_ops(ops: list[dict], registers: dict[str, int]) -> tuple[list[TraceOp], bool]:
+    """Compatibility helper for callers expecting one unconditional sequence."""
+    variants, traceable = _formal_variants(ops, registers)
+    result = variants[0] if len(variants) == 1 else []
     return result, traceable
 
 
-def load_formal_modules(path: str) -> tuple[dict[str, list[TraceOp]], set[str]]:
+def load_formal_modules(path: str) -> tuple[dict[str, FormalVariants], set[str]]:
     with open(path, encoding="utf-8") as handle:
         formal = json.load(handle)
     registers = {item["name"]: int(item["offset"])
                  for item in formal.get("register_map", [])}
-    modules: dict[str, list[TraceOp]] = {}
+    modules: dict[str, FormalVariants] = {}
     untraceable: set[str] = set()
     for module in formal.get("modules", []):
-        ops, complete = _formal_ops(module.get("ops", []), registers)
-        if ops:
-            modules[module["name"]] = ops
+        variants, complete = _formal_variants(
+            module.get("ops", []), registers)
+        nonempty = [variant for variant in variants if variant]
+        if nonempty:
+            modules[module["name"]] = nonempty
         if not complete:
             untraceable.add(module["name"])
     return modules, untraceable
@@ -165,7 +201,7 @@ def parse_calls(text: str) -> list[tuple[str, str]]:
     return calls
 
 
-def exact_call_report(modules: dict[str, list[TraceOp]], untraceable: set[str],
+def exact_call_report(modules: dict[str, FormalVariants], untraceable: set[str],
                       calls: list[tuple[str, str]], segments: list[RuntimeSegment],
                       traced_count: int) -> int:
     missing_modules = sorted({formal for formal, _ in calls if formal not in modules})
@@ -185,11 +221,18 @@ def exact_call_report(modules: dict[str, list[TraceOp]], untraceable: set[str],
     for formal, runtime in calls:
         while cursor < len(segments) and segments[cursor].function != runtime:
             cursor += 1
-        expected = modules[formal]
+        expected_variants = modules[formal]
         if cursor == len(segments):
+            expected = min(expected_variants, key=len)
             results.append((formal, runtime, expected, 0, list(expected)))
             continue
-        matched, missing = subsequence_match(expected, segments[cursor].ops)
+        candidates = []
+        for expected in expected_variants:
+            matched, missing = subsequence_match(
+                expected, segments[cursor].ops)
+            candidates.append((not missing, matched, -len(missing), expected, missing))
+        _passed, matched, _missing_count, expected, missing = max(
+            candidates, key=lambda item: item[:3])
         results.append((formal, runtime, expected, matched, missing))
         cursor += 1
 

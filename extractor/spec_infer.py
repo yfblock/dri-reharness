@@ -238,6 +238,8 @@ _MODELED_STATE_FIELDS = {
     "dma": "UInt64",
     "hpi_regstep": "UInt",
     "sie_num": "UInt",
+    "gpio_sdata": "UInt",
+    "gpio_sdir": "UInt",
 }
 
 
@@ -278,6 +280,15 @@ def _modeled_state_fields(formal: dict) -> dict[str, str]:
                 if "Computed" in body.get("addr", {}):
                     inspect(body["addr"]["Computed"])
                 inspect(body.get("value") or body.get("transform"))
+            if "StateRead" in op:
+                found[op["StateRead"]["field"]] = "UInt"
+            elif "StateWrite" in op:
+                found[op["StateWrite"]["field"]] = "UInt"
+                inspect(op["StateWrite"].get("value"))
+            elif "OutputWrite" in op:
+                inspect(op["OutputWrite"].get("value"))
+            elif "Return" in op:
+                inspect(op["Return"].get("value"))
             if "Cond" in op:
                 inspect(op["Cond"].get("guard"))
     return found

@@ -85,7 +85,8 @@ def _sanitize_arguments(tokens: list[str], directory: str, source: str) -> tuple
             out.append(combined + _resolve_path(value, directory))
             i += 1
             continue
-        if token.startswith(("-D", "-U", "-std=", "-fstrict-flex-arrays=")):
+        if token.startswith(("-D", "-U", "-std=", "-fstrict-flex-arrays=",
+                             "--target=")):
             out.append(token)
         elif token in _STANDALONE_FLAGS:
             out.append(token)

@@ -29,7 +29,7 @@ _CONTROL_KW = {"if", "for", "while", "switch", "return", "sizeof", "typeof"}
 
 @dataclass
 class Op:
-    kind: str                       # Read | Write | ReadModifyWrite | Delay
+    kind: str                       # MMIO, state, output, return, or delay op
     addr: dict
     width: int
     value: Optional[str] = None
@@ -42,6 +42,7 @@ class Op:
     cond_stack: list = field(default_factory=list)  # full branch predicate stack
     control_stack: list = field(default_factory=list)  # structured cond/loop frames
     evidence: dict = field(default_factory=dict)    # auditable source provenance
+    state_field: Optional[str] = None  # StateRead/StateWrite persistent field
 
 
 # ── expression evaluation ────────────────────────────────────────────
@@ -799,9 +800,12 @@ def extract_function(func: Func, macros, tu, *,
             text = source_text(tu, cursor).strip()
             match = re.fullmatch(r"return\s+(.+?)\s*;?", text, re.S)
             if match:
-                returns.append(match.group(1).strip())
-    if returns and len(set(returns)) == 1:
-        result.return_expr = returns[0]
+                returns.append((match.group(1).strip(), cursor.location.line))
+    if returns and len({expr for expr, _line in returns}) == 1:
+        result.return_expr = returns[0][0]
+    return_value = result.return_expr
+    return_line = returns[0][1] if result.return_expr else 0
+    return_read_index = 0
     store: dict[str, AbsVal] = {}
     read_origins: dict[str, tuple[dict, int]] = {}
     read_initial: dict[str, str] = {}
@@ -908,21 +912,26 @@ def extract_function(func: Func, macros, tu, *,
         if mmio.is_mmio_read(access_name):
             addr_arg = mmio.read_addr_expr(access_name, access_args)
             addr, reg_name = resolve_addr(addr_arg, call_store, macros)
+            result_var = mmio.read_result_var(
+                access_name, access_args, lhs) or None
+            call_text = source_text(tu, cs.cursor).strip()
+            if (not result_var and return_value and call_text
+                    and call_text in return_value):
+                result_var = f"__return_read_{return_read_index}"
+                return_read_index += 1
+                return_value = return_value.replace(call_text, result_var, 1)
             op = Op(
                 kind="Read", addr=addr,
                 width=mmio.infer_call_width(access_name, cs),
                 value=None, condition=cond, cond_stack=cond_stack,
                 control_stack=control_stack,
                 reg_name=reg_name,
-                var=mmio.read_result_var(
-                    access_name, access_args, lhs) or None,
+                var=result_var,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
                 evidence=evidence_for(
                     cs, "read", addr, addr_arg, access_name),
             )
             result.ops.append(op)
-            result_var = mmio.read_result_var(
-                access_name, access_args, lhs)
             if result_var:
                 key = _norm_key(result_var)
                 store[key] = ReadTaint(addr=addr, reg_name=reg_name)
@@ -1076,6 +1085,20 @@ def extract_function(func: Func, macros, tu, *,
                     _instantiate_op(op, mapping, macros)
                     for op in inlined.ops
                 ]
+                # A callee Return describes the value of this call, not an
+                # early return from its caller.  Consume it while inlining and
+                # propagate the expression only when this call itself occurs
+                # in the caller's unique return expression.
+                inlined_returns = [
+                    item for item in instantiated if item.kind == "Return"]
+                instantiated = [
+                    item for item in instantiated if item.kind != "Return"]
+                call_text = source_text(tu, cs.cursor).strip()
+                if (inlined_returns and return_value and call_text
+                        and call_text in return_value):
+                    returned_value = inlined_returns[-1].value or "0"
+                    return_value = return_value.replace(
+                        call_text, f"({returned_value})", 1)
                 # If a helper returns a register read directly, bind the last
                 # read in its expanded body to the caller assignment target.
                 # This preserves patterns such as
@@ -1107,6 +1130,14 @@ def extract_function(func: Func, macros, tu, *,
                         if indirect_target else None,
                     })
                     result.ops.append(o2)
+
+    if return_value is not None and return_value != result.return_expr:
+        result.ops.append(Op(
+            kind="Return", addr=addr_fixed(0), width=0,
+            value=return_value,
+            source_loc=f"{func.name}:{return_line}", line=return_line,
+            evidence={"access_domain": "source_result"},
+        ))
 
     return result
 

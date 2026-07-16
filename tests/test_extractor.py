@@ -166,7 +166,10 @@ def test_generic_gpio_library_summary_materializes_callbacks_and_tracks_mutation
                    "unmodeled_callbacks", []))
     set_module = next(module for module in baseline.formal["modules"]
                       if module["name"].endswith("__gpio_generic_set"))
-    set_op = next(walk_leaf_ops(set_module["ops"]))["ReadModifyWrite"]
+    set_leaves = list(walk_leaf_ops(set_module["ops"]))
+    assert [next(iter(op)) for op in set_leaves] == [
+        "StateRead", "StateWrite", "Write", "Return"]
+    set_op = next(op["Write"] for op in set_leaves if "Write" in op)
     assert set_op["evidence"]["summary_contract"] == (
         "linux.gpio_generic_chip_config")
     assert set_op["evidence"]["origin"] == "subsystem_summary"
@@ -256,6 +259,32 @@ def test_sdhci_ops_summary_models_accessors_and_reports_unknown_core_callbacks()
                for blocker in readiness["blockers"])
 
 
+def test_npcm_sdhci_accessor_source_contract_and_portable_boundary():
+    import copy
+    from extractor.formal import walk_leaf_ops
+    from generator.subsystem_runner import portable_sdhci_accessor_only
+    from verification.sdhci_accessor_oracle import (
+        verify_sdhci_accessor_source_contract)
+
+    npcm = os.path.join(REHARNESS, "linux", "drivers", "mmc", "host",
+                        "sdhci-npcm.c")
+    result = extract_ris(ExtractorConfig(source=npcm))
+    oracle = verify_sdhci_accessor_source_contract(result.formal)
+    assert oracle["sdhci_accessor_oracle_passed"], oracle
+    assert oracle["sdhci_accessor_oracle_ops"] == 1
+    assert portable_sdhci_accessor_only(result.formal, result.device_spec)
+
+    mutated = copy.deepcopy(result.formal)
+    op = next(
+        op for module in mutated["modules"]
+        for op in walk_leaf_ops(module["ops"]) if "Read" in op)
+    op["Read"]["width"] = "B2"
+    mutation = verify_sdhci_accessor_source_contract(mutated)
+    assert mutation["sdhci_accessor_oracle_passed"] is False
+    assert any("expected" in error
+               for error in mutation["sdhci_accessor_oracle_errors"])
+
+
 def test_virtio_config_and_queue_calls_are_distinct_unsupported_domains():
     import tempfile
     from pathlib import Path
@@ -319,7 +348,8 @@ def test_kbuild_cmd_compile_context_imports_only_parser_relevant_flags():
         command_file = build / "drivers" / "demo" / ".demo.o.cmd"
         command_file.parent.mkdir(parents=True)
         command_file.write_text(
-            "savedcmd_drivers/demo/demo.o := gcc -nostdinc -I./include "
+            "savedcmd_drivers/demo/demo.o := gcc -nostdinc "
+            "--target=arm-linux-gnueabi -I./include "
             f"-I{linux}/include -include {linux}/include/demo.h "
             "-DDEMO_VALUE=7 -std=gnu11 -Wall -O2 -c -o "
             f"drivers/demo/demo.o {source} ; objtool demo.o\n",
@@ -329,6 +359,7 @@ def test_kbuild_cmd_compile_context_imports_only_parser_relevant_flags():
             mode="required")
         assert context is not None
         assert context.origin == "kbuild-cmd"
+        assert "--target=arm-linux-gnueabi" in context.arguments
         assert "-DDEMO_VALUE=7" in context.arguments
         assert "-Wall" not in context.arguments
         assert "-O2" not in context.arguments
@@ -655,9 +686,9 @@ def test_access_accounting_and_operation_evidence_are_complete():
             assert body["reliability"] in {"Exact", "Conservative", "Unknown"}
             assert body["address_precision"] in {
                 "symbolic", "fixed", "computed", "unknown"}
-    assert len(op_ids) == len(set(op_ids)) == 32
+    assert len(op_ids) == len(set(op_ids)) == 35
     metrics = driver_metrics(result.formal)
-    assert sum(metrics["reliability"].values()) == 32
+    assert sum(metrics["reliability"].values()) == 35
     assert score(result.device_spec, result.formal, result.warnings,
                  result.facts)["backend_linux_ready"] is True
 
@@ -992,6 +1023,58 @@ def test_source_text_byte_offset_with_multibyte():
     # value must be intact (Var "VIRTIO_STATUS_RESET"), not truncated
     assert "Var" in w["Write"]["value"]
     assert w["Write"]["value"]["Var"] == "VIRTIO_STATUS_RESET"
+
+
+def test_direct_mmio_read_return_is_explicit_and_preserves_normalization():
+    import tempfile
+
+    src = textwrap.dedent("""
+        #define DATA 0x10
+        #define BIT(n) (1U << (n))
+        extern unsigned int readl(void *addr);
+        static int gpio_get(void *base, unsigned int offset)
+        {
+            return !!(readl(base + DATA) & BIT(offset));
+        }
+        int (*registered_get)(void *, unsigned int) = gpio_get;
+    """)
+    with tempfile.TemporaryDirectory() as directory:
+        source = os.path.join(directory, "direct-return.c")
+        with open(source, "w", encoding="utf-8") as fh:
+            fh.write(src)
+        formal = extract_ris(ExtractorConfig(source=source)).formal
+
+    leaves = []
+    _leaf_ops(_module(formal, "gpio_get")["ops"], leaves)
+    assert [next(iter(op)) for op in leaves] == ["Read", "Return"]
+    assert leaves[0]["Read"]["var"] == "__return_read_0"
+    returned = leaves[1]["Return"]
+    assert returned["access_domain"] == "source_result"
+    assert returned["value"] == {
+        "BinOp": {
+            "op": "Eq",
+            "left": {
+                "BinOp": {
+                    "op": "Eq",
+                    "left": {
+                        "BinOp": {
+                            "op": "BitAnd",
+                            "left": {"Var": "__return_read_0"},
+                            "right": {
+                                "BinOp": {
+                                    "op": "Shl",
+                                    "left": {"Const": 1},
+                                    "right": {"Var": "offset"},
+                                }
+                            },
+                        }
+                    },
+                    "right": {"Const": 0},
+                }
+            },
+            "right": {"Const": 0},
+        }
+    }
 
 
 def test_pure_helper_is_inlined_and_deduped():
@@ -1489,12 +1572,97 @@ def test_harness_trace_matches_ris():
     assert traced_ops == expected, f"trace {traced_ops} != expected {expected}"
 
 
+def test_altera_masked_w1c_drain_runtime_and_mutation_oracle():
+    import copy
+    import subprocess
+    import tempfile
+    from extractor.formal import walk_all_ops
+    from extractor.spec import default_bind
+    from generator import harness
+    from verification.w1c_drain_oracle import (
+        verify_w1c_drain_contract, verify_w1c_drain_runtime)
+
+    source = os.path.join(
+        REHARNESS, "linux", "drivers", "gpio", "gpio-altera.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    contract = verify_w1c_drain_contract(
+        result.formal, result.device_spec)
+    assert contract["w1c_drain_oracle_required"] is True
+    assert contract["w1c_drain_contract_passed"], contract
+    assert contract["w1c_drain_loops"] == 1
+
+    code = harness.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    with tempfile.TemporaryDirectory() as directory:
+        source_path = os.path.join(directory, "altera-harness.c")
+        binary = os.path.join(directory, "altera-harness")
+        with open(source_path, "w", encoding="utf-8") as fh:
+            fh.write(code)
+        compiled = subprocess.run(
+            ["cc", "-o", binary, source_path],
+            capture_output=True, text=True)
+        assert compiled.returncode == 0, compiled.stderr
+        executed = subprocess.run(
+            [binary], capture_output=True, text=True)
+        assert executed.returncode == 0, executed.stderr
+    runtime = verify_w1c_drain_runtime(
+        result.formal, result.device_spec, executed.stdout)
+    assert runtime["w1c_drain_runtime_passed"], runtime
+    assert runtime["w1c_drain_calls_executed"] == 1
+
+    mutated = copy.deepcopy(result.formal)
+    loop = next(
+        op["Loop"] for module in mutated["modules"]
+        for op in walk_all_ops(module["ops"])
+        if "Loop" in op
+        and op["Loop"].get("proof_kind") == "masked_w1c_drain")
+    loop["body"][0]["Write"]["addr"] = copy.deepcopy(
+        loop["guard_ops"][1]["Read"]["addr"])
+    mutation = verify_w1c_drain_contract(mutated, result.device_spec)
+    assert mutation["w1c_drain_contract_passed"] is False
+    assert any("ack does not target pending register" in error
+               for error in mutation["w1c_drain_oracle_errors"])
+
+
+def test_cadence_callback_oracle_models_probe_genmask_state():
+    import subprocess
+    import tempfile
+    from extractor.spec import default_bind
+    from generator import harness
+    from verification.subsystem_callback_oracle import verify_subsystem_callbacks
+
+    source = os.path.join(REHARNESS, "drivers", "test", "gpio-cadence.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    code = harness.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    with tempfile.TemporaryDirectory() as directory:
+        source_path = os.path.join(directory, "cadence-harness.c")
+        binary = os.path.join(directory, "cadence-harness")
+        with open(source_path, "w", encoding="utf-8") as fh:
+            fh.write(code)
+        compiled = subprocess.run(
+            ["cc", "-o", binary, source_path],
+            capture_output=True, text=True)
+        assert compiled.returncode == 0, compiled.stderr
+        executed = subprocess.run(
+            [binary], capture_output=True, text=True)
+        assert executed.returncode == 0, executed.stderr
+    oracle = verify_subsystem_callbacks(
+        result.formal, result.device_spec, executed.stdout)
+    assert oracle["subsystem_callback_oracle_passed"], oracle
+    assert oracle["subsystem_callbacks_executed"] == 7
+
+
 def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
     import subprocess
     import tempfile
     from extractor.metrics import score
     from extractor.spec import default_bind
     from generator import baremetal, harness, linux as linux_gen
+    from verification.gpio_mmio_source_oracle import (
+        verify_gpio_mmio_source_differential)
     from verification.subsystem_callback_oracle import verify_subsystem_callbacks
 
     def compile_run(code, *, defines=()):
@@ -1538,6 +1706,9 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
             result.formal, result.device_spec, b_output)
         assert b_oracle["subsystem_callback_oracle_passed"], b_oracle
         assert b_oracle["subsystem_callbacks_executed"] == 7
+        source_oracle = verify_gpio_mmio_source_differential(
+            result.formal, result.device_spec)
+        assert source_oracle["gpio_mmio_source_oracle_passed"], source_oracle
 
         linux_code = linux_gen.generate(
             result.formal, result.device_spec,
@@ -1549,13 +1720,15 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
             gen_results={
                 "harness": {
                     "compiled": True, "trace_passed": True,
-                    "has_todo": False, "unsupported": False, **h_oracle},
+                    "has_todo": False, "unsupported": False,
+                    **h_oracle, **source_oracle},
                 "baremetal": {
                     "compiled": True, "has_todo": False,
-                    "unsupported": False, **b_oracle},
+                    "unsupported": False, **b_oracle, **source_oracle},
                 "linux": {
                     "compiled": True, "syntax_ok": True,
-                    "has_todo": False, "unsupported": False},
+                    "has_todo": False, "unsupported": False,
+                    **source_oracle},
             })
         assert readiness["backend_harness_ready"] is True
         assert readiness["backend_bare_metal_ready"] is True
@@ -1578,6 +1751,17 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
     assert mutation_oracle["subsystem_callback_oracle_passed"] is False
     assert any("trace" in error
                for error in mutation_oracle["subsystem_callback_oracle_errors"])
+
+
+def test_gpio_mmio_source_differential_suite_catches_semantic_mutations():
+    from verification.gpio_mmio_source_oracle import (
+        verify_gpio_mmio_source_suite)
+
+    result = verify_gpio_mmio_source_suite()
+    assert len(result["cases"]) == 6
+    assert all(case["passed"] for case in result["cases"].values())
+    assert result["mutations_caught"] == 6
+    assert all(item["caught"] for item in result["mutations"].values())
 
 
 def test_readiness_score():
@@ -1883,7 +2067,7 @@ def test_machine_readable_reliability_report_distinguishes_strict_and_opaque():
 
     strict = build_driver_report(FTGPIO)
     assert strict["strict_reliable"] is True
-    assert strict["audit"]["leaf_register_ops"] == 32
+    assert strict["audit"]["leaf_register_ops"] == 35
     assert strict["audit"]["duplicate_op_ids"] == []
     assert strict["claim_scope"]["whole_program_complete"] is False
     opaque = build_driver_report(os.path.join(
@@ -2232,6 +2416,20 @@ def _write_trace_formal(path):
                 {"ReadModifyWrite": {
                     "addr": {"Symbolic": {"register": "DATA"}}}},
             ]},
+            {"name": "conditional", "ops": [
+                {"Cond": {
+                    "guard": {"Var": "set"},
+                    "then_ops": [{"Write": {
+                        "addr": {"Symbolic": {"register": "DATA"}}}}],
+                    "else_ops": [],
+                }},
+                {"Cond": {
+                    "guard": {"Var": "clear"},
+                    "then_ops": [{"Write": {
+                        "addr": {"Symbolic": {"register": "CONTROL"}}}}],
+                    "else_ops": [],
+                }},
+            ]},
         ],
     }
     path.write_text(json.dumps(document), encoding="utf-8")
@@ -2267,6 +2465,16 @@ def test_structured_trace_matches_reads_writes_and_rmw():
     assert "TRACE_MATCH_OK" in result.stdout
     assert "op 覆盖: 4/4" in result.stderr
     assert "寄存器覆盖: 3/3" in result.stderr
+
+
+def test_structured_trace_accepts_the_executed_conditional_variant():
+    result = _run_structured_trace("""
+[rhfn] runtime_conditional
+[rh] W 0x10 0x1
+""", "conditional=runtime_conditional")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "TRACE_MATCH_OK" in result.stdout
+    assert "op 覆盖: 1/1" in result.stderr
 
 
 def test_structured_trace_does_not_reuse_one_callback_segment():

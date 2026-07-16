@@ -10,7 +10,9 @@ from extractor.formal import walk_leaf_ops, walk_all_ops
 from .common import ops_to_c, local_decls, value_var_names
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
-from .subsystem_runner import emit_gpio_callback_runner, gpio_callback_plan
+from .subsystem_runner import (emit_gpio_callback_runner, gpio_callback_plan,
+                               emit_w1c_drain_runner,
+                               portable_sdhci_accessor_only, w1c_drain_plan)
 
 _VAR_RE = re.compile(r"\b[A-Za-z_]\w*\b")
 _KEYWORDS = {"if", "else", "for", "while", "return", "uint32_t", "uint16_t",
@@ -98,6 +100,20 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("    for (unsigned int i = 0; i < MMIO_SIZE; ++i)")
     L.append("        mmio_region[i] = (uint8_t)(0x5aU + 37U * i);")
     L.append("}")
+    L.append("static void harness_write_w1c_width(uint32_t value, uintptr_t a, unsigned int width, int be) {")
+    L.append("    uintptr_t off = a & 0xfff;")
+    L.append("    uint32_t old = 0;")
+    L.append("    for (unsigned int i = 0; i < width; ++i) {")
+    L.append("        unsigned int shift = be ? 8U * (width - i - 1U) : 8U * i;")
+    L.append("        old |= (uint32_t)mmio_region[off + i] << shift;")
+    L.append("    }")
+    L.append('    printf("[trace %lu] W 0x%03lx = 0x%08x\\n", trace_count++, off, value);')
+    L.append("    old &= ~value;")
+    L.append("    for (unsigned int i = 0; i < width; ++i) {")
+    L.append("        unsigned int shift = be ? 8U * (width - i - 1U) : 8U * i;")
+    L.append("        mmio_region[off + i] = (uint8_t)(old >> shift);")
+    L.append("    }")
+    L.append("}")
     L.append("static uint32_t harness_read_width(uintptr_t a, unsigned int width, int be) {")
     L.append("    uintptr_t off = a & 0xfff;")
     L.append("    uint32_t value = 0;")
@@ -124,11 +140,20 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("static inline void harness_write8(uint8_t v, uintptr_t a) { harness_write_width(v, a, 1, 0); }")
     L.append("static inline void harness_write16(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 0); }")
     L.append("static inline void harness_write32(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 0); }")
+    L.append("static inline void harness_write_w1c8(uint8_t v, uintptr_t a) { harness_write_w1c_width(v, a, 1, 0); }")
+    L.append("static inline void harness_write_w1c16(uint16_t v, uintptr_t a) { harness_write_w1c_width(v, a, 2, 0); }")
+    L.append("static inline void harness_write_w1c32(uint32_t v, uintptr_t a) { harness_write_w1c_width(v, a, 4, 0); }")
     L.append("static inline void harness_write16be(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 1); }")
     L.append("static inline void harness_write32be(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 1); }")
     L.append('#define REHARNESS_CALLBACK_BEGIN(n) printf("[reharness-callback-begin] %u\\n", (unsigned)(n))')
     L.append('#define REHARNESS_CALLBACK_MARKER(name) printf("[reharness-callback] %s\\n", (name))')
+    L.append('#define REHARNESS_CALLBACK_RESULT(v) printf("[reharness-result] 0x%llx\\n", (unsigned long long)(v))')
+    L.append('#define REHARNESS_CALLBACK_OUTPUT(n, v) printf("[reharness-output] %s=0x%llx\\n", (n), (unsigned long long)(v))')
+    L.append('#define REHARNESS_CALLBACK_STATE(d, r) printf("[reharness-state] sdata=0x%llx sdir=0x%llx\\n", (unsigned long long)(d), (unsigned long long)(r))')
     L.append('#define REHARNESS_CALLBACK_END() printf("[reharness-callback-end]\\n")')
+    L.append('#define REHARNESS_W1C_BEGIN(n) printf("[reharness-w1c-begin] %u\\n", (unsigned)(n))')
+    L.append('#define REHARNESS_W1C_MARKER(name) printf("[reharness-w1c] %s\\n", (name))')
+    L.append('#define REHARNESS_W1C_END() printf("[reharness-w1c-end]\\n")')
     L.append("")
     # register macros
     for name, off in regs.items():
@@ -142,7 +167,10 @@ def generate(formal: dict, device_spec, bind) -> str:
     normalized_any = False
     upper_refs = set()
     upper_calls = set()
-    portable_skip = device_spec.cls in {"ahci", "sdhci", "virtio_mmio"}
+    portable_skip = (
+        device_spec.cls in {"ahci", "virtio_mmio"}
+        or (device_spec.cls == "sdhci"
+            and not portable_sdhci_accessor_only(formal, device_spec)))
     for module in formal["modules"]:
         raw_ops = (_bound_resource_probe_ops(module["ops"])
                    if module["name"] in probe_refs else module["ops"])
@@ -188,7 +216,9 @@ def generate(formal: dict, device_spec, bind) -> str:
         params = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
         params = (params + ", ") if params else ""
         params += f"{priv} *dev"
-        L.append(f"static void {fn.name}({params}) {{")
+        has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
+        return_type = _c_type(fn.signature.return_type, bind) if has_return else "void"
+        L.append(f"static {return_type} {fn.name}({params}) {{")
         # declare read vars + value/guard locals (common.local_decls skips
         # member-access read targets, which ops_to_c discards)
         declared = {p.name for p in keep} | {"base"}
@@ -196,11 +226,14 @@ def generate(formal: dict, device_spec, bind) -> str:
         if decls:
             L.append(decls)
         L.append(f"    uintptr_t base = dev->base;")
-        L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1))
+        L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1,
+                          state_expr="dev"))
         L.append("}")
         L.append("")
 
     L.extend(emit_gpio_callback_runner(
+        formal, device_spec, priv, static=True))
+    L.extend(emit_w1c_drain_runner(
         formal, device_spec, priv, static=True))
 
     # test main: call probe (or first function) and dump trace
@@ -213,6 +246,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     if any(s.name == "hpi_regstep" for s in state_fields):
         init.append(".hpi_regstep = 1")
     L.append(f"    {priv} dev = {{ {', '.join(init)} }};")
+    L.append("    harness_seed_mmio();")
     if entry:
         keep = [p for p in entry.signature.params if p.type != "DeviceState"]
         call_args = ", ".join(["0"] * len(keep)) + (", " if keep else "") + "&dev"
@@ -220,6 +254,9 @@ def generate(formal: dict, device_spec, bind) -> str:
     if gpio_callback_plan(formal, device_spec):
         L.append("    harness_seed_mmio();")
         L.append("    reharness_run_subsystem_callbacks(&dev);")
+    if w1c_drain_plan(formal, device_spec):
+        L.append("    harness_seed_mmio();")
+        L.append("    reharness_run_w1c_drains(&dev);")
     L.append('    printf("harness done: %lu MMIO ops traced\\n", trace_count);')
     L.append("    return 0;")
     L.append("}")

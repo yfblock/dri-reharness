@@ -208,9 +208,15 @@ def main(argv: list[str] | None = None) -> int:
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
-        from generator.subsystem_runner import gpio_callback_plan
+        from generator.subsystem_runner import gpio_callback_plan, w1c_drain_plan
         from verification.subsystem_callback_oracle import (
             verify_subsystem_callbacks)
+        from verification.gpio_mmio_source_oracle import (
+            verify_gpio_mmio_source_differential)
+        from verification.sdhci_accessor_oracle import (
+            verify_sdhci_accessor_source_contract)
+        from verification.w1c_drain_oracle import (
+            verify_w1c_drain_contract, verify_w1c_drain_runtime)
 
         res = extract_ris(_config_from_args(args))
         name = res.formal["driver"]
@@ -236,6 +242,16 @@ def main(argv: list[str] | None = None) -> int:
 
         # ── generated C + verification (derived) ──
         gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
+        source_oracle = verify_gpio_mmio_source_differential(
+            res.formal, res.device_spec)
+        sdhci_oracle = verify_sdhci_accessor_source_contract(res.formal)
+        w1c_contract = verify_w1c_drain_contract(res.formal, res.device_spec)
+        _w(ver_dir, "gpio-mmio-source-oracle.json", json.dumps(
+            source_oracle, indent=2, sort_keys=True))
+        _w(ver_dir, "sdhci-accessor-oracle.json", json.dumps(
+            sdhci_oracle, indent=2, sort_keys=True))
+        _w(ver_dir, "w1c-drain-oracle.json", json.dumps(
+            w1c_contract, indent=2, sort_keys=True))
         binds, results, gen_results = [], {}, {}
         for backend, gen in gens.items():
             bind = default_bind(res.device_spec, backend)
@@ -249,7 +265,10 @@ def main(argv: list[str] | None = None) -> int:
                 fh.write(code)
             has_todo = "TODO" in code
             unsupported = "REHARNESS_UNSUPPORTED" in code
-            gr: dict = {"has_todo": has_todo, "unsupported": unsupported}
+            gr: dict = {
+                "has_todo": has_todo, "unsupported": unsupported,
+                **source_oracle, **sdhci_oracle, **w1c_contract,
+            }
 
             if backend == "harness":
                 binp = os.path.join(tmp_dir, "harness.bin")
@@ -261,6 +280,8 @@ def main(argv: list[str] | None = None) -> int:
                     out = executed.stdout
                     _w(ver_dir, "harness.trace.txt", out)
                     gr.update(verify_subsystem_callbacks(
+                        res.formal, res.device_spec, out))
+                    gr.update(verify_w1c_drain_runtime(
                         res.formal, res.device_spec, out))
                     # trace equivalence vs RIS entry (probe) module. Only the
                     # UNCONDITIONAL (top-level) ops are compared — ops inside a
@@ -311,7 +332,8 @@ def main(argv: list[str] | None = None) -> int:
                                    capture_output=True, text=True)
                 gr["compiled"] = r.returncode == 0
                 plan = gpio_callback_plan(res.formal, res.device_spec)
-                if r.returncode == 0 and plan:
+                drain_plan = w1c_drain_plan(res.formal, res.device_spec)
+                if r.returncode == 0 and (plan or drain_plan):
                     oracle_bin = os.path.join(tmp_dir, "baremetal-oracle.bin")
                     oracle_compile = subprocess.run(
                         ["cc", "-DREHARNESS_BAREMETAL_ORACLE", "-Wall",
@@ -323,6 +345,8 @@ def main(argv: list[str] | None = None) -> int:
                         _w(ver_dir, "baremetal.callback.trace.txt",
                            oracle_run.stdout)
                         gr.update(verify_subsystem_callbacks(
+                            res.formal, res.device_spec, oracle_run.stdout))
+                        gr.update(verify_w1c_drain_runtime(
                             res.formal, res.device_spec, oracle_run.stdout))
                         if oracle_run.returncode != 0:
                             gr["subsystem_callback_oracle_passed"] = False

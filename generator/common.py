@@ -60,6 +60,12 @@ def value_var_names(ops) -> set[str]:
             names |= _vars_in_expr(op["Write"].get("value"))
         elif "ReadModifyWrite" in op:
             names |= _vars_in_expr(op["ReadModifyWrite"].get("transform"))
+        elif "StateWrite" in op:
+            names |= _vars_in_expr(op["StateWrite"].get("value"))
+        elif "OutputWrite" in op:
+            names |= _vars_in_expr(op["OutputWrite"].get("value"))
+        elif "Return" in op:
+            names |= _vars_in_expr(op["Return"].get("value"))
     return names
 
 
@@ -79,6 +85,11 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
     read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(ops)
                         if "Read" in o and _is_simple_id(o["Read"]["var"])
                         and o["Read"]["var"] not in declared})
+    read_vars += sorted({o["StateRead"]["var"] for o in walk_leaf_ops(ops)
+                         if "StateRead" in o
+                         and _is_simple_id(o["StateRead"]["var"])
+                         and o["StateRead"]["var"] not in declared
+                         and o["StateRead"]["var"] not in read_vars})
     declared |= set(read_vars)
     for v in read_vars:
         lines.append(f"{pad}{ctype} {v} = 0;")
@@ -103,7 +114,9 @@ def _width_suffix(width: str) -> str:
 
 def _mmio_primitive(bind, operation: str, body: dict) -> str:
     byte_order = body.get("evidence", {}).get("byte_order", "native")
-    semantic = operation + ("BE" if byte_order == "big" else "")
+    write_semantics = body.get("evidence", {}).get("write_semantics")
+    semantic = operation + ("W1C" if write_semantics == "w1c" else "")
+    semantic += "BE" if byte_order == "big" else ""
     primitive = bind.prim(semantic, body["width"])
     if primitive:
         return primitive
@@ -161,7 +174,8 @@ def addr_to_c(addr: dict, base_expr: str, register_macros: dict[str, int]) -> st
 
 
 def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
-             indent: int = 1, word_type: str = "uint32_t") -> str:
+             indent: int = 1, word_type: str = "uint32_t",
+             state_expr: str = "dev") -> str:
     """Translate a list of formal RISOps to C statements."""
     pad = "    " * indent
     out: list[str] = []
@@ -177,11 +191,13 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             guard = expr_to_c(op["Cond"]["guard"])
             out.append(f"{pad}if ({guard}) {{")
             out.append(ops_to_c(op["Cond"]["then_ops"], bind, base_expr,
-                                register_macros, indent + 1, word_type))
+                                register_macros, indent + 1, word_type,
+                                state_expr))
             if op["Cond"].get("else_ops"):
                 out.append(f"{pad}}} else {{")
                 out.append(ops_to_c(op["Cond"]["else_ops"], bind, base_expr,
-                                    register_macros, indent + 1, word_type))
+                                    register_macros, indent + 1, word_type,
+                                    state_expr))
             out.append(f"{pad}}}")
         elif "Loop" in op:
             loop = op["Loop"]
@@ -193,7 +209,23 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                 step = loop.get("step", "").strip().rstrip(";")
                 out.append(f"{pad}for ({init}; {guard}; {step}) {{")
                 out.append(ops_to_c(loop.get("body", []), bind, base_expr,
-                                    register_macros, indent + 1, word_type))
+                                    register_macros, indent + 1, word_type,
+                                    state_expr))
+                out.append(f"{pad}}}")
+            elif (loop.get("reliability") == "Exact"
+                  and loop.get("proof_kind") == "masked_w1c_drain"):
+                out.append(f"{pad}for (;;) {{")
+                out.append(ops_to_c(
+                    loop.get("guard_ops", []), bind, base_expr,
+                    register_macros, indent + 1, word_type, state_expr))
+                guard_var = loop.get("guard_var", "guard")
+                guard_value = expr_to_c(loop.get("guard_value"))
+                out.append(f"{pad}    {guard_var} = {guard_value};")
+                out.append(f"{pad}    if (!{guard_var})")
+                out.append(f"{pad}        break;")
+                out.append(ops_to_c(
+                    loop.get("body", []), bind, base_expr,
+                    register_macros, indent + 1, word_type, state_expr))
                 out.append(f"{pad}}}")
             else:
                 out.append(
@@ -201,7 +233,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                     f"{loop.get('loop_kind', 'loop')} guard={guard} */")
         elif "Seq" in op:
             out.append(ops_to_c(op["Seq"]["ops"], bind, base_expr,
-                                register_macros, indent, word_type))
+                                register_macros, indent, word_type, state_expr))
         elif "Read" in op:
             o = op["Read"]
             r = _mmio_primitive(bind, "MmioRead", o)
@@ -210,6 +242,8 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             if (_is_simple_id(var)
                     or re.fullmatch(r"(?:g|dev)->[A-Za-z_]\w*", var)):
                 out.append(f"{pad}{var} = {r}({a});")
+                if _is_simple_id(var):
+                    out.append(f"{pad}(void){var};")
             else:
                 # member-access target (e.g. edu->revision) — discard the read
                 # result (the field isn't in the generated harness struct)
@@ -228,6 +262,17 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             t = _replace_expr_var(o.get("transform"), o.get("read_var"), "v")
             t_c = "v" if isinstance(t, dict) and "Top" in t else expr_to_c(t)
             out.append(f"{pad}{{ {word_type} v = {r}({a}); {w}({t_c}, {a}); }}")
+        elif "StateRead" in op:
+            o = op["StateRead"]
+            out.append(f"{pad}{o['var']} = {state_expr}->{o['field']};")
+        elif "StateWrite" in op:
+            o = op["StateWrite"]
+            out.append(f"{pad}{state_expr}->{o['field']} = {expr_to_c(o['value'])};")
+        elif "OutputWrite" in op:
+            o = op["OutputWrite"]
+            out.append(f"{pad}*{o['target']} = {expr_to_c(o['value'])};")
+        elif "Return" in op:
+            out.append(f"{pad}return {expr_to_c(op['Return']['value'])};")
         elif "Delay" in op:
             out.append(f"{pad}/* delay {expr_to_c(op['Delay']['cycles'])} ns */")
     return "\n".join(s for s in out if s)

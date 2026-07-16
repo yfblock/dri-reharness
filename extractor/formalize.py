@@ -53,6 +53,24 @@ def _common_fields(op: Op, op_id: str, addr: dict, value=None) -> dict:
     }
 
 
+def _semantic_fields(op: Op, op_id: str, value=None) -> dict:
+    value_precision = "unknown" if _expr_has_top(value) else "exact"
+    path_precision = "syntactic" if op.cond_stack else "unconditional"
+    domain = (op.evidence or {}).get("access_domain", "source_state")
+    reliability = ("Unsupported" if domain.startswith("unsupported")
+                   else "Unknown" if value_precision == "unknown"
+                   else "Conservative" if path_precision == "syntactic"
+                   else "Exact")
+    return {
+        "op_id": op_id,
+        "evidence": dict(op.evidence),
+        "reliability": reliability,
+        "value_precision": value_precision,
+        "path_precision": path_precision,
+        "access_domain": domain,
+    }
+
+
 def _to_risop(op: Op, id_counter: list[int]) -> dict:
     addr = F.formal_addr(op.addr, op.reg_name)
     width = F.width_of(op.width)
@@ -75,6 +93,26 @@ def _to_risop(op: Op, id_counter: list[int]) -> dict:
                 "intent": op.intent}
         body.update(_common_fields(op, op_id, addr, transform))
         return {"ReadModifyWrite": body}
+    if op.kind == "StateRead":
+        body = {"field": op.state_field, "var": op.var or f"s{id_counter[0]}",
+                "width": width}
+        body.update(_semantic_fields(op, op_id))
+        return {"StateRead": body}
+    if op.kind == "StateWrite":
+        value = F.parse_expr(op.value)
+        body = {"field": op.state_field, "value": value, "width": width}
+        body.update(_semantic_fields(op, op_id, value))
+        return {"StateWrite": body}
+    if op.kind == "OutputWrite":
+        value = F.parse_expr(op.value)
+        body = {"target": op.var, "value": value}
+        body.update(_semantic_fields(op, op_id, value))
+        return {"OutputWrite": body}
+    if op.kind == "Return":
+        value = F.parse_expr(op.value)
+        body = {"value": value}
+        body.update(_semantic_fields(op, op_id, value))
+        return {"Return": body}
     if op.kind == "Delay":
         ns = getattr(op, "_delay_ns", 0)
         return {"Delay": {"cycles": F.parse_expr(str(ns))}}
@@ -133,6 +171,44 @@ def _bounded_loop(frame: dict, macros) -> dict | None:
     }
 
 
+def _w1c_drain_loop(frame: dict, body: list[dict]) -> dict | None:
+    """Prove a masked W1C drain loop under an explicit quiescence assumption."""
+    if frame.get("loop_kind") != "while" or len(body) != 3:
+        return None
+    first, second, write = body
+    if not ("Read" in first and "Read" in second and "Write" in write):
+        return None
+    pending = first["Read"]
+    mask = second["Read"]
+    acknowledge = write["Write"]
+    value = acknowledge.get("value", {})
+    if pending.get("addr") != acknowledge.get("addr") or "Var" not in value:
+        return None
+    status = value["Var"]
+    guard_text = frame.get("guard", "")
+    if (not re.search(rf"\b{re.escape(status)}\s*=", guard_text)
+            or "&" not in guard_text):
+        return None
+    acknowledge.setdefault("evidence", {})["write_semantics"] = "w1c"
+    return {
+        "count": {"Const": 1},
+        "reliability": "Exact",
+        "bounded": True,
+        "proof_kind": "masked_w1c_drain",
+        "proof": "pending-and-mask guard acknowledged through W1C register",
+        "environment_assumptions": [
+            "no new pending bits arrive while the drain handler executes"],
+        "max_iterations": 1,
+        "guard_var": status,
+        "guard_value": {"BinOp": {
+            "op": "BitAnd", "left": {"Var": pending["var"]},
+            "right": {"Var": mask["var"]},
+        }},
+        "guard_ops": [first, second],
+        "body": [write],
+    }
+
+
 def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict]:
     """Build nested Cond/Loop nodes from structured lexical control frames."""
     result = []
@@ -166,6 +242,8 @@ def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict
                     "body": body,
                 }
                 proof = _bounded_loop(frame, macros)
+                if proof is None:
+                    proof = _w1c_drain_loop(frame, body)
                 if proof:
                     loop.update(proof)
                 result.append({"Loop": loop})

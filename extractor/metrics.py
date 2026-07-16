@@ -86,7 +86,11 @@ def _computed_is_lowerable(expr: dict | None) -> bool:
 
 
 def module_metrics(module: dict) -> dict:
-    ops = list(walk_leaf_ops(module["ops"]))
+    # State and callback-result operations are semantic RIS leaves, but are not
+    # hardware register accesses and must not inflate MMIO readiness metrics.
+    semantic_only = {"StateRead", "StateWrite", "OutputWrite", "Return"}
+    ops = [op for op in walk_leaf_ops(module["ops"])
+           if not (semantic_only & set(op))]
     total = len(ops)
     sym = fixed = comp = unsafe_comp = rmw = 0
     unknown_val = 0
@@ -304,6 +308,18 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             f"{unmodeled_subsystem} subsystem library callback(s) lack semantic summary")
     unvalidated_subsystem = met.get("subsystem_summary", {}).get(
         "generic_backend_unvalidated", 0)
+    gpio_source_required = bool(formal.get("metadata", {}).get(
+        "subsystem_summary_analysis", {}).get(
+            "summaries", {}).get("gpio_generic", []))
+    sdhci_source_required = any(
+        (op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+         or {}).get("evidence", {}).get("subsystem_summary") == "sdhci_accessor"
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
+    w1c_drain_required = any(
+        "Loop" in op and op["Loop"].get("proof_kind") == "masked_w1c_drain"
+        for module in formal.get("modules", [])
+        for op in walk_all_ops(module.get("ops", [])))
     if met["unsafe_computed"] > 0:
         blockers.append(
             f"{met['unsafe_computed']} unsafe dynamic register address(es) "
@@ -364,10 +380,18 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             return gen_results.get(backend, {})
         h = _gr("harness")
         if h:
+            h_source_ready = (not gpio_source_required or bool(
+                h.get("gpio_mmio_source_oracle_passed")))
+            h_source_ready &= (not sdhci_source_required or bool(
+                h.get("sdhci_accessor_oracle_passed")))
+            h_source_ready &= (not w1c_drain_required or bool(
+                h.get("w1c_drain_contract_passed")
+                and h.get("w1c_drain_runtime_passed")))
             harness_subsystem_ready = bool(
                 linux_subsystem_ready
                 and (unvalidated_subsystem == 0
-                     or h.get("subsystem_callback_oracle_passed")))
+                     or h.get("subsystem_callback_oracle_passed"))
+                and h_source_ready)
             harness_ready = bool(accounting_ready and path_ready and has_register_access
                                  and harness_subsystem_ready
                                  and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
@@ -379,10 +403,18 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                  and not h.get("unsupported"))
         bm = _gr("baremetal")
         if bm:
+            bm_source_ready = (not gpio_source_required or bool(
+                bm.get("gpio_mmio_source_oracle_passed")))
+            bm_source_ready &= (not sdhci_source_required or bool(
+                bm.get("sdhci_accessor_oracle_passed")))
+            bm_source_ready &= (not w1c_drain_required or bool(
+                bm.get("w1c_drain_contract_passed")
+                and bm.get("w1c_drain_runtime_passed")))
             baremetal_subsystem_ready = bool(
                 linux_subsystem_ready
                 and (unvalidated_subsystem == 0
-                     or bm.get("subsystem_callback_oracle_passed")))
+                     or bm.get("subsystem_callback_oracle_passed"))
+                and bm_source_ready)
             baremetal_ready = bool(accounting_ready and path_ready and has_register_access
                                    and baremetal_subsystem_ready
                                    and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
@@ -393,6 +425,12 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                    and not bm.get("unsupported"))
         lx = _gr("linux")
         if lx:
+            linux_source_ready = (not gpio_source_required or bool(
+                lx.get("gpio_mmio_source_oracle_passed")))
+            linux_source_ready &= (not sdhci_source_required or bool(
+                lx.get("sdhci_accessor_oracle_passed")))
+            linux_source_ready &= (not w1c_drain_required or bool(
+                lx.get("w1c_drain_contract_passed")))
             # Linux has source-aware class-specific lowerings (notably clock
             # models) that may faithfully preserve semantics a generic
             # harness/bare-metal backend cannot execute.  Judge the actual
@@ -400,6 +438,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             # backend readiness as a prerequisite.
             linux_ready = bool(accounting_ready and path_ready
                                and linux_subsystem_ready
+                               and linux_source_ready
                                and met["unsafe_computed"] == 0
                                and met["unknown_value"] == 0
                                and unsupported_ops == 0
@@ -413,6 +452,22 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                and has_register_access)
             if lx.get("unsupported"):
                 blockers.append("linux backend has unsupported semantic bindings")
+
+        if gpio_source_required and not all(
+                _gr(backend).get("gpio_mmio_source_oracle_passed", False)
+                for backend in ("harness", "baremetal", "linux")):
+            blockers.append(
+                "gpio-mmio callbacks lack passing source differential oracle")
+        if sdhci_source_required and not all(
+                _gr(backend).get("sdhci_accessor_oracle_passed", False)
+                for backend in ("harness", "baremetal", "linux")):
+            blockers.append(
+                "SDHCI accessors lack passing source contract oracle")
+        if w1c_drain_required and not (
+                _gr("harness").get("w1c_drain_runtime_passed", False)
+                and _gr("baremetal").get("w1c_drain_runtime_passed", False)
+                and _gr("linux").get("w1c_drain_contract_passed", False)):
+            blockers.append("W1C drain loop lacks contract/runtime oracle")
 
     if (unvalidated_subsystem
             and not (harness_subsystem_ready and baremetal_subsystem_ready)):

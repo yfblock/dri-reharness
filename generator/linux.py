@@ -15,6 +15,7 @@ import re
 import copy
 
 from extractor.formal import walk_leaf_ops
+from .subsystem_runner import portable_sdhci_accessor_only
 from .common import (ops_to_c, local_decls, value_var_names,
                      _replace_expr_var)
 
@@ -932,13 +933,18 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     if decls:
         lines.append(decls.replace("    ", "\t"))
     lines.append("\tvoid __iomem *base = g->base;")
-    body = ops_to_c(safe_ops, bind, "base", regs, indent=1, word_type="u32")
+    body = ops_to_c(safe_ops, bind, "base", regs, indent=1,
+                    word_type="u32", state_expr="g")
     if body:
         lines.append(body.replace("    ", "\t"))
-    if table_field == "gpio_chip.get_multiple":
+    has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
+    has_output = any("OutputWrite" in op for op in walk_leaf_ops(safe_ops))
+    if table_field == "gpio_chip.get_multiple" and not has_output:
         result = _last_read_var(module) or "0"
         lines.append(f"\t*bits = (*bits & ~*mask) | ({result} & *mask);")
         lines.append("\treturn 0;")
+    elif has_return:
+        pass
     elif ret == "irqreturn_t":
         lines.append("\treturn IRQ_HANDLED;")
     elif "*" in ret:
@@ -1032,7 +1038,8 @@ def _emit_probe_body(module, regs, bind, indent="\t",
     if decls:
         out.extend(decls.replace("    ", indent).splitlines())
     out.append(f"{indent}void __iomem *base = g->base;")
-    body = ops_to_c(safe_ops, bind, "base", regs, indent=1, word_type="u32")
+    body = ops_to_c(safe_ops, bind, "base", regs, indent=1,
+                    word_type="u32", state_expr="g")
     if body:
         out.extend(body.replace("    ", indent).splitlines())
     return out
@@ -1254,7 +1261,9 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
     safe_function_calls = set(_portable_function_macros(formal))
     cid = _cid(dev)
     _, probe_module = _probe_ops(device_spec, formal)
-    if device_spec.cls in {"ahci", "sdhci", "virtio_mmio"}:
+    if (device_spec.cls in {"ahci", "virtio_mmio"}
+            or (device_spec.cls == "sdhci"
+                and not portable_sdhci_accessor_only(formal, device_spec))):
         probe_module = None
     by_field = {field: fn for fn, field in callbacks.items()}
     has_gpio = device_spec.cls == "gpio_controller" or any(
@@ -1607,7 +1616,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             callback_code.append("")
     if device_spec.cls == "ahci":
         unsupported.append("AHCI probe requires libata host/port state bindings")
-    if device_spec.cls == "sdhci":
+    if (device_spec.cls == "sdhci"
+            and not portable_sdhci_accessor_only(formal, device_spec)):
         unsupported.append("SDHCI probe requires mmc/host state bindings")
     if device_spec.cls == "virtio_mmio":
         unsupported.append("virtio-mmio probe requires virtio core state bindings")

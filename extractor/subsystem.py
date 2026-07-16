@@ -159,6 +159,28 @@ def _op_for_entry(kind: str, entry: dict, store: dict, macros, width: int,
     )
 
 
+def _semantic_op(kind: str, evidence: dict, width: int, *,
+                 field: str | None = None, value: str | None = None,
+                 var: str | None = None) -> Op:
+    semantic_evidence = copy.deepcopy(evidence)
+    semantic_evidence["access_domain"] = "source_state"
+    return Op(
+        kind=kind, addr={}, width=width, value=value, var=var,
+        state_field=field, evidence=semantic_evidence,
+        source_loc=f"subsystem gpio_generic_chip_init:{evidence['line']}",
+        line=evidence["line"],
+    )
+
+
+def _conditional_entry(entry: dict, guard: str) -> dict:
+    conditioned = copy.deepcopy(entry)
+    conditioned.setdefault("conditions", []).append(guard)
+    conditioned.setdefault("control", []).append({
+        "kind": "cond", "guard": guard, "source": "subsystem-summary",
+    })
+    return conditioned
+
+
 def _synthetic_func(owner: Func, suffix: str, params: list[tuple[str, str]],
                     role: str, table: str, return_type: str = "int") -> Func:
     name = f"{owner.name}__gpio_generic_{suffix}"
@@ -169,7 +191,8 @@ def _synthetic_func(owner: Func, suffix: str, params: list[tuple[str, str]],
         synthetic_callback_table=f"gpio_chip.{table}",
         synthetic_return_type=return_type,
         synthetic_param_types={
-            name: ("DeviceState" if name == "gc" else "UInt")
+            name: ("DeviceState" if name == "gc" else
+                   "UIntPtr" if "*" in _ctype else "UInt")
             for name, _ctype in params
         },
     )
@@ -217,17 +240,25 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                     fields["flags"][-1].get("expr", ""), {}, macros)
                 flag_value = (evaluated_flags.n
                               if isinstance(evaluated_flags, Const) else None)
+            flag_unreadable_set = 1 << 1
+            flag_unreadable_dir = 1 << 2
             flag_byte_order = 1 << 3
             flag_read_output_set = 1 << 4
-            supported_flag_mask = flag_byte_order | flag_read_output_set
+            flag_no_set_on_input = 1 << 6
+            supported_flag_mask = (
+                flag_unreadable_set | flag_unreadable_dir | flag_byte_order
+                | flag_read_output_set | flag_no_set_on_input)
             if flag_value is None:
                 flag_tokens = {
                     token.strip() for token in re.sub(r"[()]", "", flag_text).split("|")
                     if token.strip()
                 }
                 flag_constants = {
+                    "GPIO_GENERIC_UNREADABLE_REG_SET": flag_unreadable_set,
+                    "GPIO_GENERIC_UNREADABLE_REG_DIR": flag_unreadable_dir,
                     "GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER": flag_byte_order,
                     "GPIO_GENERIC_READ_OUTPUT_REG_SET": flag_read_output_set,
+                    "GPIO_GENERIC_NO_SET_ON_INPUT": flag_no_set_on_input,
                 }
                 if flag_tokens <= {"0", "0x0", *flag_constants}:
                     flag_value = 0
@@ -237,6 +268,7 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                 flag_value is None
                 or bool(flag_value & ~supported_flag_mask)
                 or bool(flag_value & flag_byte_order and width == 8))
+            unsupported_flags = unsupported_flags or width == 8
             domain = (
                 "gpio_generic_config_variant" if variant
                 else "gpio_generic_flags_variant" if unsupported_flags
@@ -248,6 +280,12 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                 else "native")
             read_output_set = bool(
                 flag_value is not None and flag_value & flag_read_output_set)
+            unreadable_set = bool(
+                flag_value is not None and flag_value & flag_unreadable_set)
+            unreadable_dir = bool(
+                flag_value is not None and flag_value & flag_unreadable_dir)
+            no_set_on_input = bool(
+                flag_value is not None and flag_value & flag_no_set_on_input)
 
             def evidence(callback: str) -> dict:
                 item = _summary_evidence(
@@ -255,19 +293,56 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                 item["byte_order"] = byte_order
                 return item
 
-            # gpio_generic_chip_init reads the initial data/direction state.
+            # gpio_generic_chip_init snapshots data and direction into library
+            # private shadow state. These state writes are deliberately
+            # separate from MMIO accounting.
             init_evidence = evidence("gpio_generic_chip_init")
             owner_extraction = extractions.get(owner.symbol_id or owner.name)
             if owner_extraction is not None:
-                init_entries = list(dat)
-                if read_output_set:
-                    init_entries.extend(fields.get("set", []))
-                init_entries.extend(fields.get("dirout", []))
-                init_entries.extend(fields.get("dirin", []))
-                for entry in init_entries:
-                    owner_extraction.ops.append(_op_for_entry(
-                        "Read", entry, store, macros, width, init_evidence,
-                        var="gpio_initial_state"))
+                for entry in dat:
+                    owner_extraction.ops.extend([
+                        _op_for_entry(
+                            "Read", entry, store, macros, width, init_evidence,
+                            var="gpio_initial_data"),
+                        _semantic_op(
+                            "StateWrite", init_evidence, width,
+                            field="gpio_sdata", value="gpio_initial_data"),
+                    ])
+                if fields.get("set") and not fields.get("clr") and not unreadable_set:
+                    for entry in fields.get("set", []):
+                        owner_extraction.ops.extend([
+                            _op_for_entry(
+                                "Read", entry, store, macros, width, init_evidence,
+                                var="gpio_initial_data"),
+                            _semantic_op(
+                                "StateWrite", init_evidence, width,
+                                field="gpio_sdata", value="gpio_initial_data"),
+                        ])
+                if unreadable_dir and (fields.get("dirout") or fields.get("dirin")):
+                    owner_extraction.ops.append(_semantic_op(
+                        "StateWrite", init_evidence, width,
+                        field="gpio_sdir", value="0"))
+                elif fields.get("dirout"):
+                    for entry in fields.get("dirout", []):
+                        owner_extraction.ops.extend([
+                            _op_for_entry(
+                                "Read", entry, store, macros, width, init_evidence,
+                                var="gpio_initial_direction"),
+                            _semantic_op(
+                                "StateWrite", init_evidence, width,
+                                field="gpio_sdir", value="gpio_initial_direction"),
+                        ])
+                elif fields.get("dirin"):
+                    for entry in fields.get("dirin", []):
+                        owner_extraction.ops.extend([
+                            _op_for_entry(
+                                "Read", entry, store, macros, width, init_evidence,
+                                var="gpio_initial_direction"),
+                            _semantic_op(
+                                "StateWrite", init_evidence, width,
+                                field="gpio_sdir",
+                                value="gpio_initial_direction ^ 0xffffffff"),
+                        ])
                 owner_extraction.ops.sort(key=lambda op: op.line)
 
             callbacks: list[tuple[Func, FuncExtraction]] = []
@@ -277,48 +352,94 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                 owner, "get",
                 [("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
                 "read_config", "get",
-                [_op_for_entry("Read", entry, store, macros, width,
-                               get_evidence, var="value") for entry in get_entries]))
+                sum(([
+                    _op_for_entry("Read", entry, store, macros, width,
+                                  get_evidence, var="value"),
+                    _semantic_op(
+                        "Return", get_evidence, width,
+                        value="(value & BIT(offset)) != 0"),
+                ] for entry in get_entries), [])))
             callbacks.append(_make_callback(
                 owner, "get_multiple",
                 [("gc", "struct gpio_chip *"), ("mask", "unsigned long *"),
                  ("bits", "unsigned long *")],
                 "read_config", "get_multiple",
-                [_op_for_entry("Read", entry, store, macros, width,
-                               get_evidence, var="value") for entry in get_entries]))
+                sum(([
+                    _op_for_entry("Read", entry, store, macros, width,
+                                  get_evidence, var="value"),
+                    _semantic_op(
+                        "OutputWrite", get_evidence, width, var="bits",
+                        value="(*bits & ~(*mask)) | (value & *mask)"),
+                    _semantic_op("Return", get_evidence, width, value="0"),
+                ] for entry in get_entries), [])))
 
             set_entries = fields.get("set", []) or dat
             clr_entries = fields.get("clr", [])
             set_evidence = evidence("gpio_chip.set")
             if clr_entries and fields.get("set"):
-                set_ops = [
-                    _op_for_entry("Write", entry, store, macros, width,
-                                  set_evidence, value="BIT(offset)")
-                    for entry in set_entries + clr_entries
-                ]
-            else:
-                set_ops = [
+                set_body = [
                     _op_for_entry(
-                        "ReadModifyWrite", entry, store, macros, width,
-                        set_evidence,
-                        value="value ? (__old | BIT(offset)) : (__old & ~BIT(offset))",
-                        var="__old")
-                    for entry in set_entries
+                        "Write", _conditional_entry(entry, "value != 0"),
+                        store, macros, width, set_evidence,
+                        value="BIT(offset)") for entry in set_entries]
+                set_body += [
+                    _op_for_entry(
+                        "Write", _conditional_entry(entry, "value == 0"),
+                        store, macros, width, set_evidence,
+                        value="BIT(offset)") for entry in clr_entries]
+            else:
+                next_data = (
+                    "value ? (__shadow_data | BIT(offset)) : "
+                    "(__shadow_data & ~BIT(offset))")
+                set_body = [
+                    _semantic_op(
+                        "StateRead", set_evidence, width,
+                        field="gpio_sdata", var="__shadow_data"),
+                    _semantic_op(
+                        "StateWrite", set_evidence, width,
+                        field="gpio_sdata", value=next_data),
                 ]
+                set_body += [
+                    _op_for_entry(
+                        "Write", entry, store, macros, width, set_evidence,
+                        value=next_data) for entry in set_entries]
+            set_ops = set_body + [
+                _semantic_op("Return", set_evidence, width, value="0")]
             callbacks.append(_make_callback(
                 owner, "set",
                 [("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
                  ("value", "int")],
                 "write_config", "set", set_ops))
 
-            multiple_ops = [
-                _op_for_entry(
-                    "ReadModifyWrite", entry, store, macros, width,
-                    set_evidence,
-                    value="(__old & ~mask) | (bits & mask)",
-                    var="__old")
-                for entry in set_entries
-            ]
+            if clr_entries and fields.get("set"):
+                multiple_ops = [
+                    _op_for_entry(
+                        "Write", _conditional_entry(entry, "(*bits & *mask) != 0"),
+                        store, macros, width, set_evidence,
+                        value="*bits & *mask") for entry in set_entries]
+                multiple_ops += [
+                    _op_for_entry(
+                        "Write", _conditional_entry(
+                            entry, "((~(*bits)) & *mask) != 0"),
+                        store, macros, width, set_evidence,
+                        value="(~(*bits)) & *mask") for entry in clr_entries]
+            else:
+                next_multiple = (
+                    "(__shadow_data & ~(*mask)) | (*bits & *mask)")
+                multiple_ops = [
+                    _semantic_op(
+                        "StateRead", set_evidence, width,
+                        field="gpio_sdata", var="__shadow_data"),
+                    _semantic_op(
+                        "StateWrite", set_evidence, width,
+                        field="gpio_sdata", value=next_multiple),
+                ]
+                multiple_ops += [
+                    _op_for_entry(
+                        "Write", entry, store, macros, width, set_evidence,
+                        value=next_multiple) for entry in set_entries]
+            multiple_ops.append(
+                _semantic_op("Return", set_evidence, width, value="0"))
             callbacks.append(_make_callback(
                 owner, "set_multiple",
                 [("gc", "struct gpio_chip *"), ("mask", "unsigned long *"),
@@ -328,22 +449,45 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
             direction_entries = fields.get("dirout", []) + fields.get("dirin", [])
             if direction_entries:
                 dir_evidence = evidence("gpio_chip.direction")
-                input_ops = []
-                output_ops = []
+                input_value = "__shadow_dir & ~BIT(offset)"
+                output_value = "__shadow_dir | BIT(offset)"
+                input_ops = [
+                    _semantic_op(
+                        "StateRead", dir_evidence, width,
+                        field="gpio_sdir", var="__shadow_dir"),
+                    _semantic_op(
+                        "StateWrite", dir_evidence, width,
+                        field="gpio_sdir", value=input_value),
+                ]
+                direction_output_ops = [
+                    _semantic_op(
+                        "StateRead", dir_evidence, width,
+                        field="gpio_sdir", var="__shadow_dir"),
+                    _semantic_op(
+                        "StateWrite", dir_evidence, width,
+                        field="gpio_sdir", value=output_value),
+                ]
                 for entry in fields.get("dirout", []):
                     input_ops.append(_op_for_entry(
-                        "ReadModifyWrite", entry, store, macros, width,
-                        dir_evidence, value="__old & ~BIT(offset)", var="__old"))
-                    output_ops.append(_op_for_entry(
-                        "ReadModifyWrite", entry, store, macros, width,
-                        dir_evidence, value="__old | BIT(offset)", var="__old"))
+                        "Write", entry, store, macros, width,
+                        dir_evidence, value=input_value))
+                    direction_output_ops.append(_op_for_entry(
+                        "Write", entry, store, macros, width,
+                        dir_evidence, value=output_value))
                 for entry in fields.get("dirin", []):
                     input_ops.append(_op_for_entry(
-                        "ReadModifyWrite", entry, store, macros, width,
-                        dir_evidence, value="__old | BIT(offset)", var="__old"))
-                    output_ops.append(_op_for_entry(
-                        "ReadModifyWrite", entry, store, macros, width,
-                        dir_evidence, value="__old & ~BIT(offset)", var="__old"))
+                        "Write", entry, store, macros, width,
+                        dir_evidence, value=f"({input_value}) ^ 0xffffffff"))
+                    direction_output_ops.append(_op_for_entry(
+                        "Write", entry, store, macros, width,
+                        dir_evidence, value=f"({output_value}) ^ 0xffffffff"))
+                input_ops.append(
+                    _semantic_op("Return", dir_evidence, width, value="0"))
+                output_ops = (
+                    direction_output_ops + set_body if no_set_on_input
+                    else set_body + direction_output_ops)
+                output_ops.append(
+                    _semantic_op("Return", dir_evidence, width, value="0"))
                 callbacks.append(_make_callback(
                     owner, "direction_input",
                     [("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
@@ -353,19 +497,61 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                     [("gc", "struct gpio_chip *"), ("offset", "unsigned int"),
                      ("value", "int")],
                     "write_config", "direction_output", output_ops))
+                get_direction_ops = []
+                if unreadable_dir:
+                    get_direction_ops.append(_semantic_op(
+                        "StateRead", dir_evidence, width,
+                        field="gpio_sdir", var="direction"))
+                    get_direction_ops.append(_semantic_op(
+                        "Return", dir_evidence, width,
+                        value="(direction & BIT(offset)) != 0 ? 0 : 1"))
+                elif fields.get("dirout"):
+                    for entry in fields.get("dirout", []):
+                        get_direction_ops.extend([
+                            _op_for_entry(
+                                "Read", entry, store, macros, width,
+                                dir_evidence, var="direction"),
+                            _semantic_op(
+                                "Return", dir_evidence, width,
+                                value="(direction & BIT(offset)) != 0 ? 0 : 1"),
+                        ])
+                else:
+                    for entry in fields.get("dirin", []):
+                        get_direction_ops.extend([
+                            _op_for_entry(
+                                "Read", entry, store, macros, width,
+                                dir_evidence, var="direction"),
+                            _semantic_op(
+                                "Return", dir_evidence, width,
+                                value="(direction & BIT(offset)) != 0 ? 1 : 0"),
+                        ])
                 callbacks.append(_make_callback(
                     owner, "get_direction",
                     [("gc", "struct gpio_chip *"), ("offset", "unsigned int")],
-                    "read_config", "get_direction",
-                    [_op_for_entry("Read", entry, store, macros, width,
-                                   dir_evidence, var="direction")
-                     for entry in direction_entries]))
+                    "read_config", "get_direction", get_direction_ops))
 
             for synthetic, extraction in callbacks:
                 if not extraction.ops:
                     continue
                 synthetic_funcs.append(synthetic)
                 synthetic_extractions[synthetic.symbol_id] = extraction
+
+            resolved_fields = {}
+            for field_name in ("dat", "set", "clr", "dirout", "dirin"):
+                resolved = []
+                for entry in fields.get(field_name, []):
+                    flat_addr, register = resolve_addr(entry["expr"], store, macros)
+                    offset = macros.offset(register) if register else None
+                    if offset is None and "Offset" in flat_addr:
+                        offset = flat_addr["Offset"].get("offset")
+                    if offset is None and "Fixed" in flat_addr:
+                        offset = flat_addr["Fixed"]
+                    resolved.append({
+                        "expr": entry["expr"], "register": register,
+                        "offset": int(offset) if offset is not None else None,
+                    })
+                if resolved:
+                    resolved_fields[field_name] = resolved
             stats.append({
                 "function": owner.name,
                 "line": call.line,
@@ -373,10 +559,14 @@ def infer_gpio_generic_summaries(funcs: list[Func], extractions: dict,
                 "width_bytes": width,
                 "fields": {name: [entry["expr"] for entry in entries]
                            for name, entries in sorted(fields.items())},
+                "resolved_fields": resolved_fields,
                 "variant": variant,
                 "flags_value": flag_value,
                 "byte_order": byte_order,
                 "read_output_set": read_output_set,
+                "unreadable_set": unreadable_set,
+                "unreadable_dir": unreadable_dir,
+                "no_set_on_input": no_set_on_input,
                 "callbacks": [func.synthetic_callback_table
                               for func, extraction in callbacks if extraction.ops],
             })

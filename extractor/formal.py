@@ -4,7 +4,8 @@ A mathematically-grounded representation of register interaction sequences:
   Expr   = Const | Var | BinOp{op,left,right} | Ite{guard,then,else}
          | Bits{hi,lo,expr} | Top
   RegAddr= Fixed{base,offset} | Symbolic{device,register} | Computed(Expr)
-  RISOp  = Read | Write | ReadModifyWrite | Delay | Cond | Seq | Loop
+  RISOp  = Read | Write | ReadModifyWrite | StateRead | StateWrite
+         | OutputWrite | Return | Delay | Cond | Seq | Loop
   FormalRIS = {driver, version, modules[], register_map[], metadata}
 
 Emits both:
@@ -29,11 +30,11 @@ from .dataflow import _split_top, _strip_casts
 # ── BinOp / Expr ─────────────────────────────────────────────────────
 
 BINOPS = ["==", "!=", "<=", ">=", "&&", "||", "<<", ">>", "<", ">",
-          "|", "&", "+", "-", "*", "/", "%"]
+          "|", "^", "&", "+", "-", "*", "/", "%"]
 BINOP_NAME = {
     "==": "Eq", "!=": "Ne", "<=": "Le", ">=": "Ge", "<": "Lt", ">": "Gt",
     "&&": "And", "||": "Or", "<<": "Shl", ">>": "Shr",
-    "|": "BitOr", "&": "BitAnd", "+": "Add", "-": "Sub",
+    "|": "BitOr", "^": "BitXor", "&": "BitAnd", "+": "Add", "-": "Sub",
     "*": "Mul", "/": "Div", "%": "Mod",
 }
 BINOP_SYM = {v: k for k, v in BINOP_NAME.items()}
@@ -266,6 +267,18 @@ def op_display(op: dict, indent: int = 0) -> str:
     if "ReadModifyWrite" in op:
         o = op["ReadModifyWrite"]
         return f"{pad}RMW({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['transform'])} -- {o['intent']}{suffix(o)}"
+    if "StateRead" in op:
+        o = op["StateRead"]
+        return f"{pad}{o['var']} := STATE({o['field']}){suffix(o)}"
+    if "StateWrite" in op:
+        o = op["StateWrite"]
+        return f"{pad}STATE({o['field']}) := {expr_display(o['value'])}{suffix(o)}"
+    if "OutputWrite" in op:
+        o = op["OutputWrite"]
+        return f"{pad}OUT({o['target']}) := {expr_display(o['value'])}{suffix(o)}"
+    if "Return" in op:
+        o = op["Return"]
+        return f"{pad}RETURN {expr_display(o['value'])}{suffix(o)}"
     if "Delay" in op:
         return f"{pad}DELAY({expr_display(op['Delay']['cycles'])})"
     if "Cond" in op:
@@ -291,6 +304,14 @@ def op_display(op: dict, indent: int = 0) -> str:
         detail = expr_display(guard) if guard else expr_display(o["count"])
         lines = [f"{pad}LOOP {o.get('loop_kind', 'loop')} {detail} "
                  f"[{o.get('reliability', 'Unknown')}] {{"]
+        if o.get("guard_ops"):
+            lines.append(f"{pad}  GUARD {{")
+            for sub in o["guard_ops"]:
+                lines.append(op_display(sub, indent + 2))
+            lines.append(
+                f"{pad}    {o.get('guard_var', 'guard')} := "
+                f"{expr_display(o.get('guard_value'))}")
+            lines.append(f"{pad}  }}")
         for sub in o["body"]:
             lines.append(op_display(sub, indent + 1))
         lines.append(f"{pad}}}")
@@ -340,6 +361,7 @@ def walk_leaf_ops(ops) -> "object":
         elif "Seq" in op:
             yield from walk_leaf_ops(op["Seq"]["ops"])
         elif "Loop" in op:
+            yield from walk_leaf_ops(op["Loop"].get("guard_ops", []))
             yield from walk_leaf_ops(op["Loop"]["body"])
         else:
             yield op
@@ -357,6 +379,7 @@ def walk_all_ops(ops) -> "object":
         elif "Seq" in op:
             yield from walk_all_ops(op["Seq"]["ops"])
         elif "Loop" in op:
+            yield from walk_all_ops(op["Loop"].get("guard_ops", []))
             yield from walk_all_ops(op["Loop"]["body"])
 
 

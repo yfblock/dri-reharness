@@ -10,7 +10,9 @@ from extractor.formal import walk_leaf_ops
 from .common import ops_to_c, local_decls, value_var_names
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
-from .subsystem_runner import emit_gpio_callback_runner, gpio_callback_plan
+from .subsystem_runner import (emit_gpio_callback_runner, gpio_callback_plan,
+                               emit_w1c_drain_runner,
+                               portable_sdhci_accessor_only, w1c_drain_plan)
 
 
 def generate(formal: dict, device_spec, bind) -> str:
@@ -33,6 +35,20 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("static void oracle_seed_mmio(void) {")
     L.append("    for (unsigned int i = 0; i < MMIO_SIZE; ++i)")
     L.append("        oracle_mmio[i] = (uint8_t)(0x5aU + 37U * i);")
+    L.append("}")
+    L.append("static void oracle_write_w1c(uint32_t value, uintptr_t a, unsigned int width, int be) {")
+    L.append("    uintptr_t off = a - oracle_base;")
+    L.append("    uint32_t old = 0;")
+    L.append("    for (unsigned int i = 0; i < width; ++i) {")
+    L.append("        unsigned int shift = be ? 8U * (width - i - 1U) : 8U * i;")
+    L.append("        old |= (uint32_t)oracle_mmio[off + i] << shift;")
+    L.append("    }")
+    L.append('    printf("[trace %lu] W 0x%03lx = 0x%08x\\n", oracle_trace_count++, off, value);')
+    L.append("    old &= ~value;")
+    L.append("    for (unsigned int i = 0; i < width; ++i) {")
+    L.append("        unsigned int shift = be ? 8U * (width - i - 1U) : 8U * i;")
+    L.append("        oracle_mmio[off + i] = (uint8_t)(old >> shift);")
+    L.append("    }")
     L.append("}")
     L.append("static uint32_t oracle_read(uintptr_t a, unsigned int width, int be) {")
     L.append("    uintptr_t off = a - oracle_base;")
@@ -58,13 +74,22 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("static inline void mmio_write16(uint16_t v, uintptr_t a) { oracle_write(v, a, 2, 0); }")
     L.append("static inline uint8_t mmio_read8(uintptr_t a) { return (uint8_t)oracle_read(a, 1, 0); }")
     L.append("static inline void mmio_write8(uint8_t v, uintptr_t a) { oracle_write(v, a, 1, 0); }")
+    L.append("static inline void mmio_write_w1c32(uint32_t v, uintptr_t a) { oracle_write_w1c(v, a, 4, 0); }")
+    L.append("static inline void mmio_write_w1c16(uint16_t v, uintptr_t a) { oracle_write_w1c(v, a, 2, 0); }")
+    L.append("static inline void mmio_write_w1c8(uint8_t v, uintptr_t a) { oracle_write_w1c(v, a, 1, 0); }")
     L.append("static inline uint16_t mmio_read16be(uintptr_t a) { return (uint16_t)oracle_read(a, 2, 1); }")
     L.append("static inline void mmio_write16be(uint16_t v, uintptr_t a) { oracle_write(v, a, 2, 1); }")
     L.append("static inline uint32_t mmio_read32be(uintptr_t a) { return oracle_read(a, 4, 1); }")
     L.append("static inline void mmio_write32be(uint32_t v, uintptr_t a) { oracle_write(v, a, 4, 1); }")
     L.append('#define REHARNESS_CALLBACK_BEGIN(n) printf("[reharness-callback-begin] %u\\n", (unsigned)(n))')
     L.append('#define REHARNESS_CALLBACK_MARKER(name) printf("[reharness-callback] %s\\n", (name))')
+    L.append('#define REHARNESS_CALLBACK_RESULT(v) printf("[reharness-result] 0x%llx\\n", (unsigned long long)(v))')
+    L.append('#define REHARNESS_CALLBACK_OUTPUT(n, v) printf("[reharness-output] %s=0x%llx\\n", (n), (unsigned long long)(v))')
+    L.append('#define REHARNESS_CALLBACK_STATE(d, r) printf("[reharness-state] sdata=0x%llx sdir=0x%llx\\n", (unsigned long long)(d), (unsigned long long)(r))')
     L.append('#define REHARNESS_CALLBACK_END() printf("[reharness-callback-end]\\n")')
+    L.append('#define REHARNESS_W1C_BEGIN(n) printf("[reharness-w1c-begin] %u\\n", (unsigned)(n))')
+    L.append('#define REHARNESS_W1C_MARKER(name) printf("[reharness-w1c] %s\\n", (name))')
+    L.append('#define REHARNESS_W1C_END() printf("[reharness-w1c-end]\\n")')
     L.append("#else")
     L.append("static inline uint32_t mmio_read32(uintptr_t a) {")
     L.append("    return *(volatile uint32_t *)a;")
@@ -76,6 +101,9 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("static inline void mmio_write16(uint16_t v, uintptr_t a) { *(volatile uint16_t *)a = v; }")
     L.append("static inline uint8_t mmio_read8(uintptr_t a) { return *(volatile uint8_t *)a; }")
     L.append("static inline void mmio_write8(uint8_t v, uintptr_t a) { *(volatile uint8_t *)a = v; }")
+    L.append("static inline void mmio_write_w1c32(uint32_t v, uintptr_t a) { mmio_write32(v, a); }")
+    L.append("static inline void mmio_write_w1c16(uint16_t v, uintptr_t a) { mmio_write16(v, a); }")
+    L.append("static inline void mmio_write_w1c8(uint8_t v, uintptr_t a) { mmio_write8(v, a); }")
     L.append("static inline uint16_t mmio_read16be(uintptr_t a) {")
     L.append("    volatile uint8_t *p = (volatile uint8_t *)a;")
     L.append("    return (uint16_t)((uint16_t)p[0] << 8 | p[1]);")
@@ -95,7 +123,13 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("}")
     L.append("#define REHARNESS_CALLBACK_BEGIN(n) ((void)(n))")
     L.append("#define REHARNESS_CALLBACK_MARKER(name) ((void)(name))")
+    L.append("#define REHARNESS_CALLBACK_RESULT(v) ((void)(v))")
+    L.append("#define REHARNESS_CALLBACK_OUTPUT(n, v) ((void)(n), (void)(v))")
+    L.append("#define REHARNESS_CALLBACK_STATE(d, r) ((void)(d), (void)(r))")
     L.append("#define REHARNESS_CALLBACK_END() ((void)0)")
+    L.append("#define REHARNESS_W1C_BEGIN(n) ((void)(n))")
+    L.append("#define REHARNESS_W1C_MARKER(name) ((void)(name))")
+    L.append("#define REHARNESS_W1C_END() ((void)0)")
     L.append("#endif")
     L.append("#define readl(a) mmio_read32((uintptr_t)(a))")
     L.append("#define readw(a) mmio_read16((uintptr_t)(a))")
@@ -124,7 +158,10 @@ def generate(formal: dict, device_spec, bind) -> str:
     normalized_any = False
     upper_refs = set()
     upper_calls = set()
-    portable_skip = device_spec.cls in {"ahci", "sdhci", "virtio_mmio"}
+    portable_skip = (
+        device_spec.cls in {"ahci", "virtio_mmio"}
+        or (device_spec.cls == "sdhci"
+            and not portable_sdhci_accessor_only(formal, device_spec)))
     for module in formal["modules"]:
         raw_ops = (_bound_resource_probe_ops(module["ops"])
                    if module["name"] in probe_refs else module["ops"])
@@ -169,19 +206,25 @@ def generate(formal: dict, device_spec, bind) -> str:
         params_c = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
         params_c = (params_c + ", ") if params_c else ""
         params_c += f"{priv} *dev"
-        L.append(f"void {fn.name}({params_c}) {{")
+        has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
+        return_type = _c_type(fn.signature.return_type, bind) if has_return else "void"
+        L.append(f"{return_type} {fn.name}({params_c}) {{")
         declared = {p.name for p in keep} | {"base"}
         L.append(local_decls(safe_ops, declared, regs, indent=1))
         L.append(f"    uintptr_t base = {base};")
-        L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1))
+        L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1,
+                          state_expr="dev"))
         L.append("}")
         L.append("")
 
     L.extend(emit_gpio_callback_runner(
         formal, device_spec, priv, static=False))
+    L.extend(emit_w1c_drain_runner(
+        formal, device_spec, priv, static=False))
 
     plan = gpio_callback_plan(formal, device_spec)
-    if plan:
+    drain_plan = w1c_drain_plan(formal, device_spec)
+    if plan or drain_plan:
         entry = next(
             (fn for fn in device_spec.functions if fn.role == "probe"), None)
         L.append("#ifdef REHARNESS_BAREMETAL_ORACLE")
@@ -189,13 +232,18 @@ def generate(formal: dict, device_spec, bind) -> str:
         L.append(f"    {priv} dev = {{ .base = 0 }};")
         L.append("    oracle_base = (uintptr_t)oracle_mmio;")
         L.append("    dev.base = oracle_base;")
+        L.append("    oracle_seed_mmio();")
         if entry:
             keep = [p for p in entry.signature.params if p.type != "DeviceState"]
             call_args = ", ".join(["0"] * len(keep))
             call_args = (call_args + ", ") if call_args else ""
             L.append(f"    {entry.name}({call_args}&dev);")
-        L.append("    oracle_seed_mmio();")
-        L.append("    reharness_run_subsystem_callbacks(&dev);")
+        if plan:
+            L.append("    oracle_seed_mmio();")
+            L.append("    reharness_run_subsystem_callbacks(&dev);")
+        if drain_plan:
+            L.append("    oracle_seed_mmio();")
+            L.append("    reharness_run_w1c_drains(&dev);")
         L.append("    return 0;")
         L.append("}")
         L.append("#endif")
