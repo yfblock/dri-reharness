@@ -2,7 +2,7 @@
   "aggregate": {
     "drivers": 19,
     "source_accesses": 385,
-    "strict_reliable": 8,
+    "strict_reliable": 9,
     "unsupported_accesses": 10,
     "unsupported_control": 6
   },
@@ -7035,26 +7035,26 @@
         "clang_diag": 0,
         "computed": 0,
         "cond": 14,
-        "conservative_loop": 1,
+        "conservative_loop": 0,
         "control_accounting": {
           "assumed_framework_error_gotos": 0,
           "complete": false,
           "modeled_early_returns": 26,
           "unsupported": 2
         },
-        "fixed": 1,
+        "fixed": 7,
         "loop": 2,
         "modules": [
           {
             "computed": 0,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 0,
+            "fixed": 3,
             "loop": 0,
             "module": "ahci_pci_device_runtime_suspend",
-            "pct_symbolic": 1.0,
+            "pct_symbolic": 0.0,
             "rmw": 1,
-            "symbolic": 3,
+            "symbolic": 0,
             "total_ops": 3,
             "unknown_value": 0,
             "unsafe_computed": 0
@@ -7077,12 +7077,12 @@
             "computed": 0,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 0,
+            "fixed": 3,
             "loop": 0,
             "module": "ahci_pci_device_suspend",
-            "pct_symbolic": 1.0,
+            "pct_symbolic": 0.0,
             "rmw": 1,
-            "symbolic": 3,
+            "symbolic": 0,
             "total_ops": 3,
             "unknown_value": 0,
             "unsafe_computed": 0
@@ -7104,7 +7104,7 @@
           {
             "computed": 0,
             "cond": 9,
-            "conservative_loop": 1,
+            "conservative_loop": 0,
             "fixed": 1,
             "loop": 2,
             "module": "ahci_init_one",
@@ -7124,7 +7124,7 @@
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
-        "pct_symbolic": 0.95,
+        "pct_symbolic": 0.65,
         "register_map": 6,
         "reliability": {
           "Conservative": 12,
@@ -7139,7 +7139,7 @@
           "unmodeled": [],
           "unmodeled_callbacks": 0
         },
-        "symbolic": 19,
+        "symbolic": 13,
         "total_ops": 20,
         "unknown_value": 0,
         "unsafe_computed": 0
@@ -7327,14 +7327,13 @@
         "blockers": [
           "10 source register/opaque access site(s) unsupported",
           "2 unsupported control-flow transfer(s)",
-          "1 conservative loop summary/summaries require validation",
           "callback entry without table binding: ahci_pci_device_runtime_suspend, ahci_pci_device_runtime_resume, ahci_pci_device_suspend, ahci_pci_device_resume"
         ],
         "device_spec_quality": 0.875,
         "facts_quality": 0.4,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.99
+        "ris_quality": 0.93
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci.c",
       "source_sha256": "ea6533b6e12e49982d0b11195a3ed7b94746cb302bc212eb9067e9cf4b6a65a2",
@@ -10793,7 +10792,7 @@
             "loop": 1,
             "module": "ceva_ahci_probe",
             "pct_symbolic": 0.923,
-            "rmw": 2,
+            "rmw": 1,
             "symbolic": 12,
             "total_ops": 13,
             "unknown_value": 0,
@@ -10807,7 +10806,7 @@
             "loop": 1,
             "module": "ceva_ahci_resume",
             "pct_symbolic": 0.923,
-            "rmw": 2,
+            "rmw": 1,
             "symbolic": 12,
             "total_ops": 13,
             "unknown_value": 0,
@@ -10830,7 +10829,7 @@
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 4,
+        "rmw": 2,
         "subsystem_summary": {
           "generic_backend_unvalidated": 0,
           "synthetic_functions": 0,
@@ -13921,7 +13920,7 @@
         "clang_diag": 0,
         "computed": 0,
         "cond": 1,
-        "conservative_loop": 1,
+        "conservative_loop": 0,
         "control_accounting": {
           "assumed_framework_error_gotos": 0,
           "complete": true,
@@ -13934,7 +13933,7 @@
           {
             "computed": 0,
             "cond": 1,
-            "conservative_loop": 1,
+            "conservative_loop": 0,
             "fixed": 6,
             "loop": 2,
             "module": "ahci_mvebu_armada_380_config",
@@ -14037,11 +14036,10 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": false,
-        "backend_harness_ready": false,
+        "backend_bare_metal_ready": true,
+        "backend_harness_ready": true,
         "backend_linux_ready": false,
         "blockers": [
-          "1 conservative loop summary/summaries require validation",
           "missing role for: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine",
           "callback entry without table binding: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine"
         ],
@@ -14053,7 +14051,7 @@
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_mvebu.c",
       "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf",
-      "strict_reliable": false,
+      "strict_reliable": true,
       "warnings": [
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
@@ -20807,14 +20805,27 @@
             "reason": null,
             "ris_ops": [
               "op_17",
+              "op_18",
               "op_19",
+              "op_20",
               "op_21",
+              "op_22",
               "op_28",
               "op_30",
+              "op_33",
+              "op_34",
               "op_35",
+              "op_37",
+              "op_38",
               "op_39",
+              "op_41",
+              "op_42",
               "op_43",
+              "op_45",
+              "op_46",
               "op_47",
+              "op_48",
+              "op_49",
               "op_50",
               "op_52"
             ],
@@ -23459,16 +23470,22 @@
             "reason": null,
             "ris_ops": [
               "op_19",
+              "op_20",
               "op_21",
+              "op_22",
               "op_27",
               "op_29",
               "op_32",
               "op_33",
               "op_35",
               "op_36",
+              "op_38",
+              "op_39",
               "op_40",
               "op_42",
               "op_43",
+              "op_44",
+              "op_45",
               "op_46",
               "op_48"
             ],
@@ -24977,15 +24994,27 @@
             "reason": null,
             "ris_ops": [
               "op_10",
+              "op_11",
               "op_12",
               "op_14",
+              "op_17",
+              "op_18",
               "op_19",
+              "op_21",
+              "op_22",
               "op_23",
+              "op_25",
+              "op_26",
               "op_27",
+              "op_29",
+              "op_30",
               "op_31",
+              "op_32",
+              "op_33",
               "op_34",
               "op_36",
-              "op_8"
+              "op_8",
+              "op_9"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-idt3243x.c:157:8:3966:gpio_generic_chip_init",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-idt3243x.c",
@@ -26140,7 +26169,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_2"
+              "op_3"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:76:12:1660:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26160,7 +26189,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_3"
+              "op_4"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:78:2:1719:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26180,7 +26209,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_4"
+              "op_5"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:92:2:2051:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26200,7 +26229,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_5"
+              "op_6"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:93:12:2122:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26220,7 +26249,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_6"
+              "op_7"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:95:2:2178:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26240,7 +26269,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_7"
+              "op_8"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:101:2:2352:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26260,7 +26289,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_8"
+              "op_9"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:111:11:2602:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26280,7 +26309,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_10"
+              "op_11"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:118:2:2776:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26300,7 +26329,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_11"
+              "op_12"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:148:12:3523:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26320,7 +26349,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_12"
+              "op_13"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:149:11:3563:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26340,7 +26369,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_13"
+              "op_14"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:150:12:3603:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26360,7 +26389,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_14"
+              "op_15"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:202:2:5076:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26380,7 +26409,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_15"
+              "op_16"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:203:2:5115:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26400,7 +26429,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_16"
+              "op_17"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:204:2:5156:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26420,7 +26449,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_17"
+              "op_18"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:221:12:5558:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26440,7 +26469,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_18"
+              "op_19"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:239:11:6012:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26460,7 +26489,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_19"
+              "op_20"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:240:2:6050:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26480,7 +26509,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_20"
+              "op_21"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:256:11:6453:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26500,7 +26529,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_21"
+              "op_22"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:257:2:6490:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26520,7 +26549,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_22"
+              "op_23"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:276:2:7067:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26540,7 +26569,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_23"
+              "op_24"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:338:2:8774:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26560,7 +26589,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_24"
+              "op_25"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:372:31:9638:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26580,7 +26609,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_25"
+              "op_26"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:373:30:9697:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26600,7 +26629,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_26"
+              "op_27"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:374:31:9756:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26620,7 +26649,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_27"
+              "op_28"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:375:31:9816:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26640,7 +26669,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_28"
+              "op_29"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:376:30:9875:readb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26660,7 +26689,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_29"
+              "op_30"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:401:2:10481:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26680,7 +26709,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_30"
+              "op_31"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:402:2:10539:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26700,7 +26729,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_31"
+              "op_32"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:403:2:10599:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -26720,7 +26749,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_32"
+              "op_33"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c:404:2:10659:writeb",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-pl061.c",
@@ -27232,16 +27261,29 @@
             "reason": null,
             "ris_ops": [
               "op_10",
+              "op_11",
               "op_12",
+              "op_13",
               "op_14",
               "op_16",
+              "op_19",
+              "op_20",
               "op_21",
+              "op_23",
+              "op_24",
               "op_25",
+              "op_27",
+              "op_28",
               "op_29",
+              "op_31",
+              "op_32",
               "op_33",
+              "op_34",
+              "op_35",
               "op_36",
               "op_38",
-              "op_8"
+              "op_8",
+              "op_9"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c:219:8:4940:gpio_generic_chip_init",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
@@ -29327,10 +29369,10 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_14",
               "op_16",
-              "op_21",
-              "op_25"
+              "op_18",
+              "op_23",
+              "op_27"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:58:2:1223:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -29350,10 +29392,10 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_15",
               "op_17",
-              "op_22",
-              "op_26"
+              "op_19",
+              "op_24",
+              "op_28"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:58:10:1231:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -29573,7 +29615,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_11"
+              "op_12"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:152:9:3530:readw",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -29593,7 +29635,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_13"
+              "op_14"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:159:8:3652:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -29614,12 +29656,13 @@
             "origin": "subsystem_summary",
             "reason": null,
             "ris_ops": [
-              "op_18"
+              "op_20"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:201:2:4667:sdhci_writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c::esdhc_mcf_reset",
             "width_bytes": 4
           },
@@ -29636,12 +29679,13 @@
             "origin": "subsystem_summary",
             "reason": null,
             "ris_ops": [
-              "op_19"
+              "op_21"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:202:2:4717:sdhci_writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c::esdhc_mcf_reset",
             "width_bytes": 4
           },
@@ -29657,7 +29701,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_20"
+              "op_22"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c:248:9:5901:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -32167,7 +32211,7 @@
           "unsupported": 0
         },
         "clang_diag": 0,
-        "computed": 0,
+        "computed": 16,
         "cond": 7,
         "conservative_loop": 1,
         "control_accounting": {
@@ -32176,14 +32220,14 @@
           "modeled_early_returns": 15,
           "unsupported": 0
         },
-        "fixed": 17,
+        "fixed": 1,
         "loop": 1,
         "modules": [
           {
-            "computed": 0,
+            "computed": 2,
             "cond": 2,
             "conservative_loop": 0,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_writeb_be",
             "pct_symbolic": 0.5,
@@ -32194,10 +32238,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 2,
             "cond": 2,
             "conservative_loop": 0,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_writew_be",
             "pct_symbolic": 0.333,
@@ -32208,10 +32252,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 1,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 1,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_writel_be",
             "pct_symbolic": 0.0,
@@ -32222,10 +32266,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 1,
             "cond": 2,
             "conservative_loop": 0,
-            "fixed": 2,
+            "fixed": 1,
             "loop": 0,
             "module": "esdhc_mcf_readb_be",
             "pct_symbolic": 0.0,
@@ -32236,10 +32280,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 1,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 1,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_readw_be",
             "pct_symbolic": 0.0,
@@ -32250,10 +32294,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 1,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 1,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_readl_be",
             "pct_symbolic": 0.0,
@@ -32264,10 +32308,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 2,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_set_timeout",
             "pct_symbolic": 0.0,
@@ -32278,10 +32322,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 2,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_reset",
             "pct_symbolic": 0.5,
@@ -32292,10 +32336,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 2,
             "cond": 1,
             "conservative_loop": 1,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 1,
             "module": "esdhc_mcf_pltfm_set_clock",
             "pct_symbolic": 0.333,
@@ -32306,10 +32350,10 @@
             "unsafe_computed": 0
           },
           {
-            "computed": 0,
+            "computed": 2,
             "cond": 0,
             "conservative_loop": 0,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 0,
             "module": "esdhc_mcf_pltfm_set_bus_width",
             "pct_symbolic": 0.0,
@@ -32340,8 +32384,72 @@
         "subsystem_summary": {
           "generic_backend_unvalidated": 0,
           "synthetic_functions": 0,
-          "unmodeled": [],
-          "unmodeled_callbacks": 0
+          "unmodeled": [
+            {
+              "callee": "esdhc_mcf_reset",
+              "field": "reset",
+              "line": 338,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_pltfm_set_clock",
+              "field": "set_clock",
+              "line": 338,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_pltfm_get_max_clock",
+              "field": "get_max_clock",
+              "line": 340,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_pltfm_get_min_clock",
+              "field": "get_min_clock",
+              "line": 341,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_pltfm_set_bus_width",
+              "field": "set_bus_width",
+              "line": 342,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_get_max_timeout_count",
+              "field": "get_max_timeout_count",
+              "line": 343,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_set_timeout",
+              "field": "set_timeout",
+              "line": 344,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_copy_to_bounce_buffer",
+              "field": "copy_to_bounce_buffer",
+              "line": 350,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            },
+            {
+              "callee": "esdhc_mcf_request_done",
+              "field": "request_done",
+              "line": 352,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_esdhc_ops"
+            }
+          ],
+          "unmodeled_callbacks": 9
         },
         "symbolic": 6,
         "total_ops": 25,
@@ -32378,7 +32486,7 @@
             "control": {
               "branch": "case",
               "case": "SDHCI_COMMAND",
-              "guard": "(reg) == (SDHCI_COMMAND)",
+              "guard": "((reg) == (SDHCI_COMMAND))",
               "kind": "cond",
               "switch": "reg"
             },
@@ -32447,6 +32555,7 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "9 subsystem library callback(s) lack semantic summary",
           "1 conservative loop summary/summaries require validation",
           "missing role for: esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width",
           "callback entry without table binding: esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width"
@@ -32455,7 +32564,7 @@
         "facts_quality": 1.0,
         "function_spec_quality": 0.7,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.852
+        "ris_quality": 0.802
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
       "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396",
@@ -32542,6 +32651,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
             "width_bytes": 2
           },
@@ -32564,6 +32674,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
             "width_bytes": 2
           },
@@ -32586,6 +32697,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
             "width_bytes": 2
           },
@@ -32608,6 +32720,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
             "width_bytes": 2
           },
@@ -32630,6 +32743,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_clock",
             "width_bytes": 2
           },
@@ -32652,6 +32766,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_uhs_signaling",
             "width_bytes": 1
           },
@@ -32674,6 +32789,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_set_uhs_signaling",
             "width_bytes": 1
           },
@@ -32696,6 +32812,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset",
             "width_bytes": 4
           },
@@ -32718,6 +32835,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset",
             "width_bytes": 4
           },
@@ -32740,6 +32858,7 @@
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
             "status": "emitted",
             "subsystem_summary": "sdhci_accessor",
+            "summary_contract": "linux.sdhci_ops",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c::sdhci_at91_reset",
             "width_bytes": 4
           },
@@ -35949,9 +36068,23 @@
           "synthetic_functions": 0,
           "unmodeled": [
             {
-              "callee": "sdhci_set_bus_width",
-              "field": "set_bus_width",
+              "callee": "sdhci_at91_set_clock",
+              "field": "set_clock",
               "line": 137,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_at91_sama5d2_ops"
+            },
+            {
+              "callee": "sdhci_at91_reset",
+              "field": "reset",
+              "line": 138,
+              "reason": "external SDHCI core callback lacks register summary",
+              "table": "sdhci_at91_sama5d2_ops"
+            },
+            {
+              "callee": "sdhci_at91_set_uhs_signaling",
+              "field": "set_uhs_signaling",
+              "line": 139,
               "reason": "external SDHCI core callback lacks register summary",
               "table": "sdhci_at91_sama5d2_ops"
             },
@@ -35963,7 +36096,7 @@
               "table": "sdhci_at91_sama5d2_ops"
             }
           ],
-          "unmodeled_callbacks": 2
+          "unmodeled_callbacks": 4
         },
         "symbolic": 34,
         "total_ops": 36,
@@ -36081,7 +36214,7 @@
         "backend_linux_ready": false,
         "blockers": [
           "4 unsupported control-flow transfer(s)",
-          "2 subsystem library callback(s) lack semantic summary",
+          "4 subsystem library callback(s) lack semantic summary",
           "1 conservative loop summary/summaries require validation",
           "missing role for: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling",
           "callback entry without table binding: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling, sdhci_at91_runtime_resume"
@@ -37335,11 +37468,11 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 60,
+        "leaf_register_ops": 59,
         "max_site_fanout": 1,
-        "ops_with_evidence": 60,
-        "unique_evidence_sites": 60,
-        "unique_op_ids": 60
+        "ops_with_evidence": 59,
+        "unique_evidence_sites": 59,
+        "unique_op_ids": 59
       },
       "claim_scope": {
         "alias_analysis": "off",
@@ -41711,7 +41844,7 @@
           "modeled_early_returns": 16,
           "unsupported": 0
         },
-        "fixed": 15,
+        "fixed": 12,
         "loop": 4,
         "modules": [
           {
@@ -41872,12 +42005,12 @@
             "computed": 0,
             "cond": 2,
             "conservative_loop": 1,
-            "fixed": 1,
+            "fixed": 0,
             "loop": 1,
             "module": "vm_del_vqs",
-            "pct_symbolic": 0.75,
+            "pct_symbolic": 1.0,
             "rmw": 0,
-            "symbolic": 3,
+            "symbolic": 4,
             "total_ops": 4,
             "unknown_value": 0,
             "unsafe_computed": 0
@@ -41886,13 +42019,13 @@
             "computed": 1,
             "cond": 19,
             "conservative_loop": 1,
-            "fixed": 2,
+            "fixed": 0,
             "loop": 1,
             "module": "vm_find_vqs",
-            "pct_symbolic": 0.824,
+            "pct_symbolic": 0.938,
             "rmw": 0,
-            "symbolic": 14,
-            "total_ops": 17,
+            "symbolic": 15,
+            "total_ops": 16,
             "unknown_value": 0,
             "unsafe_computed": 1
           },
@@ -41947,13 +42080,13 @@
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
-        "pct_symbolic": 0.733,
+        "pct_symbolic": 0.78,
         "register_map": 31,
         "reliability": {
           "Conservative": 39,
           "Exact": 20,
           "Unknown": 0,
-          "Unsupported": 1
+          "Unsupported": 0
         },
         "rmw": 0,
         "subsystem_summary": {
@@ -41962,8 +42095,8 @@
           "unmodeled": [],
           "unmodeled_callbacks": 0
         },
-        "symbolic": 44,
-        "total_ops": 60,
+        "symbolic": 46,
+        "total_ops": 59,
         "unknown_value": 0,
         "unsafe_computed": 1
       },
@@ -41992,7 +42125,7 @@
             "control": {
               "branch": "case",
               "case": "1",
-              "guard": "(len) == (1)",
+              "guard": "((len) == (1))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42004,7 +42137,7 @@
             "control": {
               "branch": "case",
               "case": "2",
-              "guard": "(len) == (2)",
+              "guard": "((len) == (2))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42016,7 +42149,7 @@
             "control": {
               "branch": "case",
               "case": "4",
-              "guard": "(len) == (4)",
+              "guard": "((len) == (4))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42028,7 +42161,7 @@
             "control": {
               "branch": "case",
               "case": "8",
-              "guard": "(len) == (8)",
+              "guard": "((len) == (8))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42056,7 +42189,7 @@
             "control": {
               "branch": "case",
               "case": "1",
-              "guard": "(len) == (1)",
+              "guard": "((len) == (1))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42068,7 +42201,7 @@
             "control": {
               "branch": "case",
               "case": "2",
-              "guard": "(len) == (2)",
+              "guard": "((len) == (2))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42080,7 +42213,7 @@
             "control": {
               "branch": "case",
               "case": "4",
-              "guard": "(len) == (4)",
+              "guard": "((len) == (4))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42092,7 +42225,7 @@
             "control": {
               "branch": "case",
               "case": "8",
-              "guard": "(len) == (8)",
+              "guard": "((len) == (8))",
               "kind": "cond",
               "switch": "len"
             },
@@ -42294,7 +42427,8 @@
             "control": {
               "branch": "then",
               "guard": "vm_dev->version == 1",
-              "kind": "cond"
+              "kind": "cond",
+              "source": ""
             },
             "module": "vm_find_vqs",
             "path_id": "path_30",
@@ -42304,7 +42438,8 @@
             "control": {
               "branch": "else",
               "guard": "!(vm_dev->version == 1)",
-              "kind": "cond"
+              "kind": "cond",
+              "source": ""
             },
             "module": "vm_find_vqs",
             "path_id": "path_31",
@@ -42568,7 +42703,6 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "1 register operation(s) use unsupported access domain",
           "1 unsafe dynamic register address(es) (1 computed total)",
           "4 conservative loop summary/summaries require validation",
           "missing role for: vm_get_features, vm_finalize_features, virtio_mmio_restore",
@@ -42578,7 +42712,7 @@
         "facts_quality": 1.0,
         "function_spec_quality": 0.812,
         "llm_synthesis_ready": true,
-        "ris_quality": 0.888
+        "ris_quality": 0.897
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
       "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5",
@@ -42611,134 +42745,14 @@
             "callee": "writel",
             "column": 2,
             "function": "wmt_ge_fillrect",
-            "line": 89,
-            "offset": 2053,
+            "line": 95,
+            "offset": 2345,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
               "op_1"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:89:2:2053:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_fillrect",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_fillrect",
-            "line": 91,
-            "offset": 2165,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_2"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:91:2:2165:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_fillrect",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_fillrect",
-            "line": 92,
-            "offset": 2239,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_3"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:92:2:2239:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_fillrect",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_fillrect",
-            "line": 93,
-            "offset": 2294,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_4"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:93:2:2294:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_fillrect",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_fillrect",
-            "line": 94,
-            "offset": 2356,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_5"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:94:2:2356:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_fillrect",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_fillrect",
-            "line": 95,
-            "offset": 2418,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_6"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:95:2:2418:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_fillrect",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_fillrect",
-            "line": 96,
-            "offset": 2465,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_7"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:96:2:2465:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:95:2:2345:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42752,13 +42766,13 @@
             "column": 2,
             "function": "wmt_ge_fillrect",
             "line": 97,
-            "offset": 2512,
+            "offset": 2457,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_8"
+              "op_2"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:97:2:2512:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:97:2:2457:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42772,13 +42786,33 @@
             "column": 2,
             "function": "wmt_ge_fillrect",
             "line": 98,
-            "offset": 2566,
+            "offset": 2531,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_9"
+              "op_3"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:98:2:2566:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:98:2:2531:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_fillrect",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_fillrect",
+            "line": 99,
+            "offset": 2586,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_4"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:99:2:2586:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42792,13 +42826,13 @@
             "column": 2,
             "function": "wmt_ge_fillrect",
             "line": 100,
-            "offset": 2622,
+            "offset": 2648,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_10"
+              "op_5"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:100:2:2622:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:100:2:2648:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42812,13 +42846,13 @@
             "column": 2,
             "function": "wmt_ge_fillrect",
             "line": 101,
-            "offset": 2660,
+            "offset": 2710,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_11"
+              "op_6"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:101:2:2660:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:101:2:2710:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42832,13 +42866,13 @@
             "column": 2,
             "function": "wmt_ge_fillrect",
             "line": 102,
-            "offset": 2698,
+            "offset": 2757,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_12"
+              "op_7"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:102:2:2698:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:102:2:2757:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42852,13 +42886,113 @@
             "column": 2,
             "function": "wmt_ge_fillrect",
             "line": 103,
-            "offset": 2769,
+            "offset": 2804,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_8"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:103:2:2804:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_fillrect",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_fillrect",
+            "line": 104,
+            "offset": 2858,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_9"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:104:2:2858:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_fillrect",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_fillrect",
+            "line": 106,
+            "offset": 2914,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_10"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:106:2:2914:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_fillrect",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_fillrect",
+            "line": 107,
+            "offset": 2952,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_11"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:107:2:2952:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_fillrect",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_fillrect",
+            "line": 108,
+            "offset": 2990,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_12"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:108:2:2990:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_fillrect",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_fillrect",
+            "line": 109,
+            "offset": 3061,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
               "op_13"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:103:2:2769:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:109:2:3061:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_fillrect",
@@ -42871,134 +43005,14 @@
             "callee": "writel",
             "column": 2,
             "function": "wmt_ge_copyarea",
-            "line": 115,
-            "offset": 3016,
+            "line": 121,
+            "offset": 3308,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
               "op_14"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:115:2:3016:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 118,
-            "offset": 3127,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_15"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:118:2:3127:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 119,
-            "offset": 3181,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_16"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:119:2:3181:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 120,
-            "offset": 3242,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_17"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:120:2:3242:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 121,
-            "offset": 3303,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_18"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:121:2:3303:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 122,
-            "offset": 3349,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_19"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:122:2:3349:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 123,
-            "offset": 3395,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_20"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:123:2:3395:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:121:2:3308:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43012,13 +43026,33 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 124,
-            "offset": 3448,
+            "offset": 3419,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_21"
+              "op_15"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:124:2:3448:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:124:2:3419:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 125,
+            "offset": 3473,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_16"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:125:2:3473:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43032,13 +43066,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 126,
-            "offset": 3503,
+            "offset": 3534,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_22"
+              "op_17"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:126:2:3503:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:126:2:3534:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43052,13 +43086,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 127,
-            "offset": 3558,
+            "offset": 3595,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_23"
+              "op_18"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:127:2:3558:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:127:2:3595:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43072,13 +43106,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 128,
-            "offset": 3620,
+            "offset": 3641,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_24"
+              "op_19"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:128:2:3620:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:128:2:3641:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43092,13 +43126,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 129,
-            "offset": 3682,
+            "offset": 3687,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_25"
+              "op_20"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:129:2:3682:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:129:2:3687:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43112,33 +43146,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 130,
-            "offset": 3729,
+            "offset": 3740,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_26"
+              "op_21"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:130:2:3729:writel",
-            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-            "status": "emitted",
-            "symbol": "wmt_ge_copyarea",
-            "width_bytes": 4
-          },
-          {
-            "access_domain": "mmio",
-            "access_kind": "write",
-            "ast_kind": "CALL_EXPR",
-            "callee": "writel",
-            "column": 2,
-            "function": "wmt_ge_copyarea",
-            "line": 131,
-            "offset": 3776,
-            "origin": "direct",
-            "reason": null,
-            "ris_ops": [
-              "op_27"
-            ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:131:2:3776:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:130:2:3740:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43152,13 +43166,33 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 132,
-            "offset": 3830,
+            "offset": 3795,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_28"
+              "op_22"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:132:2:3830:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:132:2:3795:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 133,
+            "offset": 3850,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_23"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:133:2:3850:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43172,13 +43206,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 134,
-            "offset": 3886,
+            "offset": 3912,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_29"
+              "op_24"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:134:2:3886:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:134:2:3912:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43192,13 +43226,13 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 135,
-            "offset": 3927,
+            "offset": 3974,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_30"
+              "op_25"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:135:2:3927:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:135:2:3974:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43212,13 +43246,113 @@
             "column": 2,
             "function": "wmt_ge_copyarea",
             "line": 136,
-            "offset": 3965,
+            "offset": 4021,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_26"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:136:2:4021:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 137,
+            "offset": 4068,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_27"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:137:2:4068:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 138,
+            "offset": 4122,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_28"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:138:2:4122:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 140,
+            "offset": 4178,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_29"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:140:2:4178:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 141,
+            "offset": 4219,
+            "origin": "direct",
+            "reason": null,
+            "ris_ops": [
+              "op_30"
+            ],
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:141:2:4219:writel",
+            "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
+            "status": "emitted",
+            "symbol": "wmt_ge_copyarea",
+            "width_bytes": 4
+          },
+          {
+            "access_domain": "mmio",
+            "access_kind": "write",
+            "ast_kind": "CALL_EXPR",
+            "callee": "writel",
+            "column": 2,
+            "function": "wmt_ge_copyarea",
+            "line": 142,
+            "offset": 4257,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
               "op_31"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:136:2:3965:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:142:2:4257:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_copyarea",
@@ -43231,14 +43365,14 @@
             "callee": "readl",
             "column": 10,
             "function": "wmt_ge_sync",
-            "line": 143,
-            "offset": 4106,
+            "line": 149,
+            "offset": 4398,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
               "op_32"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:143:10:4106:readl",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:149:10:4398:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "wmt_ge_sync",
@@ -43251,14 +43385,14 @@
             "callee": "writel",
             "column": 2,
             "function": "wmt_ge_rops_probe",
-            "line": 161,
-            "offset": 4512,
+            "line": 167,
+            "offset": 4804,
             "origin": "direct",
             "reason": null,
             "ris_ops": [
               "op_33"
             ],
-            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:161:2:4512:writel",
+            "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:167:2:4804:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
             "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c::wmt_ge_rops_probe",
@@ -43448,17 +43582,18 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "3 clang error diagnostic(s)",
-          "1 conservative loop summary/summaries require validation"
+          "1 conservative loop summary/summaries require validation",
+          "missing role for: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync",
+          "callback entry without table binding: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 0.6,
         "function_spec_quality": 0.25,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.97
+        "ris_quality": 1.0
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c",
-      "source_sha256": "b1d7894f2d3a41780709a049861a7468575864c3d1ed6815893f3090499a60c5",
+      "source_sha256": "376941bfb110e59631b1f12b2e934a3e8b0ca21ed8aff573d6a38fcee363ac89",
       "strict_reliable": false,
       "warnings": [
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
@@ -43474,14 +43609,11 @@
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/ns/ns_common_types.h:120: declaration does not declare anything",
         "clang header diag[3] /home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/ns_common.h:25: no member named 'ns_id' in 'struct ns_common'",
         "clang header diag[3] /home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/ns_common.h:26: no member named 'ns_id' in 'struct ns_common'",
-        "clang header diag[3] /home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/ns_common.h:62: no member named '__ns_ref_active' in 'struct ns_common'",
-        "clang diag[3] /home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:71: redefinition of 'wmt_ge_fillrect'",
-        "clang diag[3] /home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:107: redefinition of 'wmt_ge_copyarea'",
-        "clang diag[3] /home/yfblock/Code/dri-trans-paper/reharness/drivers/test/wmt_ge_rops.c:140: redefinition of 'wmt_ge_sync'"
+        "clang header diag[3] /home/yfblock/Code/dri-trans-paper/reharness/linux/include/linux/ns_common.h:62: no member named '__ns_ref_active' in 'struct ns_common'"
       ]
     }
   ],
-  "generated_at": "2026-07-16T14:22:23.822741+00:00",
-  "reharness_commit": "b12809e4d701b7fffdac93572ac4e813a882555e",
+  "generated_at": "2026-07-17T07:35:59.104710+00:00",
+  "reharness_commit": "24182ac7a6b8be43b743e8a8ac9ae7b251b0e897",
   "schema": 1
 }

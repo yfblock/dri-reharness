@@ -2,24 +2,18 @@
   "cases": {
     "dove": {
       "contract_passed": true,
-      "contract_required": false,
+      "contract_required": true,
       "errors": [],
-      "operations": 0,
-      "portable": false,
+      "operations": 2,
+      "portable": true,
       "source": "linux/drivers/mmc/host/sdhci-dove.c"
     },
     "hlwd": {
-      "contract_passed": false,
+      "contract_passed": true,
       "contract_required": true,
-      "errors": [
-        "source does not bind host through sdhci_pltfm_init",
-        "source platform data may install private SDHCI accessors",
-        "unknown SDHCI accessor sdhci_be32bs_writel",
-        "unknown SDHCI accessor sdhci_be32bs_writew",
-        "unknown SDHCI accessor sdhci_be32bs_writeb"
-      ],
-      "operations": 3,
-      "portable": false,
+      "errors": [],
+      "operations": 7,
+      "portable": true,
       "source": "linux/drivers/mmc/host/sdhci-of-hlwd.c"
     },
     "npcm": {
@@ -31,12 +25,35 @@
       "source": "linux/drivers/mmc/host/sdhci-npcm.c"
     }
   },
-  "mutation": {
-    "caught": true,
-    "errors": [
-      "sdhci_readl lowered as ('Read', 'B2'), expected ('Read', 'B4')"
-    ],
-    "name": "npcm_accessor_width"
-  },
+  "mutations": [
+    {
+      "caught": true,
+      "errors": [
+        "sdhci_readl lowered as ('Read', 'B2'), expected ('Read', 'B4')"
+      ],
+      "name": "npcm_accessor_width"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "sdhci_be32bs_readw lost reg^2 addressing"
+      ],
+      "name": "hlwd_byte_swap_address"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "sdhci_be32bs_writew lacks transfer-mode shadow write"
+      ],
+      "name": "hlwd_transfer_shadow"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "sdhci_ops.write_l lost source delay contract"
+      ],
+      "name": "hlwd_write_delay"
+    }
+  ],
   "schema": 1
 }

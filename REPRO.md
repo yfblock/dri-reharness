@@ -2,7 +2,7 @@
 
 本流程复现 19-driver 提取/三后端编译矩阵、两个确定性 QEMU 实验，以及由机器结果生成的论文表格。主结果不调用 LLM。
 
-`paper-artifact-v8` 保留此前论文基线。当前 C12 结果 JSON 中的 `reharness_commit` 固定为 `a4531457962f5c600f9d2ebe5fcbaf0a6f6b8ffd`，表示 portable GPIO callback runner、值级 oracle 与 width/endianness lowering 的实现提交；随后纳入结果、日志和论文 PDF 的提交只封存制品，不改变该实现 SHA。
+结果 JSON 中的 `reharness_commit` 记录执行实验时的代码提交；在最终 artifact tag 前重跑得到的工作树结果会暂时指向上一提交，封存提交和 tag 用于固定代码、结果、日志与论文 PDF 的完整组合。
 
 ## 环境
 
@@ -31,7 +31,7 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：101 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：110 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -46,7 +46,7 @@ python3 verification/run_zero_shot_holdout.py
 
 验收要求：guard 通过、context provenance 可用、目标源码无 clang error、source access accounting strict、三后端编译、函数 inventory 稳定、RIS/DeviceSpec 无语义回退。权威输出：`experiments/results/zero-shot-v1.json`。
 
-该结果不要求新驱动 strict-ready。当前 gpio-altera 的 18 个 source access 全部 accounting，三个后端均编译，但仍有 polling loop 和 Linux source-private/lifecycle blocker；这是保留的泛化边界。
+该冻结首例只验证 holdout、context provenance 和无特例策略；最终 zero-shot matrix 另外通过 masked-W1C drain contract 和 mutation oracle 验证 gpio-altera，不应把首例脚本本身误解为完整 strict-readiness 证明。
 
 ## 2b. 12-driver exact-context 与 zero-shot matrix
 
@@ -71,11 +71,12 @@ exact compile context=12/12
 pipeline completed=12/12
 harness/bare-metal/Linux compile=12/12
 no_register_access=0/12
-strict-ready: harness=5/12 bare-metal=5/12 Linux=5/12
-first common semantic blocker=conservative_loop (3/12)
+strict-ready: harness=12/12 bare-metal=12/12 Linux=12/12 all=12/12
+cases with register hardware interactions=11/12
+first common semantic blocker=none
 ~~~
 
-三个 clock 案例以及 `gpio-ts4800`、`gpio-ge` 现在三个后端共同 strict-ready。后两个案例的 harness 与 bare-metal 分别执行 7/7 合成 callbacks，并由独立解释器核对每次访问的类型、offset 和值；GE 额外验证 big-endian byte order，TS4800 验证 16-bit accessor。DW APB 的 callback oracle 也通过，但 computed address 与 loop blocker 仍保留；CLPS711x variant、未建模 SDHCI core callback、virtio domain 和 clang diagnostics 同样不会被 runner 掩盖。
+GPIO callback runner 与独立 source differential 覆盖 width、endianness、shadow state 和 banked computed address。SDHCI NPCM、Dove、HLWD 通过 accessor/source lifecycle contract；virtio-input 的 config/virtqueue 被建模为 subsystem state，因此不伪造成 MMIO。DW APB 的每-bank chip ownership、selector/shadow、PM context、source-proven IRQ bank、parent IRQ dispatch 以及 ack/mask/type 语义由 13 个 mutation 覆盖。
 
 权威输出：`experiments/results/zero-shot-contexts.json` 和 `experiments/results/zero-shot-matrix.json`。详细设计与问题记录见 `docs/zero-shot-matrix-c10.md`。
 
@@ -90,9 +91,9 @@ python3 verification/run_matrix.py
 当前冻结聚合值：
 
 ~~~text
-drivers=19 ops=470 symbolic=357 fixed=74 computed=25
-rmw=88 conditions=117 registers=157 unknown_value=0
-harness_compile=19 baremetal_compile=19 linux_compile=19
+drivers=19 ops=476 symbolic=360 fixed=61 computed=41
+rmw=71 conditions=123 registers=157 unknown_value=0 clang_diagnostics=0
+harness_compile=18 baremetal_compile=18 linux_compile=17
 strict_ready: harness=6 baremetal=6 linux=7
 llm_synthesis_ready=13
 ~~~
@@ -108,7 +109,7 @@ python3 verification/reliability_report.py \
   --output experiments/results/reliability.json
 ~~~
 
-报告逐驱动记录 source access accounting、显式 CFG/control accounting、SMT path validation、op ID/evidence 覆盖和 alias/toolchain 范围。当前单源默认 `alias-mode=off` 的 scoped strict 为 8/19，因此这些结果仍为 `whole_program_complete=false`。该字段现在由严格 gate 合取计算；linked manifest fixture 可达到 true，但其 scope 明确为 `manifest-internal`，不包含外部 kernel/subsystem 语义。
+报告逐驱动记录 source access accounting、显式 CFG/control accounting、SMT path validation、op ID/evidence 覆盖和 alias/toolchain 范围。当前单源默认 `alias-mode=off` 的 scoped strict 为 9/19，因此这些结果仍为 `whole_program_complete=false`。该字段现在由严格 gate 合取计算；linked manifest fixture 可达到 true，但其 scope 明确为 `manifest-internal`，不包含外部 kernel/subsystem 语义。
 
 ## 3b. Clock 算术 oracle 与泛化边界
 
@@ -136,13 +137,13 @@ aspeed-vhub: 5 TUs,  3540 lines,  92 functions,  154 ops
 dwc2:       10 TUs, 21668 lines, 445 functions, 4202 ops
 aggregate:  19 TUs, 27447 lines, 626 functions, 4394 ops, 948 RMW
 calls:      974 internal, 223 cross-TU, 223 resolved, 578 MMIO-propagating
-MMIO:       907 source primitives, 1084 direct AST ops, 3742 emitted RIS ops
-compile:    harness=3/3 bare-metal=3/3 Linux=2/3 original-Kbuild=3/3
+MMIO:       907 source primitives, 1087 direct AST ops, 3742 emitted RIS ops
+compile:    harness=3/3 bare-metal=3/3 Linux=3/3 original-Kbuild=3/3
 ~~~
 
 固定实验内核未启用 usbcore，因此三个原始模块的严格 modpost 都会报告未解析的 USB 导出符号。验证器只在确认失败属于该类外部符号后，以 `KBUILD_MODPOST_WARN=1` 完成 `.ko` 链接，并在 JSON 中保留 `strict_success=false`、符号列表和完整日志。
 
-权威输出：`experiments/results/multisource-matrix.json`。DWC2 与 C67X00 的生成 Linux 聚合模块通过；Aspeed-vHub 因 endpoint 生命周期和未建模 subsystem state 保守失败。脚本因此仍预期非零退出，不能把 2/3 改写成 3/3。
+权威输出：`experiments/results/multisource-matrix.json`。三个生成 Linux 聚合模块均通过 Kbuild；Aspeed-vHub 与 DWC2 仍因 endpoint/HCD lifecycle、source-private state、路径和循环证明缺口而非 strict-ready。脚本预期成功退出，但 3/3 编译不能改写成 3/3 语义完成。
 
 ## 3d. C67X00 linked SVF 与 HPI oracle
 
@@ -182,8 +183,8 @@ EDU_TRACE_OK
 TRACE_MATCH_OK
 module coverage 6/6
 call coverage 7/7
-op coverage 16/16
-register coverage 7/7
+op coverage 13/13
+register coverage 8/8
 QEMU_EXPERIMENTS_OK
 ~~~
 
@@ -214,7 +215,7 @@ python3 -m extractor extract -s drivers/test/gpio-ftgpio010.c \
 
 工具位置和超时通过 REHARNESS_SVF_* 环境变量配置；required 模式在工具缺失、bitcode/link/WPA 失败时返回错误，不允许静默退回逐 TU 或空 alias。多源结果记录 linked bitcode SHA、TU 数、工具版本与 source provenance。
 
-LLM synthesis 是独立的可选路径，通过 REHARNESS_LLM_CMD 接入外部命令。模型和 endpoint 具有非确定性，因此 LLM 结果不计入论文的 19/19 编译和 QEMU headline claims。
+LLM synthesis 是独立的可选路径，通过 REHARNESS_LLM_CMD 接入外部命令。模型和 endpoint 具有非确定性，因此 LLM 结果不计入论文的确定性编译矩阵和 QEMU headline claims。
 
 ## 从干净 checkout 完整执行
 
@@ -224,8 +225,13 @@ git submodule update --init
 ./run.sh test
 python3 verification/check_generalization_guard.py
 python3 verification/run_zero_shot_holdout.py
+python3 verification/materialize_holdout_contexts.py
+python3 verification/run_zero_shot_matrix.py
 python3 verification/run_matrix.py
 python3 verification/run_multisource_matrix.py
+python3 verification/sdhci_accessor_oracle.py --output experiments/results/sdhci-accessor-oracle.json
+python3 verification/virtio_state_oracle.py --output experiments/results/virtio-state-oracle.json
+python3 verification/dwapb_banked_oracle.py --output experiments/results/dwapb-banked-oracle.json
 python3 verification/run_clock_model_boundary.py
 python3 verification/c67x00_hpi_trace_oracle.py --output experiments/results/c67x00-hpi-oracle.json
 verification/run_qemu_experiments.sh

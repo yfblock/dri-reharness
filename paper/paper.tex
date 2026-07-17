@@ -40,7 +40,7 @@
 \email{anonymous@example.com}
 
 \begin{abstract}
-Device drivers account for the majority of operating system code, yet their register-level behavior remains largely implicit---buried in C source with ad-hoc macros, pointer arithmetic, and framework-dependent idioms. We present \reharness, a pipeline that extracts formal register interaction sequences (RIS) from C drivers using libclang AST analysis combined with flow-sensitive dataflow and taint tracking. The extracted RIS feeds backend-independent function/device specifications and deterministic userspace, bare-metal, and Linux generators. Evaluation artifacts are produced by a version-pinned, machine-readable pipeline rather than manually transcribed tables. Across \EvalDrivers{} Linux drivers, \reharness extracts \EvalOps{} operations: \EvalSymbolic{} symbolic, \EvalFixed{} fixed, and \EvalComputed{} computed-address accesses, including \EvalRMW{} read-modify-write patterns and \EvalConditions{} conditions. We additionally evaluate \MultiSourceDrivers{} real multi-source Linux modules comprising \MultiSourceTUs{} translation units and \MultiSourceLines{} lines. All three generated backends compile for every single-source case; for the multi-source modules, harness and bare-metal compile for all three while Linux compiles for DWC2 and C67X00 and conservatively rejects ASPEED vHub. Strict semantic readiness is intentionally more conservative (\LinuxReadyCount{}/\EvalDrivers{} for Linux) because unknown transforms, unsafe dynamic addresses, and unbound subsystem state are treated as blockers rather than silently approximated. Deterministically generated drivers additionally pass value-level QEMU validation on the edu PCI device and offset/order trace validation on a real gpio-ftgpio010 driver.
+Device drivers account for the majority of operating system code, yet their register-level behavior remains largely implicit---buried in C source with ad-hoc macros, pointer arithmetic, and framework-dependent idioms. We present \reharness, a pipeline that extracts formal register interaction sequences (RIS) from C drivers using libclang AST analysis combined with flow-sensitive dataflow and taint tracking. The extracted RIS feeds backend-independent function/device specifications and deterministic userspace, bare-metal, and Linux generators. Evaluation artifacts are produced by a version-pinned, machine-readable pipeline rather than manually transcribed tables. Across \EvalDrivers{} Linux drivers, \reharness extracts \EvalOps{} operations: \EvalSymbolic{} symbolic, \EvalFixed{} fixed, and \EvalComputed{} computed-address accesses, including \EvalRMW{} read-modify-write patterns and \EvalConditions{} conditions. We additionally evaluate \MultiSourceDrivers{} real multi-source Linux modules comprising \MultiSourceTUs{} translation units and \MultiSourceLines{} lines. Harness and bare-metal outputs compile for \HarnessCompileCount{}/\EvalDrivers{} single-source cases and Linux outputs for \LinuxCompileCount{}/\EvalDrivers{}; all three backends compile each multi-source module. Strict semantic readiness is intentionally more conservative (\LinuxReadyCount{}/\EvalDrivers{} for Linux) because unknown transforms, unsafe dynamic addresses, and unbound subsystem state are treated as blockers rather than silently approximated. Deterministically generated drivers additionally pass value-level QEMU validation on the edu PCI device and offset/order trace validation on a real gpio-ftgpio010 driver.
 \end{abstract}
 
 \keywords{device drivers, formal specification, program analysis, code generation, LLM-assisted synthesis}
@@ -132,50 +132,52 @@ Resolving \texttt{g->base} requires tracking the \texttt{ioremap} call that init
 
 \section{System Overview}
 
-\reharness is organized as a pipeline with four major stages, illustrated in Figure~\ref{fig:arch}.
+\reharness is organized as a pipeline with four major stages, illustrated in Figure~\ref{fig:impl_arch}.
 
 \begin{figure}[t]
 \centering
 \resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[
-  node distance=0.8cm,
-  block/.style={rectangle, draw, rounded corners, minimum width=2.8cm, minimum height=0.7cm, align=center, font=\small},
+  node distance=0.75cm,
+  block/.style={rectangle, draw, rounded corners, minimum width=3.0cm, minimum height=0.75cm, align=center, font=\small},
+  artifact/.style={rectangle, draw, dashed, fill=gray!10, minimum width=2.8cm, minimum height=0.75cm, align=center, font=\footnotesize},
   arrow/.style={->, >=stealth, thick},
-  artifact/.style={rectangle, draw, dashed, fill=gray!5, minimum width=2.4cm, minimum height=0.6cm, align=center, font=\footnotesize},
 ]
 
 \node[block] (src) {C Driver Source};
-\node[block, right=of src] (extract) {AST Extraction\\+ Dataflow};
-\node[artifact, right=of extract] (ris) {.ris\\Formal RIS};
-\node[block, right=of ris] (infer) {Semantic\\Inference};
-\node[artifact, right=of infer] (dspec) {.dspec\\.bind\\.facts};
-\node[block, right=of dspec] (gen) {Code\\Generation};
-\node[artifact, right=of gen] (code) {candidate.c\\(harness/bare/linux)};
+\node[block, right=of src] (parse) {Parse + Macro Extraction\\\texttt{extractor/tu.py}, \texttt{extractor/macros.py}, \texttt{extractor/ast\_model.py}};
+\node[block, right=of parse] (extract) {RIS Extraction + Inlining\\\texttt{extractor/call\_graph.py}, \texttt{extractor/dataflow.py}, \texttt{extractor/wrappers.py}, \texttt{extractor/taint.py}};
+\node[artifact, right=of extract] (ris) {Formal RIS\\.ris};
+\node[block, right=of ris] (infer) {Semantic Inference\\\texttt{extractor/spec\_infer.py}, \texttt{extractor/spec.py}};
+\node[artifact, right=of infer] (dspec) {Formal Specs\\.dspec/.bind/.facts};
+\node[block, right=of dspec] (gen) {Code Generation\\\texttt{generator/common.py}, \texttt{generator/harness.py}, \texttt{generator/baremetal.py}, \texttt{generator/linux.py}};
+\node[artifact, right=of gen] (code) {Generated C Code\\Linux / Bare-metal / Harness};
 
-\draw[arrow] (src) -- (extract);
-\draw[arrow] (extract) -- (ris);
-\draw[arrow] (ris) -- (infer);
-\draw[arrow] (infer) -- (dspec);
-\draw[arrow] (dspec) -- (gen);
-\draw[arrow] (gen) -- (code);
+\draw[arrow] (src) -- (parse) node[midway, above] {libclang AST + preprocessing};
+\draw[arrow] (parse) -- (extract) node[midway, above] {target funcs + macro table};
+\draw[arrow] (extract) -- (ris) node[midway, above] {formal register ops};
+\draw[arrow] (ris) -- (infer) node[midway, above] {RIS + callback bindings};
+\draw[arrow] (infer) -- (dspec) node[midway, above] {Function / Device specs};
+\draw[arrow] (dspec) -- (gen) node[midway, above] {backend bindings};
+\draw[arrow] (gen) -- (code) node[midway, above] {emitted deterministically};
 
-\node[block, below=1.2cm of gen] (llm) {LLM Repair\\Loop};
+\node[block, below=1.4cm of gen] (llm) {LLM Repair Loop\\\texttt{synthesis.py}};
 \draw[arrow, dashed] (code.south) -- ++(0,-0.4) -| (llm);
-\draw[arrow, dashed] (llm) -- ++(0,0.4) -| (gen.south);
+\draw[arrow, dashed] (llm) -| (gen.south);
 
 \end{tikzpicture}%
 }
-\caption{\reharness pipeline. C source is parsed via libclang to extract formal RIS; semantic inference enriches RIS into backend-independent specs; code generation targets multiple backends; a dashed LLM repair loop patches candidates under verification feedback.}
-\label{fig:arch}
+\caption{Implementation architecture of \reharness, showing repository components and artifact flow from C source through formal RIS and backend code generation.}
+\label{fig:impl_arch}
 \end{figure}
 
-\textbf{Stage 1: RIS Extraction.} The extraction stage parses C source with libclang, builds a macro offset table from preprocessing records, identifies driver entry points, and performs per-function flow-sensitive dataflow analysis. The output is a formal \rislang specification recording every register read, write, and RMW operation with symbolic register names, branch guards, and width annotations.
+\textbf{Stage 1: RIS Extraction.} The extraction stage is implemented in \texttt{extractor/tu.py}, \texttt{extractor/macros.py}, and \texttt{extractor/ast\_model.py}. It parses C source with libclang, preserves preprocessing context, and extracts a macro table of \texttt{\#define} offsets. Target functions and callback initializer bindings are discovered from the AST. The extractor then computes a libclang-backed call graph and performs flow-sensitive dataflow analysis with guarded predicate stacking. The output is a formal \rislang specification recording every register read, write, and RMW operation with symbolic register names, branch guards, and width annotations.
 
-\textbf{Stage 2: Semantic Inference.} The inference stage enriches raw \rislang modules with backend-independent semantics. It infers function roles from callback table registrations (e.g., \texttt{.irq\_ack = ftgpio\_ack\_irq} $\rightarrow$ \texttt{interrupt\_ack}), abstracts C parameter types to formal types (e.g., \texttt{struct irq\_data *} $\rightarrow$ \texttt{LogicalIRQ}), binds MMIO bases to device state, and derives effects and Hoare-style contracts from role semantics. The result is a \texttt{FunctionSpec} per driver function, composed into a \texttt{DeviceSpec} with state, resources, register map, and invariants.
+\textbf{Stage 2: Semantic Inference.} Semantic inference is implemented in \texttt{extractor/spec\_infer.py} and \texttt{extractor/spec.py}. It enriches raw \rislang modules with backend-independent semantics: inferring function roles from callback table fields and function-name hints, abstracting C parameter and return types to formal types (for example, \texttt{struct irq\_data *} $\rightarrow$ \texttt{LogicalIRQ}), binding MMIO base expressions such as \texttt{g->base} to device state, and deriving effects and Hoare-style contracts from role semantics. The result is a \texttt{FunctionSpec} per driver function and a composed \texttt{DeviceSpec} with state, resources, register map, and invariants.
 
-\textbf{Stage 3: Code Generation.} The generation stage consumes the formal specs and backend-specific binding files to produce driver code for three targets: (1) a userspace harness with fake MMIO memory and trace logging for testing, (2) portable bare-metal C for embedded systems, and (3) Linux kernel modules with platform, PCI, GPIO/IRQ, clock-provider, and miscdevice lifecycle glue selected from the inferred device class. Conservatively recognized source-private clock containers are rebound to generated state while retaining their scalar rate arithmetic, pure helpers, and distinct callback-table instances. When an operation cannot be bound explicitly, generation emits an unsupported marker and neutral code instead of inventing behavior.
+\textbf{Stage 3: Code Generation.} Code generation is implemented in \texttt{generator/common.py}, \texttt{generator/harness.py}, \texttt{generator/baremetal.py}, \texttt{generator/linux.py}, and \texttt{generator/subsystem\_runner.py}. It consumes the formal specs and backend-specific bindings to emit deterministic C for three targets: a userspace harness with fake MMIO memory and trace logging, portable bare-metal C, and Linux kernel modules with platform, PCI, GPIO/IRQ, and clock-provider glue. When a source expression cannot be safely lowered or a lifecycle is unknown, the generator emits an explicit unsupported marker instead of approximating semantics.
 
-\textbf{Stage 4: LLM-Assisted Synthesis.} When the deterministic backend cannot fully reconstruct source-private state or complex subsystem semantics, \reharness assembles a structured bundle of \rislang, device spec, backend binding, source facts, and a deterministic candidate. It then enters a closed loop: compile/static/trace verification yields structured feedback, which is fed to an LLM as a repair prompt. The LLM patches the candidate, and the loop repeats until the candidate passes all checks or the iteration budget is exhausted.
+\textbf{Stage 4: LLM-Assisted Synthesis.} The optional LLM repair loop is implemented in \texttt{synthesis.py}. When deterministic generation cannot fully reconstruct source-private state or subsystem-specific lifecycle semantics, \reharness assembles a structured bundle of \rislang, \texttt{DeviceSpec}, \texttt{BindSpec}, source facts, and a scaffolded candidate. It then uses compile, static, and trace verification feedback to prompt the LLM for repairs until the candidate passes the checks or the iteration budget expires.
 
 \section{Formal RIS Language}
 
@@ -425,7 +427,7 @@ The Linux backend generates buildable kernel modules with \texttt{struct device\
 
 \subsection{LLM-Assisted Synthesis Loop}
 
-When deterministic generation is insufficient---for example, when the Linux backend cannot fully reconstruct the probe/resource lifecycle or subsystem-specific registration glue---\reharness enters a closed-loop LLM-assisted synthesis mode (Figure~\ref{fig:arch}, dashed path).
+When deterministic generation is insufficient---for example, when the Linux backend cannot fully reconstruct the probe/resource lifecycle or subsystem-specific registration glue---\reharness enters a closed-loop LLM-assisted synthesis mode (Figure~\ref{fig:impl_arch}, dashed path).
 
 The synthesis module assembles a structured input bundle: \texttt{device.ris}, \texttt{device.dspec}, \texttt{device.<backend>.bind}, \texttt{device.facts}, \texttt{device.scaffold.c}, and two guiding documents (\texttt{constraints.md} and \texttt{verification.md}). The scaffold is the output of the deterministic generator.
 
@@ -485,7 +487,7 @@ The initial corpus treats one C translation unit as one extraction target. To ev
 \resizebox{\columnwidth}{!}{\MultiSourceResultsTable}
 \end{table}
 
-Table~\ref{tab:multisource} covers \MultiSourceDrivers{} modules, \MultiSourceTUs{} translation units, \MultiSourceLines{} source lines, and \MultiSourceFunctions{} functions, yielding \MultiSourceOps{} operations, \MultiSourceRMW{} RMW patterns, and \MultiSourceRegisters{} mapped registers. Of \MultiSourceCallEdges{} internal call edges, all \MultiSourceCrossTUEdges{} cross-TU edges are resolved; \MultiSourcePropagatedEdges{} edges carry MMIO summaries. The source comparison finds \MultiSourceSourceMMIO{} lexical MMIO primitives and \MultiSourceRISMMIO{} emitted RIS MMIO operations after propagation. C67X00 demonstrates propagation through its low-level HPI implementation, ASPEED vHub covers endpoint/hub paths, and the ten-file DWC2 case exercises host, gadget, dual-role, endpoint, and DMA code. Harness and bare-metal compile for all three modules; generated Linux compiles for DWC2 and C67X00. C67X00 now binds HPI base, register stride, and SIE number as source-private state and lowers all 32 computed HPI addresses. ASPEED vHub retains explicit endpoint-lifecycle and subsystem-state blockers. Compilation remains distinct from strict readiness: C67X00 still records a switch-exclusivity gap, an unproved loop, and unsupported external HCD lifecycle semantics.
+Table~\ref{tab:multisource} covers \MultiSourceDrivers{} modules, \MultiSourceTUs{} translation units, \MultiSourceLines{} source lines, and \MultiSourceFunctions{} functions, yielding \MultiSourceOps{} operations, \MultiSourceRMW{} RMW patterns, and \MultiSourceRegisters{} mapped registers. Of \MultiSourceCallEdges{} internal call edges, all \MultiSourceCrossTUEdges{} cross-TU edges are resolved; \MultiSourcePropagatedEdges{} edges carry MMIO summaries. The source comparison finds \MultiSourceSourceMMIO{} lexical MMIO primitives and \MultiSourceRISMMIO{} emitted RIS MMIO operations after propagation. C67X00 demonstrates propagation through its low-level HPI implementation, ASPEED vHub covers endpoint/hub paths, and the ten-file DWC2 case exercises host, gadget, dual-role, endpoint, and DMA code. All three generated backends compile for all three modules. C67X00 now binds HPI base, register stride, and SIE number as source-private state and lowers all 32 computed HPI addresses. ASPEED vHub and DWC2 retain explicit endpoint/HCD lifecycle and source-private-state blockers. Compilation remains distinct from strict readiness: C67X00 still records a switch-exclusivity gap, an unproved loop, and unsupported external HCD lifecycle semantics.
 
 \subsection{Generation Readiness (RQ3)}
 
@@ -498,9 +500,9 @@ Table~\ref{tab:readiness} separates compilation from strict semantic readiness. 
 \resizebox{\columnwidth}{!}{\ReadinessResultsTable}
 \end{table}
 
-Harness, bare-metal, and Linux outputs compile for \EvalDrivers{}/\EvalDrivers{} drivers. In contrast, strict readiness is \HarnessReadyCount{}/\EvalDrivers{} for harness, \BaremetalReadyCount{}/\EvalDrivers{} for bare-metal, and \LinuxReadyCount{}/\EvalDrivers{} for Linux; \LLMReadyCount{}/\EvalDrivers{} have sufficient structured context for assisted synthesis. Generic GPIO callbacks recovered from \texttt{gpio\_generic\_chip\_config} are executed by a contract-driven runner in the userspace harness and in a macro-gated bare-metal host-oracle mode. An independent Formal-RIS interpreter checks callback identity, operation kind, offset, byte order, and value; readiness is restored only when every synthesized callback passes. Highbank separately illustrates source-aware Linux-only clock lowering. Unknown transforms, unsafe computed addresses, target-source clang errors, unsupported subsystem domains, and normalized source-private state block readiness even when code can be compiled. The mean RIS quality is \EvalMeanRIS{}.
+Harness outputs compile for \HarnessCompileCount{}/\EvalDrivers{} drivers, bare-metal for \BaremetalCompileCount{}/\EvalDrivers{}, and Linux for \LinuxCompileCount{}/\EvalDrivers{}. In contrast, strict readiness is \HarnessReadyCount{}/\EvalDrivers{} for harness, \BaremetalReadyCount{}/\EvalDrivers{} for bare-metal, and \LinuxReadyCount{}/\EvalDrivers{} for Linux; \LLMReadyCount{}/\EvalDrivers{} have sufficient structured context for assisted synthesis. Generic GPIO callbacks recovered from \texttt{gpio\_generic\_chip\_config} are executed by a contract-driven runner in the userspace harness and in a macro-gated bare-metal host-oracle mode. An independent Formal-RIS interpreter checks callback identity, operation kind, offset, byte order, and value; readiness is restored only when every synthesized callback passes. Highbank separately illustrates source-aware Linux-only clock lowering. Unknown transforms, unsafe computed addresses, target-source clang errors, unsupported subsystem domains, and normalized source-private state block readiness even when code can be compiled. The mean RIS quality is \EvalMeanRIS{}.
 
-A frozen 12-driver zero-shot holdout provides a separate generalization check. All three generated backends compile for 12/12 cases and are strictly ready for 7/12. Sequential \texttt{gpio-mmio} callbacks are checked against an independent source model that includes \texttt{sdata}/\texttt{sdir} shadow state and detects six semantic mutations. NPCM SDHCI is admitted only by a source contract that excludes private accessor overrides; Dove and HLWD remain rejected. The Altera IRQ loop is lowered only as a masked W1C drain: the pending and mask registers are reread after acknowledgement, and the one-body-iteration proof explicitly assumes that no new pending bits arrive during the drain. These contracts establish register-interaction behavior, not complete GPIO/IRQ or SDHCI lifecycle equivalence.
+A frozen 12-driver zero-shot holdout provides a separate generalization check. All three generated backends compile and satisfy the current strict contracts for 12/12 cases. Sequential \texttt{gpio-mmio} callbacks are checked against an independent source model with \texttt{sdata}/\texttt{sdir} shadow state. SDHCI NPCM, Dove, and HLWD pass source accessor contracts, including HLWD byte-swapped addresses, transfer-mode shadowing, and delay semantics. Virtio config and virtqueue operations are represented as subsystem-private state rather than false MMIO. For DW APB, the Linux backend allocates one \texttt{gpio\_chip} and shadow state per firmware bank, restricts IRQ registration to the source-proven bank, and restores parent IRQ discovery/domain dispatch; PM, bank addressing, lifecycle, and IRQ bit/type mutations are independently checked. The Altera IRQ loop is lowered only as a masked W1C drain under an explicit no-new-pending-bits assumption. These contracts remain scoped to the modeled register and subsystem behavior, not arbitrary hardware equivalence.
 
 We additionally publish \path{experiments/results/reliability.json}. Each recognized source access receives a stable site identifier, every RIS leaf carries source evidence and precision labels, and path predicates are checked for satisfiability and switch exclusivity with Z3. Direct volatile dereferences, inline assembly, unsupported register domains, and unmodeled control transfers cannot disappear silently. The report explicitly scopes its strict verdict to recognized register-access and control patterns. \texttt{whole\_program\_complete} is now a conjunction over linked analysis, all translation units, internal calls, access accounting, explicit CFG, path validation, switch exclusivity, operation identity/evidence, computed addresses, values, loops, and access domains. Its scope is \texttt{manifest-internal}; it does not claim completeness for external kernel or subsystem semantics. The default single-source evaluation leaves alias analysis off and therefore remains false.
 
@@ -600,7 +602,7 @@ For gpio-ftgpio010, the experiment registers a platform device, loads the instru
 
 We presented \reharness, a pipeline for extracting formal register interaction specifications from C device drivers using libclang AST analysis with flow-sensitive dataflow and taint tracking. \reharness overcomes the four fundamental limitations of regex-based extraction: macro-defined register offsets are resolved via preprocessing records, wrapper functions are inlined through inter-procedural call-graph analysis, branch conditions are recorded through predicate stacking, and arithmetic address expressions are evaluated through symbolic abstract interpretation.
 
-Beyond raw extraction, \reharness infers backend-independent function and device semantics, composes them into a multi-backend code generation framework, and provides an optional closed-loop LLM-assisted synthesis module for complex targets. Across \EvalDrivers{} drivers, it extracts \EvalOps{} operations---\EvalSymbolic{} symbolic, \EvalFixed{} fixed, and \EvalComputed{} computed-address---including \EvalRMW{} RMW patterns and \EvalConditions{} conditions, with a mean RIS quality score of \EvalMeanRIS{}. All three deterministic backends compile for \EvalDrivers{}/\EvalDrivers{} drivers, while the explicit \LinuxReadyCount{}/\EvalDrivers{} strict Linux readiness result prevents compilation from being mistaken for semantic completeness. Value-level and trace-level QEMU oracles pass for the deterministic edu and gpio-ftgpio010 outputs.
+Beyond raw extraction, \reharness infers backend-independent function and device semantics, composes them into a multi-backend code generation framework, and provides an optional closed-loop LLM-assisted synthesis module for complex targets. Across \EvalDrivers{} drivers, it extracts \EvalOps{} operations---\EvalSymbolic{} symbolic, \EvalFixed{} fixed, and \EvalComputed{} computed-address---including \EvalRMW{} RMW patterns and \EvalConditions{} conditions, with a mean RIS quality score of \EvalMeanRIS{}. Deterministic harness and bare-metal outputs compile for \HarnessCompileCount{}/\EvalDrivers{} drivers and Linux outputs for \LinuxCompileCount{}/\EvalDrivers{}, while the explicit \LinuxReadyCount{}/\EvalDrivers{} strict Linux readiness result prevents compilation from being mistaken for semantic completeness. Value-level and trace-level QEMU oracles pass for the deterministic edu and gpio-ftgpio010 outputs.
 
 \reharness enables formal reasoning about driver behavior at the register level, a capability that has been missing from the driver analysis toolchain. By producing specifications in a formal language rather than ad-hoc formats, it provides a foundation for verification, testing, safe-language translation, and AI-assisted driver synthesis.
 

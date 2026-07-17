@@ -1,0 +1,78 @@
+{
+  "case": "linux/drivers/virtio/virtio_input.c",
+  "contract": {
+    "virtio_state_fields": [
+      "ready",
+      "virtio_cfg_select",
+      "virtio_cfg_size",
+      "virtio_cfg_subsel",
+      "virtio_cfg_u_abs_flat",
+      "virtio_cfg_u_abs_fuzz",
+      "virtio_cfg_u_abs_max",
+      "virtio_cfg_u_abs_min",
+      "virtio_cfg_u_abs_res",
+      "virtio_cfg_u_bitmap",
+      "virtio_cfg_u_ids_bustype",
+      "virtio_cfg_u_ids_product",
+      "virtio_cfg_u_ids_vendor",
+      "virtio_cfg_u_ids_version",
+      "virtio_cfg_u_string",
+      "virtio_evt_available",
+      "virtio_evt_completed",
+      "virtio_evt_notified",
+      "virtio_evt_queue_depth",
+      "virtio_sts_completed",
+      "virtio_sts_notified",
+      "virtio_sts_outstanding"
+    ],
+    "virtio_state_oracle_errors": [],
+    "virtio_state_oracle_ops": 54,
+    "virtio_state_oracle_passed": true,
+    "virtio_state_oracle_required": true
+  },
+  "mutations": [
+    {
+      "caught": true,
+      "errors": [
+        "missing virtio state field virtio_cfg_select",
+        "missing virtio state field virtio_cfg_subsel",
+        "missing virtio state field virtio_cfg_size"
+      ],
+      "name": "config_selector"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "missing virtio state field virtio_evt_available",
+        "missing virtio state field virtio_evt_completed",
+        "missing virtio state field virtio_evt_notified",
+        "event queue notify transition is missing"
+      ],
+      "name": "event_notify"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "missing virtio state field virtio_sts_outstanding",
+        "missing virtio state field virtio_sts_notified",
+        "status queue notify transition is missing"
+      ],
+      "name": "status_ownership"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "freeze lifecycle does not clear ready"
+      ],
+      "name": "freeze_ready"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "virtio loop lacks an exact finite bound"
+      ],
+      "name": "queue_loop_bound"
+    }
+  ],
+  "schema": 1
+}

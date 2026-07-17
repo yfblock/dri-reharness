@@ -2,7 +2,7 @@
   "aggregate": {
     "call_edges": 974,
     "cross_tu_call_edges": 223,
-    "direct_mmio_ops": 1084,
+    "direct_mmio_ops": 1087,
     "drivers": 3,
     "ops": 4394,
     "propagated_mmio_edges": 578,
@@ -20,13 +20,13 @@
         "baremetal_compile": true,
         "harness_compile": true,
         "harness_trace": true,
-        "linux_compile": false
+        "linux_compile": true
       },
       "call_edges": 120,
       "cross_tu_call_edges": 53,
       "description": "Pinned Linux ASPEED virtual USB hub controller module",
-      "direct_mmio_delta": 3,
-      "direct_mmio_ops": 104,
+      "direct_mmio_delta": 4,
+      "direct_mmio_ops": 105,
       "driver": "aspeed-vhub",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 92,
@@ -70,27 +70,27 @@
       },
       "pipeline_exit": 0,
       "propagated_mmio_edges": 54,
-      "propagation_amplification": 1.4423,
+      "propagation_amplification": 1.4286,
       "propagation_by_depth": [
         {
           "depth": 0,
-          "new_mmio_ops": 104,
-          "total_mmio_ops": 104
+          "new_mmio_ops": 105,
+          "total_mmio_ops": 105
         },
         {
           "depth": 1,
           "new_mmio_ops": 125,
-          "total_mmio_ops": 229
+          "total_mmio_ops": 230
         },
         {
           "depth": 2,
           "new_mmio_ops": 102,
-          "total_mmio_ops": 331
+          "total_mmio_ops": 332
         },
         {
           "depth": 3,
           "new_mmio_ops": 90,
-          "total_mmio_ops": 421
+          "total_mmio_ops": 422
         }
       ],
       "readiness": {
@@ -102,7 +102,7 @@
           "1 source register/opaque access site(s) unsupported",
           "13 switch path pair(s) not proven exclusive",
           "7 unsupported control-flow transfer(s)",
-          "6 conservative loop summary/summaries require validation",
+          "4 conservative loop summary/summaries require validation",
           "missing role for: ast_vhub_wake_work",
           "callback entry without table binding: ast_vhub_wake_work",
           "linux backend has unsupported semantic bindings"
@@ -115,7 +115,7 @@
       },
       "resolved_cross_tu_call_edges": 53,
       "ris_mmio_ops": 150,
-      "seconds": 30.499,
+      "seconds": 29.363,
       "source_count": 5,
       "source_lines": 3540,
       "source_mmio_primitives": {
@@ -142,8 +142,8 @@
       "call_edges": 128,
       "cross_tu_call_edges": 30,
       "description": "Pinned Linux Cypress C67X00 USB host-controller module",
-      "direct_mmio_delta": 13,
-      "direct_mmio_ops": 15,
+      "direct_mmio_delta": 14,
+      "direct_mmio_ops": 16,
       "driver": "c67x00",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 89,
@@ -188,27 +188,27 @@
       },
       "pipeline_exit": 0,
       "propagated_mmio_edges": 79,
-      "propagation_amplification": 2.1333,
+      "propagation_amplification": 2.0,
       "propagation_by_depth": [
         {
           "depth": 0,
-          "new_mmio_ops": 15,
-          "total_mmio_ops": 15
+          "new_mmio_ops": 16,
+          "total_mmio_ops": 16
         },
         {
           "depth": 1,
-          "new_mmio_ops": 34,
-          "total_mmio_ops": 49
+          "new_mmio_ops": 35,
+          "total_mmio_ops": 51
         },
         {
           "depth": 2,
           "new_mmio_ops": 103,
-          "total_mmio_ops": 152
+          "total_mmio_ops": 154
         },
         {
           "depth": 3,
           "new_mmio_ops": 182,
-          "total_mmio_ops": 334
+          "total_mmio_ops": 336
         }
       ],
       "readiness": {
@@ -228,7 +228,7 @@
       },
       "resolved_cross_tu_call_edges": 30,
       "ris_mmio_ops": 32,
-      "seconds": 21.178,
+      "seconds": 20.599,
       "source_count": 4,
       "source_lines": 2239,
       "source_mmio_primitives": {
@@ -254,8 +254,8 @@
       "call_edges": 726,
       "cross_tu_call_edges": 140,
       "description": "Pinned Linux Synopsys DesignWare USB2 dual-role controller module",
-      "direct_mmio_delta": 161,
-      "direct_mmio_ops": 965,
+      "direct_mmio_delta": 162,
+      "direct_mmio_ops": 966,
       "driver": "dwc2",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 445,
@@ -300,27 +300,27 @@
       },
       "pipeline_exit": 0,
       "propagated_mmio_edges": 445,
-      "propagation_amplification": 3.6891,
+      "propagation_amplification": 3.6853,
       "propagation_by_depth": [
         {
           "depth": 0,
-          "new_mmio_ops": 965,
-          "total_mmio_ops": 965
+          "new_mmio_ops": 966,
+          "total_mmio_ops": 966
         },
         {
           "depth": 1,
           "new_mmio_ops": 1745,
-          "total_mmio_ops": 2710
+          "total_mmio_ops": 2711
         },
         {
           "depth": 2,
           "new_mmio_ops": 3739,
-          "total_mmio_ops": 6449
+          "total_mmio_ops": 6450
         },
         {
           "depth": 3,
           "new_mmio_ops": 4690,
-          "total_mmio_ops": 11139
+          "total_mmio_ops": 11140
         }
       ],
       "readiness": {
@@ -332,9 +332,9 @@
           "220 contradictory/infeasible RIS path(s)",
           "35 switch path pair(s) not proven exclusive",
           "32 unsupported control-flow transfer(s)",
-          "203 unsafe dynamic register address(es) (383 computed total)",
+          "255 unsafe dynamic register address(es) (383 computed total)",
           "85 clang error diagnostic(s)",
-          "182 conservative loop summary/summaries require validation",
+          "165 conservative loop summary/summaries require validation",
           "missing role for: dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
           "callback entry without table binding: dwc2_suspend, dwc2_resume, dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_hcd_reset_func, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
           "linux backend has unsupported semantic bindings"
@@ -343,11 +343,11 @@
         "facts_quality": 1.0,
         "function_spec_quality": 0.562,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.693
+        "ris_quality": 0.685
       },
       "resolved_cross_tu_call_edges": 140,
       "ris_mmio_ops": 3560,
-      "seconds": 94.513,
+      "seconds": 108.338,
       "source_count": 10,
       "source_lines": 21668,
       "source_mmio_primitives": {
@@ -373,8 +373,8 @@
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "85c576862274f5062cfdf956692be20a6a20b3c4"
+    "reharness_commit": "24182ac7a6b8be43b743e8a8ac9ae7b251b0e897"
   },
-  "generated_at": "2026-07-15T18:27:20.211412+00:00",
+  "generated_at": "2026-07-17T07:33:03.558139+00:00",
   "schema": 1
 }
