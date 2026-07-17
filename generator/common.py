@@ -1,5 +1,6 @@
 """Shared C-emission helpers for all backends."""
 from __future__ import annotations
+import copy
 import hashlib
 import json
 import re
@@ -137,23 +138,28 @@ def ris_op_digest(op: dict) -> str:
 
     Source paths and other provenance are deliberately excluded: the digest
     describes the operation the backend must lower, while the canonical
-    Formal RIS remains the authority for provenance.
+    Formal RIS remains the authority for provenance.  The digest is always
+    derived from the current operation; callers must not cache it in Formal
+    RIS, because doing so would hide later semantic mutations.
     """
     kind = next((name for name in ("Read", "Write", "ReadModifyWrite")
                  if name in op), "Unknown")
-    body = op.get(kind, {})
-    if body.get("contract_digest"):
-        return body["contract_digest"]
-    semantic = {
-        "kind": kind,
-        "addr": body.get("addr"),
-        "width": body.get("width"),
-        "value": body.get("value"),
-        "transform": body.get("transform"),
-        "read_var": body.get("read_var"),
-        "var": body.get("var"),
-        "access_domain": body.get("access_domain"),
+    body = copy.deepcopy(op.get(kind, {}))
+    body.pop("op_id", None)
+    body.pop("contract_digest", None)
+    body.pop("_backend_contract_digest", None)
+    evidence = body.pop("evidence", {})
+    # Most evidence locates the source operation and is intentionally outside
+    # the semantic contract.  These fields, however, select different backend
+    # MMIO primitives and therefore must participate in the digest.
+    lowering_evidence = {
+        name: evidence[name]
+        for name in ("byte_order", "write_semantics")
+        if name in evidence
     }
+    semantic = {"kind": kind, "body": body}
+    if lowering_evidence:
+        semantic["lowering_evidence"] = lowering_evidence
     encoded = json.dumps(
         semantic, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()[:16]
@@ -164,9 +170,10 @@ def lowering_receipt(op: dict, disposition: str = "lowered") -> str:
     kind = next((name for name in ("Read", "Write", "ReadModifyWrite")
                  if name in op), "Unknown")
     body = op.get(kind, {})
+    digest = body.get("_backend_contract_digest") or ris_op_digest(op)
     return ("/* REHARNESS_RIS_OP "
             f"id={body.get('op_id', '?')} kind={kind} "
-            f"status={disposition} digest={ris_op_digest(op)} */")
+            f"status={disposition} digest={digest} */")
 
 
 def _replace_expr_var(expr, name: str | None, replacement: str):

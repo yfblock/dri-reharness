@@ -8,8 +8,17 @@ statement following each receipt implements the recorded semantics.
 """
 from __future__ import annotations
 
+import argparse
+import copy
 from collections import Counter
+import hashlib
+import json
+from pathlib import Path
 import re
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 from extractor.formal import walk_leaf_ops
 from generator.common import ris_op_digest
@@ -32,10 +41,6 @@ def build_generation_contract(formal: dict) -> dict:
                 continue
             body = op[kind]
             digest = ris_op_digest(op)
-            # Normalization rewrites backend-private expressions on deep
-            # copies.  Carry the canonical digest through those rewrites so a
-            # receipt always names the pre-normalization Formal RIS contract.
-            body["contract_digest"] = digest
             operations.append({
                 "op_id": body.get("op_id"),
                 "module": module.get("name"),
@@ -44,12 +49,13 @@ def build_generation_contract(formal: dict) -> dict:
                 "width": body.get("width"),
                 "reliability": body.get("reliability"),
                 "access_domain": body.get("access_domain"),
-                "evidence": body.get("evidence", {}),
+                "evidence": copy.deepcopy(body.get("evidence", {})),
             })
     return {
         "schema": 1,
         "driver": formal.get("driver"),
-        "claim_scope": formal.get("metadata", {}).get("assurance_scope", {}),
+        "claim_scope": copy.deepcopy(
+            formal.get("metadata", {}).get("assurance_scope", {})),
         "policy": {
             "required_disposition": "lowered",
             "cardinality": "exactly-once",
@@ -98,3 +104,63 @@ def verify_backend_lowering(formal: dict, generated_c: str) -> dict:
         "kind_mismatch": kind_mismatch,
         "duplicate_expected_ids": duplicate_expected,
     }
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Verify exactly-once lowering receipts against Formal RIS")
+    parser.add_argument("--formal", required=True,
+                        help="canonical Formal RIS JSON")
+    parser.add_argument("--generated", required=True,
+                        help="generated C containing lowering receipts")
+    parser.add_argument("--contract",
+                        help="optional frozen generation-contract JSON")
+    parser.add_argument("--output", help="optional JSON report path")
+    args = parser.parse_args(argv)
+
+    formal_path = Path(args.formal)
+    generated_path = Path(args.generated)
+    formal = json.loads(formal_path.read_text(encoding="utf-8"))
+    generated_bytes = generated_path.read_bytes()
+    generated_c = generated_bytes.decode("utf-8")
+    rebuilt_contract = build_generation_contract(formal)
+    if args.contract:
+        contract_path = Path(args.contract)
+        contract_bytes = contract_path.read_bytes()
+        frozen = json.loads(contract_bytes.decode("utf-8"))
+        frozen_core = {key: frozen.get(key) for key in rebuilt_contract}
+        if frozen_core != rebuilt_contract:
+            report = {
+                "schema": 1,
+                "complete": False,
+                "verifier_error": "formal_contract_mismatch",
+                "formal": str(formal_path),
+                "contract": str(contract_path),
+                "generated": str(generated_path),
+                "contract_sha256": hashlib.sha256(
+                    contract_bytes).hexdigest(),
+                "generated_sha256": hashlib.sha256(
+                    generated_bytes).hexdigest(),
+            }
+            rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+            if args.output:
+                output = Path(args.output)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text(rendered, encoding="utf-8")
+            print(rendered, end="")
+            return 3
+    report = verify_backend_lowering(formal, generated_c)
+    report["generated_sha256"] = hashlib.sha256(generated_bytes).hexdigest()
+    if args.contract:
+        report["contract_sha256"] = hashlib.sha256(contract_bytes).hexdigest()
+    rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
+    if args.output:
+        output = Path(args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(rendered, encoding="utf-8")
+    print(rendered, end="")
+    return 0 if report["complete"] else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -52,25 +52,63 @@ preflight() {
   return $errors
 }
 
-# ── LLM 合成: 读 prompt → pi_synth.sh (带重试) → 提取 C → sanitize + (可选 instrument) ──
+# ── 候选后处理与原子接纳 ──
+postprocess_candidate() {
+  local candidate="$1"
+  python3 "$HERE/tools/sanitize.py" "$candidate" || return 1
+  if [ "${INSTRUMENT:-0}" = "1" ]; then
+    python3 "$HERE/tools/instrument_mmio.py" "$candidate" || return 1
+  fi
+}
+
+accept_existing_c() {
+  local stage="${1:-existing}"
+  local candidate="$DRVDIR/.${MODULE}.candidate.$$"
+  local report="$RH_TMP/lowering_${stage}.json"
+  cp "$DRVDIR/$MODULE.c" "$candidate" || return 1
+  if ! postprocess_candidate "$candidate"; then
+    rm -f "$candidate"
+    return 1
+  fi
+  verify_lowering_candidate "$candidate" "$report"
+  local rc=$?
+  if [ "$rc" -ne 0 ]; then
+    rm -f "$candidate"
+    return "$rc"
+  fi
+  mv -f "$candidate" "$DRVDIR/$MODULE.c"
+  mkdir -p "$ITER_LOG/lowering_${stage}"
+  cp "$report" "$ITER_LOG/lowering_${stage}/report.json"
+}
+
+# ── LLM 合成: candidate → postprocess → lowering gate → atomic promote ──
 llm_write_c() {
   local prompt_file="$1"
-  local max_retries=2
-  local attempt
-  for attempt in $(seq 1 $max_retries); do
-    timeout 600 bash "$HERE/tools/pi_synth.sh" < "$prompt_file" > "$RH_TMP/fix_out.txt" 2>&1
-    local rc=$?
-    if [ $rc -eq 0 ] && [ -s "$RH_TMP/fix_out.txt" ]; then
-      break
+  local stage="${2:-repair}"
+  local transport_max=2
+  local semantic_max="${MAX_LOWERING_ITER:-3}"
+  local semantic transport rc candidate report attempt_dir active_prompt
+  candidate="$DRVDIR/.${MODULE}.candidate.$$"
+  active_prompt="$prompt_file"
+  for semantic in $(seq 1 "$semantic_max"); do
+    for transport in $(seq 1 "$transport_max"); do
+      timeout 600 bash "$HERE/tools/pi_synth.sh" < "$active_prompt" \
+        > "$RH_TMP/fix_out.txt" 2>&1
+      rc=$?
+      if [ $rc -eq 0 ] && [ -s "$RH_TMP/fix_out.txt" ]; then
+        break
+      fi
+      if [ "$transport" -lt "$transport_max" ]; then
+        echo "  ⚠ Pi synth 失败 (rc=$rc), 传输重试 $((transport+1))/$transport_max..."
+        sleep 2
+      fi
+    done
+    if [ $rc -ne 0 ] || [ ! -s "$RH_TMP/fix_out.txt" ]; then
+      echo "  ⚠ Pi synth 传输重试用尽 (rc=$rc)"
+      rm -f "$candidate"
+      return 1
     fi
-    if [ $attempt -lt $max_retries ]; then
-      echo "  ⚠ Pi synth 失败 (rc=$rc), 重试 $((attempt+1))/$max_retries..."
-      sleep 2
-    else
-      echo "  ⚠ Pi synth 重试用尽 (rc=$rc)"
-    fi
-  done
-  python3 - "$DRVDIR/$MODULE.c" "$RH_TMP/fix_out.txt" <<'PY'
+    python3 - "$candidate" "$RH_TMP/fix_out.txt" <<'PY'
 import re, sys
 t = open(sys.argv[2]).read()
 m = re.findall(r'```c\n(.*?)\n```', t, re.S)
@@ -78,14 +116,52 @@ code = m[0] if m else (t if ('#include' in t or 'static ' in t) else '')
 if not code or len(code) < 50:
     print('  LLM 未返回有效代码'); sys.exit(1)
 open(sys.argv[1], 'w').write(code + '\n')
-print('  ✓ LLM 已写回')
+print('  ✓ LLM 候选已提取')
 PY
-  if [ $? -ne 0 ]; then return 1; fi
-  python3 "$HERE/tools/sanitize.py" "$DRVDIR/$MODULE.c" || true
-  if [ "${INSTRUMENT:-0}" = "1" ]; then
-    python3 "$HERE/tools/instrument_mmio.py" "$DRVDIR/$MODULE.c" || true
-  fi
-  return 0
+    if [ $? -ne 0 ] || ! postprocess_candidate "$candidate"; then
+      rm -f "$candidate"
+      return 1
+    fi
+
+    report="$RH_TMP/lowering_${stage}_${semantic}.json"
+    attempt_dir="$ITER_LOG/lowering_${stage}_attempt${semantic}"
+    mkdir -p "$attempt_dir"
+    cp "$active_prompt" "$attempt_dir/prompt.txt"
+    cp "$RH_TMP/fix_out.txt" "$attempt_dir/reply.txt"
+    cp "$candidate" "$attempt_dir/${MODULE}.candidate.c"
+    verify_lowering_candidate "$candidate" "$report"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+      cp "$report" "$attempt_dir/report.json"
+      mv -f "$candidate" "$DRVDIR/$MODULE.c"
+      echo "  ✓ LLM 候选通过 generation contract 并原子写回"
+      return 0
+    fi
+    [ -f "$report" ] && cp "$report" "$attempt_dir/report.json"
+    if [ "$rc" -ne 2 ]; then
+      echo "  ✗ lowering verifier 基础设施失败"
+      rm -f "$candidate"
+      return "$rc"
+    fi
+    echo "  ✗ LLM 候选违反 generation contract ($semantic/$semantic_max)"
+    cat > "$RH_TMP/lowering_retry_prompt.txt" <<RETRY
+$(cat "$prompt_file")
+
+## 上一个候选被 generation contract verifier 拒绝
+$(cat "$report")
+
+每个 register operation 必须在实现它的实际 MMIO 语句正前方恰好保留一次精确 receipt。不得只添加注释而不实现操作，也不得删除、复制、发明或中性化硬件副作用。
+
+## 被拒绝的候选
+$(cat "$candidate")
+
+## 要求
+输出完整修复版 $MODULE.c（一个 \`\`\`c 代码块）。
+RETRY
+    active_prompt="$RH_TMP/lowering_retry_prompt.txt"
+  done
+  rm -f "$candidate"
+  return 2
 }
 
 # ── 单次编译: 成功返回 0 ──
@@ -125,9 +201,22 @@ compile_loop() {
   local ok=0
   for iter in $(seq 1 "$max"); do
     echo "  --- 编译 $iter/$max ---"
-    if compile_once; then echo "  ✓ 编译成功 (尝试 $iter)"; ok=1; break; fi
+    if ! verify_current_lowering "$RH_TMP/compile_pre${iter}_lowering.json"; then
+      echo "  ✗ 当前代码未通过 generation contract，拒绝编译"
+      return 1
+    fi
+    if compile_once; then
+      if ! verify_current_lowering "$RH_TMP/compile_post${iter}_lowering.json"; then
+        echo "  ✗ 编译后 generation contract 复核失败"
+        return 1
+      fi
+      echo "  ✓ 编译成功 (尝试 $iter)"; ok=1; break
+    fi
     echo "  ✗ 编译失败, 喂 LLM 修复..."
     grep -iE 'error:|warning:' "$RH_TMP/compile.log" | head -15 | sed 's/^/    /'
+    if [ "$iter" -eq "$max" ]; then
+      break
+    fi
     grep -iE 'error:|warning:' "$RH_TMP/compile.log" | head -40 > "$RH_TMP/compile_err.txt"
     cat > "$RH_TMP/compile_fix.txt" <<FIXHEAD
 你是 Linux 内核驱动开发专家(目标内核 ${KERNEL_RELEASE:-unknown})。下面的驱动编译失败, 请修复。
@@ -139,7 +228,7 @@ $constraints
 FIXHEAD
     cat "$DRVDIR/$MODULE.c" >> "$RH_TMP/compile_fix.txt"
     echo -e "\n## 要求\n只输出修复后的完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> "$RH_TMP/compile_fix.txt"
-    llm_write_c "$RH_TMP/compile_fix.txt" || true
+    llm_write_c "$RH_TMP/compile_fix.txt" "compile_${iter}" || return 1
     save_iter compile "$iter" "$RH_TMP/compile_fix.txt" "$RH_TMP/compile_err.txt"
   done
   return $(( 1 - ok ))

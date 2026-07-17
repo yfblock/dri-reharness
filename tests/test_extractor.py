@@ -2299,6 +2299,265 @@ def test_backend_lowering_receipts_are_bijective_and_mutation_checked():
     assert digest_report["digest_mismatch"]
 
 
+def test_generation_contract_and_digest_are_pure_and_mutation_sensitive():
+    import copy
+    from generator.common import lowering_receipt, ris_op_digest
+    from generator.linux import _normalize_ops
+    from verification.backend_lowering_oracle import build_generation_contract
+
+    op = {"Write": {
+        "op_id": "op_1",
+        "addr": {"Fixed": {"base": "base", "offset": 16}},
+        "width": "B4",
+        "value": {"Const": 1},
+        "access_domain": "mmio",
+        "reliability": "Exact",
+        "evidence": {
+            "source": "/tmp/driver.c",
+            "line": 7,
+            "byte_order": "native",
+        },
+    }}
+    formal = {
+        "driver": "pure-contract",
+        "metadata": {"assurance_scope": {"whole_program_complete": True}},
+        "modules": [{"name": "probe", "ops": [op]}],
+    }
+    original = copy.deepcopy(formal)
+    first = build_generation_contract(formal)
+    second = build_generation_contract(formal)
+    assert first == second
+    assert formal == original
+    assert "contract_digest" not in op["Write"]
+
+    # Contract output must not retain mutable aliases into canonical Formal.
+    first["claim_scope"]["whole_program_complete"] = False
+    first["register_operations"][0]["evidence"]["line"] = 99
+    assert formal == original
+
+    baseline = ris_op_digest(op)
+    op["Write"]["value"] = {"Const": 2}
+    assert ris_op_digest(op) != baseline
+    assert (build_generation_contract(formal)["register_operations"][0]
+            ["digest"] != second["register_operations"][0]["digest"])
+
+    # A stale field from an older serialized Formal document is never trusted.
+    mutated = copy.deepcopy(op)
+    mutated["Write"]["contract_digest"] = baseline
+    mutated["Write"]["addr"]["Fixed"]["offset"] = 20
+    assert ris_op_digest(mutated) != baseline
+
+    # Provenance is excluded, but lowering-relevant evidence is semantic.
+    provenance_only = copy.deepcopy(op)
+    provenance_only["Write"]["evidence"]["source"] = "/elsewhere/driver.c"
+    assert ris_op_digest(provenance_only) == ris_op_digest(op)
+    big_endian = copy.deepcopy(op)
+    big_endian["Write"]["evidence"]["byte_order"] = "big"
+    assert ris_op_digest(big_endian) != ris_op_digest(op)
+
+    # Backend normalization may rewrite a deep-copy expression, but its
+    # receipt must still name the canonical pre-normalization contract.
+    source_private = copy.deepcopy(op)
+    source_private["Write"]["value"] = {"Var": "chip->enabled"}
+    canonical = ris_op_digest(source_private)
+    normalized, _changed = _normalize_ops([source_private], "dev")
+    assert normalized[0]["Write"]["value"] != source_private["Write"]["value"]
+    assert ris_op_digest(normalized[0]) != canonical
+    assert f"digest={canonical}" in lowering_receipt(normalized[0])
+    assert "_backend_contract_digest" not in source_private["Write"]
+
+
+def test_backend_lowering_oracle_cli_exit_status_and_output():
+    import subprocess
+    import tempfile
+    from generator.common import lowering_receipt
+    from verification.backend_lowering_oracle import build_generation_contract
+
+    op = {"Write": {
+        "op_id": "op_1",
+        "addr": {"Fixed": {"base": "base", "offset": 16}},
+        "width": "B4",
+        "value": {"Const": 1},
+        "access_domain": "mmio",
+        "reliability": "Exact",
+        "evidence": {},
+    }}
+    formal = {
+        "driver": "oracle-cli",
+        "modules": [{"name": "probe", "ops": [op]}],
+    }
+    with tempfile.TemporaryDirectory() as directory:
+        formal_path = os.path.join(directory, "formal.json")
+        contract_path = os.path.join(directory, "generation-contract.json")
+        generated_path = os.path.join(directory, "generated.c")
+        report_path = os.path.join(directory, "nested", "report.json")
+        with open(formal_path, "w", encoding="utf-8") as handle:
+            json.dump(formal, handle)
+        with open(contract_path, "w", encoding="utf-8") as handle:
+            json.dump(build_generation_contract(formal), handle)
+        with open(generated_path, "w", encoding="utf-8") as handle:
+            handle.write(lowering_receipt(op) + "\n")
+        command = [
+            sys.executable,
+            os.path.join(REHARNESS, "verification",
+                         "backend_lowering_oracle.py"),
+            "--formal", formal_path,
+            "--contract", contract_path,
+            "--generated", generated_path,
+            "--output", report_path,
+        ]
+        passed = subprocess.run(
+            command, cwd=REHARNESS, capture_output=True, text=True)
+        assert passed.returncode == 0, passed.stderr
+        passed_report = json.load(open(report_path, encoding="utf-8"))
+        assert passed_report["complete"]
+        assert len(passed_report["generated_sha256"]) == 64
+        assert len(passed_report["contract_sha256"]) == 64
+
+        with open(generated_path, "w", encoding="utf-8") as handle:
+            handle.write("/* receipt deliberately removed */\n")
+        failed = subprocess.run(
+            command, cwd=REHARNESS, capture_output=True, text=True)
+        assert failed.returncode == 2
+        report = json.load(open(report_path, encoding="utf-8"))
+        assert report["complete"] is False
+        assert report["missing"] == ["op_1"]
+
+        frozen = json.load(open(contract_path, encoding="utf-8"))
+        frozen["register_operations"][0]["digest"] = "0" * 16
+        with open(contract_path, "w", encoding="utf-8") as handle:
+            json.dump(frozen, handle)
+        drift = subprocess.run(
+            command, cwd=REHARNESS, capture_output=True, text=True)
+        assert drift.returncode == 3
+        drift_report = json.load(open(report_path, encoding="utf-8"))
+        assert drift_report["verifier_error"] == "formal_contract_mismatch"
+
+
+def test_e2e_llm_candidate_gate_is_atomic_and_fail_closed():
+    import subprocess
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as directory:
+        tools = os.path.join(directory, "tools")
+        driver = os.path.join(directory, "driver")
+        logs = os.path.join(driver, "iter_log")
+        os.makedirs(tools)
+        os.makedirs(logs)
+        counter = os.path.join(directory, "counter")
+        current = os.path.join(driver, "demo.c")
+        prompt = os.path.join(directory, "prompt.txt")
+        with open(current, "w", encoding="utf-8") as handle:
+            handle.write("ORIGINAL\n")
+        with open(counter, "w", encoding="utf-8") as handle:
+            handle.write("0\n")
+        with open(prompt, "w", encoding="utf-8") as handle:
+            handle.write("produce candidate\n")
+
+        synth = os.path.join(tools, "pi_synth.sh")
+        with open(synth, "w", encoding="utf-8") as handle:
+            handle.write(textwrap.dedent(r"""
+                #!/bin/bash
+                n=$(cat "$COUNTER")
+                n=$((n + 1))
+                echo "$n" > "$COUNTER"
+                if [ "$n" -gt 1 ] && ! grep -qx ORIGINAL "$CURRENT_FILE"; then
+                  echo "accepted file was overwritten by rejected candidate" >&2
+                  exit 9
+                fi
+                marker=REJECTED
+                if [ "${ALWAYS_FAIL:-0}" != 1 ] && [ "$n" -gt 1 ]; then
+                  marker=ACCEPTED
+                fi
+                cat <<EOF
+                ```c
+                #include <linux/module.h>
+                static int generated_marker_for_test = 1; /* $marker */
+                MODULE_LICENSE("GPL");
+                ```
+                EOF
+            """).lstrip())
+        os.chmod(synth, 0o755)
+        sanitize = os.path.join(tools, "sanitize.py")
+        with open(sanitize, "w", encoding="utf-8") as handle:
+            handle.write("import sys\nraise SystemExit(0)\n")
+
+        shell = textwrap.dedent(r"""
+            set -u
+            HERE="$TEST_ROOT"
+            DRVDIR="$TEST_DRIVER"
+            MODULE=demo
+            KERNELDIR=/nonexistent
+            INSTRUMENT=0
+            ITER_LOG="$TEST_LOGS"
+            MAX_LOWERING_ITER=2
+            export COUNTER CURRENT_FILE ALWAYS_FAIL
+            source "$COMMON"
+            verify_lowering_candidate() {
+              local candidate="$1" report="$2"
+              if grep -q ACCEPTED "$candidate"; then
+                echo '{"complete": true}' > "$report"
+                return 0
+              fi
+              echo '{"complete": false, "missing": ["op_1"]}' > "$report"
+              return 2
+            }
+            llm_write_c "$PROMPT" atomic
+            grep -q ACCEPTED "$CURRENT_FILE"
+            test "$(cat "$COUNTER")" = 2
+            test -f "$TEST_LOGS/lowering_atomic_attempt1/demo.candidate.c"
+
+            echo ORIGINAL > "$CURRENT_FILE"
+            echo 0 > "$COUNTER"
+            ALWAYS_FAIL=1
+            export ALWAYS_FAIL
+            if llm_write_c "$PROMPT" rejected; then
+              echo "all-rejected candidates unexpectedly passed" >&2
+              exit 1
+            fi
+            grep -qx ORIGINAL "$CURRENT_FILE"
+        """)
+        env = os.environ.copy()
+        env.update({
+            "TEST_ROOT": directory,
+            "TEST_DRIVER": driver,
+            "TEST_LOGS": logs,
+            "COUNTER": counter,
+            "CURRENT_FILE": current,
+            "ALWAYS_FAIL": "0",
+            "COMMON": os.path.join(REHARNESS, "tools", "e2e_common.sh"),
+            "PROMPT": prompt,
+        })
+        run = subprocess.run(
+            ["bash", "-c", shell], cwd=REHARNESS, env=env,
+            capture_output=True, text=True)
+        assert run.returncode == 0, run.stdout + run.stderr
+        syntax = subprocess.run(
+            ["bash", "-n", os.path.join(REHARNESS, "run_e2e.sh"),
+             os.path.join(REHARNESS, "tools", "e2e_common.sh")],
+            capture_output=True, text=True)
+        assert syntax.returncode == 0, syntax.stderr
+
+
+def test_e2e_all_llm_repair_stages_use_the_lowering_gate():
+    run_e2e = open(os.path.join(REHARNESS, "run_e2e.sh"),
+                   encoding="utf-8").read()
+    common = open(os.path.join(REHARNESS, "tools", "e2e_common.sh"),
+                  encoding="utf-8").read()
+    for stage in ("synth", "qemu_${iter}", "trace_${titer}"):
+        assert f'"{stage}"' in run_e2e
+    assert 'accept_existing_c "skip_synth"' in run_e2e
+    assert 'verify_current_lowering "$QDIR/lowering.json"' in run_e2e
+    assert 'verify_current_lowering "$TDIR/lowering.json"' in run_e2e
+    assert 'verify_current_lowering "$ITER_LOG/final-lowering.json"' in run_e2e
+    assert "ensure_lowering" not in run_e2e
+    assert "|| true" not in "\n".join(
+        line for line in run_e2e.splitlines() if "llm_write_c" in line)
+    assert 'verify_current_lowering "$RH_TMP/compile_pre' in common
+    assert 'verify_current_lowering "$RH_TMP/compile_post' in common
+    assert 'mv -f "$candidate" "$DRVDIR/$MODULE.c"' in common
+
+
 def test_backend_lowering_gate_distinguishes_specialization_from_omission():
     from extractor.spec import default_bind
     from generator import linux as linux_gen

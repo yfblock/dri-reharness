@@ -154,6 +154,42 @@ case "$SUBSYSTEM" in
     ;;
 esac
 
+# ── generation contract gate ──
+# Every LLM-produced revision must account for the canonical Formal RIS before
+# it is compiled or executed.  The current oracle proves receipt cardinality
+# and digest identity; generated-C AST equivalence is a separate stronger gate.
+verify_lowering_candidate() {
+  local candidate="$1" report="$2"
+  rm -f "$report"
+  python3 "$HERE/verification/backend_lowering_oracle.py" \
+    --formal "$BUNDLE/$BASE.formal.json" \
+    --contract "$BUNDLE/generation-contract.json" \
+    --generated "$candidate" \
+    --output "$report" > "$RH_TMP/lowering_stdout.txt" 2>&1
+  local rc=$?
+  if [ "$rc" -eq 0 ]; then
+    return 0
+  fi
+  # A well-formed incomplete report is a candidate error (2).  Missing or
+  # malformed output means the verifier/bundle itself failed (3).
+  if python3 - "$report" <<'PY' >/dev/null 2>&1
+import json, sys
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+assert report.get("complete") is False
+assert not report.get("verifier_error")
+PY
+  then
+    return 2
+  fi
+  cat "$RH_TMP/lowering_stdout.txt" >&2
+  return 3
+}
+
+verify_current_lowering() {
+  local report="${1:-$RH_TMP/lowering_current.json}"
+  verify_lowering_candidate "$DRVDIR/$MODULE.c" "$report"
+}
+
 # 2. 合成
 if [ "$SKIP_SYNTH" != "1" ]; then
   echo ""; echo "[2] Pi 合成 $MODULE.c"
@@ -192,28 +228,17 @@ PROMPT_HEAD
   echo -e "\n## .facts (AST 类型、字段、回调、资源和错误路径)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.facts" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## generation contract (机器可读；不得遗漏、复制或发明 RIS 操作)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/generation-contract.json" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## synthesis readiness / unresolved blockers" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/score.txt" >> $RH_TMP/synth_prompt.txt
-  echo -e "\n生成代码必须保留 generation contract 中每个 register operation 的 op_id；未证明项必须显式拒绝，不能用中性值、删除操作或新增硬件副作用来掩盖。" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n生成代码必须在实现每个 register operation 的实际 MMIO 语句正前方保留且仅保留一次：\n/* REHARNESS_RIS_OP id=<op_id> kind=<Read|Write|ReadModifyWrite> status=lowered digest=<16-hex-digest> */\n成功候选必须全部是 status=lowered；若任何项无法实现，本阶段应失败，不能用 rejected、中性值、删除操作或新增硬件副作用来伪装成功。" >> $RH_TMP/synth_prompt.txt
   echo -e "\n$CONSTRAINTS" >> $RH_TMP/synth_prompt.txt
   cp $RH_TMP/synth_prompt.txt "$ITER_LOG/synth/prompt.txt" 2>/dev/null || { mkdir -p "$ITER_LOG/synth"; cp $RH_TMP/synth_prompt.txt "$ITER_LOG/synth/prompt.txt"; }
-  timeout 600 bash "$HERE/tools/pi_synth.sh" < $RH_TMP/synth_prompt.txt > $RH_TMP/synth_out.txt 2>&1
-  python3 - "$DRVDIR/$MODULE.c" "$RH_TMP/synth_out.txt" <<'PY' || { echo "  ✗ 合成失败"; exit 1; }
-import re, sys
-t = open(sys.argv[2]).read()
-m = re.findall(r'```c\n(.*?)\n```', t, re.S)
-code = m[0] if m else (t if ('#include' in t or 'static ' in t) else '')
-if not code or len(code) < 50: print('未返回有效代码'); sys.exit(1)
-open(sys.argv[1], 'w').write(code + '\n'); print('  ✓ 合成', sys.argv[1])
-PY
-  python3 "$HERE/tools/sanitize.py" "$DRVDIR/$MODULE.c" || true
-  if [ "$INSTRUMENT" = "1" ]; then
-    python3 "$HERE/tools/instrument_mmio.py" "$DRVDIR/$MODULE.c" || true
+  if ! llm_write_c "$RH_TMP/synth_prompt.txt" "synth"; then
+    echo "  ✗ 合成候选未通过 generation contract"; exit 1
   fi
-  cp $RH_TMP/synth_out.txt "$ITER_LOG/synth/reply.txt" 2>/dev/null
+  cp "$RH_TMP/fix_out.txt" "$ITER_LOG/synth/reply.txt" 2>/dev/null
 else
   echo "[2] 跳过合成 (用已有 $DRVDIR/$MODULE.c)"
-  python3 "$HERE/tools/sanitize.py" "$DRVDIR/$MODULE.c" || true
-  if [ "$INSTRUMENT" = "1" ]; then
-    python3 "$HERE/tools/instrument_mmio.py" "$DRVDIR/$MODULE.c" || true
+  if ! accept_existing_c "skip_synth"; then
+    echo "  ✗ 已有代码未通过 generation contract"; exit 1
   fi
 fi
 
@@ -245,7 +270,13 @@ for iter in $(seq 1 $MAX_QEMU_ITER); do
   QEMU_LOG="/tmp/reharness_qemu_run.txt"
   [ -f "$QEMU_LOG" ] && cp "$QEMU_LOG" "$QDIR/qemu_serial.log"
   [ -f $RH_TMP/qemu_run.txt ] && cp $RH_TMP/qemu_run.txt "$QDIR/qemu_judge.txt"
-  if [ $QRC -eq 0 ]; then echo "  ✓ QEMU 成功 (尝试 $iter)"; QEMU_OK=1; LAST_QEMU_SERIAL="$QDIR/qemu_serial.log"; break; fi
+  if [ $QRC -eq 0 ]; then
+    if ! verify_current_lowering "$QDIR/lowering.json"; then
+      echo "  ✗ QEMU 候选的 generation contract 复核失败"; exit 1
+    fi
+    echo "  ✓ QEMU 成功 (尝试 $iter)"
+    QEMU_OK=1; LAST_QEMU_SERIAL="$QDIR/qemu_serial.log"; break
+  fi
   echo "  ✗ QEMU 失败 rc=$QRC, 喂 LLM 修复..."
   QEMU_ERR=$(grep -aE 'RIP:|Call Trace|Oops:|BUG:|probe.*failed|Kernel panic|dumped core' "$QEMU_LOG" 2>/dev/null | head -20)
   OB=$(wc -c < "$QEMU_LOG" 2>/dev/null)
@@ -261,10 +292,14 @@ $CONSTRAINTS
 FIXHEAD
   cat "$DRVDIR/$MODULE.c" >> $RH_TMP/qemu_fix.txt
   echo -e "\n## 要求\n只修运行时错误, 输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> $RH_TMP/qemu_fix.txt
-  llm_write_c $RH_TMP/qemu_fix.txt || true
+  if ! llm_write_c "$RH_TMP/qemu_fix.txt" "qemu_${iter}"; then
+    echo "  QEMU 修复候选未通过 generation contract"; exit 1
+  fi
   save_iter qemu "$iter" $RH_TMP/qemu_fix.txt "$QDIR/error.txt"
   echo "  → 重编..."
-  compile_once || echo "  重编失败"
+  if ! compile_loop "$MAX_COMPILE_ITER" "$CONSTRAINTS"; then
+    echo "  重编迭代用尽"; exit 1
+  fi
 done
 if [ "$QEMU_OK" -ne 1 ]; then
   echo ""; echo "############ $BASE QEMU 迭代用尽 (见 $ITER_LOG/) ############"; exit 1
@@ -278,6 +313,9 @@ for titer in $(seq 1 $MAX_TRACE_ITER); do
   if [ "$TRACE_TYPE" = "value" ]; then
     # 值级 trace (edu): 已在 qemu_run.sh 里由 exerciser 校验 (EDU_TRACE_OK)
     # QEMU 步骤成功 = trace 通过
+    if ! verify_current_lowering "$RH_TMP/final_value_trace_lowering.json"; then
+      echo "  ✗ 最终 generation contract 复核失败"; exit 1
+    fi
     echo "  ✓ trace (值级) 已在 QEMU 步骤通过"
     TRACE_OK=1; break
   fi
@@ -297,6 +335,9 @@ for titer in $(seq 1 $MAX_TRACE_ITER); do
   cp $RH_TMP/trace_match.err "$TDIR/trace_match.err" 2>/dev/null
   [ -f "$DRVDIR/$MODULE.c" ] && cp "$DRVDIR/$MODULE.c" "$TDIR/${MODULE}.c" 2>/dev/null
   if [ $TRC -eq 0 ]; then
+    if ! verify_current_lowering "$TDIR/lowering.json"; then
+      echo "  ✗ trace 候选的 generation contract 复核失败"; exit 1
+    fi
     echo "  ✓ trace 一致性通过 (尝试 $titer)"; TRACE_OK=1; break
   fi
   echo "  ✗ trace 一致性失败 (尝试 $titer), 喂 LLM 修回调逻辑..."
@@ -317,10 +358,12 @@ $CONSTRAINTS
 TFIX
   cat "$DRVDIR/$MODULE.c" >> $RH_TMP/trace_fix.txt
   echo -e "\n## 要求\n修复回调的 MMIO 访问使其匹配 .ris。输出完整 $MODULE.c (一个 \`\`\`c 代码块)。" >> $RH_TMP/trace_fix.txt
-  llm_write_c $RH_TMP/trace_fix.txt || { echo "  LLM 修复失败"; }
+  if ! llm_write_c "$RH_TMP/trace_fix.txt" "trace_${titer}"; then
+    echo "  trace 修复候选未通过 generation contract"; exit 1
+  fi
   save_iter trace "$titer" $RH_TMP/trace_fix.txt $RH_TMP/trace_match.out
   echo "  → 重编 + 重跑 QEMU..."
-  if compile_once; then
+  if compile_loop "$MAX_COMPILE_ITER" "$CONSTRAINTS"; then
     bash qemu_run.sh "${QEMU_ARGS[@]}" > $RH_TMP/qemu_run.txt 2>&1
     QRC=$?
     QDIR2="$ITER_LOG/trace_qemu${titer}"; mkdir -p "$QDIR2"
@@ -331,6 +374,9 @@ TFIX
   fi
 done
 if [ "$TRACE_OK" -eq 1 ]; then
+  if ! verify_current_lowering "$ITER_LOG/final-lowering.json"; then
+    echo "  ✗ 最终 generation attestation 失败"; exit 1
+  fi
   echo ""; echo "############ $BASE 端到端成功 + trace 一致性通过 ############"
   exit 0
 else
