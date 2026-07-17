@@ -2,12 +2,12 @@
   "schema": 1,
   "holdout": "zero-shot-v2",
   "profiles": {
-    "x86-pinned": {
+    "x86-allmodconfig": {
       "arch": "x86",
-      "build_dir": "kernel/build",
+      "build_dir": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
       "cc": "gcc",
-      "defconfig": null,
-      "kind": "pinned-experiment-build"
+      "defconfig": "allmodconfig",
+      "kind": "native-architecture-allmodconfig"
     },
     "riscv-generic": {
       "arch": "riscv",
@@ -21,45 +21,53 @@
       "build_dir": "output/zero-shot-v2-contexts/build/loongarch-generic",
       "cc": "clang-18",
       "defconfig": "defconfig",
-      "kind": "native-architecture-defconfig"
+      "kind": "native-architecture-defconfig",
+      "requires_lld": true,
+      "make_vars": {
+        "OBJCOPY": "llvm-objcopy-18"
+      }
     },
     "arm64-generic": {
       "arch": "arm64",
       "build_dir": "output/zero-shot-v2-contexts/build/arm64-generic",
       "cc": "clang-18",
       "defconfig": "defconfig",
-      "kind": "native-architecture-defconfig"
+      "kind": "native-architecture-defconfig",
+      "requires_lld": true,
+      "make_vars": {
+        "OBJCOPY": "llvm-objcopy-18"
+      }
     }
   },
   "cases": {
     "gpio-bd72720": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/gpio/gpio-bd72720.o",
-      "context_note": "Bus-neutral MFD child compiled in the pinned experiment build."
+      "context_note": "Bus-neutral MFD child compiled with dependencies enabled by x86 allmodconfig."
     },
     "gpio-sifive": {
       "profile": "riscv-generic",
       "target": "drivers/gpio/gpio-sifive.o"
     },
     "gpio-lp87565": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/gpio/gpio-lp87565.o",
-      "context_note": "Bus-neutral MFD/regmap child compiled in the pinned experiment build."
+      "context_note": "Bus-neutral MFD/regmap child compiled with dependencies enabled by x86 allmodconfig."
     },
     "gpio-tpic2810": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/gpio/gpio-tpic2810.o",
       "context_note": "Architecture-neutral I2C GPIO expander."
     },
     "clk-si544": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/clk/clk-si544.o",
       "context_note": "Architecture-neutral I2C clock device."
     },
     "clk-twl6040": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/clk/clk-twl6040.o",
-      "context_note": "Bus-neutral MFD clock child compiled in the pinned experiment build."
+      "context_note": "Bus-neutral MFD clock child compiled with dependencies enabled by x86 allmodconfig."
     },
     "clk-loongson2": {
       "profile": "loongarch-generic",
@@ -78,11 +86,11 @@
       "target": "drivers/mmc/host/sdhci-milbeaut.o"
     },
     "virtio-pci-common": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/virtio/virtio_pci_common.o"
     },
     "virtio-pci-legacy": {
-      "profile": "x86-pinned",
+      "profile": "x86-allmodconfig",
       "target": "drivers/virtio/virtio_pci_legacy.o"
     }
   }

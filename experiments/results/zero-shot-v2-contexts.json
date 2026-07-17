@@ -1,0 +1,354 @@
+{
+  "compile_database": "output/zero-shot-v2-contexts/compile_commands.json",
+  "compile_database_sha256": "036a4f115dc51743ee0322c3e07e39fb53bf4809cc76922d86ae301cd5a1229a",
+  "contexts": [
+    {
+      "arch": "loongarch",
+      "case": "clk-loongson2",
+      "command_file": "output/zero-shot-v2-contexts/build/loongarch-generic/drivers/clk/.clk-loongson2.o.cmd",
+      "command_file_sha256": "3928ad7b69a2dab0cf4c541f13375eff161599aae4cf3e58cf761df323b20113",
+      "context_note": null,
+      "defconfig": "defconfig",
+      "profile": "loongarch-generic",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "44d3fdb8274cf2606dc2ab0384ebade32ff2ffcc10a5b82c0ed3d767150b86f0",
+      "resolved_context": {
+        "argument_count": 36,
+        "arguments_sha256": "6396711f78eadc296c306a4b0b953f3227e1e8c5111c04d9037c13f66ace174b",
+        "directory": "output/zero-shot-v2-contexts/build/loongarch-generic",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "44d3fdb8274cf2606dc2ab0384ebade32ff2ffcc10a5b82c0ed3d767150b86f0",
+        "source": "linux/drivers/clk/clk-loongson2.c"
+      },
+      "source": "linux/drivers/clk/clk-loongson2.c",
+      "target": "drivers/clk/clk-loongson2.o"
+    },
+    {
+      "arch": "x86",
+      "case": "clk-si544",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/clk/.clk-si544.o.cmd",
+      "command_file_sha256": "d1afdf53cb74f1041d8dbb11a81770a32fdd47977918cdd451ac9c4036c5bde6",
+      "context_note": "Architecture-neutral I2C clock device.",
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "4f000277b5629ca228043ec4e7afc585f1c482e2f27c4a462a7757bdb7ba3cc2",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "06f935a2a99d8147248bc44ae7a90f66dfbc443b145eec7af7aca6f6f6a050c9",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "4f000277b5629ca228043ec4e7afc585f1c482e2f27c4a462a7757bdb7ba3cc2",
+        "source": "linux/drivers/clk/clk-si544.c"
+      },
+      "source": "linux/drivers/clk/clk-si544.c",
+      "target": "drivers/clk/clk-si544.o"
+    },
+    {
+      "arch": "x86",
+      "case": "clk-twl6040",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/clk/.clk-twl6040.o.cmd",
+      "command_file_sha256": "e4913ee54b4ffebb737d7f25f083fe834f667b45e9252097fe46d05e98d39bee",
+      "context_note": "Bus-neutral MFD clock child compiled with dependencies enabled by x86 allmodconfig.",
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "71b6d70d40a6a77c6dce2fd0cd5b99c27e345c667d960d69d738d6f892d9c6a6",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "c5c4312ee47cdb4e8dd596d954dcf3807035fe190e7a111af6354d03eac88d83",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "71b6d70d40a6a77c6dce2fd0cd5b99c27e345c667d960d69d738d6f892d9c6a6",
+        "source": "linux/drivers/clk/clk-twl6040.c"
+      },
+      "source": "linux/drivers/clk/clk-twl6040.c",
+      "target": "drivers/clk/clk-twl6040.o"
+    },
+    {
+      "arch": "x86",
+      "case": "gpio-bd72720",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/gpio/.gpio-bd72720.o.cmd",
+      "command_file_sha256": "0e9a6d4d32c77c77d98ee0cf605c91294841f0f35c394f791de87f1c8513dfb9",
+      "context_note": "Bus-neutral MFD child compiled with dependencies enabled by x86 allmodconfig.",
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "d089bbf2abf403d3470ad18416edb3e2641dafadc9aa9d4587123b1bd54dfd17",
+      "resolved_context": {
+        "argument_count": 34,
+        "arguments_sha256": "8744dbf4db015810795efda3091337e6e8c778d6837862887429223d0d79a43a",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "d089bbf2abf403d3470ad18416edb3e2641dafadc9aa9d4587123b1bd54dfd17",
+        "source": "linux/drivers/gpio/gpio-bd72720.c"
+      },
+      "source": "linux/drivers/gpio/gpio-bd72720.c",
+      "target": "drivers/gpio/gpio-bd72720.o"
+    },
+    {
+      "arch": "x86",
+      "case": "gpio-lp87565",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/gpio/.gpio-lp87565.o.cmd",
+      "command_file_sha256": "61dfe826e8c30e63355dca22ca10e26201d1047d7293dbc10fe7b053e072a480",
+      "context_note": "Bus-neutral MFD/regmap child compiled with dependencies enabled by x86 allmodconfig.",
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "8491ffd8a91d99a19975774bf3957d7ec5fffb8b8c9aeb0479701fa5a4103784",
+      "resolved_context": {
+        "argument_count": 34,
+        "arguments_sha256": "c2c8af2dc987045de0fe5de6d1e3dd79a300d9452216a15e10a3b46157ac9cf2",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "8491ffd8a91d99a19975774bf3957d7ec5fffb8b8c9aeb0479701fa5a4103784",
+        "source": "linux/drivers/gpio/gpio-lp87565.c"
+      },
+      "source": "linux/drivers/gpio/gpio-lp87565.c",
+      "target": "drivers/gpio/gpio-lp87565.o"
+    },
+    {
+      "arch": "riscv",
+      "case": "gpio-sifive",
+      "command_file": "output/zero-shot-v2-contexts/build/riscv-generic/drivers/gpio/.gpio-sifive.o.cmd",
+      "command_file_sha256": "16feac3a49c26fc7f68c0cce3ec96b4a951825f614674da85c27cb3cfa9a6070",
+      "context_note": null,
+      "defconfig": "defconfig",
+      "profile": "riscv-generic",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "aa03a9b3918932f7430d3d48ef8e3aae80b5f476d45abe1f1ec6664d529859d0",
+      "resolved_context": {
+        "argument_count": 32,
+        "arguments_sha256": "0e04375a814f14156df4fdad3cf1efc9af41a3a68f8fa1e576062106745a0a09",
+        "directory": "output/zero-shot-v2-contexts/build/riscv-generic",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "aa03a9b3918932f7430d3d48ef8e3aae80b5f476d45abe1f1ec6664d529859d0",
+        "source": "linux/drivers/gpio/gpio-sifive.c"
+      },
+      "source": "linux/drivers/gpio/gpio-sifive.c",
+      "target": "drivers/gpio/gpio-sifive.o"
+    },
+    {
+      "arch": "x86",
+      "case": "gpio-tpic2810",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/gpio/.gpio-tpic2810.o.cmd",
+      "command_file_sha256": "98e2d9f8384436f79fcf26568c23e47a191d2835d2ba158e8a08ae95b7f758b6",
+      "context_note": "Architecture-neutral I2C GPIO expander.",
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "bab7e0703d88cb076809b7e6eba4e3791e58d959002e9d70f8ddbd7bf635f698",
+      "resolved_context": {
+        "argument_count": 34,
+        "arguments_sha256": "bcb3bccd9aa130a8f94b3984fe2ccadd11f885d71741d84623652a1f780b3864",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "bab7e0703d88cb076809b7e6eba4e3791e58d959002e9d70f8ddbd7bf635f698",
+        "source": "linux/drivers/gpio/gpio-tpic2810.c"
+      },
+      "source": "linux/drivers/gpio/gpio-tpic2810.c",
+      "target": "drivers/gpio/gpio-tpic2810.o"
+    },
+    {
+      "arch": "arm64",
+      "case": "sdhci-iproc",
+      "command_file": "output/zero-shot-v2-contexts/build/arm64-generic/drivers/mmc/host/.sdhci-iproc.o.cmd",
+      "command_file_sha256": "2a42ac61aebf548d11ede776c80665a27ec26f512f5448e71d6640bba792e683",
+      "context_note": null,
+      "defconfig": "defconfig",
+      "profile": "arm64-generic",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "e59fd31e94237a285c319bb8efe64e5f6b280a61c5496b71a831b1f0f1fda8cd",
+      "resolved_context": {
+        "argument_count": 36,
+        "arguments_sha256": "ae111ff946c995c3592c20a3be44e98d1dddeb06eb6c591afe582e207691117e",
+        "directory": "output/zero-shot-v2-contexts/build/arm64-generic",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "e59fd31e94237a285c319bb8efe64e5f6b280a61c5496b71a831b1f0f1fda8cd",
+        "source": "linux/drivers/mmc/host/sdhci-iproc.c"
+      },
+      "source": "linux/drivers/mmc/host/sdhci-iproc.c",
+      "target": "drivers/mmc/host/sdhci-iproc.o"
+    },
+    {
+      "arch": "arm64",
+      "case": "sdhci-milbeaut",
+      "command_file": "output/zero-shot-v2-contexts/build/arm64-generic/drivers/mmc/host/.sdhci-milbeaut.o.cmd",
+      "command_file_sha256": "29fab15bd32653338f35af7a59db0e066c925b458533e2feac8260b91593ceb5",
+      "context_note": null,
+      "defconfig": "defconfig",
+      "profile": "arm64-generic",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "47388044122340bf659728d42a595df5cae79f23912d826cee0f68e353a71a7f",
+      "resolved_context": {
+        "argument_count": 36,
+        "arguments_sha256": "0cb52cf29e711b6e28b4e4b04a21120ebdd3cfb43768a50fccb75fa17592a215",
+        "directory": "output/zero-shot-v2-contexts/build/arm64-generic",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "47388044122340bf659728d42a595df5cae79f23912d826cee0f68e353a71a7f",
+        "source": "linux/drivers/mmc/host/sdhci-milbeaut.c"
+      },
+      "source": "linux/drivers/mmc/host/sdhci-milbeaut.c",
+      "target": "drivers/mmc/host/sdhci-milbeaut.o"
+    },
+    {
+      "arch": "arm64",
+      "case": "sdhci-sprd",
+      "command_file": "output/zero-shot-v2-contexts/build/arm64-generic/drivers/mmc/host/.sdhci-sprd.o.cmd",
+      "command_file_sha256": "4697e7744be21ddeebe9c05cdc19208e620930220315cf4e445295ed328cff59",
+      "context_note": null,
+      "defconfig": "defconfig",
+      "profile": "arm64-generic",
+      "profile_kind": "native-architecture-defconfig",
+      "raw_command_sha256": "5c52fbcacfa7437c90d85932004b2cb6381a667d6ef79c164368a4bf26d9e37f",
+      "resolved_context": {
+        "argument_count": 36,
+        "arguments_sha256": "c83df8913e78ea73f663149de4c33c425bb8eaedf1a1afe1f01311b2a3f878d2",
+        "directory": "output/zero-shot-v2-contexts/build/arm64-generic",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "5c52fbcacfa7437c90d85932004b2cb6381a667d6ef79c164368a4bf26d9e37f",
+        "source": "linux/drivers/mmc/host/sdhci-sprd.c"
+      },
+      "source": "linux/drivers/mmc/host/sdhci-sprd.c",
+      "target": "drivers/mmc/host/sdhci-sprd.o"
+    },
+    {
+      "arch": "x86",
+      "case": "virtio-pci-common",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/virtio/.virtio_pci_common.o.cmd",
+      "command_file_sha256": "e990c8e4da3a2b83221e87f58bc3e2dbaf51abdf42401f29be2debc74806e3c9",
+      "context_note": null,
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "8e11736efb0e56ae9aa6c0e5eadc9432934428094024ab82a0ea5dbcb36eb257",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "312cfeb2cecc968f48f077d1d5b40ea265ae6a34dfe0884013f47e3ae7dfcb7f",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "8e11736efb0e56ae9aa6c0e5eadc9432934428094024ab82a0ea5dbcb36eb257",
+        "source": "linux/drivers/virtio/virtio_pci_common.c"
+      },
+      "source": "linux/drivers/virtio/virtio_pci_common.c",
+      "target": "drivers/virtio/virtio_pci_common.o"
+    },
+    {
+      "arch": "x86",
+      "case": "virtio-pci-legacy",
+      "command_file": "output/zero-shot-v2-contexts/build/x86-allmodconfig/drivers/virtio/.virtio_pci_legacy.o.cmd",
+      "command_file_sha256": "450c8c70de3a2220e7c494e97b08afcbbc6657d020fceb4d9d16ad221075ecf8",
+      "context_note": null,
+      "defconfig": "allmodconfig",
+      "profile": "x86-allmodconfig",
+      "profile_kind": "native-architecture-allmodconfig",
+      "raw_command_sha256": "c7db2652c59e33324e4a4e1b108074d833c7e7cbaec93a7599f4d065a4183a3f",
+      "resolved_context": {
+        "argument_count": 33,
+        "arguments_sha256": "5ec34ad71453f07cbd335e38e9c12c668415e181dd6aa172854ecbedd5a2e188",
+        "directory": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+        "origin": "compile-commands",
+        "provenance": "output/zero-shot-v2-contexts/compile_commands.json",
+        "raw_command_sha256": "c7db2652c59e33324e4a4e1b108074d833c7e7cbaec93a7599f4d065a4183a3f",
+        "source": "linux/drivers/virtio/virtio_pci_legacy.c"
+      },
+      "source": "linux/drivers/virtio/virtio_pci_legacy.c",
+      "target": "drivers/virtio/virtio_pci_legacy.o"
+    }
+  ],
+  "environment": {
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "reharness_commit": "8a23af07f7b582cd4be6808f5c2e61b4c9d71d4a"
+  },
+  "exact_contexts": 12,
+  "expected_contexts": 12,
+  "generated_at": "2026-07-17T10:30:21.553619+00:00",
+  "guard": {
+    "cases": 12,
+    "first_run": "gpio-bd72720",
+    "holdout": "zero-shot-v2",
+    "issues": [],
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "passed": true,
+    "schema": 1,
+    "specialization_inventory": {
+      "device_name_equals": [
+        "edu"
+      ],
+      "private_mmio_layouts": [
+        "dwc2_readl",
+        "dwc2_writel"
+      ],
+      "source_basename_equals": [
+        "sdhci-esdhc-mcf.c"
+      ]
+    }
+  },
+  "holdout": "zero-shot-v2",
+  "profiles": {
+    "arm64-generic": {
+      "arch": "arm64",
+      "build_dir": "output/zero-shot-v2-contexts/build/arm64-generic",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "9d27cde0145bc4588728d2f8abbf270cc56a10488ff824bfa4e5113e35787369",
+      "defconfig": "defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": "/home/yfblock/.rustup/toolchains/1.78.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "make_vars": {
+        "OBJCOPY": "llvm-objcopy-18"
+      }
+    },
+    "loongarch-generic": {
+      "arch": "loongarch",
+      "build_dir": "output/zero-shot-v2-contexts/build/loongarch-generic",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "d045eb8b792909888fd5d468dbd589d7eaf2c36e02eb3162752c61e9fefa2c57",
+      "defconfig": "defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": "/home/yfblock/.rustup/toolchains/1.78.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "make_vars": {
+        "OBJCOPY": "llvm-objcopy-18"
+      }
+    },
+    "riscv-generic": {
+      "arch": "riscv",
+      "build_dir": "output/zero-shot-v2-contexts/build/riscv-generic",
+      "cc": "clang-18",
+      "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+      "config_sha256": "9b1c7c85937f1ad59d2cb78a0ac7650d1c1741267f61f31a4c0fd5f6b7a943bf",
+      "defconfig": "defconfig",
+      "kind": "native-architecture-defconfig",
+      "lld": null,
+      "make_vars": {}
+    },
+    "x86-allmodconfig": {
+      "arch": "x86",
+      "build_dir": "output/zero-shot-v2-contexts/build/x86-allmodconfig",
+      "cc": "gcc",
+      "cc_version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "config_sha256": "3891043de456723a53d3d219926d5dc1017ec018fbe026944f3b35f45f47f27f",
+      "defconfig": "allmodconfig",
+      "kind": "native-architecture-allmodconfig",
+      "lld": null,
+      "make_vars": {}
+    }
+  },
+  "recipe_validation": {
+    "issues": [],
+    "passed": true
+  },
+  "schema": 1
+}

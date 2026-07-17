@@ -109,6 +109,8 @@ def _run_make(profile: dict, build: Path, target: str,
     ]
     if profile.get("requires_lld"):
         command.append("LD=ld.lld")
+    for name, value in sorted(profile.get("make_vars", {}).items()):
+        command.append(f"{name}={value}")
     command.append(target)
     return subprocess.run(
         command, cwd=ROOT, env=env, capture_output=True, text=True,
@@ -163,6 +165,7 @@ def materialize(holdout_path: Path, recipes_path: Path,
             "kind": profile["kind"],
             "config_sha256": _sha256(build / ".config"),
             "lld": str(lld) if lld else None,
+            "make_vars": profile.get("make_vars", {}),
         }
 
         for case_id in sorted(case_ids):

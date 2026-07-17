@@ -86,3 +86,6 @@ The research stopping rule is evidence-based: if the common blocker requires
 whole-subsystem emulation, cross-translation-unit ownership recovery, or
 unavailable hardware behavior, record that boundary rather than replacing it
 with permissive fallback semantics.
+
+The completed unmodified baseline and the mechanically selected first blocker
+are recorded in `docs/zero-shot-v2-baseline.md`.
