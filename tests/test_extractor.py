@@ -111,9 +111,31 @@ def test_zero_shot_blocker_normalization_and_common_root_selection():
     assert normalize_blocker(
         "linux backend has unsupported semantic bindings"
     ) == "linux_semantic_binding"
+    assert normalize_blocker(
+        "linux backend has 35 emitted definition operation(s) without "
+        "independent runtime registration/callsite attestation"
+    ) == "linux_runtime_attestation"
+    assert normalize_blocker(
+        "harness backend has 8 register operation(s) explicitly blocked by "
+        "unsupported loop lowering"
+    ) == "unsupported_loop_lowering"
+    assert normalize_blocker(
+        "linux backend has 3 register operation(s) explicitly blocked by "
+        "a synthesized lifecycle stub"
+    ) == "linux_lifecycle_stub"
+    assert normalize_blocker(
+        "linux backend has 2 register operation(s) explicitly blocked by "
+        "an unimplemented lifecycle route"
+    ) == "linux_lifecycle_unimplemented"
+    assert normalize_blocker(
+        "linux backend has 9 register operation(s) explicitly blocked by "
+        "a missing Linux definition root"
+    ) == "linux_definition_root"
     rows = [
         {"driver": f"case-{index}", "blockers": [
             "1 conservative loop summary/summaries require validation",
+            "linux backend has 35 emitted definition operation(s) without "
+            "independent runtime registration/callsite attestation",
             "linux backend has unsupported semantic bindings",
         ]}
         for index in range(3)
@@ -789,8 +811,11 @@ def test_access_accounting_and_operation_evidence_are_complete():
     assert len(op_ids) == len(set(op_ids)) == 35
     metrics = driver_metrics(result.formal)
     assert sum(metrics["reliability"].values()) == 35
-    assert score(result.device_spec, result.formal, result.warnings,
-                 result.facts)["backend_linux_ready"] is True
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_linux_ready"] is False
+    assert any("attestation results unavailable" in blocker
+               for blocker in readiness["blockers"])
 
 
 def test_filtered_source_mmio_access_blocks_strict_readiness():
@@ -861,7 +886,9 @@ def test_canonical_bounded_loop_is_proved_and_lowered():
     assert metrics["conservative_loop"] == 0
     readiness = score(result.device_spec, result.formal, result.warnings,
                       result.facts)
-    assert readiness["backend_bare_metal_ready"] is True
+    assert readiness["backend_bare_metal_ready"] is False
+    assert any("attestation results unavailable" in blocker
+               for blocker in readiness["blockers"])
     code = harness_gen.generate(
         result.formal, result.device_spec,
         default_bind(result.device_spec, "harness"))
@@ -1511,7 +1538,10 @@ def test_inlined_read_return_binds_the_caller_lhs():
 
 
 def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
-    from verification.backend_lowering_oracle import build_generation_contract
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+    from verification.backend_lowering_oracle import (
+        build_generation_contract, verify_backend_lowering)
     from verification.backend_lowering_plan import verify_backend_lowering_plan
 
     result = extract_ris(ExtractorConfig(source=DWC2_MULTI))
@@ -1549,6 +1579,29 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
         assert plan["lowered_ops"] == 3182
         assert plan["blocked_ops"] == 426
 
+    linux_code = linux_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "linux"), result.facts)
+    linux_lowering = verify_backend_lowering(result.formal, linux_code)
+    linux_plan = verify_backend_lowering_plan(
+        result.formal, contract, "linux", device_spec=result.device_spec,
+        lowering_report=linux_lowering)
+    assert linux_plan["candidate_definition_ops"] == 2023
+    assert linux_plan["evidence_only_ops"] == 77
+    assert linux_plan["authorized_ops"] == 2100
+    assert linux_plan["blocked_ops"] == 1508
+    assert linux_plan["disposition_counts"][
+        "blocked_unsupported_loop"] == 426
+    assert linux_plan["disposition_counts"][
+        "blocked_linux_root_unreachable"] == 898
+    assert linux_plan["disposition_counts"][
+        "blocked_linux_lifecycle_stub"] == 182
+    assert linux_plan["disposition_counts"][
+        "blocked_linux_lifecycle_unimplemented"] == 2
+    assert linux_plan["definition_alignment_complete"] is True
+    assert linux_plan["runtime_complete"] is False
+    assert linux_plan["strict_complete"] is False
+
     callback_tables = {
         fn.callback_table for fn in result.device_spec.functions
         if fn.callback_table
@@ -1565,6 +1618,9 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
 
 def test_real_linux_c67x00_multisource_driver():
     from extractor.metrics import count_clang_errors, driver_metrics
+    from verification.backend_lowering_oracle import (
+        build_generation_contract, verify_backend_lowering)
+    from verification.backend_lowering_plan import verify_backend_lowering_plan
 
     result = extract_ris(ExtractorConfig(source=C67X00_MULTI))
     assert result.stats["translation_units"] == 4
@@ -1613,10 +1669,25 @@ def test_real_linux_c67x00_multisource_driver():
     assert "SOFEOP_TO_HPI_EN(g->sie_num)" in code
     assert "SOFEOP_FLG(g->sie_num)" in code
     assert "0 + (HPI_" not in code
+    contract = build_generation_contract(result.formal)
+    lowering = verify_backend_lowering(result.formal, code)
+    plan = verify_backend_lowering_plan(
+        result.formal, contract, "linux", device_spec=result.device_spec,
+        lowering_report=lowering)
+    assert plan["authorized_ops"] == 26
+    assert plan["blocked_ops"] == 6
+    assert plan["disposition_counts"]["blocked_unsupported_loop"] == 6
+    assert plan["definition_alignment_complete"] is True
+    assert plan["runtime_complete"] is False
 
 
 def test_real_linux_aspeed_vhub_five_source_driver():
     from extractor.metrics import count_clang_errors, driver_metrics
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+    from verification.backend_lowering_oracle import (
+        build_generation_contract, verify_backend_lowering)
+    from verification.backend_lowering_plan import verify_backend_lowering_plan
 
     result = extract_ris(ExtractorConfig(source=ASPEED_VHUB_MULTI))
     assert result.stats["translation_units"] == 5
@@ -1640,6 +1711,23 @@ def test_real_linux_aspeed_vhub_five_source_driver():
     # recovered from the driver's local header, not mistaken for functions.
     assert result.facts.constants["VHUB_IRQ_EP_POOL_ACK_STALL"] == (1 << 16)
     assert result.facts.constants["VHUB_SW_RESET_ROOT_HUB"] == 1
+    code = linux_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "linux"), result.facts)
+    contract = build_generation_contract(result.formal)
+    lowering = verify_backend_lowering(result.formal, code)
+    plan = verify_backend_lowering_plan(
+        result.formal, contract, "linux", device_spec=result.device_spec,
+        lowering_report=lowering)
+    assert plan["authorized_ops"] == 133
+    assert plan["blocked_ops"] == 21
+    assert plan["disposition_counts"]["blocked_unsupported_loop"] == 10
+    assert plan["disposition_counts"][
+        "blocked_linux_lifecycle_stub"] == 3
+    assert plan["disposition_counts"][
+        "blocked_linux_root_unreachable"] == 8
+    assert plan["definition_alignment_complete"] is True
+    assert plan["runtime_complete"] is False
 
 
 def test_single_source_callee_rescue_closes_ahci_access_gaps_without_strict_claim():
@@ -1953,7 +2041,8 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
     from extractor.metrics import score
     from extractor.spec import default_bind
     from generator import baremetal, harness, linux as linux_gen
-    from verification.backend_lowering_oracle import build_generation_contract
+    from verification.backend_lowering_oracle import (
+        build_generation_contract, verify_backend_lowering)
     from verification.backend_lowering_plan import verify_backend_lowering_plan
     from verification.generated_c_ast_oracle import verify_generated_c_ast
     from verification.gpio_mmio_source_oracle import (
@@ -2019,10 +2108,14 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
         assert source_oracle["gpio_mmio_source_oracle_calls"] == (
             16 if source == GPIO_CLPS711X else 8)
         contract = build_generation_contract(result.formal)
+        h_lowering = verify_backend_lowering(result.formal, h_code)
+        b_lowering = verify_backend_lowering(result.formal, b_code)
         h_plan = verify_backend_lowering_plan(
-            result.formal, contract, "harness")
+            result.formal, contract, "harness",
+            lowering_report=h_lowering)
         b_plan = verify_backend_lowering_plan(
-            result.formal, contract, "baremetal")
+            result.formal, contract, "baremetal",
+            lowering_report=b_lowering)
         assert h_plan["complete"] and b_plan["complete"]
 
         linux_code = linux_gen.generate(
@@ -2036,6 +2129,8 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                 "harness": {
                     "compiled": True, "trace_passed": True,
                     "has_todo": False, "unsupported": False,
+                    "backend_lowering_complete": h_lowering["complete"],
+                    "backend_lowering": h_lowering,
                     "backend_ast_leaf_required": True,
                     "backend_ast_leaf_complete": True,
                     "backend_ast_leaf": h_ast,
@@ -2046,11 +2141,23 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                         h_plan["classification_complete"],
                     "backend_lowering_plan_lowering_complete":
                         h_plan["lowering_complete"],
+                    "backend_lowering_plan_authorization_complete":
+                        h_plan["authorization_complete"],
+                    "backend_lowering_plan_reconciliation_complete":
+                        h_plan["reconciliation_complete"],
+                    "backend_lowering_plan_definition_alignment_complete":
+                        h_plan["definition_alignment_complete"],
+                    "backend_lowering_plan_runtime_complete":
+                        h_plan["runtime_complete"],
+                    "backend_lowering_plan_strict_complete":
+                        h_plan["strict_complete"],
                     "backend_lowering_plan": h_plan,
                     **h_oracle, **source_oracle},
                 "baremetal": {
                     "compiled": True, "has_todo": False,
                     "unsupported": False,
+                    "backend_lowering_complete": b_lowering["complete"],
+                    "backend_lowering": b_lowering,
                     "backend_ast_leaf_required": True,
                     "backend_ast_leaf_complete": True,
                     "backend_ast_leaf": b_ast,
@@ -2061,6 +2168,16 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                         b_plan["classification_complete"],
                     "backend_lowering_plan_lowering_complete":
                         b_plan["lowering_complete"],
+                    "backend_lowering_plan_authorization_complete":
+                        b_plan["authorization_complete"],
+                    "backend_lowering_plan_reconciliation_complete":
+                        b_plan["reconciliation_complete"],
+                    "backend_lowering_plan_definition_alignment_complete":
+                        b_plan["definition_alignment_complete"],
+                    "backend_lowering_plan_runtime_complete":
+                        b_plan["runtime_complete"],
+                    "backend_lowering_plan_strict_complete":
+                        b_plan["strict_complete"],
                     "backend_lowering_plan": b_plan,
                     **b_oracle, **source_oracle},
                 "linux": {
@@ -2199,7 +2316,9 @@ def test_readiness_score():
     assert s["ris_quality"] >= 0.9
     assert s["backend_harness_ready"] is False
     assert s["backend_bare_metal_ready"] is False
-    assert s["backend_linux_ready"] is True
+    assert s["backend_linux_ready"] is False
+    assert any("attestation results unavailable" in blocker
+               for blocker in s["blockers"])
     assert any("generic-backend execution oracle" in blocker
                for blocker in s["blockers"])
     assert not any("unknown (Top)" in b for b in s["blockers"])
@@ -2223,7 +2342,9 @@ def test_computed_address_lowering_distinguishes_safe_and_unsafe():
     metrics = driver_metrics(pl061.formal)
     assert metrics["computed"] == 4 and metrics["unsafe_computed"] == 0
     ready = score(pl061.device_spec, pl061.formal, pl061.warnings, pl061.facts)
-    assert ready["backend_bare_metal_ready"] is True
+    assert ready["backend_bare_metal_ready"] is False
+    assert any("attestation results unavailable" in blocker
+               for blocker in ready["blockers"])
 
     mb86 = extract_ris(ExtractorConfig(source=MB86S7X))
     metrics = driver_metrics(mb86.formal)
@@ -2293,14 +2414,22 @@ def test_bundle_assembly():
     name = res.formal["driver"]
     for need in (f"{name}.ris", f"{name}.dspec", f"{name}.facts",
                  f"{name}.harness.bind", f"{name}.formal.json",
-                 "generation-contract.json", "score.txt"):
+                 f"{name}.device-spec.json", "generation-contract.json",
+                 "score.txt"):
         assert need in files, f"missing {need}"
     contract = json.load(open(os.path.join(
         bdir, "generation-contract.json"), encoding="utf-8"))
     assert contract["policy"]["cardinality"] == "exactly-once"
     assert len(contract["register_operations"]) == 35
     assert contract["synthesis_readiness"]["llm_synthesis_ready"] is True
+    assert contract["synthesis_readiness"]["backend_harness_ready"] is False
+    assert contract["synthesis_readiness"]["backend_bare_metal_ready"] is False
+    assert contract["synthesis_readiness"]["backend_linux_ready"] is False
     assert "whole_program_complete" in contract["claim_scope"]
+    from extractor.spec import device_spec_from_dict
+    device_document = json.load(open(os.path.join(
+        bdir, f"{name}.device-spec.json"), encoding="utf-8"))
+    assert device_spec_from_dict(device_document) == res.device_spec
 
 
 def test_backend_lowering_receipts_are_bijective_and_mutation_checked():
@@ -3302,7 +3431,9 @@ def test_verified_linux_specific_lowering_is_not_gated_by_generic_loops():
         }})
     assert readiness["backend_harness_ready"] is False
     assert readiness["backend_bare_metal_ready"] is False
-    assert readiness["backend_linux_ready"] is True
+    assert readiness["backend_linux_ready"] is False
+    assert any("linux backend lowering/receipt attestation unavailable"
+               in blocker for blocker in readiness["blockers"])
 
 
 def test_sodaville_path_sensitive_local_mmio_and_irq_private_state():

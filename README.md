@@ -9,18 +9,18 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 版本化语料：drivers/test/ 内含 19 个单源测试驱动；drivers/multisource/ 包含真实 Kbuild 多源模块 manifest。
 - 版本化内核：linux/ 是固定到实验 commit 的 Git submodule。
 - 三个确定性后端：harness 18/19、bare-metal 18/19、Linux 17/19 可编译；未编译项保留明确日志，不用 stub 成功替代。
-- 严格语义 readiness（C17 generated-C AST primitive gate 重跑）：harness 4/19、bare-metal 4/19、Linux 3/19，三个后端共同 3/19。除 lowering receipt 和 call-context gate 外，harness/bare-metal 的每个 operation 还必须拥有唯一 AST anchor，并证明 primitive 数量、方向、宽度、端序/W1C 与无额外未归属访问；`gpio-cadence` 因 Write anchor 内隐藏额外 read 被保守撤销。
+- 严格语义 readiness（C19 Linux definition/runtime 分轴 gate）：harness 4/19、bare-metal 4/19、Linux 0/19，三个后端共同 0/19。H/B 保留 C17 AST primitive gate；Linux 虽仍有 17/19 可编译，但 receipt 只证明函数定义已发射，尚无独立 registration/callsite attestation，因此不再把 `__maybe_unused` 或 evidence-only callback 冒充为 runtime-reachable strict 完成。
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。C15 将 DWC2/ASPEED 的 unaccounted source site 从 48/4 降为 0，但 direct evidence frontier 仍显式阻塞 call-semantics strict 声明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
 - 原始 MMIO 对照：907 个源码 primitive、1,087 个 direct AST 操作、C15 后 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
-- 测试套件：148 tests（132 core + 7 generated-C AST + 7 lowering-plan + 2 read-provenance）；测试入口先执行冻结 holdout/specialization guard。
+- 测试套件：159 tests（132 core + 7 generated-C AST + 13 lowering-plan + 2 read-provenance + 5 DeviceSpec JSON）；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；C15 机器报告给出 scoped strict 5/19。`whole_program_complete` 由 linked analysis、调用语义、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
 - C67X00 HPI：32/32 computed address 可安全 lowering；`hpi.base`、`hpi.regstep` 和 `sie_num` 显式建模。5 个 primitive、4 个原始 C↔RIS differential case 通过，4 类 mutation 全被检出。
 - SVF 别名分析：off、auto、required，默认 off；多源 manifest 会先链接所有 TU bitcode，再执行一次 WPA，并记录 linked-bitcode SHA、工具版本和 source provenance。C67X00 required run 成功链接 4 TU。
 - 零样本泛化基础：`drivers/holdout/zero-shot-v1.json` 冻结 12 个未用于实现的驱动；extractor/generator 出现这些驱动的专用标识会使 CI 失败。Kbuild importer 优先读取 `compile_commands.json`，否则自动读取对象对应的 `.cmd`，并把来源、参数与 SHA 写入 analysis metadata。
-- Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；C15 gate 下 harness/bare-metal strict 为 7/12，Linux 与三后端共同 strict 为 6/12。首个公共 blocker 是 5 个案例共有的 `call_context`，它将在 Formal RIS `Call` 阶段解决。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
+- Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；C19 gate 下 harness/bare-metal strict 为 7/12，Linux 与三后端共同 strict 为 0/12。首个跨驱动 RIS blocker 仍是 5 个案例共有的 `call_context`，Linux 还叠加了未完成的 registration/callsite 证明。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
 
 下表来自 C15 当前 19-driver 矩阵；AHCI direct evidence frontier 会增加真实未覆盖操作，因此计数与 C14 冻结结果不同：
 
@@ -50,6 +50,8 @@ RIS leaf op 还包含 `op_id`、source evidence、reliability、address/value/pa
 C17 为公共 harness/bare-metal lowering 增加 `__rh_op_<op_id>` LabelStmt + direct CompoundStmt。libclang oracle 现可拒绝悬空 receipt、错误 primitive kind/width/endianness/W1C、RMW ownership 和未锚定额外 MMIO。contract 同时区分 `write_from_read` 与 `intrinsic_rmw`，修复了旧生成器对 dataflow RMW 重复读取硬件的错误。地址、值变换、guard/order、Linux 专用 emitter 与 Formal `Call` 仍是明确 blocker。
 
 C18 将 backend lowering recipe 绑定到 canonical Formal，禁止 probe success-path 重写后重新猜测 primitive ownership；同时用独立 lowering plan 将 DWC2 H/B 的 3608 个 contract ops 精确分解为 3182 lowered + 426 `blocked_unsupported_loop`，不为未证明循环伪造 receipt/anchor。direct-read-return 也改为只信任 MMIO classifier 证明的 return provenance，不再因 `device_property_read_bool` 一类名称含 `read` 的普通 helper 篡改 RMW 数据流。
+
+C19 将 lowering plan 扩展到 Linux，并与真实 receipt report 做授权集对账。DWC2 精确分为 2023 个 definition candidate、77 个 evidence-only ops、426 个 loop blocker、898 个 root blocker与 184 个 lifecycle blocker；C67X00/ASPEED 也分别闭合为 26/6 和 133/21 authorized/blocked。新的 versioned DeviceSpec JSON 为 verifier 和 LLM bundle 提供严格、可重载的函数/root 证据。定义已发射与 runtime 已注册仍明确分离。
 
 Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_chip.init_hw` 绑定会按字段语义归类；clock provider 会保留多套 `clk_ops`、纯标量 rate 算术、源码内 helper、父时钟/provider 注册以及对应 OF 变体。Sodaville 的 PCI ID、12-line GPIO generic dat/set/dirout 行为和 mask/unmask/EOI IRQ lifecycle 由版本化源码保守恢复。只有经过显式 source-private 重绑定且真实 Kbuild 通过的 callback 才可消除 unsupported marker。
 
@@ -139,6 +141,7 @@ python3 tools/generate_paper_results.py
 - [C16 generation contract 纯函数与 LLM 原子 attestation gate](docs/generation-attestation-c16.md)
 - [C17 generated-C AST anchors、primitive ownership 与负向结果](docs/generated-c-ast-anchors-c17.md)
 - [C18 DWC2 lowering plan、canonical recipe 与 read provenance](docs/dwc2-lowering-plan-c18.md)
+- [C19 Linux definition plan、DeviceSpec JSON 与 runtime boundary](docs/linux-definition-plan-c19.md)
 
 ## 依赖
 

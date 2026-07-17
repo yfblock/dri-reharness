@@ -204,7 +204,8 @@ def main(argv: list[str] | None = None) -> int:
         import subprocess, tempfile
         from .metrics import driver_metrics, format_metrics, count_clang_errors
         from .metrics import score as score_fn, format_score
-        from .spec import default_bind, display_bind_set
+        from .spec import (default_bind, display_bind_set,
+                           device_spec_to_dict)
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
@@ -244,12 +245,15 @@ def main(argv: list[str] | None = None) -> int:
         generation_contract = build_generation_contract(res.formal)
         generation_contract["synthesis_readiness"] = score_fn(
             res.device_spec, res.formal, res.warnings, res.facts)
+        device_spec_document = device_spec_to_dict(res.device_spec)
         save_formal_text(res.formal, os.path.join(outdir, f"{name}.ris"))
         _w(outdir, f"{name}.formal.json", json.dumps(
             res.formal, indent=2, sort_keys=True))
         _w(outdir, "generation-contract.json", json.dumps(
             generation_contract, indent=2, sort_keys=True))
         _w(outdir, f"{name}.dspec", res.device_spec.display())
+        _w(outdir, f"{name}.device-spec.json", json.dumps(
+            device_spec_document, indent=2, sort_keys=True))
         _w(outdir, f"{name}.facts", res.facts.display())
         _w(ver_dir, "analysis.json", json.dumps({
             "stats": res.stats, "warnings": res.warnings,
@@ -286,12 +290,12 @@ def main(argv: list[str] | None = None) -> int:
             lowering = verify_backend_lowering(res.formal, code)
             _w(ver_dir, f"{backend}-lowering.json", json.dumps(
                 lowering, indent=2, sort_keys=True))
-            lowering_plan = None
-            if backend in {"harness", "baremetal"}:
-                lowering_plan = verify_backend_lowering_plan(
-                    res.formal, generation_contract, backend)
-                _w(ver_dir, f"{backend}-lowering-plan.json", json.dumps(
-                    lowering_plan, indent=2, sort_keys=True))
+            lowering_plan = verify_backend_lowering_plan(
+                res.formal, generation_contract, backend,
+                device_spec=(res.device_spec if backend == "linux" else None),
+                lowering_report=lowering)
+            _w(ver_dir, f"{backend}-lowering-plan.json", json.dumps(
+                lowering_plan, indent=2, sort_keys=True))
             ast_leaf = None
             if backend in {"harness", "baremetal"}:
                 try:
@@ -311,8 +315,7 @@ def main(argv: list[str] | None = None) -> int:
                 "has_todo": has_todo, "unsupported": unsupported,
                 "backend_lowering_complete": lowering["complete"],
                 "backend_lowering": lowering,
-                "backend_lowering_plan_required": backend in {
-                    "harness", "baremetal"},
+                "backend_lowering_plan_required": True,
                 "backend_lowering_plan_accounting_complete": bool(
                     lowering_plan
                     and lowering_plan.get("accounting_complete")),
@@ -321,6 +324,19 @@ def main(argv: list[str] | None = None) -> int:
                     and lowering_plan.get("classification_complete")),
                 "backend_lowering_plan_lowering_complete": bool(
                     lowering_plan and lowering_plan.get("lowering_complete")),
+                "backend_lowering_plan_authorization_complete": bool(
+                    lowering_plan
+                    and lowering_plan.get("authorization_complete")),
+                "backend_lowering_plan_reconciliation_complete": bool(
+                    lowering_plan
+                    and lowering_plan.get("reconciliation_complete")),
+                "backend_lowering_plan_definition_alignment_complete": bool(
+                    lowering_plan
+                    and lowering_plan.get("definition_alignment_complete")),
+                "backend_lowering_plan_runtime_complete": bool(
+                    lowering_plan and lowering_plan.get("runtime_complete")),
+                "backend_lowering_plan_strict_complete": bool(
+                    lowering_plan and lowering_plan.get("strict_complete")),
                 "backend_lowering_plan": lowering_plan,
                 "backend_ast_leaf_required": backend in {
                     "harness", "baremetal"},
@@ -486,6 +502,7 @@ def main(argv: list[str] | None = None) -> int:
         print("── core reconstruction inputs ──")
         for f in (f"{name}.ris", f"{name}.formal.json",
                   "generation-contract.json", f"{name}.dspec",
+                  f"{name}.device-spec.json",
                   f"{name}.bind", f"{name}.facts"):
             print(f"   {outdir}/{f}")
         print("── generated/ ──")

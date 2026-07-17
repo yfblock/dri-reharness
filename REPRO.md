@@ -31,7 +31,9 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：110 passed, 0 failed。测试前会打印 `zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：159 passed, 0 failed（132 core + 7 generated-C AST + 13
+lowering-plan + 2 read-provenance + 5 DeviceSpec JSON）。测试前会打印
+`zero-shot-v1` guard 报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -71,9 +73,9 @@ exact compile context=12/12
 pipeline completed=12/12
 harness/bare-metal/Linux compile=12/12
 no_register_access=0/12
-strict-ready: harness=12/12 bare-metal=12/12 Linux=12/12 all=12/12
+strict-ready: harness=7/12 bare-metal=7/12 Linux=0/12 all=0/12
 cases with register hardware interactions=11/12
-first common semantic blocker=none
+first common RIS semantic blocker=call_context (5 drivers)
 ~~~
 
 GPIO callback runner 与独立 source differential 覆盖 width、endianness、shadow state 和 banked computed address。SDHCI NPCM、Dove、HLWD 通过 accessor/source lifecycle contract；virtio-input 的 config/virtqueue 被建模为 subsystem state，因此不伪造成 MMIO。DW APB 的每-bank chip ownership、selector/shadow、PM context、source-proven IRQ bank、parent IRQ dispatch 以及 ack/mask/type 语义由 13 个 mutation 覆盖。
@@ -91,14 +93,14 @@ python3 verification/run_matrix.py
 当前冻结聚合值：
 
 ~~~text
-drivers=19 ops=476 symbolic=360 fixed=61 computed=41
-rmw=71 conditions=123 registers=157 unknown_value=0 clang_diagnostics=0
+drivers=19 ops=485 symbolic=366 fixed=64 computed=41
+rmw=73 conditions=123 registers=157 unknown_value=0 clang_diagnostics=0
 harness_compile=18 baremetal_compile=18 linux_compile=17
-strict_ready: harness=6 baremetal=6 linux=7
-llm_synthesis_ready=13
+strict_ready: harness=4 baremetal=4 linux=0 all=0
+llm_synthesis_ready=5
 ~~~
 
-*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定；可精确 lowering 的 computed address（例如 PL061 banked GPIO）不再被误判为 blocker。Highbank 只有 Linux 专用 clock lowering ready；其轮询循环仍阻止通用 harness/bare-metal readiness。
+*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定。C19 进一步要求 Linux 定义发射与 runtime registration/callsite 证据分离；在独立 registration attestation 完成前，已编译的 Linux callback 不再计为 strict-ready。
 
 实验内核配置固定启用 `CONFIG_COMMON_CLK=y`，用于验证生成的 clock framework 注册路径；该配置随 artifact 版本化。
 

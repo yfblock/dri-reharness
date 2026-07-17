@@ -79,6 +79,7 @@ cmd_test()    {
   $PY tests/test_generated_c_ast_oracle.py
   $PY tests/test_backend_lowering_plan.py
   $PY tests/test_dataflow_read_return.py
+  $PY tests/test_device_spec_json.py
 }
 
 banner

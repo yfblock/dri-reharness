@@ -8,6 +8,8 @@ serialized to/from `.dspec`. Code generators consume (RIS, DeviceSpec, bind).
   Effect       = RegEffect | StateEffect | ResourceEffect | EventEffect
 """
 from __future__ import annotations
+import copy
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Optional
@@ -193,6 +195,304 @@ class DeviceSpec:
             lines.append(fn.display(indent=1))
         lines.append("}")
         return "\n".join(lines)
+
+
+# ── versioned machine-readable DeviceSpec ───────────────────────────
+
+_DEVICE_SPEC_SCHEMA = 1
+
+
+def _json_object(value, path: str, fields: set[str]) -> dict:
+    if type(value) is not dict:
+        raise ValueError(f"{path} must be an object")
+    missing = sorted(fields - set(value))
+    unknown = sorted(set(value) - fields)
+    if missing:
+        raise ValueError(f"{path} missing required field(s): {', '.join(missing)}")
+    if unknown:
+        raise ValueError(f"{path} has unknown field(s): {', '.join(unknown)}")
+    return value
+
+
+def _json_string(value, path: str, *, nullable: bool = False) -> str | None:
+    if nullable and value is None:
+        return None
+    if type(value) is not str:
+        expected = "a string or null" if nullable else "a string"
+        raise ValueError(f"{path} must be {expected}")
+    if not value:
+        raise ValueError(f"{path} must not be empty")
+    return value
+
+
+def _json_string_list(value, path: str) -> list[str]:
+    if type(value) is not list:
+        raise ValueError(f"{path} must be an array")
+    return [
+        _json_string(item, f"{path}[{index}]")
+        for index, item in enumerate(value)
+    ]
+
+
+def _json_value(value, path: str):
+    """Validate and copy one strict JSON value used by Effect.detail."""
+    if value is None or type(value) in {str, bool, int}:
+        return value
+    if type(value) is float:
+        if not math.isfinite(value):
+            raise ValueError(f"{path} must contain a finite JSON number")
+        return value
+    if type(value) is list:
+        return [_json_value(item, f"{path}[{index}]")
+                for index, item in enumerate(value)]
+    if type(value) is dict:
+        out = {}
+        for key, item in value.items():
+            if type(key) is not str:
+                raise ValueError(f"{path} object keys must be strings")
+            out[key] = _json_value(item, f"{path}.{key}")
+        return out
+    raise ValueError(
+        f"{path} contains non-JSON value of type {type(value).__name__}")
+
+
+def device_spec_to_dict(device_spec: DeviceSpec) -> dict:
+    """Serialize a DeviceSpec to the complete version-1 JSON schema.
+
+    The returned document owns all nested containers.  Validation through the
+    matching reader also prevents an invalid in-memory dataclass from being
+    silently frozen as a machine-readable artifact.
+    """
+    if not isinstance(device_spec, DeviceSpec):
+        raise TypeError("device_spec must be a DeviceSpec")
+    document = {
+        "schema": _DEVICE_SPEC_SCHEMA,
+        "name": device_spec.name,
+        "class": device_spec.cls,
+        "source": device_spec.source,
+        "state": [{
+            "name": item.name,
+            "type": item.type,
+            "bind": item.bind,
+        } for item in device_spec.state],
+        "resources": [{
+            "name": item.name,
+            "type": item.type,
+            "required": item.required,
+            "bind": item.bind,
+        } for item in device_spec.resources],
+        "registers": [{
+            "name": item.name,
+            "width": item.width,
+            "offset": item.offset,
+            "base": item.base,
+        } for item in device_spec.registers],
+        "invariants": list(device_spec.invariants),
+        "functions": [{
+            "name": function.name,
+            "signature": {
+                "params": [{
+                    "name": param.name,
+                    "type": param.type,
+                    "from_expr": param.from_expr,
+                } for param in function.signature.params],
+                "return_type": function.signature.return_type,
+            },
+            "role": function.role,
+            "context": function.context,
+            "source": function.source,
+            "binds": [{
+                "name": binding.name,
+                "type": binding.type,
+                "from_expr": binding.from_expr,
+            } for binding in function.binds],
+            "requires": list(function.requires),
+            "ensures": list(function.ensures),
+            "effects": [{
+                "kind": effect.kind,
+                "text": effect.text,
+                "detail": copy.deepcopy(effect.detail),
+            } for effect in function.effects],
+            "ris_ref": function.ris_ref,
+            "is_callback_entry": function.is_callback_entry,
+            "callback_table": function.callback_table,
+        } for function in device_spec.functions],
+    }
+    # Validate every field and nested detail before returning the artifact.
+    device_spec_from_dict(document)
+    return copy.deepcopy(document)
+
+
+def device_spec_from_dict(document: dict) -> DeviceSpec:
+    """Parse a strict version-1 DeviceSpec document without retaining aliases."""
+    top = _json_object(document, "device_spec", {
+        "schema", "name", "class", "source", "state", "resources",
+        "registers", "invariants", "functions",
+    })
+    if type(top["schema"]) is not int or top["schema"] != _DEVICE_SPEC_SCHEMA:
+        raise ValueError(
+            f"unsupported DeviceSpec schema: {top['schema']!r}")
+    name = _json_string(top["name"], "device_spec.name")
+    cls = _json_string(top["class"], "device_spec.class")
+    source = _json_string(
+        top["source"], "device_spec.source", nullable=True)
+
+    if type(top["state"]) is not list:
+        raise ValueError("device_spec.state must be an array")
+    state = []
+    for index, raw in enumerate(top["state"]):
+        path = f"device_spec.state[{index}]"
+        item = _json_object(raw, path, {"name", "type", "bind"})
+        state.append(StateField(
+            _json_string(item["name"], f"{path}.name"),
+            _json_string(item["type"], f"{path}.type"),
+            _json_string(item["bind"], f"{path}.bind", nullable=True),
+        ))
+
+    if type(top["resources"]) is not list:
+        raise ValueError("device_spec.resources must be an array")
+    resources = []
+    for index, raw in enumerate(top["resources"]):
+        path = f"device_spec.resources[{index}]"
+        item = _json_object(
+            raw, path, {"name", "type", "required", "bind"})
+        if type(item["required"]) is not bool:
+            raise ValueError(f"{path}.required must be a boolean")
+        resources.append(Resource(
+            _json_string(item["name"], f"{path}.name"),
+            _json_string(item["type"], f"{path}.type"),
+            item["required"],
+            _json_string(item["bind"], f"{path}.bind", nullable=True),
+        ))
+
+    if type(top["registers"]) is not list:
+        raise ValueError("device_spec.registers must be an array")
+    registers = []
+    for index, raw in enumerate(top["registers"]):
+        path = f"device_spec.registers[{index}]"
+        item = _json_object(
+            raw, path, {"name", "width", "offset", "base"})
+        width = _json_string(item["width"], f"{path}.width")
+        if width not in {"B1", "B2", "B4", "B8"}:
+            raise ValueError(f"{path}.width has unsupported value {width!r}")
+        if type(item["offset"]) is not int:
+            raise ValueError(f"{path}.offset must be an integer")
+        registers.append(RegisterDesc(
+            _json_string(item["name"], f"{path}.name"),
+            width,
+            item["offset"],
+            _json_string(item["base"], f"{path}.base"),
+        ))
+
+    invariants = _json_string_list(
+        top["invariants"], "device_spec.invariants")
+
+    if type(top["functions"]) is not list:
+        raise ValueError("device_spec.functions must be an array")
+    functions = []
+    for index, raw in enumerate(top["functions"]):
+        path = f"device_spec.functions[{index}]"
+        item = _json_object(raw, path, {
+            "name", "signature", "role", "context", "source", "binds",
+            "requires", "ensures", "effects", "ris_ref",
+            "is_callback_entry", "callback_table",
+        })
+        signature_raw = _json_object(
+            item["signature"], f"{path}.signature",
+            {"params", "return_type"})
+        if type(signature_raw["params"]) is not list:
+            raise ValueError(f"{path}.signature.params must be an array")
+        params = []
+        for param_index, raw_param in enumerate(signature_raw["params"]):
+            param_path = f"{path}.signature.params[{param_index}]"
+            param = _json_object(
+                raw_param, param_path, {"name", "type", "from_expr"})
+            params.append(Param(
+                _json_string(param["name"], f"{param_path}.name"),
+                _json_string(param["type"], f"{param_path}.type"),
+                _json_string(
+                    param["from_expr"], f"{param_path}.from_expr",
+                    nullable=True),
+            ))
+        signature = Signature(
+            params=params,
+            return_type=_json_string(
+                signature_raw["return_type"],
+                f"{path}.signature.return_type"),
+        )
+
+        role = _json_string(item["role"], f"{path}.role")
+        if role not in ROLES:
+            raise ValueError(f"{path}.role has unsupported value {role!r}")
+        context = _json_string(item["context"], f"{path}.context")
+        if context not in CONTEXTS:
+            raise ValueError(
+                f"{path}.context has unsupported value {context!r}")
+
+        if type(item["binds"]) is not list:
+            raise ValueError(f"{path}.binds must be an array")
+        bindings = []
+        for bind_index, raw_binding in enumerate(item["binds"]):
+            bind_path = f"{path}.binds[{bind_index}]"
+            binding = _json_object(
+                raw_binding, bind_path, {"name", "type", "from_expr"})
+            bindings.append(Binding(
+                _json_string(binding["name"], f"{bind_path}.name"),
+                _json_string(binding["type"], f"{bind_path}.type"),
+                _json_string(
+                    binding["from_expr"], f"{bind_path}.from_expr",
+                    nullable=True),
+            ))
+
+        if type(item["effects"]) is not list:
+            raise ValueError(f"{path}.effects must be an array")
+        effects = []
+        for effect_index, raw_effect in enumerate(item["effects"]):
+            effect_path = f"{path}.effects[{effect_index}]"
+            effect = _json_object(
+                raw_effect, effect_path, {"kind", "text", "detail"})
+            if type(effect["detail"]) is not dict:
+                raise ValueError(f"{effect_path}.detail must be an object")
+            effects.append(Effect(
+                _json_string(effect["kind"], f"{effect_path}.kind"),
+                _json_string(effect["text"], f"{effect_path}.text"),
+                _json_value(effect["detail"], f"{effect_path}.detail"),
+            ))
+
+        if type(item["is_callback_entry"]) is not bool:
+            raise ValueError(f"{path}.is_callback_entry must be a boolean")
+        callback_table = _json_string(
+            item["callback_table"], f"{path}.callback_table", nullable=True)
+        if callback_table is not None and not item["is_callback_entry"]:
+            raise ValueError(
+                f"{path}.callback_table requires is_callback_entry=true")
+        functions.append(FunctionSpec(
+            name=_json_string(item["name"], f"{path}.name"),
+            signature=signature,
+            role=role,
+            context=context,
+            source=_json_string(
+                item["source"], f"{path}.source", nullable=True),
+            binds=bindings,
+            requires=_json_string_list(item["requires"], f"{path}.requires"),
+            ensures=_json_string_list(item["ensures"], f"{path}.ensures"),
+            effects=effects,
+            ris_ref=_json_string(
+                item["ris_ref"], f"{path}.ris_ref", nullable=True),
+            is_callback_entry=item["is_callback_entry"],
+            callback_table=callback_table,
+        ))
+
+    return DeviceSpec(
+        name=name,
+        cls=cls,
+        state=state,
+        resources=resources,
+        registers=registers,
+        functions=functions,
+        invariants=invariants,
+        source=source,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════

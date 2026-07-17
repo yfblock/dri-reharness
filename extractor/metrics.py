@@ -5,6 +5,7 @@ count, condition/loop count, clang diagnostic count. Used by the readiness
 scorer (Milestone 8) and the `metrics` CLI.
 """
 from __future__ import annotations
+from collections import Counter
 import re
 from .formal import walk_leaf_ops, walk_all_ops
 
@@ -417,21 +418,52 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     # Readiness Scoring Stricter"): a backend is ready only if its generated C
     # compiles, has no TODOs, and (harness) passes RIS trace equivalence.
     if gen_results:
+        # Backend strict readiness is an artifact claim, not an extraction
+        # precondition.  Missing backend entries must therefore remain false
+        # even when the RIS/DeviceSpec side looks complete.
+        harness_ready = False
+        baremetal_ready = False
+        linux_ready = False
+
         def _gr(backend):
             return gen_results.get(backend, {})
 
         def _lowering_plan_ready(report):
-            if not report.get("backend_lowering_plan_required"):
-                return True
+            plan = report.get("backend_lowering_plan")
+            lowering = report.get("backend_lowering")
             return bool(
-                report.get("backend_lowering_plan_accounting_complete")
+                report.get("backend_lowering_plan_required") is True
+                and isinstance(plan, dict)
+                and isinstance(lowering, dict)
+                and report.get("backend_lowering_complete") is True
                 and report.get(
-                    "backend_lowering_plan_classification_complete")
-                and report.get("backend_lowering_plan_lowering_complete"))
+                    "backend_lowering_plan_accounting_complete") is True
+                and report.get(
+                    "backend_lowering_plan_classification_complete") is True
+                and report.get(
+                    "backend_lowering_plan_authorization_complete") is True
+                and report.get(
+                    "backend_lowering_plan_reconciliation_complete") is True
+                and report.get(
+                    "backend_lowering_plan_definition_alignment_complete")
+                is True
+                and report.get("backend_lowering_plan_strict_complete") is True
+                and plan.get("reconciliation_performed") is True
+                and plan.get("strict_complete") is True
+                and lowering.get("complete") is True)
 
         for backend in ("harness", "baremetal", "linux"):
             generated = _gr(backend)
-            if (generated.get("backend_lowering_plan_required")
+            if not generated:
+                blockers.append(
+                    f"{backend} backend generation/attestation results "
+                    "unavailable")
+                continue
+            if generated.get("backend_lowering_plan_required") is not True:
+                blockers.append(
+                    f"{backend} backend lowering/receipt attestation "
+                    "unavailable")
+            elif (generated.get("backend_lowering_plan_required")
                     and not generated.get(
                         "backend_lowering_plan_accounting_complete")):
                 blockers.append(
@@ -441,6 +473,16 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                       "backend_lowering_plan_classification_complete")):
                 blockers.append(
                     f"{backend} backend lowering plan classification failed")
+            elif (generated.get("backend_lowering_plan_required")
+                  and not generated.get(
+                      "backend_lowering_plan_authorization_complete")):
+                blockers.append(
+                    f"{backend} backend lowering receipt authorization failed")
+            elif (generated.get("backend_lowering_plan_required")
+                  and not generated.get(
+                      "backend_lowering_plan_reconciliation_complete")):
+                blockers.append(
+                    f"{backend} backend lowering receipt reconciliation failed")
             lowering = generated.get("backend_lowering", {})
             if lowering and not lowering.get("complete", False):
                 plan = generated.get("backend_lowering_plan") or {}
@@ -452,10 +494,31 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                     and plan.get("classification_complete") else set())
                 unexplained_missing = missing - explained_missing
                 if explained_missing:
-                    blockers.append(
-                        f"{backend} backend has {len(explained_missing)} "
-                        "register operation(s) explicitly blocked by "
-                        "unsupported loop lowering")
+                    entries = {
+                        entry.get("op_id"): entry
+                        for entry in plan.get("entries", [])
+                        if isinstance(entry, dict)
+                    }
+                    dispositions = Counter(
+                        (entries.get(op_id) or {}).get(
+                            "disposition", "unknown")
+                        for op_id in explained_missing)
+                    descriptions = {
+                        "blocked_unsupported_loop":
+                            "unsupported loop lowering",
+                        "blocked_linux_lifecycle_stub":
+                            "a synthesized lifecycle stub",
+                        "blocked_linux_lifecycle_unimplemented":
+                            "an unimplemented lifecycle route",
+                        "blocked_linux_root_unreachable":
+                            "a missing Linux definition root",
+                    }
+                    for disposition, count in sorted(
+                            dispositions.items()):
+                        blockers.append(
+                            f"{backend} backend has {count} register "
+                            "operation(s) explicitly blocked by "
+                            f"{descriptions.get(disposition, disposition)}")
                 discrepancy = len(unexplained_missing) + sum(
                     len(lowering.get(key, [])) for key in (
                     "duplicate", "unknown", "rejected",
@@ -545,6 +608,15 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                         "failed outside planned loop blockers")
         lx = _gr("linux")
         if lx:
+            linux_plan = lx.get("backend_lowering_plan") or {}
+            if (linux_plan.get("definition_alignment_complete")
+                    and not linux_plan.get("runtime_complete")
+                    and linux_plan.get("authorized_ops", 0)):
+                blockers.append(
+                    "linux backend has "
+                    f"{linux_plan['authorized_ops']} emitted definition "
+                    "operation(s) without independent runtime "
+                    "registration/callsite attestation")
             linux_source_ready = (not gpio_source_required or bool(
                 lx.get("gpio_mmio_source_oracle_passed")))
             linux_source_ready &= (not sdhci_source_required or bool(
@@ -568,6 +640,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                and unsupported_control == 0
                                and function_spec_quality >= 0.6
                                and not unbound_callbacks
+                               and _lowering_plan_ready(lx)
                                and lx.get("backend_lowering_complete", True)
                                and not lx.get("has_todo")
                                and not lx.get("unsupported")
@@ -597,6 +670,13 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 and _gr("baremetal").get("w1c_drain_runtime_passed", False)
                 and _gr("linux").get("w1c_drain_contract_passed", False)):
             blockers.append("W1C drain loop lacks contract/runtime oracle")
+    else:
+        harness_ready = False
+        baremetal_ready = False
+        linux_ready = False
+        blockers.append(
+            "generated backend compile/lowering/attestation results "
+            "unavailable")
 
     if (unvalidated_subsystem
             and not (harness_subsystem_ready and baremetal_subsystem_ready)):

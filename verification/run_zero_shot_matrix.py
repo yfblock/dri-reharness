@@ -63,9 +63,28 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
     ("missing_role", r"^missing role for:"),
     ("callback_binding", r"^callback entry without table binding:"),
     ("no_register_access", r"^no MMIO register accesses$"),
+    ("unsupported_loop_lowering",
+     r"^(?:harness|baremetal|linux) backend has \d+ register operation\(s\) "
+     r"explicitly blocked by unsupported loop lowering$"),
+    ("linux_lifecycle_stub",
+     r"^linux backend has \d+ register operation\(s\) explicitly blocked "
+     r"by a synthesized lifecycle stub$"),
+    ("linux_lifecycle_unimplemented",
+     r"^linux backend has \d+ register operation\(s\) explicitly blocked "
+     r"by an unimplemented lifecycle route$"),
+    ("linux_definition_root",
+     r"^linux backend has \d+ register operation\(s\) explicitly blocked "
+     r"by a missing Linux definition root$"),
+    ("linux_runtime_attestation",
+     r"^linux backend has \d+ emitted definition operation\(s\) without "
+     r"independent runtime registration/callsite attestation$"),
     ("linux_semantic_binding", r"^linux backend has unsupported semantic bindings$"),
 )
-UMBRELLA_BLOCKERS = {"linux_semantic_binding"}
+UMBRELLA_BLOCKERS = {
+    "linux_definition_root", "linux_lifecycle_stub",
+    "linux_lifecycle_unimplemented", "linux_runtime_attestation",
+    "linux_semantic_binding",
+}
 
 
 def normalize_blocker(blocker: str) -> str:

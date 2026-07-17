@@ -224,6 +224,7 @@ PROMPT_HEAD
   esac
   echo "## .ris" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.ris" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## .dspec (含寄存器偏移)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.dspec" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n## DeviceSpec JSON (机器可读函数/回调/root 证据)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.device-spec.json" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## .bind (linux)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.linux.bind" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## .facts (AST 类型、字段、回调、资源和错误路径)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.facts" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## generation contract (机器可读；不得遗漏、复制或发明 RIS 操作)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/generation-contract.json" >> $RH_TMP/synth_prompt.txt
