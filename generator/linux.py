@@ -15,6 +15,7 @@ import re
 import copy
 
 from extractor.formal import walk_leaf_ops
+from extractor.spec import PUBLIC_CALLBACK_TYPES
 from .subsystem_runner import (portable_sdhci_accessor_only,
                                portable_virtio_state_only)
 from .common import (ops_to_c, local_decls, value_var_names,
@@ -46,11 +47,24 @@ def _cid(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]", "_", text)
 
 
-def _callback_map(bind, facts) -> dict[str, str]:
+def _callback_map(bind, facts, device_spec=None) -> dict[str, str]:
     out = {c.function: c.table_field for c in bind.callbacks}
+    functions = ({function.name: function
+                  for function in device_spec.functions}
+                 if device_spec is not None else {})
     if facts is not None:
         for table_field, fn in facts.callbacks.items():
-            out[fn] = table_field
+            function = functions.get(fn)
+            owner = table_field.split(".", 1)[0]
+            if (function is not None
+                    and (function.role in {"unknown", "helper"}
+                         or owner not in PUBLIC_CALLBACK_TYPES)):
+                continue
+            # BindSpec already selected the primary typed binding.  Facts may
+            # retain alternate fields that share one callback function (for
+            # example PM freeze/thaw/restore); they are evidence, not a reason
+            # to overwrite executable backend intent.
+            out.setdefault(fn, table_field)
     return out
 
 
@@ -1088,6 +1102,63 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
             "clk_ops.recalc_rate", "clk_ops.determine_rate", "clk_ops.round_rate"}:
         problem = f"{fn.name} requires non-MMIO clock arithmetic"
     return "\n".join(lines), problem
+
+
+def _emit_evidence_only_callback(fn, module: dict, priv: str,
+                                 regs: dict[str, int], bind,
+                                 safe_function_calls: set[str]) -> str:
+    """Emit an unregistered function for an AST-bound unknown-role callback.
+
+    This preserves the recovered operations for audit and cross-TU helpers,
+    while deliberately avoiding any public callback table or lifecycle claim.
+    """
+    type_map = {
+        "UInt": "u32", "LogicalIRQ": "unsigned int",
+        "Bool": "bool", "Clock": "unsigned long",
+        "MmioBase": "void __iomem *", "UIntPtr": "unsigned long *",
+    }
+    params = []
+    aliases = []
+    declared = {"base"}
+    device_bound = False
+    for param in fn.signature.params:
+        if param.type == "DeviceState" and not device_bound:
+            params.append(f"struct {priv} *g")
+            declared.add("g")
+            device_bound = True
+            if param.name and param.name != "g":
+                aliases.append(f"\tstruct {priv} *{param.name} = g;")
+                declared.add(param.name)
+            continue
+        ctype = (f"struct {priv} *" if param.type == "DeviceState"
+                 else type_map.get(param.type, "u32"))
+        params.append(f"{ctype} {param.name}")
+        declared.add(param.name)
+    if not device_bound:
+        params.insert(0, f"struct {priv} *g")
+        declared.add("g")
+    return_type = "void" if fn.signature.return_type == "Void" else "u32"
+    safe_ops, _normalized = _normalize_ops(
+        module.get("ops", []), "g", safe_function_calls)
+    lines = [
+        f"/* AST-bound evidence only: role unknown, not registered */",
+        f"static {return_type} {fn.name}({', '.join(params)})", "{",
+        *aliases,
+    ]
+    decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
+    if decls:
+        lines.append(decls.replace("    ", "\t"))
+    lines.append("\tvoid __iomem *base = g->base;")
+    body = ops_to_c(
+        safe_ops, bind, "base", regs, indent=1,
+        word_type="u32", state_expr="g")
+    if body:
+        lines.append(body.replace("    ", "\t"))
+    if (return_type != "void"
+            and not any("Return" in op for op in walk_leaf_ops(safe_ops))):
+        lines.append(f"\treturn {_last_read_var(module) or 0};")
+    lines.extend(["}", ""])
+    return "\n".join(lines)
 
 
 def _emit_banked_irq_source_callback(
@@ -2186,8 +2257,16 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         return preserved_virtio
     priv = f"{_cid(dev)}_priv"
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}
-    callbacks = _callback_map(bind, facts)
+    callbacks = _callback_map(bind, facts, device_spec)
     modules = {m["name"]: m for m in formal["modules"]}
+    summary_groups = formal.get("metadata", {}).get(
+        "subsystem_summary_analysis", {}).get("summaries", {})
+    if device_spec.cls == "sdhci" and isinstance(summary_groups, dict):
+        for item in summary_groups.get("sdhci_ops", []):
+            if (item.get("implementation") == "source-private"
+                    and item.get("field") and item.get("module") in modules):
+                callbacks.setdefault(
+                    item["module"], f"sdhci_ops.{item['field']}")
     function_macros = _portable_function_macros(formal)
     safe_function_calls = set(function_macros)
     probe_refs = {
@@ -2216,8 +2295,6 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             callback_code.append("")
     gpio_model = (_source_gpio_model(facts)
                   if device_spec.cls == "gpio_controller" else None)
-    summary_groups = formal.get("metadata", {}).get(
-        "subsystem_summary_analysis", {}).get("summaries", {})
     gpio_summaries = (summary_groups.get("gpio_generic", [])
                       if isinstance(summary_groups, dict) else [])
     gpio_bank = next((summary.get("bank_model") for summary in gpio_summaries
@@ -2326,6 +2403,24 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             callback_code.append(code)
         if problem:
             unsupported.append(problem)
+
+    binding_rows = formal.get("metadata", {}).get(
+        "callback_binding_analysis", {}).get("bindings", [])
+    multi_source = len(formal.get("metadata", {}).get("sources", [])) > 1
+    evidence_only = {
+        row.get("function") for row in binding_rows
+        if (row.get("role") == "unknown"
+            and row.get("public_callback_type") is False
+            and multi_source)}
+    for fn in device_spec.functions:
+        if (fn.name not in evidence_only
+                or fn.name in callbacks_for_codegen):
+            continue
+        module = modules.get(fn.ris_ref)
+        if module is None:
+            continue
+        callback_code.append(_emit_evidence_only_callback(
+            fn, module, priv, regs, bind, safe_function_calls))
 
     callbacks = callbacks_for_codegen
     is_pci = any(field.startswith("pci_driver.") for field in callbacks.values())

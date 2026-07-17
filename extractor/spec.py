@@ -25,6 +25,18 @@ ROLES = [
 
 CONTEXTS = ["thread", "irq", "atomic", "sleepable", "boot"]
 
+# Struct/typedef owners whose callback fields form a public kernel ABI that a
+# backend may reconstruct.  Other AST-proven owner/field pairs remain evidence
+# only, regardless of a generic role hint on the function name.
+PUBLIC_CALLBACK_TYPES = {
+    "irq_chip", "irq_handler", "gpio_chip", "gpio_irq_chip",
+    "platform_driver", "pci_driver", "amba_driver", "i2c_driver",
+    "spi_driver", "virtio_config_ops", "virtio_driver", "virtqueue_info",
+    "clk_ops", "dev_pm_ops", "file_operations", "input_dev",
+    "usb_ep_ops", "usb_gadget_ops", "hc_driver",
+    "sdhci_ops", "mmc_host_ops",
+}
+
 # abstract types (backend-independent; .bind maps them to concrete types)
 TYPES = [
     "DeviceState", "MmioBase", "LogicalIRQ", "UInt", "UIntPtr", "Bool", "Register",
@@ -305,7 +317,14 @@ def default_bind(device_spec, backend: str) -> BindSpec:
                         PrimitiveMap("MmioWriteBE", "B4", "iowrite32be")]
         b.state = [StateMap("dev.base", base_expr)]
         for fn in device_spec.functions:
-            if fn.is_callback_entry and fn.callback_table:
+            # FunctionSpec retains every AST-proven callback owner/field.
+            # BindSpec is executable backend intent, so an unknown role or a
+            # private owner must not be promoted into a generated callback
+            # table merely because ownership is known.
+            if (fn.is_callback_entry and fn.callback_table
+                    and fn.role not in {"unknown", "helper"}
+                    and fn.callback_table.split(".", 1)[0]
+                    in PUBLIC_CALLBACK_TYPES):
                 if "." in fn.callback_table:
                     b.callbacks.append(CallbackMap(fn.callback_table, fn.name))
                 else:

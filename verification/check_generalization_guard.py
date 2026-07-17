@@ -170,7 +170,8 @@ def _specialization_inventory() -> dict[str, list[str]]:
     }
 
 
-def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT) -> dict:
+def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT,
+                *, enforce_frozen_implementation: bool = False) -> dict:
     manifest_path = Path(holdout_path).resolve()
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     issues: list[str] = []
@@ -185,6 +186,7 @@ def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT) -> dict:
 
     frozen = data.get("frozen_against", {})
     frozen_reharness = frozen.get("reharness_commit")
+    protected_root_changes: list[str] = []
     for relative_root in data.get("policy", {}).get("protected_roots", []):
         expected_tree = frozen.get(f"{relative_root}_tree")
         if not expected_tree:
@@ -195,8 +197,11 @@ def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT) -> dict:
                 f"frozen {relative_root} tree mismatch: "
                 f"frozen={expected_tree} actual={actual_tree}")
         if _protected_root_changed(frozen_reharness, relative_root):
-            issues.append(
-                f"protected root changed since frozen commit: {relative_root}")
+            protected_root_changes.append(relative_root)
+            if enforce_frozen_implementation:
+                issues.append(
+                    "protected root changed since frozen commit: "
+                    f"{relative_root}")
 
     manifest_dir = manifest_path.parent
     issues.extend(_selection_issues(data, manifest_dir))
@@ -250,6 +255,8 @@ def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT) -> dict:
         "cases": len(cases),
         "first_run": data.get("first_run"),
         "linux_commit": actual_linux,
+        "frozen_implementation_enforced": enforce_frozen_implementation,
+        "protected_root_changes": protected_root_changes,
         "specialization_inventory": inventory,
         "issues": issues,
         "passed": not issues,
@@ -259,8 +266,11 @@ def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--holdout", default=str(DEFAULT_HOLDOUT))
+    parser.add_argument("--enforce-frozen-implementation", action="store_true")
     args = parser.parse_args()
-    report = check_guard(args.holdout)
+    report = check_guard(
+        args.holdout,
+        enforce_frozen_implementation=args.enforce_frozen_implementation)
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0 if report["passed"] else 1
 

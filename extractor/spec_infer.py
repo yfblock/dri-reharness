@@ -13,12 +13,13 @@ from __future__ import annotations
 import re
 import os
 from typing import Optional
+import clang.cindex as _cx
 
 
 from .spec import (FunctionSpec, DeviceSpec, Signature, Param, Binding,
                    RegisterDesc, StateField, Resource, Effect, reg_effect,
-                   event_effect)
-from .ast_model import Func
+                   event_effect, PUBLIC_CALLBACK_TYPES)
+from .ast_model import Func, function_symbol_id
 from .formal import walk_leaf_ops, walk_all_ops
 
 _MEMBER_BASE = re.compile(r"^([A-Za-z_]\w*)->\w+$")
@@ -171,12 +172,10 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
 
 def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
                          source_path: str,
-                         callback_entries: set[str]) -> tuple[list[FunctionSpec], dict]:
-    names = {f.name for f in funcs}
-    cb_bindings = parse_callback_bindings(source_text, names)
-    name_counts: dict[str, int] = {}
-    for func in funcs:
-        name_counts[func.name] = name_counts.get(func.name, 0) + 1
+                         callback_entries: set[str],
+                         callback_bindings: dict[str, dict] | None = None
+                         ) -> tuple[list[FunctionSpec], dict]:
+    cb_bindings = dict(callback_bindings or {})
     func_by_module = {(f.module_name or f.name): f for f in funcs}
 
     specs: list[FunctionSpec] = []
@@ -193,14 +192,24 @@ def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
                 "table": fn.synthetic_callback_table.split(".", 1)[0],
                 "field": (fn.synthetic_callback_table.split(".", 1)[1]
                           if "." in fn.synthetic_callback_table else fn.name),
+                "function": fn.name,
+                "binding_kind": "synthetic",
             }
-            cb_bindings[fn.name] = cb
+            cb_bindings[fn.symbol_id or fn.name] = cb
         else:
-            cb = (cb_bindings.get(fn.name)
-              if name_counts.get(fn.name, 0) == 1 else None)
+            cb = cb_bindings.get(fn.symbol_id or fn.name)
         if cb:
             role, context = cb["role"], cb["context"]
             table = f"{cb['table']}.{cb['field']}"
+            # Binding and semantic-role evidence are orthogonal.  An
+            # AST-proven owner/field with no FIELD_ROLE contract must not
+            # erase an independently inferred generic lifecycle role.
+            if role == "unknown":
+                hint = name_role_hints(fn.name)
+                if hint:
+                    role = hint
+                    context = ("irq" if hint.startswith("interrupt")
+                               or hint == "set_irq_type" else "thread")
         else:
             hint = name_role_hints(fn.name)
             symbol = fn.symbol_id or fn.name
@@ -528,219 +537,272 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "exit": ("remove", "thread"),
 }
 
-# Fallback table when a callback reference is outside a recognizable struct
-# initializer.  Initializer-aware parsing below is authoritative.
-FIELD_TABLE = {
-    "irq_ack": "irq_chip", "irq_mask": "irq_chip", "irq_unmask": "irq_chip",
-    "irq_mask_ack": "irq_chip", "irq_eoi": "irq_chip", "irq_enable": "irq_chip",
-    "irq_disable": "irq_chip", "irq_set_type": "irq_chip", "handle_irq": "irq_chip",
-    "parent_handler": "gpio_irq_chip",
-    "init_hw": "gpio_irq_chip",
-    "probe": "platform_driver", "remove": "platform_driver", "shutdown": "platform_driver",
-    "suspend": "dev_pm_ops", "resume": "dev_pm_ops", "freeze": "dev_pm_ops",
-    "thaw": "dev_pm_ops", "poweroff": "dev_pm_ops", "restore": "dev_pm_ops",
-    "find_vqs": "virtio_config_ops", "del_vqs": "virtio_config_ops",
-    "get_status": "virtio_config_ops", "set_status": "virtio_config_ops",
-    "reset": "virtio_config_ops", "generation": "virtio_config_ops",
-    "get_shm_region": "virtio_config_ops", "notify_vq": "virtio_config_ops",
-    "request": "gpio_chip", "free": "gpio_chip",
-    "get_direction": "gpio_chip", "direction_input": "gpio_chip",
-    "direction_output": "gpio_chip", "set_config": "gpio_chip",
-    "get": "gpio_chip", "set": "gpio_chip",
-    "get_multiple": "gpio_chip", "set_multiple": "gpio_chip",
-    "alloc_request": "usb_ep_ops", "free_request": "usb_ep_ops",
-    "queue": "usb_ep_ops", "dequeue": "usb_ep_ops",
-    "set_halt": "usb_ep_ops", "set_wedge": "usb_ep_ops",
-    "fifo_status": "usb_ep_ops", "fifo_flush": "usb_ep_ops",
-    "get_frame": "usb_gadget_ops", "wakeup": "usb_gadget_ops",
-    "set_remote_wakeup": "usb_gadget_ops",
-    "set_selfpowered": "usb_gadget_ops", "pullup": "usb_gadget_ops",
-    "udc_start": "usb_gadget_ops", "udc_stop": "usb_gadget_ops",
-    "match_ep": "usb_gadget_ops",
-    "urb_enqueue": "hc_driver", "urb_dequeue": "hc_driver",
-    "endpoint_disable": "hc_driver", "endpoint_reset": "hc_driver",
-    "get_frame_number": "hc_driver", "hub_status_data": "hc_driver",
-    "hub_control": "hc_driver", "bus_suspend": "hc_driver",
-    "bus_resume": "hc_driver", "map_urb_for_dma": "hc_driver",
-    "unmap_urb_for_dma": "hc_driver", "free_dev": "hc_driver",
-    "reset_device": "hc_driver",
-    "start": "hc_driver", "stop": "hc_driver", "irq": "hc_driver",
-    "read_l": "sdhci_ops", "read_w": "sdhci_ops", "read_b": "sdhci_ops",
-    "write_l": "sdhci_ops", "write_w": "sdhci_ops", "write_b": "sdhci_ops",
-    "callback": "virtqueue_info", "event": "input_dev",
+_CALLBACK_TYPE_ROLES: dict[str, tuple[str, str]] = {
+    "irq_handler_t": ("interrupt_handler", "irq"),
 }
 
-
-_DESIGNATED_INIT = re.compile(
-    r"(?:\.|->)\s*([A-Za-z_]\w*)\s*=\s*&?\s*([A-Za-z_]\w*)(?=\s*[,};]|\s*$)"
-)
-
-_STRUCT_INIT = re.compile(
-    r"\bstruct\s+([A-Za-z_]\w*)\s+[A-Za-z_]\w*(?:\s*\[[^]]*\])?\s*=\s*\{"
-)
-
-_KNOWN_CALLBACK_TABLES = {
-    "irq_chip", "gpio_chip", "platform_driver", "pci_driver", "amba_driver",
-    "virtio_config_ops", "virtio_driver", "clk_ops", "dev_pm_ops", "file_operations",
-    "gpio_irq_chip",
-    "usb_ep_ops", "usb_gadget_ops", "hc_driver", "sdhci_ops",
-    "virtqueue_info",
-}
+# Public callback ABI types may attach the existing field-level semantic role.
+# Every other struct still receives owner/field binding evidence, but its role
+# remains unknown so a source-private field named ``reset`` or ``write`` cannot
+# accidentally become executable backend intent.
+_ROLE_BEARING_CALLBACK_TYPES = PUBLIC_CALLBACK_TYPES
 
 
-def _initializer_blocks(src: str):
-    """Yield `(struct_type, initializer_text)` with balanced-brace parsing."""
-    for m in _STRUCT_INIT.finditer(src):
-        table = m.group(1)
-        if table not in _KNOWN_CALLBACK_TABLES:
+def _is_function_pointer(ctype) -> bool:
+    try:
+        canonical = ctype.get_canonical()
+        if canonical.kind != _cx.TypeKind.POINTER:
+            return False
+        pointee = canonical.get_pointee().get_canonical()
+        return pointee.kind in {
+            _cx.TypeKind.FUNCTIONPROTO, _cx.TypeKind.FUNCTIONNOPROTO}
+    except Exception:
+        return False
+
+
+def _record_type_name(field_cursor) -> str | None:
+    parent = field_cursor.semantic_parent or field_cursor.lexical_parent
+    if parent is not None and parent.kind in {
+            _cx.CursorKind.STRUCT_DECL, _cx.CursorKind.UNION_DECL}:
+        return parent.spelling or None
+    return None
+
+
+def _named_callback_type(ctype) -> str | None:
+    """Return an AST-declared callback typedef, never a guessed C signature."""
+    spelling = (ctype.spelling or "").strip()
+    if ctype.kind == _cx.TypeKind.TYPEDEF and spelling:
+        return spelling
+    declaration = ctype.get_declaration()
+    if declaration is not None and declaration.kind == _cx.CursorKind.TYPEDEF_DECL:
+        return declaration.spelling or None
+    return None
+
+
+def _record_declaration(ctype):
+    try:
+        current = ctype.get_canonical()
+        while current.kind in {
+                _cx.TypeKind.CONSTANTARRAY, _cx.TypeKind.INCOMPLETEARRAY,
+                _cx.TypeKind.VARIABLEARRAY, _cx.TypeKind.DEPENDENTSIZEDARRAY}:
+            current = current.element_type.get_canonical()
+        if current.kind == _cx.TypeKind.POINTER:
+            current = current.get_pointee().get_canonical()
+        declaration = current.get_declaration()
+        if declaration is not None and declaration.kind in {
+                _cx.CursorKind.STRUCT_DECL, _cx.CursorKind.UNION_DECL}:
+            return declaration
+    except Exception:
+        pass
+    return None
+
+
+def _target_function_refs(cursor, targets: dict[str, Func]) -> list[str]:
+    found: list[str] = []
+    for node in cursor.walk_preorder():
+        ref = node.referenced
+        symbol = function_symbol_id(ref)
+        if symbol in targets and symbol not in found:
+            found.append(symbol)
+    return found
+
+
+def _function_pointer_fields(cursor) -> list[object]:
+    found = []
+    seen: set[str] = set()
+    for node in cursor.walk_preorder():
+        ref = node.referenced
+        if (ref is None or ref.kind != _cx.CursorKind.FIELD_DECL
+                or not _is_function_pointer(ref.type)):
             continue
-        start = m.end() - 1
-        depth = 0
-        for i in range(start, len(src)):
-            if src[i] == "{":
-                depth += 1
-            elif src[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    yield table, src[start + 1:i]
-                    break
+        key = ref.get_usr() or f"{_record_type_name(ref)}.{ref.spelling}"
+        if key not in seen:
+            found.append(ref)
+            seen.add(key)
+    return found
 
 
-def _strip_comments_strings(src: str) -> str:
-    src = re.sub(r"/\*.*?\*/", " ", src, flags=re.S)
-    out = []
-    for ln in src.splitlines():
-        idx = ln.find("//")
-        if idx >= 0:
-            ln = ln[:idx]
-        out.append(ln)
-    src = "\n".join(out)
-    # remove string/char literals
-    src = re.sub(r'"(\\.|[^"\\])*"', ' "" ', src)
-    src = re.sub(r"'(\\.|[^'\\])*'", " ' ' ", src)
-    return src
-
-
-def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[str, dict]:
-    """funcname → {field, role, context, table} for each `.field = funcname`
-    where funcname is a target function."""
-    src = _strip_comments_strings(source_text)
-    out: dict[str, dict] = {}
-
-    def signature_table(fname: str, field: str) -> str | None:
-        m = re.search(
-            rf"\b{re.escape(fname)}\s*\((.*?)\)\s*\{{", src, flags=re.S)
-        params = m.group(1) if m else ""
-        # gpio_irq_chip callbacks such as init_hw receive a gpio_chip pointer,
-        # so the parameter type alone is ambiguous.  Prefer the field's
-        # authoritative table class before applying the broad gpio_chip rule.
-        if field in {"init_hw", "parent_handler"}:
-            return "gpio_irq_chip"
-        if "struct gpio_chip" in params:
-            return "gpio_chip"
-        if "struct irq_data" in params:
-            return "irq_chip"
-        if "struct clk_hw" in params:
-            return "clk_ops"
-        if "struct virtio_device" in params:
-            return ("virtio_driver" if field in {
-                "probe", "remove", "freeze", "restore"}
-                else "virtio_config_ops")
-        if "struct virtqueue" in params:
-            return "virtqueue_info"
-        if "struct input_dev" in params:
-            return "input_dev"
-        if "struct usb_ep" in params:
-            return "usb_ep_ops"
-        if "struct usb_gadget" in params:
-            return "usb_gadget_ops"
-        if "struct usb_hcd" in params:
-            return "hc_driver"
-        if "struct device" in params and field in {
-                "suspend", "resume", "freeze", "thaw", "poweroff", "restore"}:
-            return "dev_pm_ops"
+def _binding_info(func: Func, field_cursor, kind: str, evidence_cursor,
+                  *, table: str | None = None) -> dict | None:
+    field = field_cursor.spelling
+    owner = table or _record_type_name(field_cursor)
+    if not field or not owner:
         return None
-    # Prefer the actual enclosing struct type.  Field names such as `get`,
-    # `set`, and `probe` are ambiguous without this context.
-    for table, block in _initializer_blocks(src):
-        for m in _DESIGNATED_INIT.finditer(block):
-            field, fname = m.group(1), m.group(2)
-            if fname not in target_names:
+    role, context = (
+        FIELD_ROLE.get(field, ("unknown", "thread"))
+        if owner in _ROLE_BEARING_CALLBACK_TYPES
+        else ("unknown", "thread"))
+    loc = evidence_cursor.location
+    return {
+        "function": func.name,
+        "field": field,
+        "table": owner,
+        "role": role,
+        "context": context,
+        "binding_kind": kind,
+        "public_callback_type": owner in _ROLE_BEARING_CALLBACK_TYPES,
+        "source": loc.file.name if loc and loc.file else func.source_path,
+        "line": loc.line if loc else func.line,
+        "column": loc.column if loc else 0,
+    }
+
+
+def infer_callback_bindings(tu, funcs: list[Func]) -> dict[str, dict]:
+    """Recover typed callback ownership from the AST.
+
+    Bindings are accepted only when libclang proves a function flows into a
+    function-pointer struct field (initializer or assignment), or into a named
+    callback-typed call parameter.  Function names, driver names, compatible
+    strings, Kconfig symbols, and source-private prefixes are not consulted.
+    Unknown fields remain role ``unknown`` while retaining owner/field binding.
+    """
+    targets = {func.symbol_id or func.name: func for func in funcs}
+    grouped: dict[str, list[dict]] = {}
+
+    def record(symbol: str, field_cursor, kind: str, evidence_cursor,
+               table: str | None = None):
+        info = _binding_info(
+            targets[symbol], field_cursor, kind, evidence_cursor, table=table)
+        if info is None:
+            return
+        entries = grouped.setdefault(symbol, [])
+        identity = (info["table"], info["field"], info["binding_kind"],
+                    info["source"], info["line"], info["column"])
+        if not any((item["table"], item["field"], item["binding_kind"],
+                    item["source"], item["line"], item["column"]) == identity
+                   for item in entries):
+            entries.append(info)
+
+    for cursor in tu.cursor.walk_preorder():
+        if cursor.kind == _cx.CursorKind.VAR_DECL:
+            initializers = [node for node in cursor.get_children()
+                            if node.kind == _cx.CursorKind.INIT_LIST_EXPR]
+            for initializer in initializers:
+                expressions = list(initializer.get_children())
+                has_designators = any(
+                    _function_pointer_fields(expr) for expr in expressions)
+                for expr in expressions:
+                    fields = _function_pointer_fields(expr)
+                    symbols = _target_function_refs(expr, targets)
+                    if len(fields) == 1 and len(symbols) == 1:
+                        record(symbols[0], fields[0], "initializer", expr)
+                if has_designators:
+                    continue
+                declaration = _record_declaration(initializer.type)
+                if declaration is None:
+                    continue
+                fields = [node for node in declaration.get_children()
+                          if node.kind == _cx.CursorKind.FIELD_DECL]
+                record_initializers = (
+                    [expr for expr in expressions
+                     if expr.kind == _cx.CursorKind.INIT_LIST_EXPR]
+                    if initializer.type.get_canonical().kind in {
+                        _cx.TypeKind.CONSTANTARRAY,
+                        _cx.TypeKind.INCOMPLETEARRAY,
+                        _cx.TypeKind.VARIABLEARRAY,
+                        _cx.TypeKind.DEPENDENTSIZEDARRAY}
+                    else [initializer])
+                for record_initializer in record_initializers:
+                    values = list(record_initializer.get_children())
+                    for field_cursor, expr in zip(fields, values):
+                        symbols = _target_function_refs(expr, targets)
+                        if (_is_function_pointer(field_cursor.type)
+                                and len(symbols) == 1):
+                            record(symbols[0], field_cursor,
+                                   "positional_initializer", expr)
+
+        elif cursor.kind == _cx.CursorKind.BINARY_OPERATOR:
+            tokens = [token.spelling for token in cursor.get_tokens()]
+            if "=" not in tokens:
                 continue
-            role_ctx = FIELD_ROLE.get(field)
-            if role_ctx is None:
+            children = list(cursor.get_children())
+            if len(children) != 2:
                 continue
-            role, ctx = role_ctx
-            out[fname] = {
-                "field": field,
-                "role": role,
-                "context": ctx,
-                "table": table,
-            }
-        if table == "virtqueue_info":
-            for positional in re.finditer(
-                    r"\{\s*(?:\"\"|[A-Za-z_]\w*)\s*,\s*"
-                    r"([A-Za-z_]\w*)\s*\}", block):
-                fname = positional.group(1)
-                if fname in target_names:
-                    out[fname] = {
-                        "field": "callback", "role": "interrupt_handler",
-                        "context": "irq", "table": "virtqueue_info",
-                    }
+            fields = _function_pointer_fields(children[0])
+            symbols = _target_function_refs(children[1], targets)
+            if len(fields) == 1 and len(symbols) == 1:
+                record(symbols[0], fields[0], "assignment", cursor)
 
-    # Fallback for macro-generated or otherwise nonstandard initializers.
-    for m in _DESIGNATED_INIT.finditer(src):
-        field, fname = m.group(1), m.group(2)
-        if fname not in target_names or fname in out:
-            continue
-        role_ctx = FIELD_ROLE.get(field)
-        if role_ctx is None:
-            continue
-        role, ctx = role_ctx
-        table = signature_table(fname, field) or FIELD_TABLE.get(field, "ops")
-        out[fname] = {
-            "field": field,
-            "role": role,
-            "context": ctx,
-            "table": table,
-        }
+        elif cursor.kind == _cx.CursorKind.CALL_EXPR:
+            callee = cursor.referenced
+            if callee is None or callee.kind != _cx.CursorKind.FUNCTION_DECL:
+                continue
+            params = [node for node in callee.get_children()
+                      if node.kind == _cx.CursorKind.PARM_DECL]
+            args = list(cursor.get_arguments())
+            for param, arg in zip(params, args):
+                if not _is_function_pointer(param.type):
+                    continue
+                callback_type = _named_callback_type(param.type)
+                symbols = _target_function_refs(arg, targets)
+                if len(symbols) != 1:
+                    continue
+                if not callback_type:
+                    candidate_fields = []
+                    for owner_param in params:
+                        declaration = _record_declaration(owner_param.type)
+                        if declaration is None:
+                            continue
+                        for field_cursor in declaration.get_children():
+                            if (field_cursor.kind == _cx.CursorKind.FIELD_DECL
+                                    and field_cursor.spelling == param.spelling
+                                    and _is_function_pointer(field_cursor.type)):
+                                candidate_fields.append(field_cursor)
+                    if len(candidate_fields) == 1:
+                        record(symbols[0], candidate_fields[0],
+                               "call_assignment", arg)
+                    continue
+                role, context = _CALLBACK_TYPE_ROLES.get(
+                    callback_type, ("unknown", "thread"))
+                field = param.spelling or "callback"
+                synthetic_field = type("CallbackField", (), {
+                    "spelling": field,
+                    "semantic_parent": None,
+                    "lexical_parent": None,
+                })()
+                info = _binding_info(
+                    targets[symbols[0]], synthetic_field, "call_argument",
+                    arg, table=callback_type.removesuffix("_t"))
+                if info is not None:
+                    info["role"], info["context"] = role, context
+                    grouped.setdefault(symbols[0], []).append(info)
 
-    # Macro-declared PM tables do not contain designated initializers in the
-    # preprocessed source text retained by the artifact corpus.
-    for m in re.finditer(
-            r"DEFINE_(?:SIMPLE_)?DEV_PM_OPS\s*\(\s*\w+\s*,\s*"
-            r"([A-Za-z_]\w*)\s*,\s*([A-Za-z_]\w*)", src):
-        for field, fname in (("suspend", m.group(1)), ("resume", m.group(2))):
-            if fname in target_names:
-                role, ctx = FIELD_ROLE[field]
-                out[fname] = {
-                    "field": field, "role": role, "context": ctx,
-                    "table": "dev_pm_ops",
-                }
+    result: dict[str, dict] = {}
+    for symbol, entries in grouped.items():
+        entries.sort(key=lambda item: (
+            item["role"] == "unknown",
+            item["field"] != item["role"],
+            item["table"], item["field"],
+            item["source"], item["line"], item["column"]))
+        primary = dict(entries[0])
+        if len(entries) > 1:
+            primary["alternates"] = entries[1:]
+        result[symbol] = primary
+    return result
 
-    # Some platform drivers register the probe callback as a macro argument
-    # instead of storing it in ``struct platform_driver.probe``.
-    for match in re.finditer(
-            r"\bmodule_platform_driver_probe\s*\(\s*[A-Za-z_]\w*\s*,\s*"
-            r"([A-Za-z_]\w*)\s*\)", src):
-        fname = match.group(1)
-        if fname in target_names:
-            out[fname] = {
-                "field": "probe", "role": "probe", "context": "boot",
-                "table": "platform_driver",
-            }
 
-    # Direct IRQ registration is a callback binding even though no ops table
-    # initializer exists.
-    for fname in target_names:
-        if re.search(
-                rf"\b(?:devm_)?request_irq\s*\([^;]*\b{re.escape(fname)}\b",
-                src, flags=re.S):
-            out.setdefault(fname, {
-                "field": "handler", "role": "interrupt_handler",
-                "context": "irq", "table": "irq_handler",
-            })
-    return out
+def callback_binding_analysis(bindings: dict[str, dict], funcs: list[Func],
+                              callback_entries: set[str]) -> dict:
+    func_by_symbol = {func.symbol_id or func.name: func for func in funcs}
+    rows = []
+    for symbol, primary in bindings.items():
+        for info in [primary] + primary.get("alternates", []):
+            rows.append({key: info.get(key) for key in (
+                "function", "table", "field", "role", "context",
+                "binding_kind", "public_callback_type", "source", "line",
+                "column")})
+    rows.sort(key=lambda item: (
+        item["function"], item["table"], item["field"], item["line"] or 0))
+    bound = set(bindings)
+    return {
+        "bindings": rows,
+        "bound_entries": sorted(
+            func_by_symbol[symbol].name for symbol in callback_entries & bound
+            if symbol in func_by_symbol),
+        "unbound_entries": sorted(
+            func_by_symbol[symbol].name for symbol in callback_entries - bound
+            if symbol in func_by_symbol),
+    }
 
 
 def name_role_hints(func_name: str) -> str | None:
@@ -765,7 +827,6 @@ def name_role_hints(func_name: str) -> str | None:
 # ═══════════════════════════════════════════════════════════════════
 # Source facts extraction (.facts) — plan M9
 # ═══════════════════════════════════════════════════════════════════
-import clang.cindex as _cx
 from .spec import FactsSpec, StructDef, StructField, ResourceFact
 import os as _os
 
@@ -876,10 +937,10 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
 
     # callbacks: {table.field: fn}
     callbacks: dict = {}
-    for fname, info in callback_bindings.items():
-        field = info["field"]
-        table = info["table"]
-        callbacks[f"{table}.{field}"] = fname
+    for _symbol, info in callback_bindings.items():
+        for binding in [info] + info.get("alternates", []):
+            callbacks[f"{binding['table']}.{binding['field']}"] = \
+                binding["function"]
 
     # resources: scan for acquisition calls
     resources: list[ResourceFact] = []

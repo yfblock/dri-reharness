@@ -196,8 +196,9 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
                    driver_name: str, descriptor: str) -> ExtractionResult:
     from .call_graph import extract_multi_with_inlining
     from .formal import emitted_stats
-    from .spec_infer import (infer_function_specs, infer_device_spec,
-                             infer_facts, parse_callback_bindings)
+    from .spec_infer import (callback_binding_analysis,
+                             infer_callback_bindings, infer_function_specs,
+                             infer_device_spec, infer_facts)
 
     warnings: list[str] = []
     units: list[dict] = []
@@ -394,27 +395,41 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     combined_text = "\n\n".join(
         f"/* translation unit: {unit['source']} */\n{unit['source_text']}"
         for unit in units)
+    callback_bindings: dict[str, dict] = {}
+    for unit in units:
+        unit_bindings = infer_callback_bindings(unit["tu"], funcs)
+        unit["callback_bindings"] = unit_bindings
+        for symbol, info in unit_bindings.items():
+            existing = callback_bindings.get(symbol)
+            if existing is not None and existing != info:
+                warnings.append(
+                    f"multi-source callback binding conflict: {symbol}")
+                continue
+            callback_bindings[symbol] = info
     fn_specs, cb_bindings = infer_function_specs(
-        formal, funcs, combined_text, descriptor, callback_entries)
+        formal, funcs, combined_text, descriptor, callback_entries,
+        callback_bindings)
+    binding_analysis = callback_binding_analysis(
+        cb_bindings, funcs, callback_entries)
+    formal["metadata"]["callback_binding_analysis"] = binding_analysis
+    stats["callback_binding_analysis"] = binding_analysis
     device_spec = infer_device_spec(
         formal, funcs, fn_specs, descriptor, combined_text)
     register_names = {r["name"] for r in formal.get("register_map", [])}
     fact_parts = []
-    all_names = {f.name for f in funcs}
     for unit in units:
-        local_names = {f.name for f in unit["funcs"]}
-        local_bindings = parse_callback_bindings(unit["source_text"], all_names)
-        local_bindings = {name: info for name, info in local_bindings.items()
-                          if name in local_names}
         fact_parts.append(infer_facts(
             unit["source_text"], unit["source"], unit["tu"], unit["macros"],
-            local_bindings, register_names, formal=formal,
+            unit["callback_bindings"], register_names, formal=formal,
             driver_name=driver_name))
     facts = _merge_facts(fact_parts, descriptor, warnings)
     # Combined parsing can discover cross-TU registrations that no individual
     # source text contains in full; retain those authoritative bindings.
-    for fname, info in cb_bindings.items():
-        facts.callbacks.setdefault(f"{info['table']}.{info['field']}", fname)
+    for _symbol, info in cb_bindings.items():
+        for binding in [info] + info.get("alternates", []):
+            facts.callbacks.setdefault(
+                f"{binding['table']}.{binding['field']}",
+                binding["function"])
 
     return ExtractionResult(
         formal=formal, device_spec=device_spec, facts=facts,
@@ -604,9 +619,17 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     stats.update(emitted_stats(formal))
 
     # infer backend-independent FunctionSpec / DeviceSpec (plan M3/M4) + facts (M9)
-    from .spec_infer import infer_function_specs, infer_device_spec, infer_facts
-    fn_specs, cb_bindings = infer_function_specs(formal, funcs, source_text, source,
-                                                 callback_entries)
+    from .spec_infer import (callback_binding_analysis,
+                             infer_callback_bindings, infer_function_specs,
+                             infer_device_spec, infer_facts)
+    callback_bindings = infer_callback_bindings(tu, funcs)
+    fn_specs, cb_bindings = infer_function_specs(
+        formal, funcs, source_text, source, callback_entries,
+        callback_bindings)
+    binding_analysis = callback_binding_analysis(
+        cb_bindings, funcs, callback_entries)
+    formal["metadata"]["callback_binding_analysis"] = binding_analysis
+    stats["callback_binding_analysis"] = binding_analysis
     device_spec = infer_device_spec(formal, funcs, fn_specs, source, source_text)
     register_names = {r["name"] for r in formal.get("register_map", [])}
     facts = infer_facts(source_text, source, tu, macros, cb_bindings,

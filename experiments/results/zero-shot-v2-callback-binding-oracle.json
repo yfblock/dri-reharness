@@ -1,0 +1,12 @@
+{
+  "baseline": "experiments/results/zero-shot-v2-matrix.json",
+  "callback_binding_removed": true,
+  "candidate": "experiments/results/zero-shot-v2-callback-binding.json",
+  "errors": [],
+  "generated_at": "2026-07-17T12:23:13.226324+00:00",
+  "missing_role_preserved": true,
+  "mutation_errors": [],
+  "mutation_tests_passed": true,
+  "passed": true,
+  "schema": 1
+}

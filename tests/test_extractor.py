@@ -21,6 +21,10 @@ from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
 from extractor.formal import expr_to_c, formal_display, parse_expr  # noqa: E402
 from verification.check_generalization_guard import check_guard  # noqa: E402
+from verification.callback_binding_oracle import (  # noqa: E402
+    compare_reports as compare_callback_binding_reports,
+    mutation_self_test as callback_binding_mutation_self_test,
+)
 from verification.materialize_holdout_contexts import validate_recipes  # noqa: E402
 from verification.run_zero_shot_matrix import (  # noqa: E402
     cluster_blockers,
@@ -29,6 +33,27 @@ from verification.run_zero_shot_matrix import (  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────
+
+
+def _ast_callback_bindings(source: str) -> dict[str, dict]:
+    import tempfile
+    import clang.cindex as cx
+    from extractor import tu as tu_mod
+    from extractor.ast_model import target_functions
+    from extractor.spec_infer import infer_callback_bindings
+
+    tu_mod._configure()
+    with tempfile.NamedTemporaryFile(
+            "w", suffix=".c", delete=False, encoding="utf-8") as handle:
+        handle.write(source)
+        path = handle.name
+    try:
+        tu = cx.Index.create().parse(path, args=["-std=gnu11"])
+        funcs = target_functions(tu, path)
+        by_symbol = infer_callback_bindings(tu, funcs)
+        return {info["function"]: info for info in by_symbol.values()}
+    finally:
+        os.unlink(path)
 
 
 def test_zero_shot_holdout_is_frozen_and_not_special_cased():
@@ -50,6 +75,17 @@ def test_zero_shot_context_recipe_exactly_matches_frozen_sources():
         root / "drivers" / "holdout" / "zero-shot-v1-contexts.json"
     ).read_text(encoding="utf-8"))
     assert validate_recipes(holdout, recipes) == []
+
+
+def test_zero_shot_v2_guard_reports_post_baseline_implementation_changes():
+    path = os.path.join(
+        REHARNESS, "drivers", "holdout", "zero-shot-v2.json")
+    report = check_guard(path)
+    assert report["passed"], report["issues"]
+    assert "extractor" in report["protected_root_changes"]
+    frozen = check_guard(path, enforce_frozen_implementation=True)
+    assert not frozen["passed"]
+    assert any("protected root changed" in issue for issue in frozen["issues"])
 
 
 def test_kbuild_saved_command_parser_strips_post_compile_tools():
@@ -86,6 +122,22 @@ def test_zero_shot_blocker_normalization_and_common_root_selection():
         "driver_count": 3,
         "drivers": ["case-0", "case-1", "case-2"],
     }
+
+
+def test_callback_binding_baseline_oracle_catches_boundary_mutations():
+    import json
+    from pathlib import Path
+
+    root = Path(REHARNESS)
+    baseline = json.loads((
+        root / "experiments" / "results" / "zero-shot-v2-matrix.json"
+    ).read_text(encoding="utf-8"))
+    candidate_path = (
+        root / "experiments" / "results" /
+        "zero-shot-v2-callback-binding.json")
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    assert compare_callback_binding_reports(baseline, candidate) == []
+    assert callback_binding_mutation_self_test(baseline, candidate) == []
 
 
 def test_no_register_access_blocks_every_strict_backend_even_if_code_compiles():
@@ -2054,14 +2106,15 @@ def test_framework_and_blacklist_options_are_effective():
 
 
 def test_callback_binding_uses_enclosing_struct_type():
-    from extractor.spec_infer import parse_callback_bindings
     src = textwrap.dedent("""
+        struct gpio_chip { int (*get)(void *, unsigned int); };
+        struct pci_driver { int (*probe)(void *, void *); };
         static int chip_get(void *gc, unsigned int n) { return 0; }
         static int pci_probe(void *pdev, void *id) { return 0; }
         static const struct gpio_chip chip = { .get = chip_get };
         static struct pci_driver drv = { .probe = pci_probe };
     """)
-    got = parse_callback_bindings(src, {"chip_get", "pci_probe"})
+    got = _ast_callback_bindings(src)
     assert got["chip_get"]["table"] == "gpio_chip"
     assert got["chip_get"]["field"] == "get"
     assert got["pci_probe"]["table"] == "pci_driver"
@@ -2069,8 +2122,21 @@ def test_callback_binding_uses_enclosing_struct_type():
 
 
 def test_callback_binding_covers_irq_pm_and_clock_forms():
-    from extractor.spec_infer import parse_callback_bindings
     src = textwrap.dedent("""
+        typedef int (*irq_handler_t)(int, void *);
+        struct gpio_chip { int value; };
+        struct gpio_irq_chip { int (*init_hw)(struct gpio_chip *); };
+        struct device { int value; };
+        struct dev_pm_ops {
+            int (*suspend)(struct device *);
+            int (*resume)(struct device *);
+        };
+        struct clk_hw { int value; };
+        struct clk_ops {
+            int (*prepare)(struct clk_hw *);
+            int (*set_rate)(struct clk_hw *, unsigned long, unsigned long);
+        };
+        extern int register_irq(int line, irq_handler_t handler);
         static int gpio_init_hw(struct gpio_chip *gc) { return 0; }
         static int irq_fn(int irq, void *data) { return 0; }
         static int suspend_fn(struct device *dev) { return 0; }
@@ -2083,14 +2149,15 @@ def test_callback_binding_covers_irq_pm_and_clock_forms():
             .prepare = clk_prepare,
             .set_rate = clk_set_rate,
         };
-        DEFINE_SIMPLE_DEV_PM_OPS(pm, suspend_fn, resume_fn);
+        static const struct dev_pm_ops pm = {
+            .suspend = suspend_fn,
+            .resume = resume_fn,
+        };
         static int probe(void) {
-            return request_irq(1, irq_fn, 0, "test", 0);
+            return register_irq(1, irq_fn);
         }
     """)
-    names = {"gpio_init_hw", "irq_fn", "suspend_fn", "resume_fn",
-             "clk_prepare", "clk_set_rate"}
-    got = parse_callback_bindings(src, names)
+    got = _ast_callback_bindings(src)
     assert got["gpio_init_hw"]["table"] == "gpio_irq_chip"
     assert got["irq_fn"]["table"] == "irq_handler"
     assert got["suspend_fn"]["table"] == "dev_pm_ops"
@@ -2100,8 +2167,10 @@ def test_callback_binding_covers_irq_pm_and_clock_forms():
 
 
 def test_callback_binding_dynamic_gpio_irq_chip_init_hw():
-    from extractor.spec_infer import parse_callback_bindings
     src = textwrap.dedent("""
+        struct gpio_chip { int value; };
+        struct gpio_irq_chip { int (*init_hw)(struct gpio_chip *); };
+        struct platform_device { int value; };
         static int gpio_init_hw(struct gpio_chip *gc) { return 0; }
         static int probe(struct platform_device *pdev) {
             struct gpio_irq_chip *girq;
@@ -2109,9 +2178,119 @@ def test_callback_binding_dynamic_gpio_irq_chip_init_hw():
             return 0;
         }
     """)
-    got = parse_callback_bindings(src, {"gpio_init_hw", "probe"})
+    got = _ast_callback_bindings(src)
     assert got["gpio_init_hw"]["table"] == "gpio_irq_chip"
     assert got["gpio_init_hw"]["field"] == "init_hw"
+
+
+def test_callback_binding_tracks_struct_plus_raw_callback_call_assignment():
+    src = textwrap.dedent("""
+        struct device { int value; };
+        struct bus_driver { int (*probe)(struct device *); };
+        extern int register_probe(struct bus_driver *driver,
+                                  int (*probe)(struct device *));
+        static struct bus_driver driver;
+        static int probe(struct device *dev) { return 0; }
+        static int init(void) { return register_probe(&driver, probe); }
+    """)
+    got = _ast_callback_bindings(src)
+    assert got["probe"]["table"] == "bus_driver"
+    assert got["probe"]["field"] == "probe"
+    assert got["probe"]["binding_kind"] == "call_assignment"
+
+
+def test_callback_binding_tracks_positional_struct_array_initializers():
+    src = textwrap.dedent("""
+        struct queue_info { const char *name; void (*callback)(void *); };
+        static void first(void *queue) {}
+        static void second(void *queue) {}
+        static void setup(void) {
+            struct queue_info queues[] = {
+                { "first", first },
+                { "second", second },
+            };
+        }
+    """)
+    got = _ast_callback_bindings(src)
+    assert got["first"]["table"] == "queue_info"
+    assert got["first"]["field"] == "callback"
+    assert got["first"]["binding_kind"] == "positional_initializer"
+    assert got["second"]["table"] == "queue_info"
+
+
+def test_callback_binding_preserves_unknown_role_and_rejects_local_pointer():
+    src = textwrap.dedent("""
+        struct private_ops { int (*observe)(void *); };
+        static int bound(void *state) { return 0; }
+        static int local_only(void *state) { return 0; }
+        static const struct private_ops ops = { .observe = bound };
+        static void setup(void) {
+            int (*local)(void *) = local_only;
+        }
+    """)
+    got = _ast_callback_bindings(src)
+    assert got["bound"]["table"] == "private_ops"
+    assert got["bound"]["field"] == "observe"
+    assert got["bound"]["role"] == "unknown"
+    assert got["bound"]["binding_kind"] == "initializer"
+    assert "local_only" not in got
+
+
+def test_callback_binding_mutations_require_owner_field_and_provenance():
+    base = textwrap.dedent("""
+        struct alpha_ops { void (*transition)(void *); };
+        static void callback(void *state) {}
+        static struct alpha_ops ops = { .transition = callback };
+    """)
+    binding = _ast_callback_bindings(base)["callback"]
+    assert (binding["table"], binding["field"], binding["binding_kind"]) == (
+        "alpha_ops", "transition", "initializer")
+    assert binding["source"].endswith(".c") and binding["line"] > 0
+
+    local_pointer = textwrap.dedent("""
+        static void callback(void *state) {}
+        static void setup(void) { void (*local)(void *) = callback; }
+    """)
+    assert "callback" not in _ast_callback_bindings(local_pointer)
+
+    changed_owner = base.replace("alpha_ops", "beta_ops")
+    changed = _ast_callback_bindings(changed_owner)["callback"]
+    assert changed["table"] == "beta_ops"
+
+
+def test_unknown_callback_binding_is_evidence_not_backend_intent():
+    import tempfile
+    from generator import linux as linux_gen
+    from extractor.metrics import score
+    from extractor.spec import default_bind
+
+    src = textwrap.dedent("""
+        #define REG 0x10
+        struct opaque_ops { int (*observe)(void *); };
+        static int observe(void *base) { return readl(base + REG); }
+        static const struct opaque_ops ops = { .observe = observe };
+    """)
+    with tempfile.TemporaryDirectory() as directory:
+        path = os.path.join(directory, "opaque.c")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(src)
+        result = extract_ris(ExtractorConfig(
+            source=path, linux_root="/nonexistent"))
+    function = next(
+        item for item in result.device_spec.functions
+        if item.name == "observe")
+    assert function.callback_table == "opaque_ops.observe"
+    assert function.role == "unknown"
+    blockers = score(
+        result.device_spec, result.formal, result.warnings,
+        result.facts)["blockers"]
+    assert not any(item.startswith("callback entry") for item in blockers)
+    assert any(item.startswith("missing role") for item in blockers)
+    bind = default_bind(result.device_spec, "linux")
+    assert not any(item.function == "observe" for item in bind.callbacks)
+    code = linux_gen.generate(
+        result.formal, result.device_spec, bind, result.facts)
+    assert ".observe = observe" not in code
 
 
 def test_source_private_state_is_preserved_in_specs_and_codegen():
