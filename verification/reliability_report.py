@@ -43,6 +43,8 @@ def build_driver_report(source: str, alias_mode: str = "off") -> dict:
     accounting = result.formal.get("metadata", {}).get("access_accounting", {})
     control = result.formal.get("metadata", {}).get("control_accounting", {})
     paths = result.formal.get("metadata", {}).get("path_validation", {})
+    callee_rescue = result.formal.get("metadata", {}).get(
+        "callee_rescue", {})
 
     op_ids: list[str] = []
     evidence_sites: list[str] = []
@@ -84,6 +86,7 @@ def build_driver_report(source: str, alias_mode: str = "off") -> dict:
         and metrics.get("unsafe_computed", 0) == 0
         and metrics.get("unknown_value", 0) == 0
         and metrics.get("conservative_loop", 0) == 0
+        and callee_rescue.get("call_semantics_proven") is True
         and metrics.get("reliability", {}).get("Unsupported", 0) == 0
         and not duplicate_op_ids
         and len(op_ids) == len(evidence_sites))
@@ -97,6 +100,7 @@ def build_driver_report(source: str, alias_mode: str = "off") -> dict:
         "audit": audit,
         "access_accounting": accounting,
         "control_accounting": control,
+        "callee_rescue": callee_rescue,
         "path_validation": paths,
         "alias_analysis": result.stats.get("alias_analysis", {}),
         "metrics": metrics,

@@ -172,7 +172,7 @@ def test_no_register_access_blocks_every_strict_backend_even_if_code_compiles():
 def test_generic_gpio_library_summary_materializes_callbacks_and_tracks_mutation():
     import tempfile
     from pathlib import Path
-    from extractor.formal import walk_leaf_ops
+    from extractor.formal import expr_display, walk_leaf_ops
 
     template = r'''
         #define DAT 0x00
@@ -1354,6 +1354,147 @@ def test_cross_tu_inline_substitutes_formal_parameters_with_call_arguments():
         assert result.stats["propagated_mmio_edges"] >= 1
 
 
+def test_coverage_aware_callee_rescue_keeps_unpropagated_direct_site():
+    import tempfile
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import score
+
+    with tempfile.TemporaryDirectory() as directory:
+        manifest = os.path.join(directory, "driver.json")
+        sources = {
+            "leaf.c": "void leaf(void *b) { writel(1, b + 0x10); }\n",
+            "level1.c": (
+                "void leaf(void *b);\n"
+                "void level1(void *b) { leaf(b); }\n"),
+            "level2.c": (
+                "void level1(void *b);\n"
+                "void level2(void *b) { level1(b); }\n"),
+            "level3.c": (
+                "void level2(void *b);\n"
+                "void level3(void *b) { level2(b); }\n"),
+            "entry.c": (
+                "void level3(void *b);\n"
+                "void entry(void *b) { level3(b); }\n"),
+        }
+        for name, source in sources.items():
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as fh:
+                fh.write(source)
+        with open(manifest, "w", encoding="utf-8") as fh:
+            json.dump({
+                "schema": 1, "name": "callee-rescue",
+                "sources": list(sources),
+            }, fh)
+
+        result = extract_ris(ExtractorConfig(
+            source=manifest, linux_root="/nonexistent", max_inline_depth=3))
+        modules = {module["name"]: module for module in result.formal["modules"]}
+        assert set(modules) == {"leaf"}
+        leaves = list(walk_leaf_ops(modules["leaf"]["ops"]))
+        assert len([op for op in leaves if "Write" in op]) == 1
+        accounting = result.stats["access_accounting"]
+        assert accounting["source_accesses"] == 1
+        assert accounting["emitted"] == 1
+        assert accounting["unaccounted"] == 0
+        rescue = result.stats["callee_rescue"]
+        assert rescue["rescue_mode"] == "direct-evidence-frontier"
+        assert rescue["rescued"] == 1
+        assert rescue["rescued_direct_ops"] == 1
+        assert rescue["retained_inlined"] == 3
+        readiness = score(
+            result.device_spec, result.formal, result.warnings, result.facts)
+        assert readiness["llm_synthesis_ready"] is False
+        assert readiness["backend_harness_ready"] is False
+        assert readiness["backend_bare_metal_ready"] is False
+        assert readiness["backend_linux_ready"] is False
+        assert any("call semantics not proven" in blocker
+                   for blocker in readiness["blockers"])
+
+        complete = extract_ris(ExtractorConfig(
+            source=manifest, linux_root="/nonexistent", max_inline_depth=4))
+        assert {module["name"] for module in complete.formal["modules"]} == {
+            "entry"}
+        assert complete.stats["access_accounting"]["unaccounted"] == 0
+        assert complete.stats["callee_rescue"]["rescued"] == 0
+        assert complete.stats["callee_rescue"][
+            "call_semantics_proven"] is False
+        assert complete.formal["metadata"]["assurance_scope"][
+            "call_semantics_proven"] is False
+
+
+def test_callee_rescue_fails_closed_for_missing_operation_evidence():
+    from extractor.call_graph import _coverage_aware_inlined_names
+    from extractor.dataflow import FuncExtraction, Op
+
+    helper = FuncExtraction(name="helper", ops=[
+        Op(kind="Write", addr={"Computed": "opaque"}, width=4,
+           value="1", evidence={}),
+    ])
+    inlined, rescue, frontiers = _coverage_aware_inlined_names(
+        {"helper": helper}, {"root": FuncExtraction(name="root")},
+        {"helper"})
+    assert inlined == set()
+    assert rescue["rescued"] == 1
+    assert rescue["unproven_symbols"] == ["helper"]
+    assert rescue["rescued_direct_ops"] == 1
+    assert rescue["call_semantics_proven"] is False
+    assert len(frontiers["helper"].ops) == 1
+
+
+def test_shallow_site_coverage_does_not_prove_deep_call_context():
+    import tempfile
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import score
+
+    with tempfile.TemporaryDirectory() as directory:
+        manifest = os.path.join(directory, "driver.json")
+        sources = {
+            "leaf.c": (
+                "void leaf(void *b, unsigned v) { writel(v, b); }\n"),
+            "level1.c": (
+                "void leaf(void *b, unsigned v);\n"
+                "void level1(void *b) { leaf(b + 0x20, 2); }\n"),
+            "level2.c": (
+                "void level1(void *b);\n"
+                "void level2(void *b) { level1(b); }\n"),
+            "level3.c": (
+                "void level2(void *b);\n"
+                "void level3(void *b) { level2(b); }\n"),
+            "entry.c": (
+                "void leaf(void *b, unsigned v);\n"
+                "void level3(void *b);\n"
+                "void entry(void *b) { leaf(b + 0x10, 1); level3(b); }\n"),
+        }
+        for name, source in sources.items():
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as fh:
+                fh.write(source)
+        with open(manifest, "w", encoding="utf-8") as fh:
+            json.dump({
+                "schema": 1, "name": "mixed-depth-call-context",
+                "sources": list(sources),
+            }, fh)
+
+        result = extract_ris(ExtractorConfig(
+            source=manifest, linux_root="/nonexistent", max_inline_depth=3))
+        rescue = result.stats["callee_rescue"]
+        assert rescue["rescued"] == 0
+        assert rescue["candidates"] > 0
+        assert rescue["call_semantics_proven"] is False
+        assert result.stats["access_accounting"]["unaccounted"] == 0
+        leaves = [
+            op for module in result.formal["modules"]
+            for op in walk_leaf_ops(module["ops"])
+            if "Write" in op
+        ]
+        # Lexical site coverage sees the shallow instance, but the deeper
+        # parameterized call is beyond the bounded expansion depth.
+        assert len(leaves) == 1
+        readiness = score(
+            result.device_spec, result.formal, result.warnings, result.facts)
+        assert readiness["llm_synthesis_ready"] is False
+        assert any("call-context proof" in blocker
+                   for blocker in readiness["blockers"])
+
+
 def test_inlined_read_return_binds_the_caller_lhs():
     from extractor.formal import expr_display, walk_leaf_ops
 
@@ -1378,8 +1519,14 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     assert result.stats["resolved_cross_tu_call_edges"] == \
         result.stats["cross_tu_call_edges"]
     assert result.stats["propagated_mmio_edges"] >= 400
-    assert result.stats["total_ops"] >= 3000
+    assert result.stats["total_ops"] == 3608
     assert result.stats["mmio_writes"] >= 800
+    assert result.stats["access_accounting"]["unaccounted"] == 0
+    rescue = result.stats["callee_rescue"]
+    assert rescue["rescued"] == 21
+    assert rescue["rescued_direct_ops"] == 48
+    assert result.formal["metadata"]["assurance_scope"][
+        "callee_rescue_semantics_complete"] is False
 
     callback_tables = {
         fn.callback_table for fn in result.device_spec.functions
@@ -1432,6 +1579,7 @@ def test_real_linux_c67x00_multisource_driver():
     assert state["sie_num"].bind == "sie.sie_num"
     assert result.facts.callbacks["platform_driver.probe"] == "c67x00_drv_probe"
     assert result.facts.callbacks["irq_handler.handler"] == "c67x00_irq"
+    assert result.stats["callee_rescue"]["rescued"] == 0
 
     code = _linux_generate_and_compile(C67X00_MULTI, "rh_test_c67x00")
     assert "u32 hpi_regstep;" in code
@@ -1456,18 +1604,41 @@ def test_real_linux_aspeed_vhub_five_source_driver():
     assert count_clang_errors(result.warnings) == 0
 
     metrics = driver_metrics(result.formal)
-    assert len(result.formal["modules"]) == 15
-    assert metrics["total_ops"] == 154
-    assert metrics["symbolic"] == 114
+    assert len(result.formal["modules"]) == 16
+    assert metrics["total_ops"] == 158
+    assert metrics["symbolic"] == 118
     # Declaration-initialized reads (``u32 val = readl(...)``) now retain
     # their caller LHS, exposing seven additional genuine RMW chains.
     assert metrics["rmw"] == 21
     assert metrics["register_map"] == 22
     assert metrics["unknown_value"] == 0
+    assert result.stats["access_accounting"]["unaccounted"] == 0
+    assert result.stats["callee_rescue"]["rescued"] == 1
+    assert result.stats["callee_rescue"]["rescued_direct_ops"] == 4
     # Object-like macros whose definitions begin with parentheses must be
     # recovered from the driver's local header, not mistaken for functions.
     assert result.facts.constants["VHUB_IRQ_EP_POOL_ACK_STALL"] == (1 << 16)
     assert result.facts.constants["VHUB_SW_RESET_ROOT_HUB"] == 1
+
+
+def test_single_source_callee_rescue_closes_ahci_access_gaps_without_strict_claim():
+    from extractor.metrics import score
+
+    cases = {
+        os.path.join(REHARNESS, "drivers", "test", "ahci_dwc.c"): (9, 2, 6),
+        os.path.join(REHARNESS, "drivers", "test", "ahci_sunxi.c"): (11, 2, 3),
+    }
+    for source, (ops, rescued, direct_ops) in cases.items():
+        result = extract_ris(ExtractorConfig(source=source))
+        assert result.stats["total_ops"] == ops
+        assert result.stats["access_accounting"]["unaccounted"] == 0
+        assert result.stats["callee_rescue"]["rescued"] == rescued
+        assert result.stats["callee_rescue"]["rescued_direct_ops"] == direct_ops
+        readiness = score(
+            result.device_spec, result.formal, result.warnings, result.facts)
+        assert readiness["llm_synthesis_ready"] is False
+        assert any("call semantics not proven" in blocker
+                   for blocker in readiness["blockers"])
 
 
 def test_callback_entry_not_deduped(ftgpio_formal):

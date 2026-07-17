@@ -190,6 +190,18 @@ def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
             "assumed_framework_error_gotos", 0),
         "unsupported": control.get("unsupported", 0),
     }
+    rescue = formal.get("metadata", {}).get("callee_rescue", {})
+    agg["callee_rescue"] = {
+        "candidates": rescue.get("candidates", 0),
+        "rescued": rescue.get("rescued", 0),
+        "retained_inlined": rescue.get("retained_inlined", 0),
+        "rescued_direct_ops": rescue.get("rescued_direct_ops", 0),
+        "rescue_mode": rescue.get("rescue_mode", "none"),
+        "call_semantics_proven": (
+            rescue.get("call_semantics_proven") is True),
+        "semantics_complete": (
+            rescue.get("call_semantics_proven") is True),
+    }
     subsystem = formal.get("metadata", {}).get(
         "subsystem_summary_analysis", {})
     summaries = subsystem.get("summaries", {})
@@ -303,6 +315,18 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unsupported_control:
         blockers.append(
             f"{unsupported_control} unsupported control-flow transfer(s)")
+    rescued_callees = met.get("callee_rescue", {}).get("rescued", 0)
+    if rescued_callees:
+        blockers.append(
+            f"{rescued_callees} helper module(s) retained only for lexical "
+            "access coverage; call semantics not proven")
+    flattened_callees = met.get("callee_rescue", {}).get("candidates", 0)
+    call_semantics_ready = met.get("callee_rescue", {}).get(
+        "call_semantics_proven", False)
+    if flattened_callees and not rescued_callees:
+        blockers.append(
+            f"{flattened_callees} inlined helper definition(s) lack "
+            "call-context proof")
     unmodeled_subsystem = met.get("subsystem_summary", {}).get(
         "unmodeled_callbacks", 0)
     if unmodeled_subsystem:
@@ -360,6 +384,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         blockers.append("no MMIO register accesses")
 
     accounting_ready = bool(accounting.get("strict_complete", False))
+    callee_semantics_ready = call_semantics_ready
     path_ready = (bool(path_validation.get("complete", False))
                   and path_validation.get("infeasible", 0) == 0
                   and path_validation.get("nonexclusive_switch_pairs", 0) == 0)
@@ -368,14 +393,16 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         linux_subsystem_ready and unvalidated_subsystem == 0)
     harness_subsystem_ready = generic_subsystem_ready
     baremetal_subsystem_ready = generic_subsystem_ready
-    baremetal_ready = (accounting_ready and path_ready and has_register_access
+    baremetal_ready = (accounting_ready and callee_semantics_ready
+                       and path_ready and has_register_access
                        and generic_subsystem_ready
                        and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                        and unsupported_ops == 0
                        and unsupported_control == 0
                        and met["conservative_loop"] == 0
                        and ris_quality >= 0.7)
-    linux_ready = (accounting_ready and path_ready and has_register_access
+    linux_ready = (accounting_ready and callee_semantics_ready
+                   and path_ready and has_register_access
                    and linux_subsystem_ready
                    and met["unsafe_computed"] == 0
                    and met["unknown_value"] == 0
@@ -418,7 +445,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 and (unvalidated_subsystem == 0
                      or h.get("subsystem_callback_oracle_passed"))
                 and h_source_ready)
-            harness_ready = bool(accounting_ready and path_ready and has_register_access
+            harness_ready = bool(accounting_ready and callee_semantics_ready
+                                 and path_ready and has_register_access
                                  and harness_subsystem_ready
                                  and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                  and unsupported_ops == 0
@@ -444,7 +472,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 and (unvalidated_subsystem == 0
                      or bm.get("subsystem_callback_oracle_passed"))
                 and bm_source_ready)
-            baremetal_ready = bool(accounting_ready and path_ready and has_register_access
+            baremetal_ready = bool(accounting_ready and callee_semantics_ready
+                                   and path_ready and has_register_access
                                    and baremetal_subsystem_ready
                                    and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                    and unsupported_ops == 0
@@ -468,7 +497,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             # harness/bare-metal backend cannot execute.  Judge the actual
             # generated Linux artifact directly instead of requiring generic
             # backend readiness as a prerequisite.
-            linux_ready = bool(accounting_ready and path_ready
+            linux_ready = bool(accounting_ready and callee_semantics_ready
+                               and path_ready
                                and linux_subsystem_ready
                                and linux_source_ready
                                and met["unsafe_computed"] == 0
@@ -516,7 +546,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     # LLM synthesis gate (plan M9): artifacts sufficient to ask an LLM to
     # synthesize/repair a candidate under verification feedback. Distinct from
     # deterministic Linux readiness — does not require Linux gen to be complete.
-    llm_synthesis_ready = (ris_quality >= 0.7
+    llm_synthesis_ready = (callee_semantics_ready
+                           and ris_quality >= 0.7
                            and function_spec_quality >= 0.5
                            and facts_quality >= 0.6
                            and len(device_spec.registers) > 0)

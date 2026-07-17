@@ -364,6 +364,12 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         "linked_bitcode_hashed": bool(
             alias_analysis.get("linked_bitcode_sha256")),
         "internal_calls_resolved": stats.get("unresolved_internal_calls", 0) == 0,
+        "call_semantics_proven": (
+            stats.get("callee_rescue", {}).get(
+                "call_semantics_proven") is True),
+        "callee_rescue_semantics_complete": (
+            stats.get("callee_rescue", {}).get(
+                "call_semantics_proven") is True),
         "access_accounting_strict": bool(accounting.get("strict_complete")),
         "control_accounting_complete": bool(control_accounting.get("complete")),
         "cfg_complete": bool(

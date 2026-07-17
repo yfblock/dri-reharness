@@ -535,6 +535,12 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "count": stats.get("wrapper_summary_count", 0),
                 "summaries": stats.get("wrapper_summaries", []),
             },
+            "callee_rescue": stats.get("callee_rescue", {
+                "candidates": 0, "rescued": 0,
+                "rescue_mode": "direct-evidence-frontier",
+                "call_semantics_proven": False,
+                "rescued_symbols": [],
+            }),
             "subsystem_summary_analysis": {
                 "synthetic_functions": stats.get(
                     "synthetic_subsystem_functions", 0),
@@ -555,6 +561,12 @@ def build_formal_ris(driver_name: str, source_path: str,
                           == "linked-manifest"
                           else "per-translation-unit SVF Andersen")),
                 "indirect_calls": "simple static initializer/assignment targets",
+                "call_semantics_proven": (
+                    stats.get("callee_rescue", {}).get(
+                        "call_semantics_proven") is True),
+                "callee_rescue_semantics_complete": (
+                    stats.get("callee_rescue", {}).get(
+                        "call_semantics_proven") is True),
                 "whole_program_complete": False,
             },
         },

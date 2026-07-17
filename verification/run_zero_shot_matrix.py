@@ -50,6 +50,8 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
     ("path_infeasible", r"contradictory/infeasible RIS path\(s\)"),
     ("switch_exclusivity", r"switch path pair\(s\) not proven exclusive"),
     ("unsupported_control_flow", r"unsupported control-flow transfer\(s\)"),
+    ("callee_rescue", r"helper module\(s\) retained only for lexical access coverage"),
+    ("call_context", r"inlined helper definition\(s\) lack call-context proof"),
     ("subsystem_summary", r"subsystem library callback\(s\) lack semantic summary"),
     ("subsystem_validation", r"synthesized subsystem callback\(s\) "
                               r"lack generic-backend execution oracle"),
