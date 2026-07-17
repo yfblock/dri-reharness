@@ -318,6 +318,21 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
             return "", []
         return source_text(case_cursor.translation_unit, parts[0]), parts[1:]
 
+    def switch_case_group(case_cursor):
+        """Flatten libclang's nested representation of stacked case labels."""
+        values = []
+        current = case_cursor
+        while current.kind == cx.CursorKind.CASE_STMT:
+            value, statements = switch_case_value(current)
+            if value:
+                values.append(value)
+            if (len(statements) == 1
+                    and statements[0].kind == cx.CursorKind.CASE_STMT):
+                current = statements[0]
+                continue
+            return values, statements
+        return values, []
+
     def switch_values(node):
         values = []
         for sub in node.walk_preorder():
@@ -332,11 +347,14 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
         current = None
         for child in body.get_children():
             if child.kind == cx.CursorKind.CASE_STMT:
-                value, statements = switch_case_value(child)
-                guard = f"({switch_expr}) == ({value})" if value else switch_expr
+                case_values, statements = switch_case_group(child)
+                comparisons = [
+                    f"({switch_expr}) == ({value})" for value in case_values]
+                guard = (" || ".join(f"({item})" for item in comparisons)
+                         if comparisons else switch_expr)
                 current = {"kind": "cond", "guard": guard,
                            "branch": "case", "switch": switch_expr,
-                           "case": value}
+                           "case": " | ".join(case_values)}
                 yield child, stack
                 for statement in statements:
                     yield from visit(statement, stack + [current])

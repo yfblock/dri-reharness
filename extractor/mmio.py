@@ -4,6 +4,7 @@ Identifies Linux MMIO read/write/delay calls and infers access width from
 the function-name suffix (readl→4, readw→2, readb→1, readq→8).
 """
 from __future__ import annotations
+import re
 
 MMIO_READ_FNS = {
     "readb", "readw", "readl", "readq",
@@ -187,6 +188,42 @@ def access_args(name: str, call) -> list[str]:
         if parsed:
             return parsed
     return list(call.arg_text)
+
+
+def recover_source_access(name: str, args: list[str], line_text: str
+                          ) -> tuple[str, list[str]]:
+    """Recover a source macro call hidden by an empty libclang expansion."""
+    if args and any(arg.strip() for arg in args):
+        return name, args
+    candidates = sorted(
+        MMIO_READ_FNS | MMIO_WRITE_FNS,
+        key=len, reverse=True)
+    for candidate in candidates:
+        match = re.search(
+            rf"\b{re.escape(candidate)}\s*\(", line_text or "")
+        if not match:
+            continue
+        depth = 0
+        end = None
+        for index in range(match.end() - 1, len(line_text)):
+            char = line_text[index]
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = index + 1
+                    break
+        if end is None:
+            continue
+        recovered = _split_call_args(line_text[match.start():end])
+        if not recovered:
+            continue
+        same_kind = ((is_mmio_read(name) and is_mmio_read(candidate))
+                     or (is_mmio_write(name) and is_mmio_write(candidate)))
+        if same_kind and infer_width(name) == infer_width(candidate):
+            return candidate, recovered
+    return name, args
 
 
 def infer_call_width(name: str, call=None) -> int:

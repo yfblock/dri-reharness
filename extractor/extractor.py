@@ -554,6 +554,14 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     (synthetic_funcs, synthetic_extractions,
      subsystem_summaries) = infer_subsystem_summaries(
         source_funcs, extractions, macros, tu)
+    summary_owners = {
+        item.get("function")
+        for group in subsystem_summaries.values()
+        if isinstance(group, list) for item in group
+        if isinstance(item, dict) and item.get("function")}
+    inlined_names -= {
+        func.symbol_id or func.name for func in source_funcs
+        if func.name in summary_owners}
     if synthetic_funcs:
         funcs = source_funcs + synthetic_funcs
         extractions.update(synthetic_extractions)

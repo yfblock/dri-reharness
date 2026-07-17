@@ -10,9 +10,10 @@ from extractor.formal import walk_leaf_ops
 from .common import ops_to_c, local_decls, value_var_names
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
-from .subsystem_runner import (emit_gpio_callback_runner, gpio_callback_plan,
+from .subsystem_runner import (emit_gpio_callback_runner, subsystem_callback_plan,
                                emit_w1c_drain_runner,
-                               portable_sdhci_accessor_only, w1c_drain_plan)
+                               portable_sdhci_accessor_only,
+                               portable_virtio_state_only, w1c_drain_plan)
 
 
 def generate(formal: dict, device_spec, bind) -> str:
@@ -86,6 +87,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append('#define REHARNESS_CALLBACK_RESULT(v) printf("[reharness-result] 0x%llx\\n", (unsigned long long)(v))')
     L.append('#define REHARNESS_CALLBACK_OUTPUT(n, v) printf("[reharness-output] %s=0x%llx\\n", (n), (unsigned long long)(v))')
     L.append('#define REHARNESS_CALLBACK_STATE(d, r) printf("[reharness-state] sdata=0x%llx sdir=0x%llx\\n", (unsigned long long)(d), (unsigned long long)(r))')
+    L.append('#define REHARNESS_VIRTIO_STATE(ea, ec, so, sc, en, sn, r) printf("[reharness-virtio-state] ea=0x%llx ec=0x%llx so=0x%llx sc=0x%llx en=0x%llx sn=0x%llx ready=0x%llx\\n", (unsigned long long)(ea), (unsigned long long)(ec), (unsigned long long)(so), (unsigned long long)(sc), (unsigned long long)(en), (unsigned long long)(sn), (unsigned long long)(r))')
     L.append('#define REHARNESS_CALLBACK_END() printf("[reharness-callback-end]\\n")')
     L.append('#define REHARNESS_W1C_BEGIN(n) printf("[reharness-w1c-begin] %u\\n", (unsigned)(n))')
     L.append('#define REHARNESS_W1C_MARKER(name) printf("[reharness-w1c] %s\\n", (name))')
@@ -126,11 +128,15 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define REHARNESS_CALLBACK_RESULT(v) ((void)(v))")
     L.append("#define REHARNESS_CALLBACK_OUTPUT(n, v) ((void)(n), (void)(v))")
     L.append("#define REHARNESS_CALLBACK_STATE(d, r) ((void)(d), (void)(r))")
+    L.append("#define REHARNESS_VIRTIO_STATE(ea, ec, so, sc, en, sn, r) ((void)(ea), (void)(ec), (void)(so), (void)(sc), (void)(en), (void)(sn), (void)(r))")
     L.append("#define REHARNESS_CALLBACK_END() ((void)0)")
     L.append("#define REHARNESS_W1C_BEGIN(n) ((void)(n))")
     L.append("#define REHARNESS_W1C_MARKER(name) ((void)(name))")
     L.append("#define REHARNESS_W1C_END() ((void)0)")
     L.append("#endif")
+    L.append("static inline void reharness_delay_ns(uint32_t ns) {")
+    L.append("    for (volatile uint32_t i = 0; i < ns / 100U + 1U; ++i) { }")
+    L.append("}")
     L.append("#define readl(a) mmio_read32((uintptr_t)(a))")
     L.append("#define readw(a) mmio_read16((uintptr_t)(a))")
     L.append("#define readb(a) mmio_read8((uintptr_t)(a))")
@@ -142,6 +148,9 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define irqd_to_hwirq(d) (d)")
     L.append("#define BIT(n) (1u << (n))")
     L.append("#define GENMASK(h, l) (((~0u) << (l)) & (~0u >> (31 - (h))))")
+    L.append("#define test_bit(n, bits) (((bits) >> (n)) & 1u)")
+    L.append("#define likely(x) (x)")
+    L.append("#define unlikely(x) (x)")
     L.append("#define pci_resource_len(p, b) (0u)")
     L.append("#define mmc_gpio_get_cd(m) (0)")
     L.append("#define ahci_remap_dcc(i) (0u)")
@@ -158,8 +167,15 @@ def generate(formal: dict, device_spec, bind) -> str:
     normalized_any = False
     upper_refs = set()
     upper_calls = set()
+    for definition in function_macros.values():
+        body = definition.get("body", "")
+        upper_refs |= set(re.findall(r"\b[A-Z][A-Za-z0-9_]{2,}\b", body))
+        upper_calls |= set(re.findall(
+            r"\b([A-Z][A-Za-z0-9_]{2,})\s*\(", body))
     portable_skip = (
-        device_spec.cls in {"ahci", "virtio_mmio"}
+        device_spec.cls == "ahci"
+        or (device_spec.cls == "virtio_mmio"
+            and not portable_virtio_state_only(formal, device_spec))
         or (device_spec.cls == "sdhci"
             and not portable_sdhci_accessor_only(formal, device_spec)))
     for module in formal["modules"]:
@@ -186,7 +202,9 @@ def generate(formal: dict, device_spec, bind) -> str:
     for state in device_spec.state:
         if state.name in {"base", "clk", "num_irqs"}:
             continue
-        ctype = "uint64_t" if state.type == "UInt64" else "uint32_t"
+        ctype = ("uintptr_t" if state.type == "MmioBase" else
+                 "uint32_t *" if state.type == "UIntArray" else
+                 "uint64_t" if state.type == "UInt64" else "uint32_t")
         L.append(f"    {ctype} {state.name};")
     L.append("};")
     L.append("")
@@ -222,16 +240,45 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.extend(emit_w1c_drain_runner(
         formal, device_spec, priv, static=False))
 
-    plan = gpio_callback_plan(formal, device_spec)
+    plan = subsystem_callback_plan(formal, device_spec)
     drain_plan = w1c_drain_plan(formal, device_spec)
     if plan or drain_plan:
         entry = next(
             (fn for fn in device_spec.functions if fn.role == "probe"), None)
         L.append("#ifdef REHARNESS_BAREMETAL_ORACLE")
         L.append("int main(void) {")
-        L.append(f"    {priv} dev = {{ .base = 0 }};")
+        array_states = [state for state in device_spec.state
+                        if state.type == "UIntArray"]
+        for state in array_states:
+            L.append(f"    uint32_t {state.name}_storage[4] = {{ 0 }};")
+        initializers = [".base = 0"]
+        initializers.extend(
+            f".{state.name} = {state.name}_storage"
+            for state in array_states)
+        if any(state.name == "nr_ports" for state in device_spec.state):
+            initializers.append(".nr_ports = 1")
+        if any(state.name == "ready" for state in device_spec.state):
+            initializers.append(".ready = 1")
+        if any(state.name == "idev" for state in device_spec.state):
+            initializers.append(".idev = 1")
+        if any(state.name == "evbit" for state in device_spec.state):
+            initializers.append(".evbit = ~0u")
+        if any(state.name == "absbit" for state in device_spec.state):
+            initializers.append(".absbit = ~0u")
+        for state in device_spec.state:
+            if state.name.endswith("_queue_depth"):
+                initializers.append(f".{state.name} = 4")
+            elif state.name.endswith("_completed"):
+                initializers.append(f".{state.name} = 2")
+        L.append(f"    {priv} dev = {{ {', '.join(initializers)} }};")
         L.append("    oracle_base = (uintptr_t)oracle_mmio;")
         L.append("    dev.base = oracle_base;")
+        for index, resource in enumerate(
+                item for item in device_spec.resources
+                if item.type == "MmioResource"
+                and item.bind not in {None, "base"}):
+            L.append(
+                f"    dev.{resource.bind} = oracle_base + 0x{index * 0x100:x};")
         L.append("    oracle_seed_mmio();")
         if entry:
             keep = [p for p in entry.signature.params if p.type != "DeviceState"]

@@ -97,7 +97,7 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
         indirect_targets,
         callback_entries,
         include_framework, extra_blacklist)
-    inline_cache = {n: e for n, e in base.items() if e.ops}
+    inline_cache = {n: e for n, e in base.items() if e.ops or e.return_expr}
 
     # pure helpers (inlined into a caller, never callback-referenced) are dedup'd
     inlined_into_caller: set[str] = set()
@@ -215,7 +215,9 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
         "total_mmio_ops": sum(len(ex.ops) for ex in expanded.values()),
     }]
     for depth in range(1, max(0, max_depth) + 1):
-        inline_cache = {name: ex for name, ex in expanded.items() if ex.ops}
+        inline_cache = {
+            name: ex for name, ex in expanded.items()
+            if ex.ops or ex.return_expr}
         next_expanded = extract_all(inline_cache)
         before = {name: _op_fingerprint(ex) for name, ex in expanded.items()}
         after = {name: _op_fingerprint(ex) for name, ex in next_expanded.items()}

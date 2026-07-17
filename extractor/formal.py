@@ -107,6 +107,53 @@ def parse_expr(text: str) -> dict:
     return {"Var": t}
 
 
+def simplify_expr(expr: dict) -> dict:
+    """Fold constant Formal expressions without changing symbolic terms."""
+    if not isinstance(expr, dict):
+        return expr
+    if "BinOp" in expr:
+        body = expr["BinOp"]
+        left = simplify_expr(body.get("left", {"Top": None}))
+        right = simplify_expr(body.get("right", {"Top": None}))
+        op = body.get("op")
+        if "Const" in left and "Const" in right:
+            a, b = int(left["Const"]), int(right["Const"])
+            operations = {
+                "Add": lambda: a + b, "Sub": lambda: a - b,
+                "Mul": lambda: a * b, "Div": lambda: a // b,
+                "Mod": lambda: a % b, "BitAnd": lambda: a & b,
+                "BitOr": lambda: a | b, "BitXor": lambda: a ^ b,
+                "Shl": lambda: a << b, "Shr": lambda: a >> b,
+                "Eq": lambda: int(a == b), "Ne": lambda: int(a != b),
+                "Lt": lambda: int(a < b), "Le": lambda: int(a <= b),
+                "Gt": lambda: int(a > b), "Ge": lambda: int(a >= b),
+                "And": lambda: int(bool(a) and bool(b)),
+                "Or": lambda: int(bool(a) or bool(b)),
+            }
+            if op in operations and not (op in {"Div", "Mod"} and b == 0):
+                return {"Const": operations[op]() & 0xFFFFFFFFFFFFFFFF}
+        return {"BinOp": {"op": op, "left": left, "right": right}}
+    if "Ite" in expr:
+        body = expr["Ite"]
+        guard = simplify_expr(body.get("guard", {"Top": None}))
+        then = simplify_expr(body.get("then", {"Top": None}))
+        otherwise = simplify_expr(body.get("else", {"Top": None}))
+        if "Const" in guard:
+            return then if guard["Const"] else otherwise
+        if then == otherwise:
+            return then
+        return {"Ite": {"guard": guard, "then": then, "else": otherwise}}
+    if "Bits" in expr:
+        body = expr["Bits"]
+        inner = simplify_expr(body.get("expr", {"Top": None}))
+        if "Const" in inner:
+            width = int(body["hi"]) - int(body["lo"]) + 1
+            return {"Const": (int(inner["Const"]) >> int(body["lo"]))
+                    & ((1 << width) - 1)}
+        return {"Bits": {**body, "expr": inner}}
+    return expr
+
+
 def _split_ternary(text: str) -> tuple[str, str, str] | None:
     """Split a top-level C conditional expression, including nested ITEs."""
     depth = 0
@@ -216,7 +263,8 @@ def formal_addr(flat_addr: dict, reg_name: Optional[str]) -> dict:
         dynamic = o.get("expr")
         if dynamic:
             expr = {"BinOp": {
-                "op": "Add", "left": expr, "right": parse_expr(dynamic),
+                "op": "Add", "left": expr,
+                "right": simplify_expr(parse_expr(dynamic)),
             }}
         if off:
             expr = {"BinOp": {

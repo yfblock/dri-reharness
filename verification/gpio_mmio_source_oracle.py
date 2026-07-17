@@ -11,7 +11,8 @@ sys.path.insert(0, ROOT)
 
 from extractor.formal import walk_leaf_ops
 from generator.subsystem_runner import gpio_callback_plan
-from verification.subsystem_callback_oracle import _execute
+from extractor.formal import parse_expr
+from verification.subsystem_callback_oracle import _eval, _execute
 
 
 def _seed() -> bytearray:
@@ -35,7 +36,9 @@ def _write(memory: bytearray, offset: int, width: int,
 
 def _config(formal: dict) -> tuple[dict | None, list[str]]:
     analysis = formal.get("metadata", {}).get("subsystem_summary_analysis", {})
-    summaries = analysis.get("summaries", {}).get("gpio_generic", [])
+    summary_groups = analysis.get("summaries", {})
+    summaries = (summary_groups.get("gpio_generic", [])
+                 if isinstance(summary_groups, dict) else [])
     if not summaries:
         return None, []
     errors = []
@@ -43,23 +46,67 @@ def _config(formal: dict) -> tuple[dict | None, list[str]]:
         errors.append(f"expected one gpio-mmio config, observed {len(summaries)}")
         return None, errors
     summary = copy.deepcopy(summaries[0])
-    if summary.get("variant"):
+    variant_model = summary.get("variant_model")
+    if summary.get("variant") and not variant_model:
         errors.append("path-variant gpio-mmio config lacks a single source model")
     resolved = summary.get("resolved_fields", {})
     offsets = {}
+    offset_specs = {}
     for field in ("dat", "set", "clr", "dirout", "dirin"):
         entries = resolved.get(field, [])
         if len(entries) > 1:
             errors.append(f"{field} has {len(entries)} source variants")
         if entries:
             offset = entries[0].get("offset")
-            if offset is None:
+            dynamic_expr = entries[0].get("dynamic_expr")
+            if offset is None and not dynamic_expr:
                 errors.append(f"{field} source address is unresolved")
             else:
-                offsets[field] = int(offset)
-    if "dat" not in offsets:
+                resource_index = entries[0].get("resource_index")
+                offset_specs[field] = {
+                    "offset": int(offset) if offset is not None else None,
+                    "dynamic_expr": dynamic_expr,
+                    "resource_offset": (
+                        int(resource_index) * 0x100
+                        if resource_index is not None else 0),
+                }
+                if offset is not None:
+                    offsets[field] = int(offset) + offset_specs[field][
+                        "resource_offset"]
+    if "dat" not in offset_specs:
         errors.append("gpio-mmio dat register is unresolved")
     summary["offsets"] = offsets
+    summary["offset_specs"] = offset_specs
+    base_variants = [summary]
+    if variant_model:
+        common = {key: value for key, value in offset_specs.items()
+                  if key not in {"dirin", "dirout"}}
+        base_variants = [
+            {**copy.deepcopy(summary), "variant_value": 0,
+             "offset_specs": {**common, "dirout": offset_specs["dirout"]}},
+            {**copy.deepcopy(summary), "variant_value": 1,
+             "offset_specs": {**common, "dirin": offset_specs["dirin"]}},
+        ]
+    bank_model = summary.get("bank_model")
+    materialized = []
+    bank_values = range(int(bank_model.get("max_count") or 0)) if bank_model else [0]
+    if bank_model and not bank_model.get("max_count"):
+        errors.append("banked gpio-mmio config lacks a finite selector bound")
+    for active in base_variants:
+        for bank_value in bank_values:
+            active = copy.deepcopy(active)
+            active["bank_value"] = int(bank_value)
+            active_offsets = {}
+            for field, spec in active["offset_specs"].items():
+                value = spec["offset"]
+                if spec.get("dynamic_expr"):
+                    value = _eval(parse_expr(spec["dynamic_expr"]), {
+                        bank_model["selector"]: int(bank_value)})
+                active_offsets[field] = int(value) + int(
+                    spec["resource_offset"])
+            active["offsets"] = active_offsets
+            materialized.append(active)
+    summary["variants"] = materialized
     return summary, errors
 
 
@@ -192,28 +239,63 @@ def _source_call(table: str, args: dict[str, int], config: dict,
     }
 
 
-def _formal_calls(formal: dict, device_spec, plan: list[dict]) -> tuple[dict, list]:
+def _summary_probe_ops(ops: list[dict]) -> list[dict]:
+    filtered = []
+    for op in ops:
+        if "Cond" in op:
+            body = copy.deepcopy(op["Cond"])
+            body["then_ops"] = _summary_probe_ops(body.get("then_ops", []))
+            body["else_ops"] = _summary_probe_ops(body.get("else_ops") or [])
+            if body["then_ops"] or body["else_ops"]:
+                filtered.append({"Cond": body})
+            continue
+        if "Seq" in op:
+            nested = _summary_probe_ops(op["Seq"].get("ops", []))
+            if nested:
+                filtered.append({"Seq": {"ops": nested}})
+            continue
+        body = (op.get("Read") or op.get("Write") or op.get("StateRead")
+                or op.get("StateWrite"))
+        evidence = body.get("evidence", {}) if body else {}
+        if evidence.get("summary_contract") == "linux.gpio_generic_chip_config":
+            filtered.append(copy.deepcopy(op))
+    return filtered
+
+
+def _formal_calls(formal: dict, device_spec, plan: list[dict], *,
+                  variant_value: int = 0,
+                  bank_value: int = 0) -> tuple[dict, list]:
     modules = {module["name"]: module for module in formal.get("modules", [])}
     registers = {item["name"]: int(item["offset"])
                  for item in formal.get("register_map", [])}
-    state = {"gpio_sdata": 0, "gpio_sdir": 0}
+    state = {"gpio_sdata": 0, "gpio_sdir": 0,
+             "gpio_config_variant": variant_value,
+             "gpio_bank_index": bank_value}
+    base_offsets = {
+        resource.bind: index * 0x100
+        for index, resource in enumerate(
+            item for item in device_spec.resources
+            if item.type == "MmioResource")
+        if resource.bind
+    }
     memory = _seed()
-    probe = next((function for function in device_spec.functions
-                  if function.role == "probe" and function.ris_ref in modules), None)
-    if probe is not None:
-        init_ops = []
-        for op in walk_leaf_ops(modules[probe.ris_ref]["ops"]):
-            body = (op.get("Read") or op.get("Write") or op.get("StateRead")
-                    or op.get("StateWrite"))
-            evidence = body.get("evidence", {}) if body else {}
-            if evidence.get("summary_contract") == "linux.gpio_generic_chip_config":
-                init_ops.append(op)
-        _execute(init_ops, {}, memory, registers, state, {})
-    initial = dict(state)
+    summary_groups = formal.get("metadata", {}).get(
+        "subsystem_summary_analysis", {}).get("summaries", {})
+    summaries = (summary_groups.get("gpio_generic", [])
+                 if isinstance(summary_groups, dict) else [])
+    init_name = summaries[0].get("function") if len(summaries) == 1 else None
+    if init_name in modules:
+        init_ops = _summary_probe_ops(modules[init_name]["ops"])
+        _execute(init_ops, {"base": 0,
+                            (summaries[0].get("bank_model") or {}).get(
+                                "selector", "gpio_bank_index"): bank_value},
+                 memory, registers, state, {}, base_offsets)
+    initial = {field: state[field] for field in ("gpio_sdata", "gpio_sdir")}
     memory = _seed()
     calls = []
     for entry in plan:
         env = dict(entry["args"])
+        env["base"] = 0
         outputs = {
             param.name: int(entry["args"].get(param.name, 1))
             for param in entry["function"].signature.params
@@ -222,10 +304,11 @@ def _formal_calls(formal: dict, device_spec, plan: list[dict]) -> tuple[dict, li
         env.update({f"*{name}": value for name, value in outputs.items()})
         trace, result = _execute(
             modules[entry["module"]]["ops"], env, memory, registers,
-            state, outputs)
+            state, outputs, base_offsets)
         calls.append({
             "table": entry["table"], "trace": trace, "result": result,
-            "outputs": dict(outputs), "state": dict(state),
+            "outputs": dict(outputs), "state": {
+                field: state[field] for field in ("gpio_sdata", "gpio_sdir")},
         })
     return initial, calls
 
@@ -249,36 +332,52 @@ def verify_gpio_mmio_source_differential(formal: dict, device_spec) -> dict:
     plan = gpio_callback_plan(formal, device_spec)
     if not plan:
         errors.append("no portable gpio callback plan for source differential")
-    source_initial = _source_init(config)
-    source_state = dict(source_initial)
-    source_memory = _seed()
-    source_calls = [
-        _source_call(entry["table"], entry["args"], config,
-                     source_memory, source_state)
-        for entry in plan
-    ]
-    try:
-        formal_initial, formal_calls = _formal_calls(formal, device_spec, plan)
-    except (KeyError, ValueError, ZeroDivisionError) as error:
-        errors.append(f"Formal RIS interpreter failed: {error}")
-        formal_initial, formal_calls = {}, []
-    if formal_initial != source_initial:
-        errors.append(
-            f"initial shadow state {formal_initial} != source {source_initial}")
-    for index, (actual, expected) in enumerate(
-            zip(formal_calls, source_calls, strict=False), 1):
-        if actual != expected:
+    configs = config.get("variants") or [config]
+    initial_states = {}
+    total_calls = 0
+    for active in configs:
+        variant_value = int(active.get("variant_value", 0))
+        bank_value = int(active.get("bank_value", 0))
+        label = f"variant={variant_value},bank={bank_value}"
+        source_initial = _source_init(active)
+        initial_states[label] = source_initial
+        source_state = dict(source_initial)
+        source_memory = _seed()
+        source_calls = [
+            _source_call(entry["table"], entry["args"], active,
+                         source_memory, source_state)
+            for entry in plan
+        ]
+        total_calls += len(source_calls)
+        try:
+            formal_initial, formal_calls = _formal_calls(
+                formal, device_spec, plan, variant_value=variant_value,
+                bank_value=bank_value)
+        except (KeyError, ValueError, ZeroDivisionError) as error:
+            errors.append(f"{label} Formal RIS interpreter failed: {error}")
+            formal_initial, formal_calls = {}, []
+        if formal_initial != source_initial:
             errors.append(
-                f"call#{index} {expected['table']} Formal RIS {actual} != source {expected}")
-    if len(formal_calls) != len(source_calls):
-        errors.append(
-            f"Formal/source call count {len(formal_calls)}/{len(source_calls)}")
+                f"{label} initial shadow state {formal_initial} != source "
+                f"{source_initial}")
+        for index, (actual, expected) in enumerate(
+                zip(formal_calls, source_calls, strict=False), 1):
+            if actual != expected:
+                errors.append(
+                    f"{label} call#{index} {expected['table']} Formal RIS "
+                    f"{actual} != source {expected}")
+        if len(formal_calls) != len(source_calls):
+            errors.append(
+                f"{label} Formal/source call count "
+                f"{len(formal_calls)}/{len(source_calls)}")
     return {
         "gpio_mmio_source_oracle_required": True,
         "gpio_mmio_source_oracle_passed": not errors,
         "gpio_mmio_source_oracle_errors": errors,
-        "gpio_mmio_source_oracle_calls": len(source_calls),
-        "gpio_mmio_source_initial_state": source_initial,
+        "gpio_mmio_source_oracle_calls": total_calls,
+        "gpio_mmio_source_initial_state": (
+            next(iter(initial_states.values())) if len(initial_states) == 1
+            else initial_states),
     }
 
 
@@ -293,6 +392,8 @@ def verify_gpio_mmio_source_suite() -> dict:
         "cadence": "linux/drivers/gpio/gpio-cadence.c",
         "idt3243x": "linux/drivers/gpio/gpio-idt3243x.c",
         "sodaville": "linux/drivers/gpio/gpio-sodaville.c",
+        "clps711x": "linux/drivers/gpio/gpio-clps711x.c",
+        "dwapb": "linux/drivers/gpio/gpio-dwapb.c",
     }
     extracted = {
         name: extract_ris(ExtractorConfig(source=os.path.join(root, source)))
@@ -369,6 +470,53 @@ def verify_gpio_mmio_source_suite() -> dict:
               if "Write" in op]
     writes[0]["addr"], writes[1]["addr"] = writes[1]["addr"], writes[0]["addr"]
     check("set_clear_swapped", mutated, ftgpio.device_spec)
+
+    clps = extracted["clps711x"]
+    mutated = copy.deepcopy(clps.formal)
+    probe = next(m for m in mutated["modules"]
+                 if "__gpio_generic_" not in m["name"])
+    direction_init = next(
+        op["StateWrite"] for op in walk_leaf_ops(probe["ops"])
+        if "StateWrite" in op and op["StateWrite"]["field"] == "gpio_sdir")
+    polarity = direction_init["value"]["Ite"]
+    polarity["then"], polarity["else"] = polarity["else"], polarity["then"]
+    check("variant_direction_polarity", mutated, clps.device_spec)
+
+    mutated = copy.deepcopy(clps.formal)
+    collapsed = 0
+    for module in mutated["modules"]:
+        for op in walk_leaf_ops(module["ops"]):
+            body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            fixed = (body or {}).get("addr", {}).get("Fixed")
+            if fixed and fixed.get("base") == "dir":
+                fixed["base"] = "dat"
+                collapsed += 1
+    if not collapsed:
+        raise AssertionError("CLPS direction resource mutation found no addresses")
+    check("direction_resource_collapsed", mutated, clps.device_spec)
+
+    dwapb = extracted["dwapb"]
+    mutated = copy.deepcopy(dwapb.formal)
+    module = next(m for m in mutated["modules"]
+                  if m["name"].endswith("__gpio_generic_get"))
+    computed = next(
+        op["Read"]["addr"]["Computed"] for op in walk_leaf_ops(module["ops"])
+        if "Read" in op and "Computed" in op["Read"].get("addr", {}))
+    stride = computed["BinOp"]["right"]["BinOp"]["right"]["BinOp"]["right"]
+    stride["Const"] *= 2
+    check("bank_stride", mutated, dwapb.device_spec)
+
+    mutated = copy.deepcopy(dwapb.formal)
+    for module in mutated["modules"]:
+        if "__gpio_generic_" not in module["name"]:
+            continue
+        selector = next(
+            (op["StateRead"] for op in walk_leaf_ops(module["ops"])
+             if "StateRead" in op
+             and op["StateRead"]["field"] == "gpio_bank_index"), None)
+        if selector:
+            selector["field"] = "gpio_config_variant"
+    check("bank_selector_state", mutated, dwapb.device_spec)
 
     return {
         "schema": 1,

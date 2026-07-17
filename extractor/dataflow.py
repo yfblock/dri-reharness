@@ -22,7 +22,7 @@ from .ast_model import (Func, function_calls, walk_with_conditions,
                         walk_with_control, continuation_guards, source_text)
 
 BASE_FIELDS = {"base", "base_addr", "regs", "io_base", "mmio_base",
-               "reg_base", "virtbase", "base0", "base1"}
+               "reg_base", "virtbase", "base0", "base1", "ioaddr"}
 
 _CONTROL_KW = {"if", "for", "while", "switch", "return", "sizeof", "typeof"}
 
@@ -457,7 +457,9 @@ def _general_assignments(func_cursor, tu) -> list[dict]:
     for cursor, control in walk_with_control(func_cursor):
         text = source_text(tu, cursor).strip()
         lhs = op = rhs = None
-        if cursor.kind == cx.CursorKind.BINARY_OPERATOR:
+        if cursor.kind in {
+                cx.CursorKind.BINARY_OPERATOR,
+                cx.CursorKind.COMPOUND_ASSIGNMENT_OPERATOR}:
             match = _GENERAL_ASSIGN_RE.match(text)
             if match:
                 lhs, op, rhs = match.groups()
@@ -494,7 +496,7 @@ def _general_assignments(func_cursor, tu) -> list[dict]:
             rhs = f"({lhs}) {op[:-1]} ({rhs})"
         loc = cursor.location
         assignments.append({
-            "lhs": lhs,
+            "lhs": lhs, "operator": op,
             "rhs": rhs.strip(),
             "line": loc.line if loc else 0,
             "offset": loc.offset if loc else 0,
@@ -518,22 +520,54 @@ def _abs_expr(value: AbsVal, fallback: str) -> str:
     return fallback
 
 
+def _resolved_argument(arg: str, store: dict, macros) -> str:
+    token = arg.strip()
+    if _IDENT_RE.fullmatch(token) and macros.offset(token) is not None:
+        return token
+    return _abs_expr(eval_expr(arg, store, macros), arg)
+
+
 def _general_assignment_store(assignments: list[dict], before_offset: int,
-                              initial: dict, macros) -> dict:
+                              initial: dict, macros,
+                              *, include_compound: bool = False) -> dict:
     store = dict(initial)
     for entry in assignments:
         if entry["offset"] and entry["offset"] >= before_offset:
             break
-        # Loop-carried state requires a fixpoint.  Applying the initializer as
-        # a guarded scalar assignment at every operation incorrectly froze the
-        # induction variable (e.g. ``i`` became ``i < 4 ? 0 : i``).  Leave it
-        # symbolic; the formal Loop node carries the exact induction semantics
-        # when a bound is proved, or remains conservative otherwise.
-        if any(frame.get("kind") == "loop" for frame in entry["control"]):
+        if entry.get("operator") != "=" and not include_compound:
             continue
         lhs = entry["lhs"]
-        value = eval_expr(entry["rhs"], store, macros)
-        conditions = [condition for condition in entry["conditions"] if condition]
+        # Preserve acyclic temporaries inside loops (bank offsets, array
+        # selectors, context pointers), but keep induction variables and
+        # self-dependent accumulators symbolic until a loop fixpoint exists.
+        loop_frames = [frame for frame in entry["control"]
+                       if frame.get("kind") == "loop"]
+        if loop_frames:
+            marker = "__reharness_self_reference"
+            induction = any(
+                _substitute_text(
+                    " ".join((frame.get("init", ""),
+                              frame.get("step", ""))), {lhs: marker})
+                != " ".join((frame.get("init", ""), frame.get("step", "")))
+                for frame in loop_frames)
+            self_dependent = (
+                _substitute_text(entry["rhs"], {lhs: marker}) != entry["rhs"])
+            if induction or self_dependent:
+                continue
+        scalar_mapping = {
+            name: _abs_expr(item, name) for name, item in store.items()
+            if _IDENT_RE.fullmatch(name) and not isinstance(item, Top)
+        }
+        rhs = _substitute_text(entry["rhs"], scalar_mapping) or entry["rhs"]
+        value = eval_expr(rhs, store, macros)
+        if isinstance(value, Top):
+            value = SymExpr(rhs)
+        loop_guards = {frame.get("guard", "") for frame in loop_frames}
+        conditions = [
+            condition for condition in entry["conditions"]
+            if condition and condition not in loop_guards
+            and "scoped_guard" not in condition
+            and "gpio_generic_lock" not in condition]
         # A loop-carried assignment cannot be represented as one exact scalar
         # state without a fixpoint. Keep its expression but mark it with the
         # loop guard so downstream reliability remains conservative.
@@ -541,7 +575,7 @@ def _general_assignment_store(assignments: list[dict], before_offset: int,
             old = store.get(lhs, SymExpr(lhs))
             guard = " && ".join(f"({condition})" for condition in conditions)
             store[lhs] = SymExpr(
-                f"(({guard}) ? ({_abs_expr(value, entry['rhs'])})"
+                f"(({guard}) ? ({_abs_expr(value, rhs)})"
                 f" : ({_abs_expr(old, lhs)}))")
         else:
             store[lhs] = value
@@ -558,6 +592,145 @@ class FuncExtraction:
     ops: list[Op] = field(default_factory=list)
     calls: list = field(default_factory=list)   # CallSite list (for call graph)
     warnings: list[str] = field(default_factory=list)
+
+
+def _path_return_expr(func: Func, tu) -> str | None:
+    """Summarize branch returns as one conservative conditional value.
+
+    The accepted shape has one final unconditional fallback and only lexical
+    condition frames.  Loops, gotos, and missing fallbacks remain opaque.
+    """
+    sites: list[tuple[int, str, list[str]]] = []
+    for cursor, control in walk_with_control(func.cursor):
+        if cursor.kind != cx.CursorKind.RETURN_STMT:
+            continue
+        match = re.fullmatch(
+            r"return\s+(.+?)\s*;?", source_text(tu, cursor).strip(), re.S)
+        if not match:
+            continue
+        if any(frame.get("kind") != "cond" for frame in control):
+            return None
+        guards = [frame.get("guard", "").strip() for frame in control]
+        if any(not guard for guard in guards):
+            return None
+        sites.append((cursor.location.offset or 0, match.group(1).strip(), guards))
+    if not sites:
+        return None
+    if len({expr for _offset, expr, _guards in sites}) == 1:
+        return sites[0][1]
+    fallback = [site for site in sites if not site[2]]
+    if len(fallback) != 1:
+        return None
+    fallback_site = fallback[0]
+    if fallback_site[0] != max(site[0] for site in sites):
+        return None
+    value = fallback_site[1]
+    branches = [site for site in sites if site is not fallback_site]
+    for _offset, branch, guards in reversed(branches):
+        guard = " && ".join(f"({item})" for item in guards)
+        value = f"(({guard}) ? ({branch}) : ({value}))"
+    return value
+
+
+def _pure_return_functions(inline_cache: Optional[dict]
+                           ) -> dict[str, FuncExtraction]:
+    groups: dict[str, list[FuncExtraction]] = {}
+    seen: set[int] = set()
+    for extraction in (inline_cache or {}).values():
+        if id(extraction) in seen:
+            continue
+        seen.add(id(extraction))
+        if extraction.return_expr and not extraction.ops:
+            groups.setdefault(extraction.name, []).append(extraction)
+    pure = {name: values[0] for name, values in groups.items()
+            if len(values) == 1}
+    changed = True
+    while changed:
+        changed = False
+        for name, extraction in list(pure.items()):
+            if any(call.name not in pure
+                   or not re.search(
+                       rf"\b{re.escape(call.name)}\s*\(",
+                       extraction.return_expr or "")
+                   for call in extraction.calls):
+                pure.pop(name)
+                changed = True
+    return pure
+
+
+def _split_text_args(body: str) -> list[str]:
+    args: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in body:
+        if char in "([{":
+            depth += 1
+        elif char in ")]}" and depth:
+            depth -= 1
+        if char == "," and depth == 0:
+            args.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+    args.append("".join(current).strip())
+    return args if args != [""] else []
+
+
+def _expand_pure_calls(text: str, inline_cache: Optional[dict]) -> str:
+    """Inline understood scalar helpers inside an expression string."""
+    pure = _pure_return_functions(inline_cache)
+    if not text or not pure:
+        return text
+    value = text
+    for _round in range(16):
+        candidates: list[tuple[int, int, int, FuncExtraction]] = []
+        for name, extraction in pure.items():
+            for match in re.finditer(rf"\b{re.escape(name)}\s*\(", value):
+                open_paren = value.find("(", match.start())
+                depth = 0
+                close = None
+                for index in range(open_paren, len(value)):
+                    if value[index] == "(":
+                        depth += 1
+                    elif value[index] == ")":
+                        depth -= 1
+                        if depth == 0:
+                            close = index
+                            break
+                if close is not None:
+                    candidates.append((match.start(), close, open_paren,
+                                       extraction))
+        if not candidates:
+            break
+        start, close, open_paren, extraction = max(
+            candidates, key=lambda item: item[0])
+        args = _split_text_args(value[open_paren + 1:close])
+        if len(args) != len(extraction.params):
+            break
+        replacement = _substitute_text(
+            extraction.return_expr, dict(zip(extraction.params, args)))
+        if not replacement:
+            break
+        value = value[:start] + f"({replacement})" + value[close + 1:]
+    return value
+
+
+def _expand_numeric_macros(text: str, macros) -> str:
+    if not text or macros is None:
+        return text
+    values: dict[str, str] = {}
+    for name in set(re.findall(r"\b[A-Za-z_]\w*\b", text)):
+        offset = macros.offset(name)
+        if offset is not None:
+            values[name] = hex(offset) if offset >= 0 else str(offset)
+    return _substitute_text(text, values) or text
+
+
+def _expand_addr_numeric_macros(addr: dict, macros) -> dict:
+    if "Indirect" in addr and addr["Indirect"].get("expr"):
+        addr["Indirect"]["expr"] = _expand_numeric_macros(
+            addr["Indirect"]["expr"], macros)
+    return addr
 
 
 def _substitute_text(text: Optional[str], mapping: dict[str, str]) -> Optional[str]:
@@ -591,11 +764,26 @@ def _substitute_addr(addr: dict, mapping: dict[str, str]) -> dict:
     return out
 
 
-def _instantiate_op(op: Op, mapping: dict[str, str], macros=None) -> Op:
+def _instantiate_op(op: Op, mapping: dict[str, str], macros=None,
+                    inline_cache: Optional[dict] = None) -> Op:
     import copy
     out = copy.copy(op)
     out.evidence = copy.deepcopy(op.evidence)
     out.addr = _substitute_addr(op.addr, mapping)
+    if "Indirect" in out.addr and out.addr["Indirect"].get("expr"):
+        original_expr = out.addr["Indirect"]["expr"]
+        expanded = _expand_pure_calls(
+            original_expr, inline_cache)
+        token = expanded.strip()
+        offset = macros.offset(token) if macros is not None else None
+        if offset is not None:
+            out.addr = addr_offset(
+                out.addr["Indirect"].get("base_reg", ""), offset)
+            out.reg_name = token
+        else:
+            out.addr["Indirect"]["expr"] = (
+                _expand_numeric_macros(expanded, macros)
+                if expanded != original_expr else expanded)
     out.value = _substitute_text(op.value, mapping)
     out.condition = _substitute_text(op.condition, mapping)
     out.cond_stack = [
@@ -609,13 +797,6 @@ def _instantiate_op(op: Op, mapping: dict[str, str], macros=None) -> Op:
                 copied[key] = _substitute_text(copied[key], mapping)
         out.control_stack.append(copied)
     out.var = _substitute_text(op.var, mapping)
-    indirect = out.addr.get("Indirect")
-    if indirect and macros is not None:
-        expr = (indirect.get("expr") or "").strip()
-        offset = macros.offset(expr) if expr else None
-        if offset is not None:
-            out.addr = addr_offset(indirect.get("base_reg", ""), offset)
-            out.reg_name = expr
     return out
 
 
@@ -801,8 +982,8 @@ def extract_function(func: Func, macros, tu, *,
             match = re.fullmatch(r"return\s+(.+?)\s*;?", text, re.S)
             if match:
                 returns.append((match.group(1).strip(), cursor.location.line))
-    if returns and len({expr for expr, _line in returns}) == 1:
-        result.return_expr = returns[0][0]
+    result.return_expr = _path_return_expr(func, tu)
+    source_return_expr = result.return_expr
     return_value = result.return_expr
     return_line = returns[0][1] if result.return_expr else 0
     return_read_index = 0
@@ -831,7 +1012,8 @@ def extract_function(func: Func, macros, tu, *,
 
     def evidence_for(cs, kind: str, addr: dict,
                      source_address: str = "",
-                     effective_name: str | None = None) -> dict:
+                     effective_name: str | None = None,
+                     subsystem_args: list[str] | None = None) -> dict:
         from .accounting import callsite_evidence
         evidence = callsite_evidence(
             func, cs, kind, effective_name=effective_name)
@@ -844,6 +1026,26 @@ def extract_function(func: Func, macros, tu, *,
                     or base.startswith(alias + ".") or referenced):
                 evidence["alias_provenance"] = {"name": alias, **fact}
                 break
+        summary = mmio.summary_kind(effective_name or cs.name)
+        if summary == "virtio_config":
+            evidence["summary_contract"] = "linux.virtio_config"
+            args = subsystem_args or []
+            if effective_name in {"virtio_cread_le", "virtio_cwrite_le"}:
+                if len(args) >= 3:
+                    evidence["config_member"] = args[2]
+                if args:
+                    evidence["virtio_device"] = args[0]
+            elif effective_name == "virtio_cread_bytes":
+                if len(args) >= 2:
+                    evidence["config_member"] = args[1]
+                if args:
+                    evidence["virtio_device"] = args[0]
+        elif summary == "virtqueue":
+            evidence["summary_contract"] = "linux.virtqueue"
+            args = subsystem_args or []
+            if args:
+                evidence["queue_expr"] = args[0]
+            evidence["queue_operation"] = effective_name or cs.name
         return evidence
 
     # map line → structured lexical control stack
@@ -894,9 +1096,22 @@ def extract_function(func: Func, macros, tu, *,
                     cond_stack.insert(0, frame["guard"])
                     cond = cond or frame["guard"]
 
-        lhs = _bind_lhs(source_lines or [], cs.line, name)
         access_name = mmio.effective_access_name(name, cs.callee_text)
         access_args = mmio.access_args(access_name, cs)
+        source_line = ((source_lines or [])[cs.line - 1]
+                       if 0 < cs.line <= len(source_lines or []) else "")
+        access_name, access_args = mmio.recover_source_access(
+            access_name, access_args, source_line)
+        lhs = _bind_lhs(source_lines or [], cs.line, access_name)
+        if mmio.summary_kind(access_name) in {"virtio_config", "virtqueue"}:
+            control_stack = [
+                frame for frame in control_stack
+                if not (frame.get("kind") == "loop"
+                        and frame.get("loop_kind") == "do"
+                        and "virtio_" in frame.get("source", ""))]
+            cond_stack = [frame.get("guard", "") for frame in control_stack
+                          if frame.get("guard")]
+            cond = cond_stack[-1] if cond_stack else None
         call_store = dict(store)
         call_store.update(_general_assignment_store(
             general_assignments, call_offset, call_store, macros))
@@ -911,7 +1126,11 @@ def extract_function(func: Func, macros, tu, *,
 
         if mmio.is_mmio_read(access_name):
             addr_arg = mmio.read_addr_expr(access_name, access_args)
+            source_addr_arg = addr_arg
+            addr_arg = _expand_pure_calls(addr_arg, inline_cache)
             addr, reg_name = resolve_addr(addr_arg, call_store, macros)
+            if addr_arg != source_addr_arg:
+                addr = _expand_addr_numeric_macros(addr, macros)
             result_var = mmio.read_result_var(
                 access_name, access_args, lhs) or None
             call_text = source_text(tu, cs.cursor).strip()
@@ -929,7 +1148,7 @@ def extract_function(func: Func, macros, tu, *,
                 var=result_var,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
                 evidence=evidence_for(
-                    cs, "read", addr, addr_arg, access_name),
+                    cs, "read", addr, addr_arg, access_name, access_args),
             )
             result.ops.append(op)
             if result_var:
@@ -947,7 +1166,13 @@ def extract_function(func: Func, macros, tu, *,
                     f"cannot decode register RMW call {name} at line {cs.line}")
                 continue
             address_text, mask_text, update_text = parts
+            source_address_text = address_text
+            address_text = _expand_pure_calls(address_text, inline_cache)
+            mask_text = _expand_pure_calls(mask_text, inline_cache)
+            update_text = _expand_pure_calls(update_text, inline_cache)
             addr, reg_name = resolve_addr(address_text, call_store, macros)
+            if address_text != source_address_text:
+                addr = _expand_addr_numeric_macros(addr, macros)
             transform = (f"((__old & ~({mask_text})) | "
                          f"(({update_text}) & ({mask_text})))")
             result.ops.append(Op(
@@ -957,7 +1182,8 @@ def extract_function(func: Func, macros, tu, *,
                 control_stack=control_stack, reg_name=reg_name,
                 var="__old", source_loc=f"{func.name}:{cs.line}",
                 line=cs.line,
-                evidence=evidence_for(cs, "rmw", addr, address_text)))
+                evidence=evidence_for(
+                    cs, "rmw", addr, address_text, access_name, access_args)))
             continue
 
         if mmio.is_mmio_write(access_name):
@@ -965,7 +1191,12 @@ def extract_function(func: Func, macros, tu, *,
             # driver-private wrappers such as dwc2_writel(state, val, off).
             val_text, addr_text = mmio.write_value_addr(
                 access_name, access_args)
+            source_addr_text = addr_text
+            val_text = _expand_pure_calls(val_text, inline_cache)
+            addr_text = _expand_pure_calls(addr_text, inline_cache)
             addr, reg_name = resolve_addr(addr_text, call_store, macros)
+            if addr_text != source_addr_text:
+                addr = _expand_addr_numeric_macros(addr, macros)
             val = eval_expr(val_text, call_store, macros)
             kind = "Write"
             value = val_to_value_str(val) or val_text.strip() or None
@@ -989,14 +1220,14 @@ def extract_function(func: Func, macros, tu, *,
                 var=rmw_var,
                 source_loc=f"{func.name}:{cs.line}", line=cs.line,
                 evidence=evidence_for(
-                    cs, "write", addr, addr_text, access_name),
+                    cs, "write", addr, addr_text, access_name, access_args),
             )
             result.ops.append(op)
             continue
 
         if mmio.is_delay(name):
             arg = cs.arg_text[0] if cs.arg_text else "0"
-            ns = _parse_delay_ns(name, arg)
+            ns = _parse_delay_ns(name, arg, macros)
             op = Op(
                 kind="Delay", addr=addr_fixed(0), width=0,
                 value=str(ns), condition=cond, cond_stack=cond_stack,
@@ -1028,13 +1259,18 @@ def extract_function(func: Func, macros, tu, *,
         if (inlined is None or depth >= max_depth) and summary is not None:
             import copy
             mapping = {
-                param: arg for param, arg in zip(
+                param: _resolved_argument(arg, call_store, macros)
+                for param, arg in zip(
                     summary.get("params", []), cs.arg_text)
                 if param and arg
             }
             address_text = _substitute_text(
                 summary.get("address"), mapping) or ""
+            source_address_text = address_text
+            address_text = _expand_pure_calls(address_text, inline_cache)
             addr, reg_name = resolve_addr(address_text, call_store, macros)
+            if address_text != source_address_text:
+                addr = _expand_addr_numeric_macros(addr, macros)
             evidence = copy.deepcopy(summary.get("evidence", {}))
             evidence["origin"] = "wrapper_summary"
             evidence.setdefault("summarized_at", []).append({
@@ -1059,6 +1295,7 @@ def extract_function(func: Func, macros, tu, *,
             else:
                 raw_value = _substitute_text(
                     summary.get("value"), mapping) or ""
+                raw_value = _expand_pure_calls(raw_value, inline_cache)
                 abstract_value = eval_expr(raw_value, call_store, macros)
                 value = val_to_value_str(abstract_value) or raw_value or None
                 result.ops.append(Op(
@@ -1078,11 +1315,12 @@ def extract_function(func: Func, macros, tu, *,
         if inlined is not None and depth < max_depth:
             if inlined.ops:
                 mapping = {
-                    param: arg for param, arg in zip(inlined.params, cs.arg_text)
+                    param: _resolved_argument(arg, call_store, macros)
+                    for param, arg in zip(inlined.params, cs.arg_text)
                     if param and arg
                 }
                 instantiated = [
-                    _instantiate_op(op, mapping, macros)
+                    _instantiate_op(op, mapping, macros, inline_cache)
                     for op in inlined.ops
                 ]
                 # A callee Return describes the value of this call, not an
@@ -1131,7 +1369,21 @@ def extract_function(func: Func, macros, tu, *,
                     })
                     result.ops.append(o2)
 
-    if return_value is not None and return_value != result.return_expr:
+    materialize_return = return_value != source_return_expr
+    if return_value is not None:
+        final_store = _general_assignment_store(
+            general_assignments, 1 << 62, store, macros,
+            include_compound=True)
+        scalar_mapping = {
+            name: _abs_expr(item, name)
+            for name, item in final_store.items()
+            if _IDENT_RE.fullmatch(name)
+            and not isinstance(item, (Top, ReadTaint))
+        }
+        return_value = _substitute_text(return_value, scalar_mapping)
+        result.return_expr = return_value
+
+    if return_value is not None and materialize_return:
         result.ops.append(Op(
             kind="Return", addr=addr_fixed(0), width=0,
             value=return_value,
@@ -1142,11 +1394,13 @@ def extract_function(func: Func, macros, tu, *,
     return result
 
 
-def _parse_delay_ns(name: str, arg: str) -> int:
+def _parse_delay_ns(name: str, arg: str, macros=None) -> int:
     try:
         n = int(arg, 0)
     except Exception:
-        return 0
+        n = macros.offset(arg.strip()) if macros is not None else None
+        if n is None:
+            return 0
     if name in ("mdelay", "msleep", "ssleep"):
         return n * 1_000_000
     if name == "udelay":

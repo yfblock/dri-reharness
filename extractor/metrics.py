@@ -66,6 +66,8 @@ def _computed_is_lowerable(expr: dict | None) -> bool:
                 r"[A-Za-z_]\w*->(?:base|regs|ioaddr|hwirq|[A-Za-z_]\w*_base)",
                 value):
             return True
+        if re.fullmatch(r"[A-Za-z_]\w*->(?:flags|nr_ports)", value):
+            return True
         if re.fullmatch(
                 r"[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)*"
                 r"(?:->|\.)hpi(?:->|\.)(?:base|regstep)", value):
@@ -308,14 +310,19 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             f"{unmodeled_subsystem} subsystem library callback(s) lack semantic summary")
     unvalidated_subsystem = met.get("subsystem_summary", {}).get(
         "generic_backend_unvalidated", 0)
-    gpio_source_required = bool(formal.get("metadata", {}).get(
-        "subsystem_summary_analysis", {}).get(
-            "summaries", {}).get("gpio_generic", []))
+    summary_groups = formal.get("metadata", {}).get(
+        "subsystem_summary_analysis", {}).get("summaries", {})
+    gpio_source_required = bool(
+        summary_groups.get("gpio_generic", [])
+        if isinstance(summary_groups, dict) else [])
     sdhci_source_required = any(
         (op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
          or {}).get("evidence", {}).get("subsystem_summary") == "sdhci_accessor"
         for module in formal.get("modules", [])
         for op in walk_leaf_ops(module.get("ops", [])))
+    virtio_source_required = bool(
+        summary_groups.get("virtio_state", [])
+        if isinstance(summary_groups, dict) else [])
     w1c_drain_required = any(
         "Loop" in op and op["Loop"].get("proof_kind") == "masked_w1c_drain"
         for module in formal.get("modules", [])
@@ -340,8 +347,15 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unbound_callbacks:
         blockers.append(f"callback entry without table binding: {', '.join(unbound_callbacks)}")
 
+    supported_subsystem_access = any(
+        (op.get("StateRead") or op.get("StateWrite") or {}).get(
+            "evidence", {}).get("summary_contract") in {
+                "linux.virtio_config", "linux.virtqueue"}
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
     has_register_access = (
-        met["symbolic"] + met["fixed"] + met["computed"] > 0)
+        met["symbolic"] + met["fixed"] + met["computed"] > 0
+        or supported_subsystem_access)
     if not has_register_access:
         blockers.append("no MMIO register accesses")
 
@@ -384,6 +398,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 h.get("gpio_mmio_source_oracle_passed")))
             h_source_ready &= (not sdhci_source_required or bool(
                 h.get("sdhci_accessor_oracle_passed")))
+            h_source_ready &= (not virtio_source_required or bool(
+                h.get("virtio_state_oracle_passed")))
             h_source_ready &= (not w1c_drain_required or bool(
                 h.get("w1c_drain_contract_passed")
                 and h.get("w1c_drain_runtime_passed")))
@@ -407,6 +423,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 bm.get("gpio_mmio_source_oracle_passed")))
             bm_source_ready &= (not sdhci_source_required or bool(
                 bm.get("sdhci_accessor_oracle_passed")))
+            bm_source_ready &= (not virtio_source_required or bool(
+                bm.get("virtio_state_oracle_passed")))
             bm_source_ready &= (not w1c_drain_required or bool(
                 bm.get("w1c_drain_contract_passed")
                 and bm.get("w1c_drain_runtime_passed")))
@@ -429,6 +447,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 lx.get("gpio_mmio_source_oracle_passed")))
             linux_source_ready &= (not sdhci_source_required or bool(
                 lx.get("sdhci_accessor_oracle_passed")))
+            linux_source_ready &= (not virtio_source_required or bool(
+                lx.get("virtio_state_oracle_passed")))
             linux_source_ready &= (not w1c_drain_required or bool(
                 lx.get("w1c_drain_contract_passed")))
             # Linux has source-aware class-specific lowerings (notably clock
@@ -463,6 +483,11 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 for backend in ("harness", "baremetal", "linux")):
             blockers.append(
                 "SDHCI accessors lack passing source contract oracle")
+        if virtio_source_required and not all(
+                _gr(backend).get("virtio_state_oracle_passed", False)
+                for backend in ("harness", "baremetal", "linux")):
+            blockers.append(
+                "virtio state transitions lack passing source contract oracle")
         if w1c_drain_required and not (
                 _gr("harness").get("w1c_drain_runtime_passed", False)
                 and _gr("baremetal").get("w1c_drain_runtime_passed", False)

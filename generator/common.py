@@ -102,7 +102,7 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
     for v in extra:
         # Upper-case identifiers are C/kernel constants, not locals.  Declaring
         # them would collide with macros such as PCI_VENDOR_ID_INTEL.
-        if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v):
+        if v in _C_KEYWORDS or re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v):
             continue
         lines.append(f"{pad}{ctype} {v} = 0;")
     return "\n".join(lines)
@@ -154,7 +154,8 @@ def _replace_expr_var(expr, name: str | None, replacement: str):
     return out
 
 
-def addr_to_c(addr: dict, base_expr: str, register_macros: dict[str, int]) -> str:
+def addr_to_c(addr: dict, base_expr: str, register_macros: dict[str, int],
+              state_expr: str = "") -> str:
     """Render a formal RegAddr as a C address expression.
 
     Symbolic registers render as `base_expr + REG_MACRO` (macro #defined in the
@@ -167,7 +168,12 @@ def addr_to_c(addr: dict, base_expr: str, register_macros: dict[str, int]) -> st
         return f"{base_expr} + 0x{off:x}" if off is not None else base_expr
     if "Fixed" in addr:
         off = addr["Fixed"]["offset"]
-        return f"{base_expr} + 0x{off:x}" if base_expr else f"0x{off:x}"
+        source_base = addr["Fixed"].get("base", "")
+        actual_base = base_expr
+        if (state_expr and source_base and source_base != "base"
+                and re.fullmatch(r"[A-Za-z_]\w*", source_base)):
+            actual_base = f"{state_expr}->{source_base}"
+        return f"{actual_base} + 0x{off:x}" if actual_base else f"0x{off:x}"
     if "Computed" in addr:
         return expr_to_c(addr["Computed"])
     return base_expr
@@ -205,9 +211,20 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             if (loop.get("reliability") == "Exact"
                     and loop.get("bounded")
                     and loop.get("loop_kind") == "for"):
-                init = loop.get("init", "").strip().rstrip(";")
-                step = loop.get("step", "").strip().rstrip(";")
-                out.append(f"{pad}for ({init}; {guard}; {step}) {{")
+                if loop.get("dynamic_bound"):
+                    induction = loop.get("induction_var", "__reharness_i")
+                    count = expr_to_c(loop.get("count"))
+                    stride = int(loop.get("stride", 1))
+                    step = (f"{induction}++" if stride == 1
+                            else f"{induction} += {stride}")
+                    out.append(
+                        f"{pad}for (uint32_t {induction} = 0, "
+                        f"__reharness_limit = {count}; "
+                        f"{induction} < __reharness_limit; {step}) {{")
+                else:
+                    init = loop.get("init", "").strip().rstrip(";")
+                    step = loop.get("step", "").strip().rstrip(";")
+                    out.append(f"{pad}for ({init}; {guard}; {step}) {{")
                 out.append(ops_to_c(loop.get("body", []), bind, base_expr,
                                     register_macros, indent + 1, word_type,
                                     state_expr))
@@ -237,7 +254,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
         elif "Read" in op:
             o = op["Read"]
             r = _mmio_primitive(bind, "MmioRead", o)
-            a = addr_to_c(o["addr"], base_expr, register_macros)
+            a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             var = o["var"]
             if (_is_simple_id(var)
                     or re.fullmatch(r"(?:g|dev)->[A-Za-z_]\w*", var)):
@@ -251,28 +268,36 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
         elif "Write" in op:
             o = op["Write"]
             w = _mmio_primitive(bind, "MmioWrite", o)
-            a = addr_to_c(o["addr"], base_expr, register_macros)
+            a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             v = expr_to_c(o["value"])
             out.append(f"{pad}{w}({v}, {a});")
         elif "ReadModifyWrite" in op:
             o = op["ReadModifyWrite"]
             r = _mmio_primitive(bind, "MmioRead", o)
             w = _mmio_primitive(bind, "MmioWrite", o)
-            a = addr_to_c(o["addr"], base_expr, register_macros)
+            a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             t = _replace_expr_var(o.get("transform"), o.get("read_var"), "v")
             t_c = "v" if isinstance(t, dict) and "Top" in t else expr_to_c(t)
             out.append(f"{pad}{{ {word_type} v = {r}({a}); {w}({t_c}, {a}); }}")
         elif "StateRead" in op:
             o = op["StateRead"]
-            out.append(f"{pad}{o['var']} = {state_expr}->{o['field']};")
+            index = (f"[{expr_to_c(o['index'])}]"
+                     if o.get("index") else "")
+            out.append(
+                f"{pad}{o['var']} = {state_expr}->{o['field']}{index};")
         elif "StateWrite" in op:
             o = op["StateWrite"]
-            out.append(f"{pad}{state_expr}->{o['field']} = {expr_to_c(o['value'])};")
+            index = (f"[{expr_to_c(o['index'])}]"
+                     if o.get("index") else "")
+            out.append(
+                f"{pad}{state_expr}->{o['field']}{index} = "
+                f"{expr_to_c(o['value'])};")
         elif "OutputWrite" in op:
             o = op["OutputWrite"]
             out.append(f"{pad}*{o['target']} = {expr_to_c(o['value'])};")
         elif "Return" in op:
             out.append(f"{pad}return {expr_to_c(op['Return']['value'])};")
         elif "Delay" in op:
-            out.append(f"{pad}/* delay {expr_to_c(op['Delay']['cycles'])} ns */")
+            out.append(
+                f"{pad}reharness_delay_ns({expr_to_c(op['Delay']['cycles'])});")
     return "\n".join(s for s in out if s)

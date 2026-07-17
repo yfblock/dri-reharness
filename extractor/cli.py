@@ -208,13 +208,16 @@ def main(argv: list[str] | None = None) -> int:
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
-        from generator.subsystem_runner import gpio_callback_plan, w1c_drain_plan
+        from generator.subsystem_runner import (subsystem_callback_plan,
+                                                w1c_drain_plan)
         from verification.subsystem_callback_oracle import (
             verify_subsystem_callbacks)
         from verification.gpio_mmio_source_oracle import (
             verify_gpio_mmio_source_differential)
         from verification.sdhci_accessor_oracle import (
             verify_sdhci_accessor_source_contract)
+        from verification.virtio_state_oracle import (
+            verify_virtio_state_contract)
         from verification.w1c_drain_oracle import (
             verify_w1c_drain_contract, verify_w1c_drain_runtime)
 
@@ -245,11 +248,14 @@ def main(argv: list[str] | None = None) -> int:
         source_oracle = verify_gpio_mmio_source_differential(
             res.formal, res.device_spec)
         sdhci_oracle = verify_sdhci_accessor_source_contract(res.formal)
+        virtio_oracle = verify_virtio_state_contract(res.formal)
         w1c_contract = verify_w1c_drain_contract(res.formal, res.device_spec)
         _w(ver_dir, "gpio-mmio-source-oracle.json", json.dumps(
             source_oracle, indent=2, sort_keys=True))
         _w(ver_dir, "sdhci-accessor-oracle.json", json.dumps(
             sdhci_oracle, indent=2, sort_keys=True))
+        _w(ver_dir, "virtio-state-oracle.json", json.dumps(
+            virtio_oracle, indent=2, sort_keys=True))
         _w(ver_dir, "w1c-drain-oracle.json", json.dumps(
             w1c_contract, indent=2, sort_keys=True))
         binds, results, gen_results = [], {}, {}
@@ -267,7 +273,8 @@ def main(argv: list[str] | None = None) -> int:
             unsupported = "REHARNESS_UNSUPPORTED" in code
             gr: dict = {
                 "has_todo": has_todo, "unsupported": unsupported,
-                **source_oracle, **sdhci_oracle, **w1c_contract,
+                **source_oracle, **sdhci_oracle, **virtio_oracle,
+                **w1c_contract,
             }
 
             if backend == "harness":
@@ -295,22 +302,31 @@ def main(argv: list[str] | None = None) -> int:
                     mod = next((m for m in modules if m["name"] == entry), None)
                     expected = []
                     untraceable = False
+                    from extractor.metrics import _computed_is_lowerable
+                    from verification.subsystem_callback_oracle import _eval
+
+                    def trace_offset(addr):
+                        if "Symbolic" in addr:
+                            return regs.get(addr["Symbolic"]["register"])
+                        if "Fixed" in addr:
+                            return addr["Fixed"]["offset"]
+                        if ("Computed" in addr
+                                and _computed_is_lowerable(addr["Computed"])):
+                            return _eval(addr["Computed"], {})
+                        return None
+
                     if mod:
                         for o in mod["ops"]:   # top-level only (no Cond/Loop descent)
                             if "Write" in o:
                                 addr = o["Write"]["addr"]
-                                off = (regs.get(addr["Symbolic"]["register"])
-                                       if "Symbolic" in addr else
-                                       addr["Fixed"]["offset"] if "Fixed" in addr else None)
+                                off = trace_offset(addr)
                                 if off is None:
                                     untraceable = True
                                 else:
                                     expected.append(("W", off))
                             elif "Read" in o:
                                 addr = o["Read"]["addr"]
-                                off = (regs.get(addr["Symbolic"]["register"])
-                                       if "Symbolic" in addr else
-                                       addr["Fixed"]["offset"] if "Fixed" in addr else None)
+                                off = trace_offset(addr)
                                 if off is None:
                                     untraceable = True
                                 else:
@@ -331,7 +347,7 @@ def main(argv: list[str] | None = None) -> int:
                 r = subprocess.run(["cc", "-ffreestanding", "-Wall", "-c", "-o", "/dev/null", cpath],
                                    capture_output=True, text=True)
                 gr["compiled"] = r.returncode == 0
-                plan = gpio_callback_plan(res.formal, res.device_spec)
+                plan = subsystem_callback_plan(res.formal, res.device_spec)
                 drain_plan = w1c_drain_plan(res.formal, res.device_spec)
                 if r.returncode == 0 and (plan or drain_plan):
                     oracle_bin = os.path.join(tmp_dir, "baremetal-oracle.bin")
@@ -374,7 +390,10 @@ def main(argv: list[str] | None = None) -> int:
                 os.makedirs(build_dir, exist_ok=True)
                 module_c = os.path.join(build_dir, f"{module_name}.c")
                 shutil.copyfile(cpath, module_c)
-                _w(build_dir, "Makefile", f"obj-m += {module_name}.o\n")
+                makefile = f"obj-m += {module_name}.o\n"
+                if res.device_spec.cls == "sdhci":
+                    makefile += "ccflags-y += -I$(srctree)/drivers/mmc/host\n"
+                _w(build_dir, "Makefile", makefile)
                 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 kernel_dir = os.environ.get(
                     "KERNELDIR", os.path.join(repo_root, "kernel", "build"))

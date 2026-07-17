@@ -59,6 +59,10 @@ def callsite_evidence(func, call, access_kind: str,
         evidence["origin"] = "subsystem_summary"
         evidence["subsystem_summary"] = summary
         evidence["effective_callee"] = access_name
+        if summary == "sdhci_accessor":
+            evidence["summary_contract"] = "linux.sdhci_ops"
+            if access_name.startswith("sdhci_be32bs_"):
+                evidence["byte_order"] = "big"
     return evidence
 
 
@@ -218,13 +222,16 @@ def build_access_accounting(funcs, formal: dict,
     for module in formal.get("modules", []):
         for op in walk_leaf_ops(module.get("ops", [])):
             body = (op.get("Read") or op.get("Write")
-                    or op.get("ReadModifyWrite"))
+                    or op.get("ReadModifyWrite") or op.get("StateRead")
+                    or op.get("StateWrite"))
             if body is None:
                 continue
             op_id = body.get("op_id", "")
             evidence = body.get("evidence") or {}
             site_id = evidence.get("site_id")
             if not site_id:
+                if op.get("StateRead") or op.get("StateWrite"):
+                    continue
                 ops_without_evidence.append(op_id or f"{module['name']}:?")
                 continue
             emitted.setdefault(site_id, []).append(op_id)

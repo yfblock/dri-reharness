@@ -13,6 +13,12 @@
 #include <linux/io.h>
 #include <linux/platform_device.h>
 
+/* The versioned corpus stores this implementation outside its original
+ * Kbuild directory.  Preserve the source's enabling Kconfig context so the
+ * companion header declares externs instead of disabled-feature stubs. */
+#ifndef CONFIG_FB_WMT_GE_ROPS
+#define CONFIG_FB_WMT_GE_ROPS 1
+#endif
 #include "wmt_ge_rops.h"
 
 #define GE_COMMAND_OFF		0x00

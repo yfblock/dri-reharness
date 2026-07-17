@@ -7,6 +7,7 @@
 - Builds register_map from the resolved macro table.
 """
 from __future__ import annotations
+import copy
 import re
 from typing import Optional
 
@@ -14,6 +15,7 @@ from .dataflow import FuncExtraction, Op
 from .ast_model import Func
 from .intent import annotate
 from . import formal as F
+from .formal import walk_leaf_ops
 from .macros import _eval_int_expr
 
 
@@ -124,7 +126,32 @@ def _loop_int(text: str, macros) -> int | None:
     if value is not None:
         return value
     token = text.strip()
-    return macros.offset(token) if macros is not None else None
+    if macros is None:
+        return None
+    direct = macros.offset(token)
+    if direct is not None:
+        return direct
+    raw = macros.raw(token)
+    if not raw:
+        count = re.fullmatch(r"([A-Za-z_]\w*)_CNT", token)
+        if count:
+            maximum = macros.offset(count.group(1) + "_MAX")
+            if maximum is not None:
+                return maximum + 1
+        return None
+    expanded = raw
+    for _round in range(8):
+        changed = False
+        for name in set(re.findall(r"\b[A-Za-z_]\w*\b", expanded)):
+            value = macros.offset(name)
+            if value is None:
+                continue
+            replaced = re.sub(rf"\b{re.escape(name)}\b", str(value), expanded)
+            changed |= replaced != expanded
+            expanded = replaced
+        if not changed:
+            break
+    return _eval_int_expr(expanded)
 
 
 def _bounded_loop(frame: dict, macros) -> dict | None:
@@ -169,6 +196,175 @@ def _bounded_loop(frame: dict, macros) -> dict | None:
         "stride": stride,
         "proof": "canonical monotonic for-loop",
     }
+
+
+def _runtime_bounded_loop(frame: dict) -> dict | None:
+    """Prove a canonical loop whose finite count is device state."""
+    if frame.get("loop_kind") != "for":
+        return None
+    init = (frame.get("init") or "").strip().rstrip(";")
+    guard = (frame.get("guard") or "").strip()
+    step = (frame.get("step") or "").strip().rstrip(";")
+    init_match = re.fullmatch(
+        r"(?:[A-Za-z_]\w*(?:\s+[A-Za-z_]\w*)*\s+)?"
+        r"([A-Za-z_]\w*)\s*=\s*0", init)
+    if not init_match:
+        return None
+    var = init_match.group(1)
+    guard_match = re.fullmatch(
+        rf"{re.escape(var)}\s*<\s*"
+        r"([A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)+)", guard)
+    if not guard_match or not re.fullmatch(
+            rf"(?:{re.escape(var)}\+\+|\+\+{re.escape(var)})", step):
+        return None
+    bound = guard_match.group(1)
+    return {
+        "count": F.parse_expr(bound),
+        "reliability": "Exact",
+        "bounded": True,
+        "dynamic_bound": True,
+        "induction_var": var,
+        "start": 0,
+        "stride": 1,
+        "proof": "canonical monotonic loop bounded by device state",
+    }
+
+
+def _replace_expr_vars(expr: dict, mapping: dict[str, str]) -> dict:
+    if not isinstance(expr, dict):
+        return expr
+    if "Var" in expr and expr["Var"] in mapping:
+        return {"Var": mapping[expr["Var"]]}
+    out = copy.deepcopy(expr)
+    if "BinOp" in out:
+        out["BinOp"]["left"] = _replace_expr_vars(
+            out["BinOp"].get("left"), mapping)
+        out["BinOp"]["right"] = _replace_expr_vars(
+            out["BinOp"].get("right"), mapping)
+    elif "Ite" in out:
+        for key in ("guard", "then", "else"):
+            out["Ite"][key] = _replace_expr_vars(
+                out["Ite"].get(key), mapping)
+    elif "Bits" in out:
+        out["Bits"]["expr"] = _replace_expr_vars(
+            out["Bits"].get("expr"), mapping)
+    return out
+
+
+def _array_state_op(kind: str, template: dict, field: str, index: str,
+                    id_counter: list[int], *, var: str | None = None,
+                    value: dict | None = None) -> dict:
+    id_counter[0] += 1
+    evidence = copy.deepcopy(template.get("evidence", {}))
+    evidence["access_domain"] = "source_state"
+    body = {
+        "field": field, "index": {"Var": index}, "width": "B4",
+        "op_id": f"op_{id_counter[0]}", "evidence": evidence,
+        "reliability": template.get("reliability", "Exact"),
+        "value_precision": "exact",
+        "path_precision": template.get("path_precision", "syntactic"),
+        "access_domain": "source_state",
+    }
+    if kind == "StateRead":
+        body["var"] = var or field
+    else:
+        body["value"] = value or {"Const": 0}
+    return {kind: body}
+
+
+def _lower_loop_private_arrays(frame: dict, body: list[dict],
+                               id_counter: list[int]) -> list[dict]:
+    """Lower loop-local aggregate aliases to indexed persistent state."""
+    source = frame.get("source", "")
+    induction = re.search(
+        r"for\s*\(\s*([A-Za-z_]\w*)\s*=\s*0\s*;", source)
+    if not induction:
+        return body
+    index = induction.group(1)
+    scalar = re.search(
+        rf"\b([A-Za-z_]\w*)\s*=\s*"
+        rf"([A-Za-z_]\w*->([A-Za-z_]\w*)\[{re.escape(index)}\]\."
+        r"([A-Za-z_]\w*))\s*;", source)
+    context = re.search(
+        rf"\*\s*([A-Za-z_]\w*)\s*=\s*"
+        rf"[A-Za-z_]\w*->([A-Za-z_]\w*)\[{re.escape(index)}\]\."
+        r"([A-Za-z_]\w*)\s*;", source)
+    if not scalar or not context:
+        return body
+    scalar_var, scalar_expr, array_name, scalar_field = scalar.groups()
+    context_var, context_array, context_field = context.groups()
+    if array_name != context_array:
+        return body
+    scalar_state = f"{array_name}_{scalar_field}"
+    prefix = f"{context_array}_{context_field}_"
+
+    template = next((
+        op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+        for op in walk_leaf_ops(body)
+        if op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")), {})
+    lowered = [_array_state_op(
+        "StateRead", template, scalar_state, index, id_counter,
+        var=scalar_var)]
+    mapping = {scalar_expr: scalar_var}
+
+    def transform(items: list[dict]) -> list[dict]:
+        result = []
+        for original in items:
+            op = copy.deepcopy(original)
+            if "Cond" in op:
+                op["Cond"]["guard"] = _replace_expr_vars(
+                    op["Cond"].get("guard"), mapping)
+                op["Cond"]["then_ops"] = transform(
+                    op["Cond"].get("then_ops", []))
+                op["Cond"]["else_ops"] = transform(
+                    op["Cond"].get("else_ops") or []) or None
+                result.append(op)
+                continue
+            if "Seq" in op:
+                op["Seq"]["ops"] = transform(op["Seq"].get("ops", []))
+                result.append(op)
+                continue
+            access = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            if access and "Computed" in access.get("addr", {}):
+                access["addr"]["Computed"] = _replace_expr_vars(
+                    access["addr"]["Computed"], mapping)
+            if "Read" in op and re.fullmatch(
+                    rf"{re.escape(context_var)}->([A-Za-z_]\w*)",
+                    op["Read"].get("var", "")):
+                field = re.fullmatch(
+                    rf"{re.escape(context_var)}->([A-Za-z_]\w*)",
+                    op["Read"]["var"]).group(1)
+                local = f"loop_state_{field}_value"
+                op["Read"]["var"] = local
+                result.append(op)
+                result.append(_array_state_op(
+                    "StateWrite", op["Read"], prefix + field, index,
+                    id_counter, value={"Var": local}))
+                continue
+            expressions = []
+            if "Write" in op:
+                expressions.append((op["Write"], "value"))
+            elif "ReadModifyWrite" in op:
+                expressions.append((op["ReadModifyWrite"], "transform"))
+            reads = set()
+            for holder, key in expressions:
+                rendered = repr(holder.get(key, {}))
+                reads |= set(re.findall(
+                    rf"{re.escape(context_var)}->([A-Za-z_]\w*)", rendered))
+            local_mapping = dict(mapping)
+            for field in sorted(reads):
+                local = f"loop_state_{field}"
+                result.append(_array_state_op(
+                    "StateRead", access or template, prefix + field, index,
+                    id_counter, var=local))
+                local_mapping[f"{context_var}->{field}"] = local
+            for holder, key in expressions:
+                holder[key] = _replace_expr_vars(holder.get(key), local_mapping)
+            result.append(op)
+        return result
+
+    lowered.extend(transform(body))
+    return lowered
 
 
 def _w1c_drain_loop(frame: dict, body: list[dict]) -> dict | None:
@@ -243,9 +439,14 @@ def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict
                 }
                 proof = _bounded_loop(frame, macros)
                 if proof is None:
+                    proof = _runtime_bounded_loop(frame)
+                if proof is None:
                     proof = _w1c_drain_loop(frame, body)
                 if proof:
                     loop.update(proof)
+                    if proof.get("dynamic_bound"):
+                        loop["body"] = _lower_loop_private_arrays(
+                            frame, body, id_counter)
                 result.append({"Loop": loop})
             else:
                 result.append({"Cond": {

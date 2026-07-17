@@ -249,14 +249,17 @@ def test_sdhci_ops_summary_models_accessors_and_reports_unknown_core_callbacks()
     assert summaries["sdhci_ops"] == [{
         "table": "demo_ops", "field": "read_l", "callee": "sdhci_readl",
         "module": "demo_ops__read_l", "width_bytes": 4,
+    }, {
+        "table": "demo_ops", "field": "write_l", "callee": "local_writel",
+        "module": "local_writel", "width_bytes": 4,
+        "implementation": "source-private",
     }]
-    assert summaries["unmodeled_callbacks"][0]["field"] == "set_clock"
+    assert summaries["unmodeled_callbacks"] == []
+    assert summaries["sdhci_delegates"][0]["field"] == "set_clock"
     assert any(function.callback_table == "sdhci_ops.read_l"
                for function in result.device_spec.functions)
-    readiness = __import__("extractor.metrics", fromlist=["score"]).score(
-        result.device_spec, result.formal, result.warnings, result.facts)
-    assert any("subsystem library callback" in blocker
-               for blocker in readiness["blockers"])
+    assert summaries["sdhci_delegates"][0]["summary_contract"] == (
+        "linux.sdhci_core_export")
 
 
 def test_npcm_sdhci_accessor_source_contract_and_portable_boundary():
@@ -283,6 +286,41 @@ def test_npcm_sdhci_accessor_source_contract_and_portable_boundary():
     assert mutation["sdhci_accessor_oracle_passed"] is False
     assert any("expected" in error
                for error in mutation["sdhci_accessor_oracle_errors"])
+
+
+def test_private_sdhci_accessors_execute_and_linux_lifecycle_is_rebuilt():
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+    from generator.subsystem_runner import portable_sdhci_accessor_only
+    from verification.sdhci_accessor_oracle import (
+        verify_sdhci_accessor_source_contract)
+
+    sources = [
+        os.path.join(REHARNESS, "linux", "drivers", "mmc", "host",
+                     "sdhci-dove.c"),
+        os.path.join(REHARNESS, "linux", "drivers", "mmc", "host",
+                     "sdhci-of-hlwd.c"),
+    ]
+    for source in sources:
+        result = extract_ris(ExtractorConfig(source=source))
+        oracle = verify_sdhci_accessor_source_contract(result.formal)
+        assert oracle["sdhci_accessor_oracle_passed"], oracle
+        assert portable_sdhci_accessor_only(result.formal, result.device_spec)
+        code = linux_gen.generate(
+            result.formal, result.device_spec,
+            default_bind(result.device_spec, "linux"), result.facts)
+        assert "REHARNESS_UNSUPPORTED" not in code
+        assert "static const struct sdhci_ops" in code
+        assert "sdhci_pltfm_init(pdev, pdata" in code
+        assert "sdhci_add_host(host)" in code
+        assert "sdhci_pltfm_remove(pdev)" in code
+    hlwd = extract_ris(ExtractorConfig(source=sources[1]))
+    assert "xfer_mode_shadow" in {field.name for field in hlwd.device_spec.state}
+    hlwd_code = linux_gen.generate(
+        hlwd.formal, hlwd.device_spec,
+        default_bind(hlwd.device_spec, "linux"), hlwd.facts)
+    assert "ioread32be" in hlwd_code and "iowrite32be" in hlwd_code
+    assert "udelay(DIV_ROUND_UP(ns, 1000))" in hlwd_code
 
 
 def test_virtio_config_and_queue_calls_are_distinct_unsupported_domains():
@@ -325,13 +363,17 @@ def test_virtio_config_and_queue_calls_are_distinct_unsupported_domains():
     domains = []
     for module in result.formal["modules"]:
         for op in walk_leaf_ops(module["ops"]):
-            body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+            body = op.get("StateRead") or op.get("StateWrite")
             if body:
                 domains.append(body["access_domain"])
-                assert body["reliability"] == "Unsupported"
+                assert body["reliability"] == "Exact"
                 assert body["evidence"]["origin"] == "subsystem_summary"
     assert domains.count("virtio_config") == 1
-    assert domains.count("virtqueue") == 3
+    assert domains.count("virtqueue") == 5
+    assert result.stats["access_accounting"]["strict_complete"] is True
+    assert result.stats["subsystem_summaries"]["virtio_state"] == [{
+        "module": "demo", "config_ops": 1, "queue_ops": 5,
+    }]
 
 
 def test_kbuild_cmd_compile_context_imports_only_parser_relevant_flags():
@@ -527,6 +569,10 @@ EDU = os.path.join(REHARNESS, "drivers", "test", "edu.c")
 PL061 = os.path.join(REHARNESS, "drivers", "test", "gpio-pl061.c")
 TS4800 = os.path.join(REHARNESS, "linux", "drivers", "gpio", "gpio-ts4800.c")
 GPIO_GE = os.path.join(REHARNESS, "linux", "drivers", "gpio", "gpio-ge.c")
+GPIO_CLPS711X = os.path.join(
+    REHARNESS, "linux", "drivers", "gpio", "gpio-clps711x.c")
+GPIO_DWAPB = os.path.join(
+    REHARNESS, "linux", "drivers", "gpio", "gpio-dwapb.c")
 MB86S7X = os.path.join(REHARNESS, "drivers", "test", "gpio-mb86s7x.c")
 C67X00_MULTI = os.path.join(REHARNESS, "drivers", "multisource", "c67x00.json")
 ASPEED_VHUB_MULTI = os.path.join(
@@ -1678,7 +1724,7 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                 [binary], capture_output=True, text=True, check=True).stdout
 
     results = {}
-    for source in (TS4800, GPIO_GE):
+    for source in (TS4800, GPIO_GE, GPIO_CLPS711X):
         result = extract_ris(ExtractorConfig(source=source))
         h_code = harness.generate(
             result.formal, result.device_spec,
@@ -1709,6 +1755,8 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
         source_oracle = verify_gpio_mmio_source_differential(
             result.formal, result.device_spec)
         assert source_oracle["gpio_mmio_source_oracle_passed"], source_oracle
+        assert source_oracle["gpio_mmio_source_oracle_calls"] == (
+            16 if source == GPIO_CLPS711X else 8)
 
         linux_code = linux_gen.generate(
             result.formal, result.device_spec,
@@ -1742,6 +1790,24 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
     assert "ioread32be" in results[GPIO_GE][4]
     assert "iowrite32be" in results[GPIO_GE][4]
 
+    clps_result, _clps_harness, *_clps_oracles, clps_linux = (
+        results[GPIO_CLPS711X])
+    summary = clps_result.formal["metadata"]["subsystem_summary_analysis"][
+        "summaries"]["gpio_generic"][0]
+    assert summary["variant_model"]["true_field"] == "dirin"
+    assert summary["variant_model"]["false_field"] == "dirout"
+    assert summary["resolved_fields"]["dat"][0]["resource_index"] == 0
+    assert summary["resolved_fields"]["dirin"][0]["resource_index"] == 1
+    assert summary["resolved_fields"]["dirout"][0]["resource_index"] == 1
+    assert [(resource.name, resource.bind)
+            for resource in clps_result.device_spec.resources
+            if resource.type == "MmioResource"] == [
+                ("mmio0", "dat"), ("mmio1", "dir")]
+    assert "g->dat = devm_platform_ioremap_resource(pdev, 0);" in clps_linux
+    assert "g->dir = devm_platform_ioremap_resource(pdev, 1);" in clps_linux
+    assert "of_alias_get_id((pdev->dev.of_node), \"gpio\")" in clps_linux
+    assert "REHARNESS_UNSUPPORTED" not in clps_linux
+
     ts_result, ts_code, *_rest = results[TS4800]
     mutated = ts_code.replace(
         "base + OUTPUT_REG_OFFSET", "base + DIRECTION_REG_OFFSET", 1)
@@ -1758,10 +1824,81 @@ def test_gpio_mmio_source_differential_suite_catches_semantic_mutations():
         verify_gpio_mmio_source_suite)
 
     result = verify_gpio_mmio_source_suite()
-    assert len(result["cases"]) == 6
+    assert len(result["cases"]) == 8
     assert all(case["passed"] for case in result["cases"].values())
-    assert result["mutations_caught"] == 6
+    assert result["cases"]["clps711x"]["calls"] == 16
+    assert result["cases"]["dwapb"]["calls"] == 32
+    assert result["mutations_caught"] == 10
     assert all(item["caught"] for item in result["mutations"].values())
+
+
+def test_gpio_direction_variant_requires_one_shared_register_address():
+    import tempfile
+    from pathlib import Path
+    from extractor.formal import walk_all_ops
+
+    source = Path(GPIO_CLPS711X).read_text(encoding="utf-8")
+    source = source.replace(
+        "config.dirout = dir;", "config.dirout = dat;", 1)
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "gpio-path-variant.c"
+        path.write_text(source, encoding="utf-8")
+        result = extract_ris(ExtractorConfig(source=str(path)))
+
+    summary = result.formal["metadata"]["subsystem_summary_analysis"][
+        "summaries"]["gpio_generic"][0]
+    assert summary["variant"] is True
+    assert summary["variant_model"] is None
+    domains = {
+        (op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+         or op.get("StateRead") or op.get("StateWrite") or {}).get(
+             "access_domain")
+        for module in result.formal["modules"]
+        for op in walk_all_ops(module["ops"])
+    }
+    assert "gpio_generic_config_variant" in domains
+
+
+def test_dwapb_banked_addresses_and_runtime_loops_are_source_backed():
+    from extractor.metrics import driver_metrics
+    from verification.dwapb_banked_oracle import verify_dwapb_banked
+    from verification.gpio_mmio_source_oracle import (
+        verify_gpio_mmio_source_differential)
+
+    database = os.path.join(
+        REHARNESS, "output", "zero-shot-contexts", "compile_commands.json")
+    config = ExtractorConfig(
+        source=GPIO_DWAPB,
+        compile_commands=database if os.path.isfile(database) else None,
+        compile_context_mode="required" if os.path.isfile(database) else "auto")
+    result = extract_ris(config)
+    metrics = driver_metrics(result.formal)
+    assert metrics["unsafe_computed"] == 0
+    assert metrics["conservative_loop"] == 0
+
+    summary = result.formal["metadata"]["subsystem_summary_analysis"][
+        "summaries"]["gpio_generic"][0]
+    assert summary["bank_model"]["max_count"] == 4
+    assert summary["bank_model"]["property"] == "reg"
+    assert summary["bank_model"]["resource_index"] == 0
+    assert summary["bank_model"]["ngpio_properties"] == [
+        "ngpios", "snps,nr-gpios"]
+    assert summary["bank_model"]["ngpio_default"] == 32
+    assert summary["bank_model"]["irq"]["selector_value"] == 0
+    assert {state.name: state.type for state in result.device_spec.state}[
+        "ports_ctx_data"] == "UIntArray"
+
+    source_oracle = verify_gpio_mmio_source_differential(
+        result.formal, result.device_spec)
+    assert source_oracle["gpio_mmio_source_oracle_passed"], source_oracle
+    assert source_oracle["gpio_mmio_source_oracle_calls"] == 32
+
+    oracle = verify_dwapb_banked()
+    assert oracle["passed"] is True
+    assert oracle["linux_lifecycle_passed"] is True
+    assert oracle["mutations_caught"] == 13
+    assert all(item["caught"] for item in oracle["mutations"].values())
+    assert all(item["caught"] for item in oracle["linux_mutations"].values())
 
 
 def test_readiness_score():
@@ -2385,10 +2522,16 @@ def _linux_generate_and_compile(source: str, module_name: str):
 
 def test_linux_backend_kernel_builds_gpio_and_edu():
     gpio = _linux_generate_and_compile(FTGPIO, "rh_test_gpio")
+    clps = _linux_generate_and_compile(GPIO_CLPS711X, "rh_test_gpio_clps")
+    dwapb = _linux_generate_and_compile(GPIO_DWAPB, "rh_test_gpio_dwapb")
     edu = _linux_generate_and_compile(EDU, "rh_test_edu")
     assert "module_platform_driver" in gpio
+    assert "g->dat = devm_platform_ioremap_resource(pdev, 0);" in clps
+    assert "g->dir = devm_platform_ioremap_resource(pdev, 1);" in clps
     assert "module_pci_driver" in edu and "struct miscdevice misc" in edu
-    assert "REHARNESS_UNSUPPORTED" not in gpio + edu
+    assert "struct gpio_dwapb_priv_bank" in dwapb
+    assert "&bank->gc, bank" in dwapb
+    assert "REHARNESS_UNSUPPORTED" not in gpio + clps + dwapb + edu
 
 
 def test_ahci_linux_backend_builds_with_explicit_limitation():

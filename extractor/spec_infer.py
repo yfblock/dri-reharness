@@ -88,6 +88,24 @@ def _base_exprs_of_module(module: dict) -> tuple[list[str], list[str]]:
     return bases, []
 
 
+def _bound_mmio_resources(formal: dict) -> dict[str, int | None]:
+    bases: dict[str, int | None] = {}
+    summary_groups = formal.get("metadata", {}).get(
+        "subsystem_summary_analysis", {}).get("summaries", {})
+    # Multi-translation-unit extraction predates subsystem materialization and
+    # records the empty default as a list.  Treat that representation as no
+    # summaries rather than imposing the single-TU dictionary schema on it.
+    summaries = (summary_groups.get("gpio_generic", [])
+                 if isinstance(summary_groups, dict) else [])
+    for summary in summaries:
+        for entries in summary.get("resolved_fields", {}).values():
+            for entry in entries:
+                base = entry.get("base")
+                if base and re.fullmatch(r"[A-Za-z_]\w*", base):
+                    bases.setdefault(base, entry.get("resource_index"))
+    return bases
+
+
 def infer_function_spec(func: Func, module: dict, role: str, context: str,
                         is_callback_entry: bool, callback_table: Optional[str],
                         source_path: str) -> FunctionSpec:
@@ -213,6 +231,21 @@ _MODELED_STATE_FIELDS = {
     "gpio_ie": "UInt",
     "version": "UInt",
     "features": "UInt64",
+    "ready": "Bool",
+    "idev": "Bool",
+    "evbit": "UInt64",
+    "absbit": "UInt64",
+    "virtio_evt_available": "UInt",
+    "virtio_evt_completed": "UInt",
+    "virtio_evt_outstanding": "UInt",
+    "virtio_evt_queue_depth": "UInt",
+    "virtio_evt_notified": "Bool",
+    "virtio_sts_available": "UInt",
+    "virtio_sts_completed": "UInt",
+    "virtio_sts_outstanding": "UInt",
+    "virtio_sts_queue_depth": "UInt",
+    "virtio_sts_notified": "Bool",
+    "xfer_mode_shadow": "UInt",
     # Common USB controller / endpoint private state.
     "enabled": "Bool",
     "suspended": "Bool",
@@ -240,6 +273,8 @@ _MODELED_STATE_FIELDS = {
     "sie_num": "UInt",
     "gpio_sdata": "UInt",
     "gpio_sdir": "UInt",
+    "flags": "UInt",
+    "nr_ports": "UInt",
 }
 
 
@@ -281,9 +316,11 @@ def _modeled_state_fields(formal: dict) -> dict[str, str]:
                     inspect(body["addr"]["Computed"])
                 inspect(body.get("value") or body.get("transform"))
             if "StateRead" in op:
-                found[op["StateRead"]["field"]] = "UInt"
+                found[op["StateRead"]["field"]] = (
+                    "UIntArray" if op["StateRead"].get("index") else "UInt")
             elif "StateWrite" in op:
-                found[op["StateWrite"]["field"]] = "UInt"
+                found[op["StateWrite"]["field"]] = (
+                    "UIntArray" if op["StateWrite"].get("index") else "UInt")
                 inspect(op["StateWrite"].get("value"))
             elif "OutputWrite" in op:
                 inspect(op["OutputWrite"].get("value"))
@@ -291,6 +328,9 @@ def _modeled_state_fields(formal: dict) -> dict[str, str]:
                 inspect(op["Return"].get("value"))
             if "Cond" in op:
                 inspect(op["Cond"].get("guard"))
+            if "Loop" in op:
+                inspect(op["Loop"].get("count"))
+                inspect(op["Loop"].get("guard"))
     return found
 
 
@@ -313,6 +353,13 @@ def infer_device_spec(formal: dict, funcs: list[Func],
         r"(?:->|\.)hpi(?:->|\.)base\b", source_text))
     state: list[StateField] = [StateField(
         "base", "MmioBase", bind="hpi.base" if has_hpi_state else None)]
+    fixed_bases = _bound_mmio_resources(formal)
+    for base in sorted(fixed_bases, key=lambda item: (
+            fixed_bases[item] is None,
+            fixed_bases[item] if fixed_bases[item] is not None else 0,
+            item)):
+        if base != "base":
+            state.append(StateField(base, "MmioBase", bind=base))
     has_irq = any(fs.role.startswith("interrupt") or fs.role == "set_irq_type" for fs in fn_specs)
     has_clk = bool(re.search(
         r"\b(?:(?:devm_)?clk_get(?:_optional)?(?:_enabled)?|"
@@ -332,7 +379,14 @@ def infer_device_spec(formal: dict, funcs: list[Func],
             existing.add(field)
 
     # resources
-    resources: list[Resource] = [Resource("mmio0", "MmioResource", True, "base")]
+    if fixed_bases and all(index is not None for index in fixed_bases.values()):
+        resources = [
+            Resource(f"mmio{index}", "MmioResource", True, base)
+            for base, index in sorted(
+                fixed_bases.items(), key=lambda item: (int(item[1]), item[0]))
+        ]
+    else:
+        resources = [Resource("mmio0", "MmioResource", True, "base")]
     if has_clk:
         resources.append(Resource("clk0", "ClockResource", True, "clk"))
     if has_irq:
@@ -527,7 +581,7 @@ _STRUCT_INIT = re.compile(
 
 _KNOWN_CALLBACK_TABLES = {
     "irq_chip", "gpio_chip", "platform_driver", "pci_driver", "amba_driver",
-    "virtio_config_ops", "clk_ops", "dev_pm_ops", "file_operations",
+    "virtio_config_ops", "virtio_driver", "clk_ops", "dev_pm_ops", "file_operations",
     "gpio_irq_chip",
     "usb_ep_ops", "usb_gadget_ops", "hc_driver", "sdhci_ops",
     "virtqueue_info",
@@ -589,7 +643,9 @@ def parse_callback_bindings(source_text: str, target_names: set[str]) -> dict[st
         if "struct clk_hw" in params:
             return "clk_ops"
         if "struct virtio_device" in params:
-            return "virtio_config_ops"
+            return ("virtio_driver" if field in {
+                "probe", "remove", "freeze", "restore"}
+                else "virtio_config_ops")
         if "struct virtqueue" in params:
             return "virtqueue_info"
         if "struct input_dev" in params:
