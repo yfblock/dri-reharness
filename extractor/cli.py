@@ -220,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
             verify_virtio_state_contract)
         from verification.w1c_drain_oracle import (
             verify_w1c_drain_contract, verify_w1c_drain_runtime)
+        from verification.backend_lowering_oracle import (
+            build_generation_contract, verify_backend_lowering)
 
         res = extract_ris(_config_from_args(args))
         name = res.formal["driver"]
@@ -236,7 +238,14 @@ def main(argv: list[str] | None = None) -> int:
 
         print(f"🚀 driver pipeline: {name} → {outdir}/")
         # ── core reconstruction inputs (recom.md) ──
+        generation_contract = build_generation_contract(res.formal)
+        generation_contract["synthesis_readiness"] = score_fn(
+            res.device_spec, res.formal, res.warnings, res.facts)
         save_formal_text(res.formal, os.path.join(outdir, f"{name}.ris"))
+        _w(outdir, f"{name}.formal.json", json.dumps(
+            res.formal, indent=2, sort_keys=True))
+        _w(outdir, "generation-contract.json", json.dumps(
+            generation_contract, indent=2, sort_keys=True))
         _w(outdir, f"{name}.dspec", res.device_spec.display())
         _w(outdir, f"{name}.facts", res.facts.display())
         _w(ver_dir, "analysis.json", json.dumps({
@@ -271,8 +280,13 @@ def main(argv: list[str] | None = None) -> int:
                 fh.write(code)
             has_todo = "TODO" in code
             unsupported = "REHARNESS_UNSUPPORTED" in code
+            lowering = verify_backend_lowering(res.formal, code)
+            _w(ver_dir, f"{backend}-lowering.json", json.dumps(
+                lowering, indent=2, sort_keys=True))
             gr: dict = {
                 "has_todo": has_todo, "unsupported": unsupported,
+                "backend_lowering_complete": lowering["complete"],
+                "backend_lowering": lowering,
                 **source_oracle, **sdhci_oracle, **virtio_oracle,
                 **w1c_contract,
             }
@@ -430,7 +444,9 @@ def main(argv: list[str] | None = None) -> int:
         # ── summary ──
         print()
         print("── core reconstruction inputs ──")
-        for f in (f"{name}.ris", f"{name}.dspec", f"{name}.bind", f"{name}.facts"):
+        for f in (f"{name}.ris", f"{name}.formal.json",
+                  "generation-contract.json", f"{name}.dspec",
+                  f"{name}.bind", f"{name}.facts"):
             print(f"   {outdir}/{f}")
         print("── generated/ ──")
         for f in sorted(os.listdir(gen_dir)):

@@ -189,6 +189,10 @@ PROMPT_HEAD
   echo "## .ris" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.ris" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## .dspec (含寄存器偏移)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.dspec" >> $RH_TMP/synth_prompt.txt
   echo -e "\n## .bind (linux)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.linux.bind" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n## .facts (AST 类型、字段、回调、资源和错误路径)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/$BASE.facts" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n## generation contract (机器可读；不得遗漏、复制或发明 RIS 操作)" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/generation-contract.json" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n## synthesis readiness / unresolved blockers" >> $RH_TMP/synth_prompt.txt; cat "$BUNDLE/score.txt" >> $RH_TMP/synth_prompt.txt
+  echo -e "\n生成代码必须保留 generation contract 中每个 register operation 的 op_id；未证明项必须显式拒绝，不能用中性值、删除操作或新增硬件副作用来掩盖。" >> $RH_TMP/synth_prompt.txt
   echo -e "\n$CONSTRAINTS" >> $RH_TMP/synth_prompt.txt
   cp $RH_TMP/synth_prompt.txt "$ITER_LOG/synth/prompt.txt" 2>/dev/null || { mkdir -p "$ITER_LOG/synth"; cp $RH_TMP/synth_prompt.txt "$ITER_LOG/synth/prompt.txt"; }
   timeout 600 bash "$HERE/tools/pi_synth.sh" < $RH_TMP/synth_prompt.txt > $RH_TMP/synth_out.txt 2>&1

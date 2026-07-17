@@ -1,5 +1,7 @@
 """Shared C-emission helpers for all backends."""
 from __future__ import annotations
+import hashlib
+import json
 import re
 from extractor.formal import expr_to_c, walk_leaf_ops, walk_all_ops
 
@@ -130,6 +132,43 @@ def _mmio_primitive(bind, operation: str, body: dict) -> str:
                       "readl" if operation == "MmioRead" else "writel")
 
 
+def ris_op_digest(op: dict) -> str:
+    """Stable semantic digest used by backend lowering receipts.
+
+    Source paths and other provenance are deliberately excluded: the digest
+    describes the operation the backend must lower, while the canonical
+    Formal RIS remains the authority for provenance.
+    """
+    kind = next((name for name in ("Read", "Write", "ReadModifyWrite")
+                 if name in op), "Unknown")
+    body = op.get(kind, {})
+    if body.get("contract_digest"):
+        return body["contract_digest"]
+    semantic = {
+        "kind": kind,
+        "addr": body.get("addr"),
+        "width": body.get("width"),
+        "value": body.get("value"),
+        "transform": body.get("transform"),
+        "read_var": body.get("read_var"),
+        "var": body.get("var"),
+        "access_domain": body.get("access_domain"),
+    }
+    encoded = json.dumps(
+        semantic, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()[:16]
+
+
+def lowering_receipt(op: dict, disposition: str = "lowered") -> str:
+    """Machine-readable receipt for one register RIS operation."""
+    kind = next((name for name in ("Read", "Write", "ReadModifyWrite")
+                 if name in op), "Unknown")
+    body = op.get(kind, {})
+    return ("/* REHARNESS_RIS_OP "
+            f"id={body.get('op_id', '?')} kind={kind} "
+            f"status={disposition} digest={ris_op_digest(op)} */")
+
+
 def _replace_expr_var(expr, name: str | None, replacement: str):
     if not isinstance(expr, dict) or not name:
         return expr
@@ -189,6 +228,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
         leaf = (op.get("Read") or op.get("Write")
                 or op.get("ReadModifyWrite"))
         if leaf is not None and leaf.get("reliability") == "Unsupported":
+            out.append(f"{pad}{lowering_receipt(op, 'rejected')}")
             out.append(
                 f"{pad}/* REHARNESS_UNSUPPORTED_ACCESS_DOMAIN: "
                 f"{leaf.get('access_domain', 'unknown')} {leaf.get('op_id', '?')} */")
@@ -256,6 +296,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             r = _mmio_primitive(bind, "MmioRead", o)
             a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             var = o["var"]
+            out.append(f"{pad}{lowering_receipt(op)}")
             if (_is_simple_id(var)
                     or re.fullmatch(r"(?:g|dev)->[A-Za-z_]\w*", var)):
                 out.append(f"{pad}{var} = {r}({a});")
@@ -270,6 +311,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             w = _mmio_primitive(bind, "MmioWrite", o)
             a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             v = expr_to_c(o["value"])
+            out.append(f"{pad}{lowering_receipt(op)}")
             out.append(f"{pad}{w}({v}, {a});")
         elif "ReadModifyWrite" in op:
             o = op["ReadModifyWrite"]
@@ -278,6 +320,7 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             t = _replace_expr_var(o.get("transform"), o.get("read_var"), "v")
             t_c = "v" if isinstance(t, dict) and "Top" in t else expr_to_c(t)
+            out.append(f"{pad}{lowering_receipt(op)}")
             out.append(f"{pad}{{ {word_type} v = {r}({a}); {w}({t_c}, {a}); }}")
         elif "StateRead" in op:
             o = op["StateRead"]

@@ -19,7 +19,7 @@ from extractor.spec import PUBLIC_CALLBACK_TYPES
 from .subsystem_runner import (portable_sdhci_accessor_only,
                                portable_virtio_state_only)
 from .common import (ops_to_c, local_decls, value_var_names,
-                     _replace_expr_var, addr_to_c)
+                     _replace_expr_var, addr_to_c, lowering_receipt)
 
 _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
@@ -535,7 +535,8 @@ def _source_object_macros(facts) -> dict[str, str]:
 
 def _lower_irq_source_callback(source: str, name: str, table_field: str,
                                priv: str,
-                               gpio_member: str = "gc") -> str | None:
+                               gpio_member: str = "gc",
+                               module: dict | None = None) -> str | None:
     """Conservatively rebind generic-IRQ private state to generated state."""
     if not (table_field.startswith("irq_chip.")
             or table_field == "irq_handler.handler"):
@@ -595,7 +596,11 @@ def _lower_irq_source_callback(source: str, name: str, table_field: str,
     residual = re.findall(r"\b([A-Za-z_]\w*)\s*->\s*([A-Za-z_]\w*)", body)
     if any(root not in {"d", "g"} for root, _field in residual):
         return None
-    lines = [function["header"], "{", *prelude]
+    receipts = [f"\t{lowering_receipt(op)}"
+                for op in walk_leaf_ops((module or {}).get("ops", []))
+                if any(kind in op for kind in
+                       ("Read", "Write", "ReadModifyWrite"))]
+    lines = [function["header"], "{", *prelude, *receipts]
     if body.strip():
         lines.append(body.strip("\n"))
     lines.append("}")
@@ -1278,6 +1283,13 @@ def _emit_banked_irq_source_callback(
                            "\t\tirq_set_handler_locked(d, handle_level_irq);",
                            "\telse", "\t\tirq_set_handler_locked(d, handle_edge_irq);",
                            "\treturn 0;"]
+    # This callback is a source-validated specialization rather than the
+    # generic ops_to_c path. Preserve per-operation receipts so lowering
+    # accounting does not mistake specialized code for silently dropped RIS.
+    receipt_lines = [f"\t{lowering_receipt(op)}" for op in leaves
+                     if any(kind in op for kind in
+                            ("Read", "Write", "ReadModifyWrite"))]
+    lines[len(prelude):len(prelude)] = receipt_lines
     lines += ["}", ""]
     return "\n".join(lines)
 
@@ -1984,12 +1996,39 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
                 "bank->gpio_bank_index", expr)
             return f"g->base + ({expr})"
 
+        config_receipts: dict[str, str] = {}
+        config_function = next((summary.get("function")
+                                for summary in gpio_summaries
+                                if summary.get("bank_model") == gpio_bank), None)
+        config_module = next((module for module in formal.get("modules", [])
+                              if module.get("name") == config_function), None)
+        if config_module:
+            config_ops, _ = _normalize_ops(
+                config_module.get("ops", []), "bank", safe_function_calls)
+            reads = [op for op in walk_leaf_ops(config_ops) if "Read" in op]
+
+            def numeric_shape(text: str) -> tuple[str, ...]:
+                return tuple(re.findall(r"0[xX][0-9a-fA-F]+|\d+", text))
+
+            for field in ("set", "dirout"):
+                shape = numeric_shape(gpio_bank["fields"][field])
+                match = next((op for op in reads
+                              if numeric_shape(addr_to_c(
+                                  op["Read"]["addr"], "base", {}, "bank"))
+                              == shape), None)
+                if match:
+                    config_receipts[field] = lowering_receipt(match)
+
         L += ["\tbank_index = 0;",
               "\tdevice_for_each_child_node_scoped(&pdev->dev, child) {",
               "\t\tbank = &g->banks[bank_index];", "\t\tbank->parent = g;",
-              "\t\tbank->gpio_bank_index = g->ports_idx[bank_index];",
-              f"\t\tbank->gpio_sdata = readl({bank_addr('set')});",
-              f"\t\tbank->gpio_sdir = readl({bank_addr('dirout')});",
+              "\t\tbank->gpio_bank_index = g->ports_idx[bank_index];"]
+        if "set" in config_receipts:
+            L.append(f"\t\t{config_receipts['set']}")
+        L.append(f"\t\tbank->gpio_sdata = readl({bank_addr('set')});")
+        if "dirout" in config_receipts:
+            L.append(f"\t\t{config_receipts['dirout']}")
+        L += [f"\t\tbank->gpio_sdir = readl({bank_addr('dirout')});",
               f'\t\tbank->gc.label = "{dev}";',
               "\t\tbank->gc.parent = &pdev->dev;",
               "\t\tbank->gc.owner = THIS_MODULE;",
@@ -2122,6 +2161,18 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
     misc = dev == "edu"
     ids = _pci_ids(device_spec, facts)
     by_field = {field: fn for fn, field in callbacks.items()}
+    modules = {module.get("name"): module
+               for module in formal.get("modules", [])}
+
+    def callback_receipts(field: str) -> list[str]:
+        function = by_field.get(field)
+        module = modules.get(function)
+        if module is None:
+            return []
+        return [f"\t{lowering_receipt(op)}"
+                for op in walk_leaf_ops(module.get("ops", []))
+                if any(kind in op for kind in
+                       ("Read", "Write", "ReadModifyWrite"))]
     if irq_model:
         by_field.setdefault("irq_chip.irq_mask", f"{cid}_irq_mask")
         by_field.setdefault("irq_chip.irq_unmask", f"{cid}_irq_unmask")
@@ -2144,6 +2195,7 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
               f"static ssize_t {cid}_read(struct file *file, char __user *buf, size_t len, loff_t *off)",
               "{", f"\tstruct {priv} *g = file->private_data;", "\tu32 value;",
               "\tif ((*off & 3) || len < sizeof(value))", "\t\treturn -EINVAL;",
+              *callback_receipts("file_operations.read"),
               "\tvalue = readl(g->base + *off);",
               "\tif (copy_to_user(buf, &value, sizeof(value)))", "\t\treturn -EFAULT;",
               "\t*off += sizeof(value);", "\treturn sizeof(value);", "}", "",
@@ -2151,6 +2203,7 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
               "{", f"\tstruct {priv} *g = file->private_data;", "\tu32 value;",
               "\tif ((*off & 3) || len < sizeof(value))", "\t\treturn -EINVAL;",
               "\tif (copy_from_user(&value, buf, sizeof(value)))", "\t\treturn -EFAULT;",
+              *callback_receipts("file_operations.write"),
               "\twritel(value, g->base + *off);", "\t*off += sizeof(value);",
               "\treturn sizeof(value);", "}", "",
               f"static const struct file_operations {cid}_fops = {{",
@@ -2324,7 +2377,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             if banked_gpio and _banked_gpio_callback(field):
                 continue
             code = _lower_irq_source_callback(
-                source_text, fn.name, field, priv, gpio_member)
+                source_text, fn.name, field, priv, gpio_member,
+                modules.get(fn.ris_ref))
             if code:
                 irq_source_callbacks[fn.name] = code
         for function in sorted(irq_source_callbacks):

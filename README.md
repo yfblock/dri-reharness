@@ -9,20 +9,20 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 版本化语料：drivers/test/ 内含 19 个单源测试驱动；drivers/multisource/ 包含真实 Kbuild 多源模块 manifest。
 - 版本化内核：linux/ 是固定到实验 commit 的 Git submodule。
 - 三个确定性后端：harness 18/19、bare-metal 18/19、Linux 17/19 可编译；未编译项保留明确日志，不用 stub 成功替代。
-- 严格语义 readiness：harness 6/19、bare-metal 6/19、Linux 7/19。通用后端只在合成 GPIO callback runner 逐函数通过 offset、操作类型和值级 oracle 后恢复 readiness；未覆盖的 subsystem callback 仍保守阻塞。
+- 严格语义 readiness（C14 lowering receipt gate 重跑）：harness 6/19、bare-metal 6/19、Linux 4/19，三个后端共同 4/19。EDU 的 IRQ handler、Cadence 的 remove 写以及其它专用 lowering 中没有逐 op 归属的语义会保守撤销 readiness；编译通过不再能掩盖 RIS 操作漏发。
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。ASPEED 与 DWC2 仍保留严格语义 blocker，编译成功不等于 subsystem lifecycle 已证明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
 - 原始 MMIO 对照：907 个源码 primitive、1,084 个 direct AST 操作、3,742 个传播后 RIS MMIO 操作。
-- 测试套件：110 tests；测试入口先执行冻结 holdout/specialization guard。
+- 测试套件：119 tests；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；机器报告给出 scoped strict 9/19。`whole_program_complete` 由 linked analysis、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
 - C67X00 HPI：32/32 computed address 可安全 lowering；`hpi.base`、`hpi.regstep` 和 `sie_num` 显式建模。5 个 primitive、4 个原始 C↔RIS differential case 通过，4 类 mutation 全被检出。
 - SVF 别名分析：off、auto、required，默认 off；多源 manifest 会先链接所有 TU bitcode，再执行一次 WPA，并记录 linked-bitcode SHA、工具版本和 source provenance。C67X00 required run 成功链接 4 TU。
 - 零样本泛化基础：`drivers/holdout/zero-shot-v1.json` 冻结 12 个未用于实现的驱动；extractor/generator 出现这些驱动的专用标识会使 CI 失败。Kbuild importer 优先读取 `compile_commands.json`，否则自动读取对象对应的 `.cmd`，并把来源、参数与 SHA 写入 analysis metadata。
-- Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。最终 zero-shot 矩阵三后端编译和 strict readiness 均为 12/12。DW APB 使用每-bank `gpio_chip`、selector/shadow state、source-proven IRQ bank 与 parent IRQ domain dispatch；PM、bank addressing、lifecycle 和 IRQ bit/type 语义由 13 个 mutation 覆盖。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
+- Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；C14 gate 下 harness/bare-metal strict 为 12/12，Linux 与三后端共同 strict 为 7/12。DW APB 使用每-bank `gpio_chip`、selector/shadow state、source-proven IRQ bank 与 parent IRQ domain dispatch；专项 oracle 仍通过，但 Linux lowering 尚有 3 个 RIS op 未建立逐语句归属，因此不再计作 strict-ready。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
 
-当前冻结实验结果来自 experiments/results/matrix.json：
+下表的提取规模来自冻结的 experiments/results/matrix.json；C14 只收紧生成端 readiness，不改变这些 RIS 计数：
 
 | 驱动数 | Ops | Symbolic | Fixed | Computed | RMW | Conditions | Registers |
 |---:|---:|---:|---:|---:|---:|---:|---:|
@@ -43,6 +43,8 @@ RIS 操作包括：
 
 RIS leaf op 还包含 `op_id`、source evidence、reliability、address/value/path precision 和 access domain。已识别 MMIO/regmap API、直接 volatile 解引用与 inline asm 都进入 access accounting；无法 lowering 的访问不会静默消失。显式 source-level CFG 记录 block、pred/succ、dominance/post-dominance、join、goto edge、backedge 与 loop header。结构化路径由 Z3 检查可满足性与 switch 互斥性；规范、静态有界的 `for` 循环可被证明并生成。简单参数型 early exit 和可界定的前向 goto 会转成 continuation guard，后向 goto 与未证明循环仍由 control accounting 显式阻塞。
 
+生成 C 中的每个 Read/Write/RMW 还必须携带 `op_id + canonical digest` lowering receipt。独立 oracle 对 generation contract 做 exactly-once 检查，拒绝 missing、duplicate、unknown、rejected、kind mismatch 和 digest drift。该 gate 证明操作归属完整性；表达式和控制路径的独立 AST 等价验证仍是下一阶段工作。
+
 Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_chip.init_hw` 绑定会按字段语义归类；clock provider 会保留多套 `clk_ops`、纯标量 rate 算术、源码内 helper、父时钟/provider 注册以及对应 OF 变体。Sodaville 的 PCI ID、12-line GPIO generic dat/set/dirout 行为和 mask/unmask/EOI IRQ lifecycle 由版本化源码保守恢复。只有经过显式 source-private 重绑定且真实 Kbuild 通过的 callback 才可消除 unsupported marker。
 
 完整 pipeline 可生成：
@@ -51,6 +53,8 @@ Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_
 - .dspec：FunctionSpec/DeviceSpec
 - .bind：后端绑定
 - .facts：源码结构、callback、resource 等事实
+- .formal.json：包含完整 provenance 的 canonical Formal RIS
+- generation-contract.json：面向确定性后端和 LLM 的逐操作生成契约、claim scope 与 readiness
 - harness、bare-metal 和 Linux C
 
 实验聚合信息使用 JSON 保存，以便论文表格和复现脚本机器读取；RIS 本身仍使用正式的 .ris 文本语言。

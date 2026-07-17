@@ -1,5 +1,7 @@
 """Pytest/standalone tests for the reharness extractor (.ris spec language)."""
+import json
 import os
+import re
 import sys
 import textwrap
 try:
@@ -2054,8 +2056,98 @@ def test_bundle_assembly():
     files = set(os.listdir(bdir))
     name = res.formal["driver"]
     for need in (f"{name}.ris", f"{name}.dspec", f"{name}.facts",
-                 f"{name}.harness.bind", "score.txt"):
+                 f"{name}.harness.bind", f"{name}.formal.json",
+                 "generation-contract.json", "score.txt"):
         assert need in files, f"missing {need}"
+    contract = json.load(open(os.path.join(
+        bdir, "generation-contract.json"), encoding="utf-8"))
+    assert contract["policy"]["cardinality"] == "exactly-once"
+    assert len(contract["register_operations"]) == 35
+    assert contract["synthesis_readiness"]["llm_synthesis_ready"] is True
+    assert "whole_program_complete" in contract["claim_scope"]
+
+
+def test_backend_lowering_receipts_are_bijective_and_mutation_checked():
+    from extractor.spec import default_bind
+    from generator import baremetal as baremetal_gen
+    from generator import harness as harness_gen
+    from generator import linux as linux_gen
+    from verification.backend_lowering_oracle import verify_backend_lowering
+
+    res = extract_ris(ExtractorConfig(source=FTGPIO))
+    generators = {
+        "harness": lambda bind: harness_gen.generate(
+            res.formal, res.device_spec, bind),
+        "baremetal": lambda bind: baremetal_gen.generate(
+            res.formal, res.device_spec, bind),
+        "linux": lambda bind: linux_gen.generate(
+            res.formal, res.device_spec, bind, res.facts),
+    }
+    codes = {}
+    for backend, generate in generators.items():
+        code = generate(default_bind(res.device_spec, backend))
+        report = verify_backend_lowering(res.formal, code)
+        assert report["complete"] is True, (backend, report)
+        assert report["required_ops"] == report["receipts"] == 35
+        codes[backend] = code
+
+    baseline = codes["harness"]
+    receipt_re = re.compile(
+        r"/\* REHARNESS_RIS_OP id=op_\d+ kind=\w+ "
+        r"status=lowered digest=[0-9a-f]+ \*/")
+    first = receipt_re.search(baseline)
+    assert first is not None
+    receipt = first.group(0)
+
+    deleted = baseline[:first.start()] + baseline[first.end():]
+    assert verify_backend_lowering(
+        res.formal, deleted)["complete"] is False
+
+    duplicated = baseline[:first.end()] + "\n" + receipt + baseline[first.end():]
+    duplicate_report = verify_backend_lowering(res.formal, duplicated)
+    assert duplicate_report["complete"] is False
+    assert duplicate_report["duplicate"]
+
+    unknown = baseline[:first.start()] + receipt.replace(
+        "id=op_1 ", "id=op_unknown ") + baseline[first.end():]
+    unknown_report = verify_backend_lowering(res.formal, unknown)
+    assert unknown_report["complete"] is False
+    assert unknown_report["unknown"] == ["op_unknown"]
+
+    rejected = baseline[:first.start()] + receipt.replace(
+        "status=lowered", "status=rejected") + baseline[first.end():]
+    rejected_report = verify_backend_lowering(res.formal, rejected)
+    assert rejected_report["complete"] is False
+    assert rejected_report["rejected"]
+
+    bad_digest = baseline[:first.start()] + re.sub(
+        r"digest=[0-9a-f]+", "digest=0000000000000000", receipt
+    ) + baseline[first.end():]
+    digest_report = verify_backend_lowering(res.formal, bad_digest)
+    assert digest_report["complete"] is False
+    assert digest_report["digest_mismatch"]
+
+
+def test_backend_lowering_gate_distinguishes_specialization_from_omission():
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+    from verification.backend_lowering_oracle import verify_backend_lowering
+
+    cases = {
+        os.path.join(REHARNESS, "drivers", "test", "gpio-sodaville.c"): [],
+        os.path.join(REHARNESS, "drivers", "test", "edu.c"):
+            ["op_1", "op_2"],
+        os.path.join(REHARNESS, "drivers", "test", "gpio-cadence.c"):
+            ["op_27"],
+    }
+    for source, expected_missing in cases.items():
+        result = extract_ris(ExtractorConfig(source=source))
+        bind = default_bind(result.device_spec, "linux")
+        code = linux_gen.generate(
+            result.formal, result.device_spec, bind, result.facts)
+        report = verify_backend_lowering(result.formal, code)
+        assert report["missing"] == expected_missing, (source, report)
+        assert report["complete"] is (not expected_missing)
 
 
 # ── extraction configuration / optional SVF regressions ─────────────

@@ -392,6 +392,16 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if gen_results:
         def _gr(backend):
             return gen_results.get(backend, {})
+        for backend in ("harness", "baremetal", "linux"):
+            lowering = _gr(backend).get("backend_lowering", {})
+            if lowering and not lowering.get("complete", False):
+                discrepancy = sum(len(lowering.get(key, [])) for key in (
+                    "missing", "duplicate", "unknown", "rejected",
+                    "digest_mismatch", "kind_mismatch",
+                    "duplicate_expected_ids"))
+                blockers.append(
+                    f"{backend} backend has {discrepancy} RIS lowering "
+                    "accounting discrepancy/discrepancies")
         h = _gr("harness")
         if h:
             h_source_ready = (not gpio_source_required or bool(
@@ -414,6 +424,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                  and unsupported_ops == 0
                                  and unsupported_control == 0
                                  and met["conservative_loop"] == 0
+                                 and h.get("backend_lowering_complete", True)
                                  and h.get("compiled") and h.get("trace_passed")
                                  and not h.get("has_todo")
                                  and not h.get("unsupported"))
@@ -439,6 +450,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                    and unsupported_ops == 0
                                    and unsupported_control == 0
                                    and met["conservative_loop"] == 0
+                                   and bm.get("backend_lowering_complete", True)
                                    and bm.get("compiled") and not bm.get("has_todo")
                                    and not bm.get("unsupported"))
         lx = _gr("linux")
@@ -465,6 +477,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                and unsupported_control == 0
                                and function_spec_quality >= 0.6
                                and not unbound_callbacks
+                               and lx.get("backend_lowering_complete", True)
                                and not lx.get("has_todo")
                                and not lx.get("unsupported")
                                and lx.get("compiled", False)
