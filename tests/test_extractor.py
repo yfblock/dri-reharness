@@ -131,6 +131,13 @@ def test_zero_shot_blocker_normalization_and_common_root_selection():
         "linux backend has 9 register operation(s) explicitly blocked by "
         "a missing Linux definition root"
     ) == "linux_definition_root"
+    assert normalize_blocker(
+        "linux backend lowering receipt reconciliation failed"
+    ) == "lowering_reconciliation"
+    assert normalize_blocker(
+        "linux backend has 1 unexplained RIS lowering accounting "
+        "discrepancy/discrepancies"
+    ) == "lowering_accounting_discrepancy"
     rows = [
         {"driver": f"case-{index}", "blockers": [
             "1 conservative loop summary/summaries require validation",

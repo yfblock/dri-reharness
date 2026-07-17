@@ -78,12 +78,19 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
     ("linux_runtime_attestation",
      r"^linux backend has \d+ emitted definition operation\(s\) without "
      r"independent runtime registration/callsite attestation$"),
+    ("lowering_reconciliation",
+     r"^(?:harness|baremetal|linux) backend lowering receipt "
+     r"reconciliation failed$"),
+    ("lowering_accounting_discrepancy",
+     r"^(?:harness|baremetal|linux) backend has \d+ unexplained RIS "
+     r"lowering accounting discrepancy/discrepancies$"),
     ("linux_semantic_binding", r"^linux backend has unsupported semantic bindings$"),
 )
 UMBRELLA_BLOCKERS = {
     "linux_definition_root", "linux_lifecycle_stub",
     "linux_lifecycle_unimplemented", "linux_runtime_attestation",
-    "linux_semantic_binding",
+    "linux_semantic_binding", "lowering_accounting_discrepancy",
+    "lowering_reconciliation",
 }
 
 
