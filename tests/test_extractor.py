@@ -1511,6 +1511,9 @@ def test_inlined_read_return_binds_the_caller_lhs():
 
 
 def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
+    from verification.backend_lowering_oracle import build_generation_contract
+    from verification.backend_lowering_plan import verify_backend_lowering_plan
+
     result = extract_ris(ExtractorConfig(source=DWC2_MULTI))
     assert result.stats["translation_units"] == 10
     assert result.stats["source_lines"] >= 21000
@@ -1527,6 +1530,24 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     assert rescue["rescued_direct_ops"] == 48
     assert result.formal["metadata"]["assurance_scope"][
         "callee_rescue_semantics_complete"] is False
+
+    contract = build_generation_contract(result.formal)
+    rows = {row["op_id"]: row for row in contract["register_operations"]}
+    assert rows["op_904"]["lowering_recipe"] == {
+        "kind": "read", "primitives": ["Read"]}
+    assert rows["op_904"]["evidence"]["function"] == "dwc2_force_mode"
+    assert rows["op_905"]["lowering_recipe"] == {
+        "kind": "write_from_read", "primitives": ["Write"],
+        "read_op_id": "op_904",
+    }
+    for backend in ("harness", "baremetal"):
+        plan = verify_backend_lowering_plan(
+            result.formal, contract, backend)
+        assert plan["accounting_complete"] is True, (backend, plan)
+        assert plan["lowering_complete"] is False
+        assert plan["required_ops"] == plan["planned_ops"] == 3608
+        assert plan["lowered_ops"] == 3182
+        assert plan["blocked_ops"] == 426
 
     callback_tables = {
         fn.callback_table for fn in result.device_spec.functions
@@ -1933,6 +1954,7 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
     from extractor.spec import default_bind
     from generator import baremetal, harness, linux as linux_gen
     from verification.backend_lowering_oracle import build_generation_contract
+    from verification.backend_lowering_plan import verify_backend_lowering_plan
     from verification.generated_c_ast_oracle import verify_generated_c_ast
     from verification.gpio_mmio_source_oracle import (
         verify_gpio_mmio_source_differential)
@@ -1996,6 +2018,12 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
         assert source_oracle["gpio_mmio_source_oracle_passed"], source_oracle
         assert source_oracle["gpio_mmio_source_oracle_calls"] == (
             16 if source == GPIO_CLPS711X else 8)
+        contract = build_generation_contract(result.formal)
+        h_plan = verify_backend_lowering_plan(
+            result.formal, contract, "harness")
+        b_plan = verify_backend_lowering_plan(
+            result.formal, contract, "baremetal")
+        assert h_plan["complete"] and b_plan["complete"]
 
         linux_code = linux_gen.generate(
             result.formal, result.device_spec,
@@ -2011,6 +2039,14 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                     "backend_ast_leaf_required": True,
                     "backend_ast_leaf_complete": True,
                     "backend_ast_leaf": h_ast,
+                    "backend_lowering_plan_required": True,
+                    "backend_lowering_plan_accounting_complete":
+                        h_plan["accounting_complete"],
+                    "backend_lowering_plan_classification_complete":
+                        h_plan["classification_complete"],
+                    "backend_lowering_plan_lowering_complete":
+                        h_plan["lowering_complete"],
+                    "backend_lowering_plan": h_plan,
                     **h_oracle, **source_oracle},
                 "baremetal": {
                     "compiled": True, "has_todo": False,
@@ -2018,6 +2054,14 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                     "backend_ast_leaf_required": True,
                     "backend_ast_leaf_complete": True,
                     "backend_ast_leaf": b_ast,
+                    "backend_lowering_plan_required": True,
+                    "backend_lowering_plan_accounting_complete":
+                        b_plan["accounting_complete"],
+                    "backend_lowering_plan_classification_complete":
+                        b_plan["classification_complete"],
+                    "backend_lowering_plan_lowering_complete":
+                        b_plan["lowering_complete"],
+                    "backend_lowering_plan": b_plan,
                     **b_oracle, **source_oracle},
                 "linux": {
                     "compiled": True, "syntax_ok": True,
@@ -2453,6 +2497,105 @@ def test_write_from_read_recipe_prevents_duplicate_hardware_reads():
         body = anchor.group("body")
         assert "read32" not in body, (backend, body)
         assert "write32" in body, (backend, body)
+
+
+def test_probe_success_path_rewrite_preserves_canonical_lowering_recipe():
+    from extractor.spec import (DeviceSpec, FunctionSpec, Param, Signature,
+                                StateField, default_bind)
+    from generator import baremetal as baremetal_gen
+    from generator import harness as harness_gen
+    from generator import linux as linux_gen
+    from generator.common import lowering_recipes
+    from generator.linux import _bound_resource_probe_ops
+
+    def leaf(op_id, kind):
+        common = {
+            "op_id": op_id,
+            "addr": {"Fixed": {"base": "base", "offset": 0x10}},
+            "width": "B4",
+            "access_domain": "mmio",
+            "reliability": "Conservative",
+            "evidence": {},
+        }
+        if kind == "Read":
+            return {"Read": {**common, "var": "shared"}}
+        return {"ReadModifyWrite": {
+            **common,
+            "read_var": "shared",
+            "transform": {"BinOp": {
+                "op": "BitOr",
+                "left": {"Var": "shared"},
+                "right": {"Const": 1},
+            }},
+        }}
+
+    def success_sibling(path_id, item):
+        return {"Cond": {
+            "guard": {"Const": 1},
+            "then_ops": [item],
+            "else_ops": None,
+            "path_id": path_id,
+            "validation": "satisfiable",
+            "control": {
+                "kind": "cond",
+                "source": "forward-goto",
+                "target_label": "error",
+                "branch": "fallthrough",
+                "guard": "1",
+            },
+        }}
+
+    # The two leaves belong to sibling lexical paths.  The RMW therefore does
+    # not own the first path's Read even though both use the same local token
+    # and register address.  Probe success-path selection flattens those
+    # siblings, which used to manufacture a cross-path write_from_read recipe.
+    ops = [
+        success_sibling("path_1", leaf("op_1", "Read")),
+        success_sibling("path_2", leaf("op_2", "ReadModifyWrite")),
+    ]
+    canonical = lowering_recipes(ops)
+    assert canonical["op_2"] == {
+        "kind": "intrinsic_rmw", "primitives": ["Read", "Write"]}
+    assert lowering_recipes(_bound_resource_probe_ops(ops))["op_2"] == {
+        "kind": "write_from_read", "primitives": ["Write"],
+        "read_op_id": "op_1",
+    }
+
+    formal = {
+        "driver": "recipe-freeze",
+        "metadata": {},
+        "register_map": [{"name": "REG", "offset": 0x10}],
+        "modules": [{"name": "probe_fn", "ops": ops}],
+    }
+    device = DeviceSpec(
+        name="recipe_freeze",
+        state=[StateField("base", "MmioBase")],
+        functions=[FunctionSpec(
+            name="probe_fn",
+            signature=Signature(
+                [Param("dev", "DeviceState")], "Void"),
+            role="probe",
+            ris_ref="probe_fn",
+        )],
+    )
+    generated = {
+        "harness": harness_gen.generate(
+            formal, device, default_bind(device, "harness")),
+        "baremetal": baremetal_gen.generate(
+            formal, device, default_bind(device, "baremetal")),
+        "linux": linux_gen.generate(
+            formal, device, default_bind(device, "linux")),
+    }
+    for backend, code in generated.items():
+        anchor = re.search(
+            r"__rh_op_op_2: \{(?P<body>.*?)^\s*\}", code,
+            flags=re.MULTILINE | re.DOTALL)
+        assert anchor is not None, backend
+        body = anchor.group("body")
+        assert re.search(r"(?:harness_|mmio_)?read(?:l|32)\s*\(", body), (
+            backend, body)
+        assert re.search(r"(?:harness_|mmio_)?write(?:l|32)\s*\(", body), (
+            backend, body)
 
 
 def test_generated_c_ast_gate_rejects_dangling_valid_receipt():

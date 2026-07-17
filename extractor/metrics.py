@@ -419,16 +419,52 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if gen_results:
         def _gr(backend):
             return gen_results.get(backend, {})
+
+        def _lowering_plan_ready(report):
+            if not report.get("backend_lowering_plan_required"):
+                return True
+            return bool(
+                report.get("backend_lowering_plan_accounting_complete")
+                and report.get(
+                    "backend_lowering_plan_classification_complete")
+                and report.get("backend_lowering_plan_lowering_complete"))
+
         for backend in ("harness", "baremetal", "linux"):
-            lowering = _gr(backend).get("backend_lowering", {})
+            generated = _gr(backend)
+            if (generated.get("backend_lowering_plan_required")
+                    and not generated.get(
+                        "backend_lowering_plan_accounting_complete")):
+                blockers.append(
+                    f"{backend} backend lowering plan accounting failed")
+            elif (generated.get("backend_lowering_plan_required")
+                  and not generated.get(
+                      "backend_lowering_plan_classification_complete")):
+                blockers.append(
+                    f"{backend} backend lowering plan classification failed")
+            lowering = generated.get("backend_lowering", {})
             if lowering and not lowering.get("complete", False):
-                discrepancy = sum(len(lowering.get(key, [])) for key in (
-                    "missing", "duplicate", "unknown", "rejected",
+                plan = generated.get("backend_lowering_plan") or {}
+                blocked_ids = set(plan.get("blocked_op_ids") or [])
+                missing = set(lowering.get("missing") or [])
+                explained_missing = (
+                    missing & blocked_ids
+                    if plan.get("accounting_complete")
+                    and plan.get("classification_complete") else set())
+                unexplained_missing = missing - explained_missing
+                if explained_missing:
+                    blockers.append(
+                        f"{backend} backend has {len(explained_missing)} "
+                        "register operation(s) explicitly blocked by "
+                        "unsupported loop lowering")
+                discrepancy = len(unexplained_missing) + sum(
+                    len(lowering.get(key, [])) for key in (
+                    "duplicate", "unknown", "rejected",
                     "digest_mismatch", "kind_mismatch",
                     "duplicate_expected_ids"))
-                blockers.append(
-                    f"{backend} backend has {discrepancy} RIS lowering "
-                    "accounting discrepancy/discrepancies")
+                if discrepancy:
+                    blockers.append(
+                        f"{backend} backend has {discrepancy} unexplained "
+                        "RIS lowering accounting discrepancy/discrepancies")
         h = _gr("harness")
         if h:
             h_source_ready = (not gpio_source_required or bool(
@@ -452,6 +488,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                  and unsupported_ops == 0
                                  and unsupported_control == 0
                                  and met["conservative_loop"] == 0
+                                 and _lowering_plan_ready(h)
                                  and h.get("backend_lowering_complete", True)
                                  and h.get("backend_ast_leaf_complete", False)
                                  and h.get("compiled") and h.get("trace_passed")
@@ -480,6 +517,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                    and unsupported_ops == 0
                                    and unsupported_control == 0
                                    and met["conservative_loop"] == 0
+                                   and _lowering_plan_ready(bm)
                                    and bm.get("backend_lowering_complete", True)
                                    and bm.get("backend_ast_leaf_complete", False)
                                    and bm.get("compiled") and not bm.get("has_todo")
@@ -487,8 +525,24 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         for backend, report in (("harness", h), ("baremetal", bm)):
             if (report and report.get("backend_ast_leaf_required")
                     and not report.get("backend_ast_leaf_complete")):
-                blockers.append(
-                    f"{backend} backend generated-C AST primitive proof failed")
+                ast_leaf = report.get("backend_ast_leaf") or {}
+                plan = report.get("backend_lowering_plan") or {}
+                blocked_ids = set(plan.get("blocked_op_ids") or [])
+                missing = set(ast_leaf.get("missing_anchors") or [])
+                explained_missing = (
+                    missing & blocked_ids
+                    if plan.get("accounting_complete")
+                    and plan.get("classification_complete") else set())
+                unexplained = bool(missing - explained_missing)
+                unexplained |= any(ast_leaf.get(key) for key in (
+                    "duplicate_expected_ids", "parse_errors",
+                    "duplicate_anchors", "unknown_anchors",
+                    "malformed_anchors", "unsupported_expected_ops",
+                    "primitive_mismatches", "unanchored_primitives"))
+                if unexplained:
+                    blockers.append(
+                        f"{backend} backend generated-C AST primitive proof "
+                        "failed outside planned loop blockers")
         lx = _gr("linux")
         if lx:
             linux_source_ready = (not gpio_source_required or bool(

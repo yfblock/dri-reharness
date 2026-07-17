@@ -13,7 +13,7 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。C15 将 DWC2/ASPEED 的 unaccounted source site 从 48/4 降为 0，但 direct evidence frontier 仍显式阻塞 call-semantics strict 声明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
 - 原始 MMIO 对照：907 个源码 primitive、1,087 个 direct AST 操作、C15 后 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
-- 测试套件：138 tests（131 core + 7 generated-C AST）；测试入口先执行冻结 holdout/specialization guard。
+- 测试套件：148 tests（132 core + 7 generated-C AST + 7 lowering-plan + 2 read-provenance）；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；C15 机器报告给出 scoped strict 5/19。`whole_program_complete` 由 linked analysis、调用语义、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
@@ -48,6 +48,8 @@ RIS leaf op 还包含 `op_id`、source evidence、reliability、address/value/pa
 生成 C 中的每个 Read/Write/RMW 还必须携带 `op_id + canonical digest` lowering receipt。独立 oracle 对 generation contract 做 exactly-once 检查，拒绝 missing、duplicate、unknown、rejected、kind mismatch 和 digest drift。C16 令 contract/digest 构建保持纯函数，并把该 verifier 强制接入 LLM 初次生成与 compile/QEMU/trace 每轮修复；候选只有通过 frozen contract 后才会原子替换当前 C。该 gate 证明操作归属完整性；表达式和控制路径的独立 AST 等价验证仍是下一阶段工作。
 
 C17 为公共 harness/bare-metal lowering 增加 `__rh_op_<op_id>` LabelStmt + direct CompoundStmt。libclang oracle 现可拒绝悬空 receipt、错误 primitive kind/width/endianness/W1C、RMW ownership 和未锚定额外 MMIO。contract 同时区分 `write_from_read` 与 `intrinsic_rmw`，修复了旧生成器对 dataflow RMW 重复读取硬件的错误。地址、值变换、guard/order、Linux 专用 emitter 与 Formal `Call` 仍是明确 blocker。
+
+C18 将 backend lowering recipe 绑定到 canonical Formal，禁止 probe success-path 重写后重新猜测 primitive ownership；同时用独立 lowering plan 将 DWC2 H/B 的 3608 个 contract ops 精确分解为 3182 lowered + 426 `blocked_unsupported_loop`，不为未证明循环伪造 receipt/anchor。direct-read-return 也改为只信任 MMIO classifier 证明的 return provenance，不再因 `device_property_read_bool` 一类名称含 `read` 的普通 helper 篡改 RMW 数据流。
 
 Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_chip.init_hw` 绑定会按字段语义归类；clock provider 会保留多套 `clk_ops`、纯标量 rate 算术、源码内 helper、父时钟/provider 注册以及对应 OF 变体。Sodaville 的 PCI ID、12-line GPIO generic dat/set/dirout 行为和 mask/unmask/EOI IRQ lifecycle 由版本化源码保守恢复。只有经过显式 source-private 重绑定且真实 Kbuild 通过的 callback 才可消除 unsupported marker。
 
@@ -136,6 +138,7 @@ python3 tools/generate_paper_results.py
 - [C15 coverage-aware callee rescue 与 call-context fail-closed 边界](docs/callee-rescue-c15.md)
 - [C16 generation contract 纯函数与 LLM 原子 attestation gate](docs/generation-attestation-c16.md)
 - [C17 generated-C AST anchors、primitive ownership 与负向结果](docs/generated-c-ast-anchors-c17.md)
+- [C18 DWC2 lowering plan、canonical recipe 与 read provenance](docs/dwc2-lowering-plan-c18.md)
 
 ## 依赖
 

@@ -736,6 +736,26 @@ def _normalize_ops(ops, state_prefix: str | None = None,
     return out, changed
 
 
+def _normalize_module_ops(
+        module: dict, state_prefix: str | None = None,
+        safe_function_calls: set[str] | None = None,
+        backend_ops: list | None = None):
+    """Normalize a backend view without changing primitive ownership.
+
+    A backend may select the bound-resource success path or otherwise rewrite
+    control structure before emission.  Lowering recipes are nevertheless a
+    contract over the canonical module, so derive them before that rewrite
+    and carry them explicitly through normalization and C emission.
+    """
+    canonical_ops = module.get("ops", [])
+    contract_recipes = lowering_recipes(canonical_ops)
+    safe_ops, changed = _normalize_ops(
+        canonical_ops if backend_ops is None else backend_ops,
+        state_prefix, safe_function_calls,
+        contract_recipes=contract_recipes)
+    return safe_ops, changed, contract_recipes
+
+
 def _bank_priv(priv: str) -> str:
     return f"{priv}_bank"
 
@@ -1069,8 +1089,8 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
         return None, f"{table_field}={fn.name}"
     state_owner = ("bank" if banked_gpio
                    and table_field.startswith("gpio_chip.") else "g")
-    safe_ops, normalized = _normalize_ops(
-        module["ops"], state_owner, safe_function_calls)
+    safe_ops, normalized, contract_recipes = _normalize_module_ops(
+        module, state_owner, safe_function_calls)
     if table_field == "gpio_chip.set_multiple":
         for op in walk_leaf_ops(safe_ops):
             body = op.get("ReadModifyWrite") or op.get("Write")
@@ -1101,7 +1121,8 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
         lines.append(decls.replace("    ", "\t"))
     lines.append("\tvoid __iomem *base = g->base;")
     body = ops_to_c(safe_ops, bind, "base", regs, indent=1,
-                    word_type="u32", state_expr=state_owner)
+                    word_type="u32", state_expr=state_owner,
+                    _lowering_recipes=contract_recipes)
     if body:
         lines.append(body.replace("    ", "\t"))
     has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
@@ -1165,8 +1186,8 @@ def _emit_evidence_only_callback(fn, module: dict, priv: str,
         params.insert(0, f"struct {priv} *g")
         declared.add("g")
     return_type = "void" if fn.signature.return_type == "Void" else "u32"
-    safe_ops, _normalized = _normalize_ops(
-        module.get("ops", []), "g", safe_function_calls)
+    safe_ops, _normalized, contract_recipes = _normalize_module_ops(
+        module, "g", safe_function_calls)
     lines = [
         f"/* AST-bound evidence only: role unknown, not registered */",
         f"static {return_type} {fn.name}({', '.join(params)})", "{",
@@ -1178,7 +1199,8 @@ def _emit_evidence_only_callback(fn, module: dict, priv: str,
     lines.append("\tvoid __iomem *base = g->base;")
     body = ops_to_c(
         safe_ops, bind, "base", regs, indent=1,
-        word_type="u32", state_expr="g")
+        word_type="u32", state_expr="g",
+        _lowering_recipes=contract_recipes)
     if body:
         lines.append(body.replace("    ", "\t"))
     if (return_type != "void"
@@ -1201,8 +1223,8 @@ def _emit_banked_irq_source_callback(
     if function is None:
         return None
     body = function["body"]
-    safe_ops, _ = _normalize_ops(
-        module.get("ops", []), "g", safe_function_calls)
+    safe_ops, _, _contract_recipes = _normalize_module_ops(
+        module, "g", safe_function_calls)
     leaves = list(walk_leaf_ops(safe_ops))
 
     def addresses(kind: str) -> list[str]:
@@ -1382,8 +1404,9 @@ def _emit_probe_body(module, regs, bind, indent="\t",
                      safe_function_calls: set[str] | None = None) -> list[str]:
     if module is None:
         return []
-    safe_ops, _ = _normalize_ops(
-        _bound_resource_probe_ops(module["ops"]), "g", safe_function_calls)
+    safe_ops, _, contract_recipes = _normalize_module_ops(
+        module, "g", safe_function_calls,
+        backend_ops=_bound_resource_probe_ops(module["ops"]))
     declared: set[str] = {"base", "ret", "g", "pdev"}
     decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
     out = []
@@ -1391,7 +1414,8 @@ def _emit_probe_body(module, regs, bind, indent="\t",
         out.extend(decls.replace("    ", indent).splitlines())
     out.append(f"{indent}void __iomem *base = g->base;")
     body = ops_to_c(safe_ops, bind, "base", regs, indent=1,
-                    word_type="u32", state_expr="g")
+                    word_type="u32", state_expr="g",
+                    _lowering_recipes=contract_recipes)
     if body:
         out.extend(body.replace("    ", indent).splitlines())
     return out
@@ -2025,8 +2049,8 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
         config_module = next((module for module in formal.get("modules", [])
                               if module.get("name") == config_function), None)
         if config_module:
-            config_ops, _ = _normalize_ops(
-                config_module.get("ops", []), "bank", safe_function_calls)
+            config_ops, _, _config_recipes = _normalize_module_ops(
+                config_module, "bank", safe_function_calls)
             reads = [op for op in walk_leaf_ops(config_ops) if "Read" in op]
 
             def numeric_shape(text: str) -> tuple[str, ...]:
@@ -2421,8 +2445,9 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     if usb_callback_fields:
         unsupported.append(
             "USB callback tables require endpoint/gadget/HCD lifecycle registration")
-    if any(_normalize_ops(
-            backend_ops(m), safe_function_calls=safe_function_calls)[1]
+    if any(_normalize_module_ops(
+            m, safe_function_calls=safe_function_calls,
+            backend_ops=backend_ops(m))[1]
            for m in formal.get("modules", [])):
         unsupported.append("source-private expressions require explicit state bindings")
 
@@ -2440,9 +2465,9 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             fallback_calls |= set(re.findall(
                 r"\b([A-Z][A-Za-z0-9_]{2,})\s*\(", body))
         for module in formal.get("modules", []):
-            safe_ops, _ = _normalize_ops(
-                backend_ops(module),
-                safe_function_calls=safe_function_calls)
+            safe_ops, _, _contract_recipes = _normalize_module_ops(
+                module, safe_function_calls=safe_function_calls,
+                backend_ops=backend_ops(module))
             fallback_refs |= {name for name in value_var_names(safe_ops)
                               if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name)}
             fallback_refs |= set(re.findall(

@@ -7,7 +7,8 @@ Linux framework glue. Compiles with `cc -ffreestanding`.
 from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops
-from .common import ops_to_c, local_decls, value_var_names
+from .common import (ops_to_c, local_decls, value_var_names,
+                     lowering_recipes)
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
 from .subsystem_runner import (emit_gpio_callback_runner, subsystem_callback_plan,
@@ -179,10 +180,12 @@ def generate(formal: dict, device_spec, bind) -> str:
         or (device_spec.cls == "sdhci"
             and not portable_sdhci_accessor_only(formal, device_spec)))
     for module in formal["modules"]:
+        contract_recipes = lowering_recipes(module["ops"])
         raw_ops = (_bound_resource_probe_ops(module["ops"])
                    if module["name"] in probe_refs else module["ops"])
         safe_ops, changed = _normalize_ops(
-            raw_ops, safe_function_calls=safe_function_calls)
+            raw_ops, safe_function_calls=safe_function_calls,
+            contract_recipes=contract_recipes)
         normalized_any |= changed
         upper_refs |= {v for v in value_var_names(safe_ops)
                        if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v)}
@@ -214,10 +217,12 @@ def generate(formal: dict, device_spec, bind) -> str:
         m = func_by_name.get(fn.ris_ref)
         if not m:
             continue
+        contract_recipes = lowering_recipes(m["ops"])
         raw_ops = (_bound_resource_probe_ops(m["ops"])
                    if fn.role == "probe" else m["ops"])
         safe_ops, _ = _normalize_ops(
-            raw_ops, "dev", safe_function_calls)
+            raw_ops, "dev", safe_function_calls,
+            contract_recipes=contract_recipes)
         if portable_skip:
             safe_ops = []
         keep = [p for p in fn.signature.params if p.type != "DeviceState"]
@@ -231,7 +236,8 @@ def generate(formal: dict, device_spec, bind) -> str:
         L.append(local_decls(safe_ops, declared, regs, indent=1))
         L.append(f"    uintptr_t base = {base};")
         L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1,
-                          state_expr="dev"))
+                          state_expr="dev",
+                          _lowering_recipes=contract_recipes))
         L.append("}")
         L.append("")
 

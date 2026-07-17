@@ -589,6 +589,7 @@ class FuncExtraction:
     name: str
     params: list[str] = field(default_factory=list)
     return_expr: str | None = None
+    return_read_var: str | None = None
     ops: list[Op] = field(default_factory=list)
     calls: list = field(default_factory=list)   # CallSite list (for call graph)
     warnings: list[str] = field(default_factory=list)
@@ -960,6 +961,38 @@ def _read_initial_transform(lhs: str, cs, source_lines: list[str], tu) -> str:
     return lhs
 
 
+def _has_classified_read_provenance(op: Op | None) -> bool:
+    """Whether ``op`` came from a read accepted by the MMIO classifier."""
+    if op is None or op.kind != "Read":
+        return False
+    evidence = op.evidence or {}
+    access_name = evidence.get("effective_callee") or evidence.get("callee")
+    return (evidence.get("access_kind") == "read"
+            and isinstance(access_name, str)
+            and mmio.is_mmio_read(access_name))
+
+
+def _proven_return_read_var(return_expr: str | None,
+                            ops: list[Op]) -> str | None:
+    """Find the unique classified Read value returned without transformation.
+
+    This closes provenance through wrappers such as ``return low_read()`` and
+    ``value = low_read(); return value`` after their callees have been
+    expanded.  Equality is deliberately limited to casts/parentheses: boolean
+    transforms, arithmetic, and unrelated read-named API calls are not direct
+    register-read returns.
+    """
+    if not return_expr:
+        return None
+    returned = _strip_casts(return_expr)
+    candidates = {
+        op.var for op in ops
+        if op.var and _strip_casts(op.var) == returned
+        and _has_classified_read_provenance(op)
+    }
+    return next(iter(candidates)) if len(candidates) == 1 else None
+
+
 def extract_function(func: Func, macros, tu, *,
                      source_lines: Optional[list[str]] = None,
                      inline_cache: Optional[dict] = None,
@@ -1138,6 +1171,8 @@ def extract_function(func: Func, macros, tu, *,
                     and call_text in return_value):
                 result_var = f"__return_read_{return_read_index}"
                 return_read_index += 1
+                if _strip_casts(return_value) == _strip_casts(call_text):
+                    result.return_read_var = result_var
                 return_value = return_value.replace(call_text, result_var, 1)
             op = Op(
                 kind="Read", addr=addr,
@@ -1279,16 +1314,26 @@ def extract_function(func: Func, macros, tu, *,
                 "indirect_expression": cs.callee_text if indirect_target else None,
             })
             if summary["kind"] == "Read":
+                summary_var = lhs or None
+                call_text = source_text(tu, cs.cursor).strip()
+                if (not summary_var and return_value and call_text
+                        and call_text in return_value):
+                    summary_var = f"__return_read_{return_read_index}"
+                    return_read_index += 1
+                    if _strip_casts(return_value) == _strip_casts(call_text):
+                        result.return_read_var = summary_var
+                    return_value = return_value.replace(
+                        call_text, summary_var, 1)
                 op = Op(
                     kind="Read", addr=addr, width=summary["width"],
                     value=None, condition=cond, cond_stack=cond_stack,
                     control_stack=control_stack, reg_name=reg_name,
-                    var=lhs or None, evidence=evidence,
+                    var=summary_var, evidence=evidence,
                     source_loc=f"{func.name}:{cs.line} (summary {resolved_name})",
                     line=cs.line)
                 result.ops.append(op)
-                if lhs:
-                    key = _norm_key(lhs)
+                if summary_var:
+                    key = _norm_key(summary_var)
                     store[key] = ReadTaint(addr=addr, reg_name=reg_name)
                     read_origins[key] = (addr, cs.line)
                     read_initial[key] = key
@@ -1337,24 +1382,22 @@ def extract_function(func: Func, macros, tu, *,
                     returned_value = inlined_returns[-1].value or "0"
                     return_value = return_value.replace(
                         call_text, f"({returned_value})", 1)
-                # If a helper returns a register read directly, bind the last
-                # read in its expanded body to the caller assignment target.
-                # This preserves patterns such as
+                # If the classifier proved that a helper returns one specific
+                # register-read result directly, bind that read to the caller
+                # assignment target.  This preserves patterns such as
                 # ``value = read_helper(...); write_helper(..., value | mask)``.
-                if lhs and inlined.return_expr:
-                    last_read = next(
+                # A helper name merely containing ``read`` is not evidence:
+                # property/configuration APIs may return an unrelated scalar
+                # after performing an earlier MMIO read in the same function.
+                if lhs and inlined.return_read_var:
+                    returned_read_var = _substitute_text(
+                        inlined.return_read_var, mapping)
+                    returned_read = next(
                         (item for item in reversed(instantiated)
-                         if item.kind == "Read"), None)
-                    returned = (_substitute_text(
-                        inlined.return_expr, mapping) or "").strip()
-                    direct_read_return = bool(re.search(
-                        r"\b(?:read[bwlq]|ioread(?:8|16|32|64)|"
-                        r"[A-Za-z_]\w*read[A-Za-z_]*)\s*\(", returned))
-                    if (last_read is not None
-                            and (not last_read.var
-                                 or last_read.var == returned
-                                 or direct_read_return)):
-                        last_read.var = lhs
+                         if item.kind == "Read"
+                         and item.var == returned_read_var), None)
+                    if _has_classified_read_provenance(returned_read):
+                        returned_read.var = lhs
                 for o2, op in zip(instantiated, inlined.ops):
                     o2.condition = cond or o2.condition
                     o2.cond_stack = cond_stack + o2.cond_stack
@@ -1382,6 +1425,9 @@ def extract_function(func: Func, macros, tu, *,
         }
         return_value = _substitute_text(return_value, scalar_mapping)
         result.return_expr = return_value
+        result.return_read_var = (
+            result.return_read_var
+            or _proven_return_read_var(return_value, result.ops))
 
     if return_value is not None and materialize_return:
         result.ops.append(Op(

@@ -222,6 +222,8 @@ def main(argv: list[str] | None = None) -> int:
             verify_w1c_drain_contract, verify_w1c_drain_runtime)
         from verification.backend_lowering_oracle import (
             build_generation_contract, verify_backend_lowering)
+        from verification.backend_lowering_plan import (
+            verify_backend_lowering_plan)
         from verification.generated_c_ast_oracle import verify_generated_c_ast
 
         res = extract_ris(_config_from_args(args))
@@ -284,6 +286,12 @@ def main(argv: list[str] | None = None) -> int:
             lowering = verify_backend_lowering(res.formal, code)
             _w(ver_dir, f"{backend}-lowering.json", json.dumps(
                 lowering, indent=2, sort_keys=True))
+            lowering_plan = None
+            if backend in {"harness", "baremetal"}:
+                lowering_plan = verify_backend_lowering_plan(
+                    res.formal, generation_contract, backend)
+                _w(ver_dir, f"{backend}-lowering-plan.json", json.dumps(
+                    lowering_plan, indent=2, sort_keys=True))
             ast_leaf = None
             if backend in {"harness", "baremetal"}:
                 try:
@@ -303,6 +311,17 @@ def main(argv: list[str] | None = None) -> int:
                 "has_todo": has_todo, "unsupported": unsupported,
                 "backend_lowering_complete": lowering["complete"],
                 "backend_lowering": lowering,
+                "backend_lowering_plan_required": backend in {
+                    "harness", "baremetal"},
+                "backend_lowering_plan_accounting_complete": bool(
+                    lowering_plan
+                    and lowering_plan.get("accounting_complete")),
+                "backend_lowering_plan_classification_complete": bool(
+                    lowering_plan
+                    and lowering_plan.get("classification_complete")),
+                "backend_lowering_plan_lowering_complete": bool(
+                    lowering_plan and lowering_plan.get("lowering_complete")),
+                "backend_lowering_plan": lowering_plan,
                 "backend_ast_leaf_required": backend in {
                     "harness", "baremetal"},
                 "backend_ast_leaf_complete": bool(

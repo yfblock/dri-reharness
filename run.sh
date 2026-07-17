@@ -77,6 +77,8 @@ cmd_test()    {
   $PY verification/check_generalization_guard.py
   $PY tests/test_extractor.py
   $PY tests/test_generated_c_ast_oracle.py
+  $PY tests/test_backend_lowering_plan.py
+  $PY tests/test_dataflow_read_return.py
 }
 
 banner

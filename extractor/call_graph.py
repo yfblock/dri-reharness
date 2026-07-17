@@ -35,7 +35,8 @@ def _op_fingerprint(extraction: FuncExtraction) -> tuple:
          (op.evidence or {}).get("symbol"),
          (op.evidence or {}).get("site_id"),
          repr((op.evidence or {}).get("inlined_at", [])))
-        for op in extraction.ops) + (("return", extraction.return_expr),)
+        for op in extraction.ops) + ((
+            "return", extraction.return_expr, extraction.return_read_var),)
 
 
 def _evidence_sites(
