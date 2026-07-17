@@ -32,6 +32,103 @@ def _git_rev(path: Path) -> str:
     return run.stdout.strip() if run.returncode == 0 else "unknown"
 
 
+def _git_object(path: Path, revision: str, relative: str) -> str:
+    run = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", f"{revision}:{relative}"],
+        capture_output=True, text=True)
+    return run.stdout.strip() if run.returncode == 0 else "unknown"
+
+
+def _protected_root_changed(commit: str, relative: str) -> bool:
+    tracked = subprocess.run(
+        ["git", "-C", str(ROOT), "diff", "--quiet", commit, "--", relative])
+    untracked = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "--others",
+         "--exclude-standard", "--", relative],
+        capture_output=True, text=True)
+    return tracked.returncode != 0 or bool(untracked.stdout.strip())
+
+
+def _selection_issues(data: dict, manifest_dir: Path) -> list[str]:
+    selection = data.get("selection")
+    if not selection:
+        return []
+    issues: list[str] = []
+    seed = selection.get("seed")
+    limits = selection.get("nonblank_loc", {})
+    minimum = limits.get("minimum")
+    maximum = limits.get("maximum")
+    if not isinstance(seed, str) or not isinstance(minimum, int) \
+            or not isinstance(maximum, int):
+        return ["selection seed/nonblank LOC limits are invalid"]
+
+    excluded: set[str] = set()
+    v1_path = manifest_dir / "zero-shot-v1.json"
+    if v1_path.is_file():
+        v1 = json.loads(v1_path.read_text(encoding="utf-8"))
+        excluded.update(Path(case["source"]).name for case in v1["cases"])
+    excluded.update(path.name for path in (ROOT / "drivers" / "test").glob("*.c"))
+    for path in (ROOT / "drivers" / "multisource").glob("*.json"):
+        corpus = json.loads(path.read_text(encoding="utf-8"))
+        excluded.update(Path(source).name for source in corpus.get("sources", []))
+
+    cases = data.get("cases", [])
+    selected_by_source = {}
+    for index, case in enumerate(cases, 1):
+        source = (manifest_dir / case.get("source", "")).resolve()
+        try:
+            relative = source.relative_to(ROOT / "linux").as_posix()
+        except ValueError:
+            issues.append(f"selection source outside Linux tree: {source}")
+            continue
+        expected_hash = hashlib.sha256(
+            f"{seed}:{relative}".encode("utf-8")).hexdigest()
+        if case.get("selection_hash") != expected_hash:
+            issues.append(f"selection hash mismatch for {case.get('id')}")
+        if case.get("selection_order") != index:
+            issues.append(f"selection order mismatch for {case.get('id')}")
+        selected_by_source[relative] = case.get("id")
+
+    expected_all: list[str] = []
+    for pool_name, pool in selection.get("pools", {}).items():
+        try:
+            signal = re.compile(pool["signal_regex"])
+            quota = int(pool["quota"])
+            glob = pool["glob"]
+        except (KeyError, TypeError, ValueError, re.error):
+            issues.append(f"invalid selection pool {pool_name}")
+            continue
+        candidates = []
+        for source in (ROOT / "linux").glob(glob):
+            if source.name in excluded:
+                continue
+            text = source.read_text(encoding="utf-8", errors="replace")
+            nonblank = sum(bool(line.strip()) for line in text.splitlines())
+            if not minimum <= nonblank <= maximum or not signal.search(text):
+                continue
+            relative = source.relative_to(ROOT / "linux").as_posix()
+            rank = hashlib.sha256(
+                f"{seed}:{relative}".encode("utf-8")).hexdigest()
+            candidates.append((rank, relative))
+        candidates.sort()
+        chosen = [relative for _, relative in candidates[:quota]]
+        if len(chosen) != quota:
+            issues.append(
+                f"selection pool {pool_name} has only {len(chosen)}/{quota} cases")
+        expected_all.extend(chosen)
+
+    actual = []
+    for case in cases:
+        source = (manifest_dir / case.get("source", "")).resolve()
+        try:
+            actual.append(source.relative_to(ROOT / "linux").as_posix())
+        except ValueError:
+            pass
+    if actual != expected_all:
+        issues.append("frozen case list differs from deterministic pool selection")
+    return issues
+
+
 def _identifier_pattern(identifier: str) -> re.Pattern[str]:
     return re.compile(
         rf"(?<![A-Za-z0-9]){re.escape(identifier)}(?![A-Za-z0-9])",
@@ -86,7 +183,23 @@ def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT) -> dict:
         issues.append(
             f"Linux submodule drift: frozen={frozen_linux} actual={actual_linux}")
 
+    frozen = data.get("frozen_against", {})
+    frozen_reharness = frozen.get("reharness_commit")
+    for relative_root in data.get("policy", {}).get("protected_roots", []):
+        expected_tree = frozen.get(f"{relative_root}_tree")
+        if not expected_tree:
+            continue
+        actual_tree = _git_object(ROOT, frozen_reharness, relative_root)
+        if actual_tree != expected_tree:
+            issues.append(
+                f"frozen {relative_root} tree mismatch: "
+                f"frozen={expected_tree} actual={actual_tree}")
+        if _protected_root_changed(frozen_reharness, relative_root):
+            issues.append(
+                f"protected root changed since frozen commit: {relative_root}")
+
     manifest_dir = manifest_path.parent
+    issues.extend(_selection_issues(data, manifest_dir))
     cases = data.get("cases", [])
     if not cases or data.get("first_run") not in {case.get("id") for case in cases}:
         issues.append("holdout cases or first_run are invalid")

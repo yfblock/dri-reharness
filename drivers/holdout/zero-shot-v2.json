@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "name": "zero-shot-v2",
+  "frozen_against": {
+    "reharness_commit": "936265bdd97297822c371899201e7704245d4745",
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "extractor_tree": "547debb4e800e7018d2d0da07db5c20caf5040ac",
+    "generator_tree": "6edfa5cd5344e67df5bc8c458600327cf25db0b1"
+  },
+  "policy": {
+    "selection_locked": true,
+    "protected_roots": [
+      "extractor",
+      "generator"
+    ],
+    "specialization_allowlist": {
+      "source_basename_equals": ["sdhci-esdhc-mcf.c"],
+      "device_name_equals": ["edu"],
+      "private_mmio_layouts": ["dwc2_readl", "dwc2_writel"]
+    },
+    "rule": "Holdout driver identifiers must not appear in extractor or generator implementation files. Generalization changes must be driver-name agnostic. The baseline is run before any protected-root change."
+  },
+  "selection": {
+    "seed": "zero-shot-v2",
+    "ordering": "sha256(seed + ':' + linux-relative-source-path)",
+    "nonblank_loc": {
+      "minimum": 80,
+      "maximum": 800
+    },
+    "excluded_sets": [
+      "zero-shot-v1 source basenames",
+      "drivers/test source basenames",
+      "drivers/multisource source basenames"
+    ],
+    "pools": {
+      "gpio": {
+        "glob": "drivers/gpio/gpio-*.c",
+        "quota": 4,
+        "signal_regex": "\\b(?:read[bwlq]?|write[bwlq]?|ioread\\w*|iowrite\\w*|in[bwl]|out[bwl]|regmap_(?:read|write|update_bits)|bgpio_init)\\b"
+      },
+      "clock": {
+        "glob": "drivers/clk/clk-*.c",
+        "quota": 3,
+        "signal_regex": "\\b(?:read[bwlq]?|write[bwlq]?|ioread\\w*|iowrite\\w*|regmap_(?:read|write|update_bits)|clk_hw_register|devm_clk_hw_register)\\b"
+      },
+      "sdhci": {
+        "glob": "drivers/mmc/host/sdhci-*.c",
+        "quota": 3,
+        "signal_regex": "\\b(?:read[bwlq]?|write[bwlq]?|ioread\\w*|iowrite\\w*|sdhci_(?:read|write)[bwl]|sdhci_pltfm_init)\\b"
+      },
+      "virtio": {
+        "glob": "drivers/virtio/virtio_*.c",
+        "quota": 2,
+        "signal_regex": "\\b(?:virtio_cread|virtio_cwrite|virtqueue_|register_virtio|virtio_find)\\w*\\b"
+      }
+    }
+  },
+  "first_run": "gpio-bd72720",
+  "cases": [
+    {
+      "id": "gpio-bd72720",
+      "source": "../../linux/drivers/gpio/gpio-bd72720.c",
+      "subsystem": "gpio-mfd",
+      "difficulty": "medium",
+      "source_sha256": "a6feaef7c70ee4c30a5413aa0895345156fa1202787bb7886b7b0c419e368ec9",
+      "selection_order": 1,
+      "selection_hash": "01e87c135d10c375431fb14b8109a62b4978647832ad6cd9d17b75b8fbb9080b",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["gpio-bd72720", "gpio_bd72720", "bd72720_gpio"]
+    },
+    {
+      "id": "gpio-sifive",
+      "source": "../../linux/drivers/gpio/gpio-sifive.c",
+      "subsystem": "gpio-irq-regmap",
+      "difficulty": "medium",
+      "source_sha256": "5c592bbecb81b48ba51223fb1a40716bfe4be07436edef7ccc93e7cecf240e22",
+      "selection_order": 2,
+      "selection_hash": "02a02afe8939c5ead5f585c044ab7f70a17301d94615c6225994111f59e82b93",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["gpio-sifive", "gpio_sifive", "sifive_gpio"]
+    },
+    {
+      "id": "gpio-lp87565",
+      "source": "../../linux/drivers/gpio/gpio-lp87565.c",
+      "subsystem": "gpio-mfd-regmap",
+      "difficulty": "medium",
+      "source_sha256": "9c830ac03fddcd50fb664231ad1858bb6262fd5c1a2dc68a3d48ad86342348a7",
+      "selection_order": 3,
+      "selection_hash": "02fb77a9d15384242d1ea39945f437f0988163ca8dd00e8aa3384324a97eec18",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["gpio-lp87565", "gpio_lp87565", "lp87565_gpio"]
+    },
+    {
+      "id": "gpio-tpic2810",
+      "source": "../../linux/drivers/gpio/gpio-tpic2810.c",
+      "subsystem": "gpio-i2c",
+      "difficulty": "far",
+      "source_sha256": "74cf35512884fee9a53a27d8e30be4c0d9466833e15b51f1bf302679489bd2f2",
+      "selection_order": 4,
+      "selection_hash": "04d67482a4b21a0f6e1183415e3a149a3b43a3b5d07216cd2a9a63c71265ddcc",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["gpio-tpic2810", "gpio_tpic2810", "tpic2810"]
+    },
+    {
+      "id": "clk-si544",
+      "source": "../../linux/drivers/clk/clk-si544.c",
+      "subsystem": "clock-i2c-regmap",
+      "difficulty": "far",
+      "source_sha256": "5b1c56bfdc16182a27374244fc98f61e3e5bd2bb49191add0da56f3451e5f059",
+      "selection_order": 5,
+      "selection_hash": "079322ba6c7e7e8e1624a6d4c1f27c77dddceddf35661dc394a562ed829ff955",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["clk-si544", "clk_si544", "si544"]
+    },
+    {
+      "id": "clk-twl6040",
+      "source": "../../linux/drivers/clk/clk-twl6040.c",
+      "subsystem": "clock-mfd",
+      "difficulty": "medium",
+      "source_sha256": "501f14bac893fced28e4c78e64028cda3e94d7a1609cc09744036de1bf7b573f",
+      "selection_order": 6,
+      "selection_hash": "08e73ba232d02c18114ed3c0987ea2cae61bc1fdedaf1b49ccb059541db3e59b",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["clk-twl6040", "clk_twl6040", "twl6040_pdmclk"]
+    },
+    {
+      "id": "clk-loongson2",
+      "source": "../../linux/drivers/clk/clk-loongson2.c",
+      "subsystem": "clock-mmio",
+      "difficulty": "medium",
+      "source_sha256": "cce7dd731a412a64634cc77b8e52ce64b70ef10a96e2f1f797ade84e80ab224a",
+      "selection_order": 7,
+      "selection_hash": "0b96eb66471dada555fb299b12b6bb4bb02adc83d6dc604e1eb0df5d631a906d",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["clk-loongson2", "clk_loongson2", "loongson2_clk"]
+    },
+    {
+      "id": "sdhci-iproc",
+      "source": "../../linux/drivers/mmc/host/sdhci-iproc.c",
+      "subsystem": "sdhci",
+      "difficulty": "medium",
+      "source_sha256": "f05fdbab5624a2564f4c56e6a1898dbc9f1fb0d06f9f0ad7d2391e118f9689fb",
+      "selection_order": 8,
+      "selection_hash": "16292d1c26a42f09c3a6ab318cc31a939d7a43cdbe9ff5ef0618bfb2de52977a",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["sdhci-iproc", "sdhci_iproc", "iproc_sdhci"]
+    },
+    {
+      "id": "sdhci-sprd",
+      "source": "../../linux/drivers/mmc/host/sdhci-sprd.c",
+      "subsystem": "sdhci",
+      "difficulty": "far",
+      "source_sha256": "f39d7e7f45bdae3600b1a37562451825aa78fc97fd4236539ff6c54523c0ea13",
+      "selection_order": 9,
+      "selection_hash": "295cbb82125bae2a912e4fdb6f1405f81ff4dce17dfaa004437e24d1d91dd263",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["sdhci-sprd", "sdhci_sprd", "sprd_sdhci"]
+    },
+    {
+      "id": "sdhci-milbeaut",
+      "source": "../../linux/drivers/mmc/host/sdhci-milbeaut.c",
+      "subsystem": "sdhci",
+      "difficulty": "medium",
+      "source_sha256": "a528bcfacd56e86b4d54c2a446cb3069b0ca3aac85b7286d186ed66bf3ed0cfd",
+      "selection_order": 10,
+      "selection_hash": "4c67d96401a22c4094cdac8e3093bc9d4caef1f7892435f5ed65c5118ffc2978",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["sdhci-milbeaut", "sdhci_milbeaut", "milbeaut_sdhci"]
+    },
+    {
+      "id": "virtio-pci-common",
+      "source": "../../linux/drivers/virtio/virtio_pci_common.c",
+      "subsystem": "virtio-pci",
+      "difficulty": "far",
+      "source_sha256": "02e42d301ad27ee2834785b4145821ffdd5aee0f76a7b6f21a5bccbd7f3f718a",
+      "selection_order": 11,
+      "selection_hash": "0f7310d34c6a013b3fcbb1aa59f7daaa02aaf005137588bcabb5bf9cf3e2cf23",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["virtio-pci-common", "virtio_pci_common", "vp_find_vqs"]
+    },
+    {
+      "id": "virtio-pci-legacy",
+      "source": "../../linux/drivers/virtio/virtio_pci_legacy.c",
+      "subsystem": "virtio-pci",
+      "difficulty": "far",
+      "source_sha256": "50a4ba372274c935dd1de2ecf460f404b7c9897fb050d7057140c6b018a53796",
+      "selection_order": 12,
+      "selection_hash": "dcf7b946bf33f5f92d8925cee07f26d38ecfc8c91ecf95a4e00944d762ecb5ea",
+      "compile_context": "kbuild-cmd",
+      "forbidden_identifiers": ["virtio-pci-legacy", "virtio_pci_legacy", "vp_legacy"]
+    }
+  ]
+}
