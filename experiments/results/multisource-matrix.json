@@ -2,14 +2,14 @@
   "aggregate": {
     "call_edges": 974,
     "cross_tu_call_edges": 223,
-    "direct_mmio_ops": 1087,
+    "direct_mmio_ops": 1091,
     "drivers": 3,
-    "ops": 4394,
+    "ops": 4446,
     "propagated_mmio_edges": 578,
     "registers": 68,
     "resolved_cross_tu_call_edges": 223,
-    "ris_mmio_ops": 3742,
-    "rmw": 948,
+    "ris_mmio_ops": 3794,
+    "rmw": 959,
     "source_lines": 27447,
     "source_mmio_primitives": 907,
     "translation_units": 19
@@ -39,12 +39,12 @@
         "conditions": 126,
         "fixed": 36,
         "loops": 6,
-        "ops": 154,
+        "ops": 158,
         "pct_non_top": 1.0,
-        "pct_symbolic": 0.76,
+        "pct_symbolic": 0.766,
         "registers": 22,
         "rmw": 21,
-        "symbolic": 114,
+        "symbolic": 118,
         "unknown_value": 0
       },
       "mmio_primitive_coverage": 1.0,
@@ -70,7 +70,7 @@
       },
       "pipeline_exit": 0,
       "propagated_mmio_edges": 54,
-      "propagation_amplification": 1.4286,
+      "propagation_amplification": 1.4667,
       "propagation_by_depth": [
         {
           "depth": 0,
@@ -98,24 +98,30 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "4 source MMIO access site(s) unaccounted",
           "1 source register/opaque access site(s) unsupported",
           "13 switch path pair(s) not proven exclusive",
           "7 unsupported control-flow transfer(s)",
+          "1 helper module(s) retained only for lexical access coverage; call semantics not proven",
           "4 conservative loop summary/summaries require validation",
           "missing role for: ast_vhub_wake_work",
           "callback entry without table binding: ast_vhub_wake_work",
+          "harness backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 3 register operation(s) explicitly blocked by a synthesized lifecycle stub",
+          "linux backend has 8 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 133 emitted definition operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
-        "function_spec_quality": 0.933,
-        "llm_synthesis_ready": true,
-        "ris_quality": 0.952
+        "function_spec_quality": 0.875,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.953
       },
       "resolved_cross_tu_call_edges": 53,
-      "ris_mmio_ops": 150,
-      "seconds": 29.363,
+      "ris_mmio_ops": 154,
+      "seconds": 40.245,
       "source_count": 5,
       "source_lines": 3540,
       "source_mmio_primitives": {
@@ -142,8 +148,8 @@
       "call_edges": 128,
       "cross_tu_call_edges": 30,
       "description": "Pinned Linux Cypress C67X00 USB host-controller module",
-      "direct_mmio_delta": 14,
-      "direct_mmio_ops": 16,
+      "direct_mmio_delta": 15,
+      "direct_mmio_ops": 17,
       "driver": "c67x00",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 89,
@@ -188,16 +194,16 @@
       },
       "pipeline_exit": 0,
       "propagated_mmio_edges": 79,
-      "propagation_amplification": 2.0,
+      "propagation_amplification": 1.8824,
       "propagation_by_depth": [
         {
           "depth": 0,
-          "new_mmio_ops": 16,
-          "total_mmio_ops": 16
+          "new_mmio_ops": 17,
+          "total_mmio_ops": 17
         },
         {
           "depth": 1,
-          "new_mmio_ops": 35,
+          "new_mmio_ops": 34,
           "total_mmio_ops": 51
         },
         {
@@ -217,18 +223,24 @@
         "backend_linux_ready": false,
         "blockers": [
           "1 switch path pair(s) not proven exclusive",
+          "42 inlined helper definition(s) lack call-context proof",
           "1 conservative loop summary/summaries require validation",
+          "missing role for: c67x00_hcd_irq",
+          "harness backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 26 emitted definition operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 0.5,
         "facts_quality": 0.9,
-        "function_spec_quality": 1.0,
+        "function_spec_quality": 0.857,
         "llm_synthesis_ready": false,
         "ris_quality": 0.75
       },
       "resolved_cross_tu_call_edges": 30,
       "ris_mmio_ops": 32,
-      "seconds": 20.599,
+      "seconds": 28.119,
       "source_count": 4,
       "source_lines": 2239,
       "source_mmio_primitives": {
@@ -254,8 +266,8 @@
       "call_edges": 726,
       "cross_tu_call_edges": 140,
       "description": "Pinned Linux Synopsys DesignWare USB2 dual-role controller module",
-      "direct_mmio_delta": 162,
-      "direct_mmio_ops": 966,
+      "direct_mmio_delta": 165,
+      "direct_mmio_ops": 969,
       "driver": "dwc2",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 445,
@@ -264,16 +276,16 @@
       "manifest": "drivers/multisource/dwc2.json",
       "metrics": {
         "clang_diagnostics": 85,
-        "computed": 383,
-        "conditions": 1633,
-        "fixed": 133,
-        "loops": 200,
-        "ops": 4202,
+        "computed": 414,
+        "conditions": 1658,
+        "fixed": 134,
+        "loops": 202,
+        "ops": 4250,
         "pct_non_top": 1.0,
-        "pct_symbolic": 0.855,
+        "pct_symbolic": 0.848,
         "registers": 46,
-        "rmw": 927,
-        "symbolic": 3044,
+        "rmw": 938,
+        "symbolic": 3060,
         "unknown_value": 0
       },
       "mmio_primitive_coverage": 1.0,
@@ -300,27 +312,27 @@
       },
       "pipeline_exit": 0,
       "propagated_mmio_edges": 445,
-      "propagation_amplification": 3.6853,
+      "propagation_amplification": 3.7234,
       "propagation_by_depth": [
         {
           "depth": 0,
-          "new_mmio_ops": 966,
-          "total_mmio_ops": 966
+          "new_mmio_ops": 969,
+          "total_mmio_ops": 969
         },
         {
           "depth": 1,
-          "new_mmio_ops": 1745,
-          "total_mmio_ops": 2711
+          "new_mmio_ops": 1744,
+          "total_mmio_ops": 2713
         },
         {
           "depth": 2,
           "new_mmio_ops": 3739,
-          "total_mmio_ops": 6450
+          "total_mmio_ops": 6452
         },
         {
           "depth": 3,
           "new_mmio_ops": 4690,
-          "total_mmio_ops": 11140
+          "total_mmio_ops": 11142
         }
       ],
       "readiness": {
@@ -328,26 +340,33 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "48 source MMIO access site(s) unaccounted",
           "220 contradictory/infeasible RIS path(s)",
           "35 switch path pair(s) not proven exclusive",
           "32 unsupported control-flow transfer(s)",
-          "255 unsafe dynamic register address(es) (383 computed total)",
+          "21 helper module(s) retained only for lexical access coverage; call semantics not proven",
+          "286 unsafe dynamic register address(es) (414 computed total)",
           "85 clang error diagnostic(s)",
-          "165 conservative loop summary/summaries require validation",
-          "missing role for: dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
-          "callback entry without table binding: dwc2_suspend, dwc2_resume, dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_hcd_reset_func, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
+          "167 conservative loop summary/summaries require validation",
+          "missing role for: dwc2_drd_role_sw_set, dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
+          "callback entry without table binding: dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_hcd_reset_func",
+          "harness backend has 426 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 426 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 182 register operation(s) explicitly blocked by a synthesized lifecycle stub",
+          "linux backend has 2 register operation(s) explicitly blocked by an unimplemented lifecycle route",
+          "linux backend has 898 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 426 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 2100 emitted definition operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
-        "function_spec_quality": 0.562,
+        "function_spec_quality": 0.412,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.685
+        "ris_quality": 0.68
       },
       "resolved_cross_tu_call_edges": 140,
-      "ris_mmio_ops": 3560,
-      "seconds": 108.338,
+      "ris_mmio_ops": 3608,
+      "seconds": 137.939,
       "source_count": 10,
       "source_lines": 21668,
       "source_mmio_primitives": {
@@ -373,8 +392,8 @@
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "24182ac7a6b8be43b743e8a8ac9ae7b251b0e897"
+    "reharness_commit": "8ae82124c8754439be1db64b9644b3b496f78329"
   },
-  "generated_at": "2026-07-17T07:33:03.558139+00:00",
+  "generated_at": "2026-07-17T23:00:46.277962+00:00",
   "schema": 1
 }

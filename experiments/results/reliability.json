@@ -2,7 +2,7 @@
   "aggregate": {
     "drivers": 19,
     "source_accesses": 385,
-    "strict_reliable": 9,
+    "strict_reliable": 5,
     "unsupported_accesses": 10,
     "unsupported_control": 6
   },
@@ -448,8 +448,22 @@
         "unique_evidence_sites": 11,
         "unique_op_ids": 20
       },
+      "callee_rescue": {
+        "base_covered_sites": 11,
+        "call_semantics_proven": false,
+        "candidates": 15,
+        "required_sites": 11,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 15,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -7032,6 +7046,15 @@
           "unaccounted": 0,
           "unsupported": 10
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 15,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 15,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 14,
@@ -7327,7 +7350,8 @@
         "blockers": [
           "10 source register/opaque access site(s) unsupported",
           "2 unsupported control-flow transfer(s)",
-          "callback entry without table binding: ahci_pci_device_runtime_suspend, ahci_pci_device_runtime_resume, ahci_pci_device_suspend, ahci_pci_device_resume"
+          "15 inlined helper definition(s) lack call-context proof",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.875,
         "facts_quality": 0.4,
@@ -7659,8 +7683,22 @@
         "unique_evidence_sites": 13,
         "unique_op_ids": 26
       },
+      "callee_rescue": {
+        "base_covered_sites": 13,
+        "call_semantics_proven": false,
+        "candidates": 1,
+        "required_sites": 13,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 1,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -10771,6 +10809,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 1,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 1,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 10,
@@ -10990,21 +11037,22 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "callback entry without table binding: ceva_ahci_resume"
+          "1 inlined helper definition(s) lack call-context proof",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 0.985
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_ceva.c",
       "source_sha256": "f1877cae1d91cacb85ad83973d17e20f48b9e7d73cbe61aef04b459725d77987",
-      "strict_reliable": true,
+      "strict_reliable": false,
       "warnings": [
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
@@ -11024,8 +11072,8 @@
     },
     {
       "access_accounting": {
-        "complete": false,
-        "emitted": 3,
+        "complete": true,
+        "emitted": 9,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -11042,7 +11090,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_1"
+              "op_7"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:142:10:4146:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
@@ -11060,11 +11108,13 @@
             "line": 185,
             "offset": 5501,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_1"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:185:8:5501:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_timer",
             "width_bytes": 4
           },
@@ -11078,11 +11128,13 @@
             "line": 186,
             "offset": 5540,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_2"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:186:9:5540:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_timer",
             "width_bytes": 4
           },
@@ -11096,11 +11148,13 @@
             "line": 199,
             "offset": 5926,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_3"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:199:16:5926:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_timer",
             "width_bytes": 4
           },
@@ -11114,11 +11168,13 @@
             "line": 208,
             "offset": 6262,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_4"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:208:2:6262:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_timer",
             "width_bytes": 4
           },
@@ -11132,11 +11188,13 @@
             "line": 229,
             "offset": 7003,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_5"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:229:11:7003:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_dmacr",
             "width_bytes": 4
           },
@@ -11150,11 +11208,13 @@
             "line": 243,
             "offset": 7398,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_6"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:243:3:7398:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_dmacr",
             "width_bytes": 4
           },
@@ -11170,7 +11230,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_2"
+              "op_8"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:302:2:8472:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
@@ -11190,7 +11250,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_3"
+              "op_9"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c:306:3:8626:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
@@ -11200,8 +11260,8 @@
           }
         ],
         "source_accesses": 9,
-        "strict_complete": false,
-        "unaccounted": 6,
+        "strict_complete": true,
+        "unaccounted": 0,
         "unsupported": 0
       },
       "alias_analysis": {
@@ -11215,14 +11275,31 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 3,
+        "leaf_register_ops": 9,
         "max_site_fanout": 1,
-        "ops_with_evidence": 3,
-        "unique_evidence_sites": 3,
-        "unique_op_ids": 3
+        "ops_with_evidence": 9,
+        "unique_evidence_sites": 9,
+        "unique_op_ids": 9
+      },
+      "callee_rescue": {
+        "base_covered_sites": 3,
+        "call_semantics_proven": false,
+        "candidates": 6,
+        "required_sites": 9,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 2,
+        "rescued_direct_ops": 6,
+        "rescued_symbols": [
+          "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_dmacr",
+          "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c::ahci_dwc_init_timer"
+        ],
+        "retained_inlined": 4,
+        "unproven_symbols": []
       },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -12738,19 +12815,28 @@
       "driver": "ahci_dwc",
       "metrics": {
         "access_accounting": {
-          "complete": false,
-          "emitted": 3,
+          "complete": true,
+          "emitted": 9,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
           "source_accesses": 9,
-          "strict_complete": false,
-          "unaccounted": 6,
+          "strict_complete": true,
+          "unaccounted": 0,
           "unsupported": 0
+        },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 6,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 2,
+          "rescued_direct_ops": 6,
+          "retained_inlined": 4,
+          "semantics_complete": false
         },
         "clang_diag": 0,
         "computed": 0,
         "cond": 2,
-        "conservative_loop": 1,
+        "conservative_loop": 2,
         "control_accounting": {
           "assumed_framework_error_gotos": 0,
           "complete": true,
@@ -12758,8 +12844,36 @@
           "unsupported": 0
         },
         "fixed": 0,
-        "loop": 1,
+        "loop": 2,
         "modules": [
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 0,
+            "loop": 0,
+            "module": "ahci_dwc_init_timer",
+            "pct_symbolic": 1.0,
+            "rmw": 0,
+            "symbolic": 4,
+            "total_ops": 4,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 1,
+            "fixed": 0,
+            "loop": 1,
+            "module": "ahci_dwc_init_dmacr",
+            "pct_symbolic": 1.0,
+            "rmw": 1,
+            "symbolic": 2,
+            "total_ops": 2,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
           {
             "computed": 0,
             "cond": 1,
@@ -12793,27 +12907,27 @@
           "complete": true,
           "infeasible": 0,
           "nonexclusive_switch_pairs": 0,
-          "satisfiable": 3,
+          "satisfiable": 4,
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
         "pct_symbolic": 1.0,
         "register_map": 5,
         "reliability": {
-          "Conservative": 3,
-          "Exact": 0,
+          "Conservative": 5,
+          "Exact": 4,
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 0,
+        "rmw": 1,
         "subsystem_summary": {
           "generic_backend_unvalidated": 0,
           "synthetic_functions": 0,
           "unmodeled": [],
           "unmodeled_callbacks": 0
         },
-        "symbolic": 3,
-        "total_ops": 3,
+        "symbolic": 9,
+        "total_ops": 9,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -12822,6 +12936,12 @@
         "infeasible": 0,
         "intentionally_unreachable": 0,
         "paths": [
+          {
+            "control": "loop",
+            "module": "ahci_dwc_init_dmacr",
+            "path_id": "path_1",
+            "status": "satisfiable"
+          },
           {
             "control": {
               "branch": "fallthrough",
@@ -12832,7 +12952,7 @@
               "target_label": "err_disable_resources"
             },
             "module": "ahci_dwc_probe",
-            "path_id": "path_1",
+            "path_id": "path_2",
             "status": "satisfiable"
           },
           {
@@ -12845,17 +12965,17 @@
               "target_label": "err_disable_resources"
             },
             "module": "ahci_dwc_resume",
-            "path_id": "path_2",
+            "path_id": "path_3",
             "status": "satisfiable"
           },
           {
             "control": "loop",
             "module": "ahci_dwc_resume",
-            "path_id": "path_3",
+            "path_id": "path_4",
             "status": "satisfiable"
           }
         ],
-        "satisfiable": 3,
+        "satisfiable": 4,
         "solver": "Z3 4.16.0",
         "switch_pairs": [],
         "timeout_ms": 100,
@@ -12866,13 +12986,14 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "6 source MMIO access site(s) unaccounted",
-          "1 conservative loop summary/summaries require validation"
+          "2 helper module(s) retained only for lexical access coverage; call semantics not proven",
+          "2 conservative loop summary/summaries require validation",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.812,
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 1.0
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_dwc.c",
@@ -13226,8 +13347,22 @@
         "unique_evidence_sites": 15,
         "unique_op_ids": 15
       },
+      "callee_rescue": {
+        "base_covered_sites": 8,
+        "call_semantics_proven": false,
+        "candidates": 2,
+        "required_sites": 8,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 2,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -13917,6 +14052,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 2,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 2,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 1,
@@ -14036,12 +14180,13 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "2 inlined helper definition(s) lack call-context proof",
           "missing role for: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine",
-          "callback entry without table binding: ahci_mvebu_armada_380_config, ahci_mvebu_armada_3700_config, ahci_mvebu_stop_engine"
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.75,
         "facts_quality": 0.7,
@@ -14051,7 +14196,7 @@
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_mvebu.c",
       "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf",
-      "strict_reliable": true,
+      "strict_reliable": false,
       "warnings": [
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
@@ -14071,8 +14216,8 @@
     },
     {
       "access_accounting": {
-        "complete": false,
-        "emitted": 6,
+        "complete": true,
+        "emitted": 9,
         "filtered": 0,
         "ops_without_evidence": [],
         "ris_ops_without_evidence": 0,
@@ -14087,11 +14232,13 @@
             "line": 57,
             "offset": 1581,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_1"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:57:12:1581:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c::sunxi_clrbits",
             "width_bytes": 4
           },
@@ -14105,11 +14252,13 @@
             "line": 59,
             "offset": 1618,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_2"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:59:2:1618:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c::sunxi_clrbits",
             "width_bytes": 4
           },
@@ -14125,7 +14274,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_3"
+              "op_6"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:66:12:1729:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
@@ -14145,7 +14294,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_4"
+              "op_7"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:68:2:1763:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
@@ -14165,7 +14314,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_1"
+              "op_4"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:75:12:1890:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
@@ -14185,7 +14334,7 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_2"
+              "op_5"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:78:2:1948:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
@@ -14203,11 +14352,13 @@
             "line": 83,
             "offset": 2047,
             "origin": "direct",
-            "reason": "recognized source MMIO call produced no RIS op",
-            "ris_ops": [],
+            "reason": null,
+            "ris_ops": [
+              "op_3"
+            ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:83:10:2047:readl",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
-            "status": "unaccounted",
+            "status": "emitted",
             "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c::sunxi_getbits",
             "width_bytes": 4
           },
@@ -14223,8 +14374,8 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_12",
-              "op_5"
+              "op_15",
+              "op_8"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:92:2:2230:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
@@ -14244,8 +14395,8 @@
             "origin": "direct",
             "reason": null,
             "ris_ops": [
-              "op_11",
-              "op_18"
+              "op_14",
+              "op_21"
             ],
             "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c:142:2:3487:writel",
             "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
@@ -14255,8 +14406,8 @@
           }
         ],
         "source_accesses": 9,
-        "strict_complete": false,
-        "unaccounted": 3,
+        "strict_complete": true,
+        "unaccounted": 0,
         "unsupported": 0
       },
       "alias_analysis": {
@@ -14270,14 +14421,31 @@
       },
       "audit": {
         "duplicate_op_ids": [],
-        "leaf_register_ops": 8,
+        "leaf_register_ops": 11,
         "max_site_fanout": 2,
-        "ops_with_evidence": 8,
-        "unique_evidence_sites": 6,
-        "unique_op_ids": 8
+        "ops_with_evidence": 11,
+        "unique_evidence_sites": 9,
+        "unique_op_ids": 11
+      },
+      "callee_rescue": {
+        "base_covered_sites": 6,
+        "call_semantics_proven": false,
+        "candidates": 5,
+        "required_sites": 9,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 2,
+        "rescued_direct_ops": 3,
+        "rescued_symbols": [
+          "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c::sunxi_clrbits",
+          "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c::sunxi_getbits"
+        ],
+        "retained_inlined": 3,
+        "unproven_symbols": []
       },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -15926,14 +16094,23 @@
       "driver": "ahci_sunxi",
       "metrics": {
         "access_accounting": {
-          "complete": false,
-          "emitted": 6,
+          "complete": true,
+          "emitted": 9,
           "filtered": 0,
           "ris_ops_without_evidence": 0,
           "source_accesses": 9,
-          "strict_complete": false,
-          "unaccounted": 3,
+          "strict_complete": true,
+          "unaccounted": 0,
           "unsupported": 0
+        },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 5,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 2,
+          "rescued_direct_ops": 3,
+          "retained_inlined": 3,
+          "semantics_complete": false
         },
         "clang_diag": 0,
         "computed": 0,
@@ -15945,9 +16122,37 @@
           "modeled_early_returns": 8,
           "unsupported": 0
         },
-        "fixed": 4,
+        "fixed": 7,
         "loop": 4,
         "modules": [
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 2,
+            "loop": 0,
+            "module": "sunxi_clrbits",
+            "pct_symbolic": 0.0,
+            "rmw": 1,
+            "symbolic": 0,
+            "total_ops": 2,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
+          {
+            "computed": 0,
+            "cond": 0,
+            "conservative_loop": 0,
+            "fixed": 1,
+            "loop": 0,
+            "module": "sunxi_getbits",
+            "pct_symbolic": 0.0,
+            "rmw": 0,
+            "symbolic": 0,
+            "total_ops": 1,
+            "unknown_value": 0,
+            "unsafe_computed": 0
+          },
           {
             "computed": 0,
             "cond": 0,
@@ -15999,15 +16204,15 @@
           "unknown": 0
         },
         "pct_non_top_value": 1.0,
-        "pct_symbolic": 0.5,
+        "pct_symbolic": 0.364,
         "register_map": 1,
         "reliability": {
           "Conservative": 0,
-          "Exact": 8,
+          "Exact": 11,
           "Unknown": 0,
           "Unsupported": 0
         },
-        "rmw": 2,
+        "rmw": 3,
         "subsystem_summary": {
           "generic_backend_unvalidated": 0,
           "synthetic_functions": 0,
@@ -16015,7 +16220,7 @@
           "unmodeled_callbacks": 0
         },
         "symbolic": 4,
-        "total_ops": 18,
+        "total_ops": 21,
         "unknown_value": 0,
         "unsafe_computed": 0
       },
@@ -16060,16 +16265,16 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "3 source MMIO access site(s) unaccounted",
+          "2 helper module(s) retained only for lexical access coverage; call semantics not proven",
           "4 conservative loop summary/summaries require validation",
           "missing role for: ahci_sunxi_start_engine",
-          "callback entry without table binding: ahci_sunxi_start_engine, ahci_sunxi_resume"
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.562,
         "facts_quality": 0.4,
-        "function_spec_quality": 0.667,
+        "function_spec_quality": 0.4,
         "llm_synthesis_ready": false,
-        "ris_quality": 0.9
+        "ris_quality": 0.873
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/ahci_sunxi.c",
       "source_sha256": "464349c5dcf3fe20ddad4b73535a0da345c9c78ea0aedcd30d1135c32c866683",
@@ -16622,8 +16827,22 @@
         "unique_evidence_sites": 25,
         "unique_op_ids": 25
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -17054,6 +17273,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 2,
@@ -17297,7 +17525,8 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "4 conservative loop summary/summaries require validation"
+          "4 conservative loop summary/summaries require validation",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.5,
         "facts_quality": 0.7,
@@ -17859,8 +18088,22 @@
         "unique_evidence_sites": 25,
         "unique_op_ids": 33
       },
+      "callee_rescue": {
+        "base_covered_sites": 4,
+        "call_semantics_proven": false,
+        "candidates": 3,
+        "required_sites": 4,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 3,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -18719,6 +18962,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 3,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 3,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 5,
         "cond": 14,
@@ -19122,13 +19374,15 @@
         "backend_linux_ready": false,
         "blockers": [
           "3 contradictory/infeasible RIS path(s)",
+          "3 inlined helper definition(s) lack call-context proof",
           "2 conservative loop summary/summaries require validation",
-          "callback entry without table binding: nomadik_clk_reboot_handler, nomadik_src_clk_init_debugfs"
+          "callback entry without table binding: nomadik_src_clk_init_debugfs",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 0.7,
         "function_spec_quality": 0.692,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 0.92
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/clk-nomadik.c",
@@ -19278,8 +19532,22 @@
         "unique_evidence_sites": 5,
         "unique_op_ids": 5
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -20300,6 +20568,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 2,
@@ -20437,10 +20714,12 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
-        "backend_linux_ready": true,
-        "blockers": [],
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "generated backend compile/lowering/attestation results unavailable"
+        ],
         "device_spec_quality": 0.688,
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
@@ -20959,8 +21238,22 @@
         "unique_evidence_sites": 22,
         "unique_op_ids": 32
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -22700,6 +22993,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 8,
@@ -23061,8 +23363,9 @@
       "readiness": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
-        "backend_linux_ready": true,
+        "backend_linux_ready": false,
         "blockers": [
+          "generated backend compile/lowering/attestation results unavailable",
           "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
         ],
         "device_spec_quality": 1.0,
@@ -23599,8 +23902,22 @@
         "unique_evidence_sites": 23,
         "unique_op_ids": 35
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -24471,6 +24788,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 8,
@@ -24805,8 +25131,9 @@
       "readiness": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
-        "backend_linux_ready": true,
+        "backend_linux_ready": false,
         "blockers": [
+          "generated backend compile/lowering/attestation results unavailable",
           "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
         ],
         "device_spec_quality": 1.0,
@@ -25046,8 +25373,22 @@
         "unique_evidence_sites": 8,
         "unique_op_ids": 17
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -25355,6 +25696,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 0,
@@ -25605,8 +25955,9 @@
       "readiness": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
-        "backend_linux_ready": true,
+        "backend_linux_ready": false,
         "blockers": [
+          "generated backend compile/lowering/attestation results unavailable",
           "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
         ],
         "device_spec_quality": 0.875,
@@ -25924,8 +26275,22 @@
         "unique_evidence_sites": 13,
         "unique_op_ids": 13
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -25963,6 +26328,15 @@
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
+        },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
         },
         "clang_diag": 0,
         "computed": 13,
@@ -26104,7 +26478,8 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "13 unsafe dynamic register address(es) (13 computed total)"
+          "13 unsafe dynamic register address(es) (13 computed total)",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.5,
         "facts_quality": 1.0,
@@ -26780,8 +27155,22 @@
         "unique_evidence_sites": 31,
         "unique_op_ids": 31
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -26819,6 +27208,15 @@
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
+        },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
         },
         "clang_diag": 0,
         "computed": 4,
@@ -27068,10 +27466,12 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
-        "backend_linux_ready": true,
-        "blockers": [],
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "generated backend compile/lowering/attestation results unavailable"
+        ],
         "device_spec_quality": 0.938,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
@@ -27315,8 +27715,22 @@
         "unique_evidence_sites": 8,
         "unique_op_ids": 18
       },
+      "callee_rescue": {
+        "base_covered_sites": 2,
+        "call_semantics_proven": false,
+        "candidates": 1,
+        "required_sites": 2,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 1,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -28130,6 +28544,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 1,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 1,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 2,
         "cond": 2,
@@ -28348,19 +28771,21 @@
       "readiness": {
         "backend_bare_metal_ready": false,
         "backend_harness_ready": false,
-        "backend_linux_ready": true,
+        "backend_linux_ready": false,
         "blockers": [
+          "1 inlined helper definition(s) lack call-context proof",
+          "generated backend compile/lowering/attestation results unavailable",
           "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
         ],
         "device_spec_quality": 0.875,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 0.928
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/gpio-sodaville.c",
       "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109",
-      "strict_reliable": true,
+      "strict_reliable": false,
       "warnings": [
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
@@ -28911,8 +29336,22 @@
         "unique_evidence_sites": 25,
         "unique_op_ids": 30
       },
+      "callee_rescue": {
+        "base_covered_sites": 10,
+        "call_semantics_proven": false,
+        "candidates": 4,
+        "required_sites": 10,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 4,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -29202,6 +29641,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 4,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 4,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 0,
@@ -29324,19 +29772,22 @@
         "unknown": 0
       },
       "readiness": {
-        "backend_bare_metal_ready": true,
-        "backend_harness_ready": true,
-        "backend_linux_ready": true,
-        "blockers": [],
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "4 inlined helper definition(s) lack call-context proof",
+          "generated backend compile/lowering/attestation results unavailable"
+        ],
         "device_spec_quality": 0.938,
         "facts_quality": 0.7,
         "function_spec_quality": 1.0,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 1.0
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/pll.c",
       "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492",
-      "strict_reliable": true,
+      "strict_reliable": false,
       "warnings": [
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
         "clang header diag[2] /home/yfblock/Code/dri-trans-paper/reharness/linux/arch/x86/include/asm/current.h:23: multiple identical address spaces specified for type",
@@ -29732,8 +30183,22 @@
         "unique_evidence_sites": 17,
         "unique_op_ids": 23
       },
+      "callee_rescue": {
+        "base_covered_sites": 2,
+        "call_semantics_proven": false,
+        "candidates": 2,
+        "required_sites": 2,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 2,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -32210,6 +32675,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 2,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 2,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 16,
         "cond": 7,
@@ -32555,15 +33029,16 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "2 inlined helper definition(s) lack call-context proof",
           "9 subsystem library callback(s) lack semantic summary",
           "1 conservative loop summary/summaries require validation",
           "missing role for: esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width",
-          "callback entry without table binding: esdhc_mcf_set_timeout, esdhc_mcf_pltfm_set_clock, esdhc_mcf_pltfm_set_bus_width"
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 0.812,
         "facts_quality": 1.0,
         "function_spec_quality": 0.7,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 0.802
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-esdhc-mcf.c",
@@ -33116,8 +33591,22 @@
         "unique_evidence_sites": 23,
         "unique_op_ids": 36
       },
+      "callee_rescue": {
+        "base_covered_sites": 13,
+        "call_semantics_proven": false,
+        "candidates": 2,
+        "required_sites": 13,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 2,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -35962,6 +36451,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 2,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 2,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 0,
         "cond": 8,
@@ -36214,15 +36712,16 @@
         "backend_linux_ready": false,
         "blockers": [
           "4 unsupported control-flow transfer(s)",
+          "2 inlined helper definition(s) lack call-context proof",
           "4 subsystem library callback(s) lack semantic summary",
           "1 conservative loop summary/summaries require validation",
           "missing role for: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling",
-          "callback entry without table binding: sdhci_at91_set_clock, sdhci_at91_set_uhs_signaling, sdhci_at91_runtime_resume"
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
         "function_spec_quality": 0.6,
-        "llm_synthesis_ready": true,
+        "llm_synthesis_ready": false,
         "ris_quality": 0.989
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/sdhci-of-at91.c",
@@ -37474,8 +37973,22 @@
         "unique_evidence_sites": 59,
         "unique_op_ids": 59
       },
+      "callee_rescue": {
+        "base_covered_sites": 21,
+        "call_semantics_proven": false,
+        "candidates": 2,
+        "required_sites": 21,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 2,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": false,
+        "callee_rescue_semantics_complete": false,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -41834,6 +42347,15 @@
           "unaccounted": 0,
           "unsupported": 0
         },
+        "callee_rescue": {
+          "call_semantics_proven": false,
+          "candidates": 2,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 2,
+          "semantics_complete": false
+        },
         "clang_diag": 0,
         "computed": 1,
         "cond": 44,
@@ -42703,15 +43225,17 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
+          "2 inlined helper definition(s) lack call-context proof",
           "1 unsafe dynamic register address(es) (1 computed total)",
           "4 conservative loop summary/summaries require validation",
-          "missing role for: vm_get_features, vm_finalize_features, virtio_mmio_restore",
-          "callback entry without table binding: vm_get_features, vm_finalize_features, vm_notify, virtio_mmio_restore"
+          "missing role for: vm_get_features, vm_finalize_features",
+          "callback entry without table binding: vm_notify",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
-        "function_spec_quality": 0.812,
-        "llm_synthesis_ready": true,
+        "function_spec_quality": 0.875,
+        "llm_synthesis_ready": false,
         "ris_quality": 0.897
       },
       "source": "/home/yfblock/Code/dri-trans-paper/reharness/drivers/test/virtio_mmio.c",
@@ -43421,8 +43945,22 @@
         "unique_evidence_sites": 33,
         "unique_op_ids": 33
       },
+      "callee_rescue": {
+        "base_covered_sites": 0,
+        "call_semantics_proven": true,
+        "candidates": 0,
+        "required_sites": 0,
+        "rescue_mode": "direct-evidence-frontier",
+        "rescued": 0,
+        "rescued_direct_ops": 0,
+        "rescued_symbols": [],
+        "retained_inlined": 0,
+        "unproven_symbols": []
+      },
       "claim_scope": {
         "alias_analysis": "off",
+        "call_semantics_proven": true,
+        "callee_rescue_semantics_complete": true,
         "claim": "recognized register-access and structured-control universe",
         "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
         "indirect_calls": "simple static initializer/assignment targets",
@@ -43460,6 +43998,15 @@
           "strict_complete": true,
           "unaccounted": 0,
           "unsupported": 0
+        },
+        "callee_rescue": {
+          "call_semantics_proven": true,
+          "candidates": 0,
+          "rescue_mode": "direct-evidence-frontier",
+          "rescued": 0,
+          "rescued_direct_ops": 0,
+          "retained_inlined": 0,
+          "semantics_complete": true
         },
         "clang_diag": 0,
         "computed": 0,
@@ -43584,7 +44131,8 @@
         "blockers": [
           "1 conservative loop summary/summaries require validation",
           "missing role for: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync",
-          "callback entry without table binding: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync"
+          "callback entry without table binding: wmt_ge_fillrect, wmt_ge_copyarea, wmt_ge_sync",
+          "generated backend compile/lowering/attestation results unavailable"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 0.6,
@@ -43613,7 +44161,7 @@
       ]
     }
   ],
-  "generated_at": "2026-07-17T07:35:59.104710+00:00",
-  "reharness_commit": "24182ac7a6b8be43b743e8a8ac9ae7b251b0e897",
+  "generated_at": "2026-07-17T22:59:28.956347+00:00",
+  "reharness_commit": "8ae82124c8754439be1db64b9644b3b496f78329",
   "schema": 1
 }

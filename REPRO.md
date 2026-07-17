@@ -136,10 +136,10 @@ python3 verification/run_multisource_matrix.py
 ~~~text
 c67x00:      4 TUs,  2239 lines,  89 functions,   38 ops
 aspeed-vhub: 5 TUs,  3540 lines,  92 functions,  154 ops
-dwc2:       10 TUs, 21668 lines, 445 functions, 4202 ops
-aggregate:  19 TUs, 27447 lines, 626 functions, 4394 ops, 948 RMW
+dwc2:       10 TUs, 21668 lines, 445 functions, 4250 ops
+aggregate:  19 TUs, 27447 lines, 626 functions, 4446 ops, 959 RMW
 calls:      974 internal, 223 cross-TU, 223 resolved, 578 MMIO-propagating
-MMIO:       907 source primitives, 1087 direct AST ops, 3742 emitted RIS ops
+MMIO:       907 source primitives, 1091 direct AST ops, 3794 emitted RIS ops
 compile:    harness=3/3 bare-metal=3/3 Linux=3/3 original-Kbuild=3/3
 ~~~
 

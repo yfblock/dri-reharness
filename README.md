@@ -12,7 +12,7 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 严格语义 readiness（C19 Linux definition/runtime 分轴 gate）：harness 4/19、bare-metal 4/19、Linux 0/19，三个后端共同 0/19。H/B 保留 C17 AST primitive gate；Linux 虽仍有 17/19 可编译，但 receipt 只证明函数定义已发射，尚无独立 registration/callsite attestation，因此不再把 `__maybe_unused` 或 evidence-only callback 冒充为 runtime-reachable strict 完成。
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。C15 将 DWC2/ASPEED 的 unaccounted source site 从 48/4 降为 0，但 direct evidence frontier 仍显式阻塞 call-semantics strict 声明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
-- 原始 MMIO 对照：907 个源码 primitive、1,087 个 direct AST 操作、C15 后 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
+- 原始 MMIO 对照：907 个源码 primitive、1,091 个 direct AST 操作、C19 当前 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
 - 测试套件：159 tests（132 core + 7 generated-C AST + 13 lowering-plan + 2 read-provenance + 5 DeviceSpec JSON）；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；C15 机器报告给出 scoped strict 5/19。`whole_program_complete` 由 linked analysis、调用语义、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
@@ -22,7 +22,7 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 零样本泛化基础：`drivers/holdout/zero-shot-v1.json` 冻结 12 个未用于实现的驱动；extractor/generator 出现这些驱动的专用标识会使 CI 失败。Kbuild importer 优先读取 `compile_commands.json`，否则自动读取对象对应的 `.cmd`，并把来源、参数与 SHA 写入 analysis metadata。
 - Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；C19 gate 下 harness/bare-metal strict 为 7/12，Linux 与三后端共同 strict 为 0/12。首个跨驱动 RIS blocker 仍是 5 个案例共有的 `call_context`，Linux 还叠加了未完成的 registration/callsite 证明。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
 
-下表来自 C15 当前 19-driver 矩阵；AHCI direct evidence frontier 会增加真实未覆盖操作，因此计数与 C14 冻结结果不同：
+下表来自 C19 当前 19-driver 矩阵；AHCI direct evidence frontier 会增加真实未覆盖操作，因此计数与 C14 冻结结果不同：
 
 | 驱动数 | Ops | Symbolic | Fixed | Computed | RMW | Conditions | Registers |
 |---:|---:|---:|---:|---:|---:|---:|---:|
