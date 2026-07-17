@@ -20,7 +20,7 @@ from .subsystem_runner import (portable_sdhci_accessor_only,
                                portable_virtio_state_only)
 from .common import (ops_to_c, local_decls, value_var_names,
                      _replace_expr_var, addr_to_c, lowering_receipt,
-                     ris_op_digest)
+                     ris_op_digest, lowering_recipes)
 
 _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
@@ -641,7 +641,8 @@ def _normalize_expr(expr, state_prefix: str | None = None,
 
 def _normalize_ops(ops, state_prefix: str | None = None,
                    safe_function_calls: set[str] | None = None,
-                   contract_digests: dict[str, str] | None = None):
+                   contract_digests: dict[str, str] | None = None,
+                   contract_recipes: dict[str, dict] | None = None):
     if contract_digests is None:
         contract_digests = {}
         for original in walk_leaf_ops(ops):
@@ -649,6 +650,8 @@ def _normalize_ops(ops, state_prefix: str | None = None,
                     or original.get("ReadModifyWrite"))
             if body and body.get("op_id"):
                 contract_digests[body["op_id"]] = ris_op_digest(original)
+    if contract_recipes is None:
+        contract_recipes = lowering_recipes(ops)
     out = copy.deepcopy(ops)
     changed = False
     for op in out:
@@ -657,10 +660,10 @@ def _normalize_ops(ops, state_prefix: str | None = None,
                 op["Cond"].get("guard"), state_prefix, safe_function_calls)
             op["Cond"]["then_ops"], a = _normalize_ops(
                 op["Cond"].get("then_ops", []), state_prefix,
-                safe_function_calls, contract_digests)
+                safe_function_calls, contract_digests, contract_recipes)
             op["Cond"]["else_ops"], b = _normalize_ops(
                 op["Cond"].get("else_ops") or [], state_prefix,
-                safe_function_calls, contract_digests)
+                safe_function_calls, contract_digests, contract_recipes)
             changed |= a or b or c
         elif "Loop" in op:
             op["Loop"]["guard"], g = _normalize_expr(
@@ -670,12 +673,12 @@ def _normalize_ops(ops, state_prefix: str | None = None,
                 op["Loop"].get("count"), state_prefix, safe_function_calls)
             op["Loop"]["body"], a = _normalize_ops(
                 op["Loop"].get("body", []), state_prefix,
-                safe_function_calls, contract_digests)
+                safe_function_calls, contract_digests, contract_recipes)
             changed |= a or c or g
         elif "Seq" in op:
             op["Seq"]["ops"], a = _normalize_ops(
                 op["Seq"].get("ops", []), state_prefix,
-                safe_function_calls, contract_digests)
+                safe_function_calls, contract_digests, contract_recipes)
             changed |= a
         elif "Return" in op:
             op["Return"]["value"], a = _normalize_expr(
@@ -707,6 +710,9 @@ def _normalize_ops(ops, state_prefix: str | None = None,
                 # that copy, so receipts remain bound to the generation
                 # contract without mutating or caching inside Formal RIS.
                 body["_backend_contract_digest"] = contract_digests[op_id]
+            if op_id in contract_recipes:
+                body["_backend_lowering_recipe"] = copy.deepcopy(
+                    contract_recipes[op_id])
             addr = body.get("addr", {})
             if "Computed" in addr:
                 addr["Computed"], a = _normalize_expr(

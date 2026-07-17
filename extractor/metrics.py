@@ -453,6 +453,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                  and unsupported_control == 0
                                  and met["conservative_loop"] == 0
                                  and h.get("backend_lowering_complete", True)
+                                 and h.get("backend_ast_leaf_complete", False)
                                  and h.get("compiled") and h.get("trace_passed")
                                  and not h.get("has_todo")
                                  and not h.get("unsupported"))
@@ -480,8 +481,14 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                    and unsupported_control == 0
                                    and met["conservative_loop"] == 0
                                    and bm.get("backend_lowering_complete", True)
+                                   and bm.get("backend_ast_leaf_complete", False)
                                    and bm.get("compiled") and not bm.get("has_todo")
                                    and not bm.get("unsupported"))
+        for backend, report in (("harness", h), ("baremetal", bm)):
+            if (report and report.get("backend_ast_leaf_required")
+                    and not report.get("backend_ast_leaf_complete")):
+                blockers.append(
+                    f"{backend} backend generated-C AST primitive proof failed")
         lx = _gr("linux")
         if lx:
             linux_source_ready = (not gpio_source_required or bool(

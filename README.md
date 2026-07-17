@@ -9,11 +9,11 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 版本化语料：drivers/test/ 内含 19 个单源测试驱动；drivers/multisource/ 包含真实 Kbuild 多源模块 manifest。
 - 版本化内核：linux/ 是固定到实验 commit 的 Git submodule。
 - 三个确定性后端：harness 18/19、bare-metal 18/19、Linux 17/19 可编译；未编译项保留明确日志，不用 stub 成功替代。
-- 严格语义 readiness（C15 call-context fail-closed gate 重跑）：harness 5/19、bare-metal 5/19、Linux 3/19，三个后端共同 3/19。除 lowering receipt 外，任何尚未由正式 `Call`/callsite verifier 证明的 helper flattening 也会撤销 readiness；编译通过和 site coverage 都不能掩盖调用实例遗漏。
+- 严格语义 readiness（C17 generated-C AST primitive gate 重跑）：harness 4/19、bare-metal 4/19、Linux 3/19，三个后端共同 3/19。除 lowering receipt 和 call-context gate 外，harness/bare-metal 的每个 operation 还必须拥有唯一 AST anchor，并证明 primitive 数量、方向、宽度、端序/W1C 与无额外未归属访问；`gpio-cadence` 因 Write anchor 内隐藏额外 read 被保守撤销。
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。C15 将 DWC2/ASPEED 的 unaccounted source site 从 48/4 降为 0，但 direct evidence frontier 仍显式阻塞 call-semantics strict 声明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
 - 原始 MMIO 对照：907 个源码 primitive、1,087 个 direct AST 操作、C15 后 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
-- 测试套件：127 tests；测试入口先执行冻结 holdout/specialization guard。
+- 测试套件：138 tests（131 core + 7 generated-C AST）；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；C15 机器报告给出 scoped strict 5/19。`whole_program_complete` 由 linked analysis、调用语义、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
@@ -46,6 +46,8 @@ RIS leaf op 还包含 `op_id`、source evidence、reliability、address/value/pa
 跨函数内联采用有界传播。若被 dedup 的 helper 自有 source site 没有出现在任何保留模块中，C15 会仅保留该 helper 中尚未覆盖的 definition-owned register evidence frontier，使访问不会消失。当前尚无正式 `Call`/call-context verifier，因此只要存在 helper flattening，无论是否触发 rescue，strict 与 LLM synthesis readiness 都保持 false；site coverage 不会被冒充为调用路径证明。
 
 生成 C 中的每个 Read/Write/RMW 还必须携带 `op_id + canonical digest` lowering receipt。独立 oracle 对 generation contract 做 exactly-once 检查，拒绝 missing、duplicate、unknown、rejected、kind mismatch 和 digest drift。C16 令 contract/digest 构建保持纯函数，并把该 verifier 强制接入 LLM 初次生成与 compile/QEMU/trace 每轮修复；候选只有通过 frozen contract 后才会原子替换当前 C。该 gate 证明操作归属完整性；表达式和控制路径的独立 AST 等价验证仍是下一阶段工作。
+
+C17 为公共 harness/bare-metal lowering 增加 `__rh_op_<op_id>` LabelStmt + direct CompoundStmt。libclang oracle 现可拒绝悬空 receipt、错误 primitive kind/width/endianness/W1C、RMW ownership 和未锚定额外 MMIO。contract 同时区分 `write_from_read` 与 `intrinsic_rmw`，修复了旧生成器对 dataflow RMW 重复读取硬件的错误。地址、值变换、guard/order、Linux 专用 emitter 与 Formal `Call` 仍是明确 blocker。
 
 Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_chip.init_hw` 绑定会按字段语义归类；clock provider 会保留多套 `clk_ops`、纯标量 rate 算术、源码内 helper、父时钟/provider 注册以及对应 OF 变体。Sodaville 的 PCI ID、12-line GPIO generic dat/set/dirout 行为和 mask/unmask/EOI IRQ lifecycle 由版本化源码保守恢复。只有经过显式 source-private 重绑定且真实 Kbuild 通过的 callback 才可消除 unsupported marker。
 
@@ -133,6 +135,7 @@ python3 tools/generate_paper_results.py
 - [C11 subsystem library summaries 与零样本边界](docs/subsystem-library-summaries-c11.md)
 - [C15 coverage-aware callee rescue 与 call-context fail-closed 边界](docs/callee-rescue-c15.md)
 - [C16 generation contract 纯函数与 LLM 原子 attestation gate](docs/generation-attestation-c16.md)
+- [C17 generated-C AST anchors、primitive ownership 与负向结果](docs/generated-c-ast-anchors-c17.md)
 
 ## 依赖
 

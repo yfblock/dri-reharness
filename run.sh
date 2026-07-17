@@ -76,6 +76,7 @@ cmd_compare() { $PY verification/compare.py "$@"; }
 cmd_test()    {
   $PY verification/check_generalization_guard.py
   $PY tests/test_extractor.py
+  $PY tests/test_generated_c_ast_oracle.py
 }
 
 banner

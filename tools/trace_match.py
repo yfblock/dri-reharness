@@ -15,6 +15,12 @@ import json
 import re
 import sys
 from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from generator.common import lowering_recipes  # noqa: E402
 
 
 TraceOp = tuple[str, int]
@@ -36,7 +42,9 @@ def _offset(addr: dict, registers: dict[str, int]) -> int | None:
 
 
 def _formal_variants(ops: list[dict],
-                     registers: dict[str, int]) -> tuple[FormalVariants, bool]:
+                     registers: dict[str, int],
+                     recipes: dict[str, dict] | None = None
+                     ) -> tuple[FormalVariants, bool]:
     """Return branch-sensitive MMIO sequences and address traceability."""
     variants: FormalVariants = [[]]
     traceable = True
@@ -45,18 +53,18 @@ def _formal_variants(ops: list[dict],
         if "Cond" in op:
             cond = op["Cond"]
             then_variants, then_complete = _formal_variants(
-                cond.get("then_ops", []), registers)
+                cond.get("then_ops", []), registers, recipes)
             else_ops = cond.get("else_ops", [])
             if else_ops:
                 else_variants, else_complete = _formal_variants(
-                    else_ops, registers)
+                    else_ops, registers, recipes)
             else:
                 else_variants, else_complete = [[]], True
             node_variants = then_variants + else_variants
             traceable = traceable and then_complete and else_complete
         elif "Seq" in op:
             node_variants, complete = _formal_variants(
-                op["Seq"].get("ops", []), registers)
+                op["Seq"].get("ops", []), registers, recipes)
             traceable = traceable and complete
         elif "Loop" in op:
             # Runtime iteration counts need a dedicated loop oracle.  The
@@ -77,7 +85,11 @@ def _formal_variants(ops: list[dict],
                     traceable = False
                     node_variants = [[]]
                 elif kind == "RMW":
-                    node_variants = [[("R", off), ("W", off)]]
+                    recipe = (recipes or {}).get(body.get("op_id"), {})
+                    if recipe.get("kind") == "write_from_read":
+                        node_variants = [[("W", off)]]
+                    else:
+                        node_variants = [[("R", off), ("W", off)]]
                 else:
                     node_variants = [[(kind, off)]]
         variants = [prefix + suffix
@@ -92,7 +104,8 @@ def _formal_variants(ops: list[dict],
 
 def _formal_ops(ops: list[dict], registers: dict[str, int]) -> tuple[list[TraceOp], bool]:
     """Compatibility helper for callers expecting one unconditional sequence."""
-    variants, traceable = _formal_variants(ops, registers)
+    variants, traceable = _formal_variants(
+        ops, registers, lowering_recipes(ops))
     result = variants[0] if len(variants) == 1 else []
     return result, traceable
 
@@ -105,8 +118,9 @@ def load_formal_modules(path: str) -> tuple[dict[str, FormalVariants], set[str]]
     modules: dict[str, FormalVariants] = {}
     untraceable: set[str] = set()
     for module in formal.get("modules", []):
+        ops = module.get("ops", [])
         variants, complete = _formal_variants(
-            module.get("ops", []), registers)
+            ops, registers, lowering_recipes(ops))
         nonempty = [variant for variant in variants if variant]
         if nonempty:
             modules[module["name"]] = nonempty

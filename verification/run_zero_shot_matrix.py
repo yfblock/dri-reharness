@@ -52,6 +52,7 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
     ("unsupported_control_flow", r"unsupported control-flow transfer\(s\)"),
     ("callee_rescue", r"helper module\(s\) retained only for lexical access coverage"),
     ("call_context", r"inlined helper definition\(s\) lack call-context proof"),
+    ("generated_c_ast", r"backend generated-C AST primitive proof failed"),
     ("subsystem_summary", r"subsystem library callback\(s\) lack semantic summary"),
     ("subsystem_validation", r"synthesized subsystem callback\(s\) "
                               r"lack generic-backend execution oracle"),

@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from extractor.formal import walk_leaf_ops
-from generator.common import ris_op_digest
+from generator.common import lowering_recipes, ris_op_digest
 
 
 _RECEIPT = re.compile(
@@ -33,6 +33,7 @@ _RECEIPT = re.compile(
 def build_generation_contract(formal: dict) -> dict:
     operations = []
     for module in formal.get("modules", []):
+        recipes = lowering_recipes(module.get("ops", []))
         for op in walk_leaf_ops(module.get("ops", [])):
             kind = next((name for name in
                          ("Read", "Write", "ReadModifyWrite")
@@ -50,6 +51,8 @@ def build_generation_contract(formal: dict) -> dict:
                 "reliability": body.get("reliability"),
                 "access_domain": body.get("access_domain"),
                 "evidence": copy.deepcopy(body.get("evidence", {})),
+                "lowering_recipe": copy.deepcopy(
+                    recipes.get(body.get("op_id"), {})),
             })
     return {
         "schema": 1,

@@ -222,6 +222,7 @@ def main(argv: list[str] | None = None) -> int:
             verify_w1c_drain_contract, verify_w1c_drain_runtime)
         from verification.backend_lowering_oracle import (
             build_generation_contract, verify_backend_lowering)
+        from verification.generated_c_ast_oracle import verify_generated_c_ast
 
         res = extract_ris(_config_from_args(args))
         name = res.formal["driver"]
@@ -283,10 +284,30 @@ def main(argv: list[str] | None = None) -> int:
             lowering = verify_backend_lowering(res.formal, code)
             _w(ver_dir, f"{backend}-lowering.json", json.dumps(
                 lowering, indent=2, sort_keys=True))
+            ast_leaf = None
+            if backend in {"harness", "baremetal"}:
+                try:
+                    ast_leaf = verify_generated_c_ast(
+                        generation_contract, cpath)
+                except Exception as exc:
+                    ast_leaf = {
+                        "schema": 1,
+                        "oracle": "generated-c-ast-leaf-v1",
+                        "complete": False,
+                        "verifier_error": type(exc).__name__,
+                        "message": str(exc),
+                    }
+                _w(ver_dir, f"{backend}-ast-leaf.json", json.dumps(
+                    ast_leaf, indent=2, sort_keys=True))
             gr: dict = {
                 "has_todo": has_todo, "unsupported": unsupported,
                 "backend_lowering_complete": lowering["complete"],
                 "backend_lowering": lowering,
+                "backend_ast_leaf_required": backend in {
+                    "harness", "baremetal"},
+                "backend_ast_leaf_complete": bool(
+                    ast_leaf and ast_leaf.get("complete")),
+                "backend_ast_leaf": ast_leaf,
                 **source_oracle, **sdhci_oracle, **virtio_oracle,
                 **w1c_contract,
             }

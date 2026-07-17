@@ -1932,6 +1932,8 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
     from extractor.metrics import score
     from extractor.spec import default_bind
     from generator import baremetal, harness, linux as linux_gen
+    from verification.backend_lowering_oracle import build_generation_contract
+    from verification.generated_c_ast_oracle import verify_generated_c_ast
     from verification.gpio_mmio_source_oracle import (
         verify_gpio_mmio_source_differential)
     from verification.subsystem_callback_oracle import verify_subsystem_callbacks
@@ -1948,6 +1950,14 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
             return subprocess.run(
                 [binary], capture_output=True, text=True, check=True).stdout
 
+    def ast_report(formal, code):
+        with tempfile.TemporaryDirectory() as directory:
+            source = os.path.join(directory, "generated.c")
+            with open(source, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            return verify_generated_c_ast(
+                build_generation_contract(formal), source)
+
     results = {}
     for source in (TS4800, GPIO_GE, GPIO_CLPS711X):
         result = extract_ris(ExtractorConfig(source=source))
@@ -1957,6 +1967,8 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
         h_output = compile_run(h_code)
         h_oracle = verify_subsystem_callbacks(
             result.formal, result.device_spec, h_output)
+        h_ast = ast_report(result.formal, h_code)
+        assert h_ast["complete"], h_ast
         assert h_oracle["subsystem_callback_oracle_passed"], h_oracle
         assert h_oracle["subsystem_callbacks_executed"] == 7
 
@@ -1975,6 +1987,8 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
             b_code, defines=("-DREHARNESS_BAREMETAL_ORACLE",))
         b_oracle = verify_subsystem_callbacks(
             result.formal, result.device_spec, b_output)
+        b_ast = ast_report(result.formal, b_code)
+        assert b_ast["complete"], b_ast
         assert b_oracle["subsystem_callback_oracle_passed"], b_oracle
         assert b_oracle["subsystem_callbacks_executed"] == 7
         source_oracle = verify_gpio_mmio_source_differential(
@@ -1994,10 +2008,17 @@ def test_gpio_callback_runner_executes_portable_contract_and_catches_mutation():
                 "harness": {
                     "compiled": True, "trace_passed": True,
                     "has_todo": False, "unsupported": False,
+                    "backend_ast_leaf_required": True,
+                    "backend_ast_leaf_complete": True,
+                    "backend_ast_leaf": h_ast,
                     **h_oracle, **source_oracle},
                 "baremetal": {
                     "compiled": True, "has_todo": False,
-                    "unsupported": False, **b_oracle, **source_oracle},
+                    "unsupported": False,
+                    "backend_ast_leaf_required": True,
+                    "backend_ast_leaf_complete": True,
+                    "backend_ast_leaf": b_ast,
+                    **b_oracle, **source_oracle},
                 "linux": {
                     "compiled": True, "syntax_ok": True,
                     "has_todo": False, "unsupported": False,
@@ -2297,6 +2318,171 @@ def test_backend_lowering_receipts_are_bijective_and_mutation_checked():
     digest_report = verify_backend_lowering(res.formal, bad_digest)
     assert digest_report["complete"] is False
     assert digest_report["digest_mismatch"]
+
+
+def test_common_ops_to_c_emits_receipt_bound_compound_anchors():
+    from generator.common import ops_to_c
+
+    class AnchorBind:
+        _primitives = {
+            ("MmioRead", "B4"): "anchor_read32",
+            ("MmioWrite", "B4"): "anchor_write32",
+        }
+
+        def prim(self, operation, width):
+            return self._primitives.get((operation, width))
+
+    def body(op_id, **fields):
+        return {
+            "op_id": op_id,
+            "width": "B4",
+            "addr": {"Fixed": {"base": "base", "offset": 4}},
+            "access_domain": "mmio",
+            "reliability": "Exact",
+            "evidence": {},
+            **fields,
+        }
+
+    ops = [
+        {"Read": body("op_1", var="value")},
+        {"Write": body("op_2", value={"Const": 7})},
+        {"ReadModifyWrite": body(
+            "op_3", read_var="old", transform={"Const": 9})},
+        {"Write": {
+            **body("op_4", value={"Const": 11}),
+            "access_domain": "regmap",
+            "reliability": "Unsupported",
+        }},
+    ]
+    code = ops_to_c(ops, AnchorBind(), "base", {})
+    receipt_anchor = re.compile(
+        r"(?m)^\s*/\* REHARNESS_RIS_OP id=(op_\d+) "
+        r"kind=(Read|Write|ReadModifyWrite) status=(lowered|rejected) "
+        r"digest=[0-9a-f]+ \*/\n\s*__rh_op_\1: \{$")
+    matches = list(receipt_anchor.finditer(code))
+    assert [(match.group(1), match.group(3)) for match in matches] == [
+        ("op_1", "lowered"),
+        ("op_2", "lowered"),
+        ("op_3", "lowered"),
+        ("op_4", "rejected"),
+    ]
+    assert "__rh_op_op_1: {\n        value = anchor_read32(" in code
+    assert "__rh_op_op_2: {\n        anchor_write32(0x7," in code
+    assert ("__rh_op_op_3: {\n        uint32_t v = anchor_read32(" in code
+            and "        anchor_write32(0x9," in code)
+    rejected = re.search(
+        r"__rh_op_op_4: \{(?P<body>.*?)^\s*\}", code,
+        flags=re.MULTILINE | re.DOTALL)
+    assert rejected is not None
+    assert "REHARNESS_UNSUPPORTED_ACCESS_DOMAIN: regmap op_4" in \
+        rejected.group("body")
+    assert "anchor_read32" not in rejected.group("body")
+    assert "anchor_write32" not in rejected.group("body")
+
+    try:
+        ops_to_c([ops[0], ops[0]], AnchorBind(), "base", {})
+    except ValueError as error:
+        assert "duplicate register RIS operation id: op_1" in str(error)
+    else:
+        raise AssertionError("duplicate operation anchors did not fail closed")
+
+
+def test_harness_and_baremetal_emit_unique_operation_anchors():
+    from extractor.formal import walk_leaf_ops
+    from extractor.spec import default_bind
+    from generator import baremetal as baremetal_gen
+    from generator import harness as harness_gen
+
+    result = extract_ris(ExtractorConfig(source=FTGPIO))
+    required_ids = {
+        (leaf.get("Read") or leaf.get("Write")
+         or leaf.get("ReadModifyWrite"))["op_id"]
+        for module in result.formal["modules"]
+        for leaf in walk_leaf_ops(module["ops"])
+        if (leaf.get("Read") or leaf.get("Write")
+            or leaf.get("ReadModifyWrite"))
+    }
+    generators = {
+        "harness": harness_gen.generate,
+        "baremetal": baremetal_gen.generate,
+    }
+    receipt_anchor = re.compile(
+        r"(?m)^\s*/\* REHARNESS_RIS_OP id=(op_\d+) "
+        r"kind=(?:Read|Write|ReadModifyWrite) "
+        r"status=(?:lowered|rejected) digest=[0-9a-f]+ \*/\n"
+        r"\s*__rh_op_\1: \{$")
+    label_re = re.compile(r"(?m)^\s*__rh_op_(op_\d+): \{$")
+    for backend, generate in generators.items():
+        code = generate(
+            result.formal, result.device_spec,
+            default_bind(result.device_spec, backend))
+        anchored_receipts = [match.group(1)
+                             for match in receipt_anchor.finditer(code)]
+        labels = label_re.findall(code)
+        assert set(anchored_receipts) == required_ids, backend
+        assert labels == anchored_receipts, backend
+        assert len(labels) == len(set(labels)), backend
+
+
+def test_write_from_read_recipe_prevents_duplicate_hardware_reads():
+    from extractor.spec import default_bind
+    from generator import baremetal as baremetal_gen
+    from generator import harness as harness_gen
+    from verification.backend_lowering_oracle import build_generation_contract
+
+    result = extract_ris(ExtractorConfig(source=FTGPIO))
+    contract = build_generation_contract(result.formal)
+    rows = {row["op_id"]: row for row in contract["register_operations"]}
+    assert rows["op_2"]["lowering_recipe"] == {
+        "kind": "read", "primitives": ["Read"]}
+    assert rows["op_3"]["lowering_recipe"] == {
+        "kind": "write_from_read", "primitives": ["Write"],
+        "read_op_id": "op_2",
+    }
+
+    for backend, generate in {
+            "harness": harness_gen.generate,
+            "baremetal": baremetal_gen.generate}.items():
+        code = generate(
+            result.formal, result.device_spec,
+            default_bind(result.device_spec, backend))
+        anchor = re.search(
+            r"__rh_op_op_3: \{(?P<body>.*?)^\s*\}", code,
+            flags=re.MULTILINE | re.DOTALL)
+        assert anchor is not None, backend
+        body = anchor.group("body")
+        assert "read32" not in body, (backend, body)
+        assert "write32" in body, (backend, body)
+
+
+def test_generated_c_ast_gate_rejects_dangling_valid_receipt():
+    import tempfile
+    from extractor.spec import default_bind
+    from generator import harness as harness_gen
+    from verification.backend_lowering_oracle import (
+        build_generation_contract, verify_backend_lowering)
+    from verification.generated_c_ast_oracle import verify_generated_c_ast
+
+    result = extract_ris(ExtractorConfig(source=FTGPIO))
+    contract = build_generation_contract(result.formal)
+    code = harness_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    assert verify_backend_lowering(result.formal, code)["complete"] is True
+    mutated, count = re.subn(
+        r"(__rh_op_op_3: \{\n)\s*harness_write32\([^\n]+\);",
+        r"\1        (void)0;", code, count=1)
+    assert count == 1
+    # Receipt-only accounting cannot see that the actual MMIO disappeared.
+    assert verify_backend_lowering(
+        result.formal, mutated)["complete"] is True
+    with tempfile.TemporaryDirectory() as directory:
+        source = os.path.join(directory, "mutated.c")
+        with open(source, "w", encoding="utf-8") as handle:
+            handle.write(mutated)
+        report = verify_generated_c_ast(contract, source)
+    assert report["complete"] is False
+    assert report["primitive_mismatches"][0]["op_id"] == "op_3"
 
 
 def test_generation_contract_and_digest_are_pure_and_mutation_sensitive():
