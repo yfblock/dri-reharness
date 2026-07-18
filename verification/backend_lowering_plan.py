@@ -442,28 +442,10 @@ def _report_id_set(report: dict, key: str) -> tuple[set[str], bool]:
 
 def _route_fingerprint(route: dict) -> str:
     """Rebuild the registration oracle's stable route identity."""
-    binding = route.get("binding") or {}
-    owner = binding.get("owner") or {}
-    owner_key = None
-    if owner:
-        owner_key = (
-            owner.get("root_usr"),
-            tuple(field.get("field_usr") for field in owner.get("fields") or []),
-        )
-    identity = {
-        "callback": route.get("callback"),
-        "target_usr": route.get("target_usr"),
-        "binding": {
-            "kind": binding.get("kind"),
-            "field_usr": binding.get("field_usr"),
-            "owner": owner_key,
-        },
-        "registration": (route.get("registration") or {}).get("chain"),
-    }
-    encoded = json.dumps(
-        identity, sort_keys=True, separators=(",", ":"), default=str
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()[:16]
+    from verification.linux_registration_ast_oracle import (
+        registration_route_fingerprint,
+    )
+    return registration_route_fingerprint(route)
 
 
 def _report_list(

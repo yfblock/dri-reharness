@@ -124,6 +124,45 @@ def _location(cursor) -> dict[str, Any]:
     }
 
 
+def _stable_chain(chain: Any) -> Any:
+    """Remove workspace-specific paths from a route identity chain."""
+    if not isinstance(chain, list):
+        return chain
+    normalized = []
+    for item in chain:
+        if not isinstance(item, dict):
+            normalized.append(item)
+            continue
+        row = dict(item)
+        location = row.get("location")
+        if isinstance(location, dict):
+            row["location"] = {
+                key: location.get(key) for key in (
+                    "line", "column", "offset")
+            }
+        normalized.append(row)
+    return normalized
+
+
+def registration_route_fingerprint(route: dict) -> str:
+    binding = route.get("binding") or {}
+    identity = {
+        "callback": route.get("callback"),
+        "target_usr": route.get("target_usr"),
+        "binding": {
+            "kind": binding.get("kind"),
+            "field_usr": binding.get("field_usr"),
+            "owner": _path_key(binding.get("owner")),
+        },
+        "registration": _stable_chain(
+            (route.get("registration") or {}).get("chain")),
+    }
+    encoded = json.dumps(
+        identity, sort_keys=True, separators=(",", ":"), default=str
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()[:16]
+
+
 def _in_source(cursor, source: Path) -> bool:
     if not cursor.location.file:
         return False
@@ -761,20 +800,7 @@ def _registered_routes(ast: dict, source: Path) -> tuple[list[dict], list[dict]]
             })
 
     for route in routes:
-        identity = {
-            "callback": route.get("callback"),
-            "target_usr": route.get("target_usr"),
-            "binding": {
-                "kind": (route.get("binding") or {}).get("kind"),
-                "field_usr": (route.get("binding") or {}).get("field_usr"),
-                "owner": _path_key((route.get("binding") or {}).get("owner")),
-            },
-            "registration": (route.get("registration") or {}).get("chain"),
-        }
-        encoded = json.dumps(
-            identity, sort_keys=True, separators=(",", ":"), default=str
-        ).encode("utf-8")
-        route["route_id"] = hashlib.sha256(encoded).hexdigest()[:16]
+        route["route_id"] = registration_route_fingerprint(route)
     return routes, errors
 
 

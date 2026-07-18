@@ -13,6 +13,7 @@ sys.path.insert(0, str(REHARNESS))
 
 from extractor.spec import DeviceSpec, FunctionSpec, Signature
 from verification.linux_registration_ast_oracle import (
+    registration_route_fingerprint,
     verify_linux_registration_ast,
 )
 
@@ -178,6 +179,12 @@ def test_linux_registration_accepts_exact_platform_gpio_irq_chain(tmp_path):
         "platform_driver.probe", "gpio_chip.get", "irq_chip.irq_ack",
         "gpio_irq_chip.parent_handler",
     } <= callbacks
+    route = copy.deepcopy(report["registration_routes"][0])
+    original = route["route_id"]
+    for item in (route.get("registration") or {}).get("chain") or []:
+        if isinstance(item.get("location"), dict):
+            item["location"]["file"] = "/different/output/root/generated.c"
+    assert registration_route_fingerprint(route) == original
 
 
 def test_linux_registration_rejects_missing_or_shadowed_driver_root(tmp_path):
