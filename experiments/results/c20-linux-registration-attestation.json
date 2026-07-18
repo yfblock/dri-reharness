@@ -1,0 +1,149 @@
+{
+  "claims": {
+    "does_not_prove": [
+      "kernel_callback_invocation",
+      "callback_internal_guard_or_path_semantics",
+      "callback_argument_equivalence",
+      "temporal_or_cross_operation_ordering",
+      "usb_endpoint_gadget_or_hcd_lifecycle"
+    ],
+    "proves": [
+      "exact_generated_artifact_sha256",
+      "exact_kbuild_saved_command_context",
+      "required_operation_ast_leaf_shape",
+      "callback_field_and_function_usr_identity",
+      "framework_object_identity",
+      "recognized_registration_call_identity",
+      "registered_platform_or_pci_module_root",
+      "per_operation_registration_and_ast_intersection"
+    ]
+  },
+  "dwc2_boundary": {
+    "backends": {
+      "baremetal_compile": true,
+      "harness_compile": true,
+      "harness_trace": true,
+      "linux_compile": true
+    },
+    "driver": "dwc2",
+    "generated_c_sha256": "a39a80d6352d78d52a0a4c55600e22dcc2579a2772763a825014e67d328012af",
+    "harness_baremetal": {
+      "blocked_unsupported_loop": 426,
+      "lowered": 3182,
+      "strict_complete": false
+    },
+    "linux": {
+      "ast_leaf_proven": 2023,
+      "ast_leaf_required": 2023,
+      "authorized_ops": 2100,
+      "blocked_ops": 1508,
+      "candidate_definition_ops": 2023,
+      "contract_ops": 3608,
+      "disposition_counts": {
+        "blocked_linux_lifecycle_stub": 182,
+        "blocked_linux_lifecycle_unimplemented": 2,
+        "blocked_linux_root_unreachable": 898,
+        "blocked_unsupported_loop": 426,
+        "candidate_definition_emit": 2023,
+        "definition_evidence_only": 77,
+        "lowered": 0
+      },
+      "evidence_only_ops": 77,
+      "registration_proven": 62,
+      "registration_required": 2023,
+      "runtime_artifact_authority_valid": true,
+      "runtime_complete": false,
+      "strict_complete": false,
+      "supported_registered_route": {
+        "callback": "platform_driver.probe",
+        "formal_module": "dwc2_driver_probe",
+        "generated_function": "dwc2_probe",
+        "op_count": 62,
+        "route_id": "cc72ebfb4aed5f8e"
+      }
+    },
+    "manifest": "drivers/multisource/dwc2.json",
+    "source_count": 10,
+    "usb_lifecycle_audit": {
+      "hc_driver": {
+        "callback_modules": 10,
+        "runtime_proven_ops": 0,
+        "strict_ops": 647,
+        "total_ops": 681
+      },
+      "strict_ops": 1127,
+      "strict_runtime_proven_ops": 0,
+      "usb_ep_ops": {
+        "callback_modules": 6,
+        "runtime_proven_ops": 0,
+        "strict_ops": 142,
+        "total_ops": 148
+      },
+      "usb_gadget_ops": {
+        "callback_modules": 5,
+        "runtime_proven_ops": 0,
+        "strict_ops": 338,
+        "total_ops": 411
+      }
+    }
+  },
+  "ftgpio_positive_control": {
+    "backends": {
+      "baremetal_compile": true,
+      "harness_compile": true,
+      "harness_trace": true,
+      "linux_compile": true
+    },
+    "driver": "gpio-ftgpio010",
+    "generated_c_sha256": "7b80caaae89039a6d58696454abb561af1eb16916b7f946aed758e71b9de04f8",
+    "linux": {
+      "ast_leaf_proven": 35,
+      "ast_leaf_required": 35,
+      "contract_ops": 35,
+      "registration_proven": 35,
+      "registration_required": 35,
+      "route_id_output_root_stable": true,
+      "runtime_artifact_authority_valid": true,
+      "runtime_complete": true,
+      "strict_complete": true
+    },
+    "source": "drivers/test/gpio-ftgpio010.c"
+  },
+  "generated_at": "2026-07-18T12:27:33+08:00",
+  "implementation_commit": "9f2af1cac895eb9b5de147515ee13558b793c690",
+  "milestone": "C20",
+  "mutation_gates": [
+    "missing_or_wrong_report_schema_or_driver",
+    "operation_set_or_required_subset_mismatch",
+    "blocked_or_evidence_only_runtime_authorization",
+    "missing_duplicate_or_changed_route_id",
+    "wrong_callback_target_owner_or_registration_object",
+    "assignment_or_registration_under_unsupported_control_flow",
+    "generated_sha_or_kbuild_context_mismatch",
+    "jointly_forged_sha_or_kbuild_context",
+    "jointly_forged_route_with_recomputed_fingerprint",
+    "candidate_plan_runtime_ast_or_route_field_mutation",
+    "linux_kbuild_failure_or_missing_saved_command"
+  ],
+  "oracles": {
+    "ast_leaf": "generated-c-ast-leaf-v1",
+    "backend_plan": "backend-lowering-plan-v3",
+    "linux_registration": "linux-registration-ast-v1"
+  },
+  "reproduction": [
+    "./run.sh test",
+    "python3 -m extractor driver -s drivers/test/gpio-ftgpio010.c -o /tmp/reharness-c20-ftgpio --alias-mode off",
+    "python3 -m extractor driver -s drivers/multisource/dwc2.json -o /tmp/reharness-c20-dwc2 --alias-mode off"
+  ],
+  "schema": 1,
+  "tests": {
+    "core": 132,
+    "device_spec_json": 5,
+    "generated_c_ast": 8,
+    "linux_registration_ast": 5,
+    "lowering_plan": 20,
+    "read_provenance": 2,
+    "readiness": 1,
+    "total": 173
+  }
+}

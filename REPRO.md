@@ -31,9 +31,10 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：159 passed, 0 failed（132 core + 7 generated-C AST + 13
-lowering-plan + 2 read-provenance + 5 DeviceSpec JSON）。测试前会打印
-`zero-shot-v1` guard 报告并要求 `passed=true`。
+预期：173 passed, 0 failed（132 core + 8 generated-C AST + 5 Linux
+registration AST + 20 lowering-plan + 1 C20 readiness + 2 read-provenance +
+5 DeviceSpec JSON）。测试前会打印 `zero-shot-v1` guard 报告并要求
+`passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -100,7 +101,7 @@ strict_ready: harness=4 baremetal=4 linux=0 all=0
 llm_synthesis_ready=5
 ~~~
 
-*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定。C19 进一步要求 Linux 定义发射与 runtime registration/callsite 证据分离；在独立 registration attestation 完成前，已编译的 Linux callback 不再计为 strict-ready。
+*_compile 只表示生成物通过相应编译器/Kbuild。*_ready 还要求没有 Top、unsafe computed address、目标源文件 clang error 或 REHARNESS_UNSUPPORTED 状态绑定。C19 要求 Linux 定义发射与 runtime registration/callsite 证据分离；C20 进一步要求 required-subset AST、registration AST、实际 generated-C SHA、精确 `.o.cmd` context 和 lowering-plan-v3 逐操作交集全部闭合。
 
 实验内核配置固定启用 `CONFIG_COMMON_CLK=y`，用于验证生成的 clock framework 注册路径；该配置随 artifact 版本化。
 
@@ -147,7 +148,28 @@ compile:    harness=3/3 bare-metal=3/3 Linux=3/3 original-Kbuild=3/3
 
 权威输出：`experiments/results/multisource-matrix.json`。三个生成 Linux 聚合模块均通过 Kbuild；Aspeed-vHub 与 DWC2 仍因 endpoint/HCD lifecycle、source-private state、路径和循环证明缺口而非 strict-ready。脚本预期成功退出，但 3/3 编译不能改写成 3/3 语义完成。
 
-## 3d. C67X00 linked SVF 与 HPI oracle
+## 3d. Linux registration attestation 正反基线
+
+~~~bash
+python3 -m extractor driver \
+  -s drivers/test/gpio-ftgpio010.c \
+  -o /tmp/reharness-c20-ftgpio --alias-mode off
+python3 -m extractor driver \
+  -s drivers/multisource/dwc2.json \
+  -o /tmp/reharness-c20-dwc2 --alias-mode off
+~~~
+
+FTGPIO 是 v1 支持形态的正向控制：35/35 required AST 与 35/35
+registration 均通过，Linux strict 为 true。DWC2 是大型边界控制：2023/2023
+required AST 通过，但只有 platform probe 下的 62/2023 operations 注册；1127
+个 USB endpoint/gadget/HCD strict operations 全部保持未注册，最终 Linux strict
+为 false。两个报告还必须与实际 generated C SHA 和精确 Kbuild `.o.cmd`
+context 一致；canonical 可 strict 时，plan v3 会独立重跑两个 AST oracle。
+
+权威冻结摘要：`experiments/results/c20-linux-registration-attestation.json`。
+详细设计：`docs/linux-registration-attestation-c20.md`。
+
+## 3e. C67X00 linked SVF 与 HPI oracle
 
 ~~~bash
 python3 -m extractor driver \
