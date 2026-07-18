@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "milestone": "C21",
+  "generated_at": "2026-07-18T16:17:07+08:00",
+  "implementation_commit": "15b1f2e1067e65800b97e5c72a8f0bd4e4533a5a",
+  "tests": {
+    "core": 133,
+    "device_spec_json": 5,
+    "generated_c_ast": 8,
+    "linux_registration_ast": 10,
+    "lowering_plan": 21,
+    "read_provenance": 2,
+    "readiness": 1,
+    "total": 180
+  },
+  "claims": {
+    "proves": [
+      "typed_pm_and_static_clock_registration_graph",
+      "sdhci_match_pdata_init_same_host_add_lifecycle",
+      "single_instance_usb_hcd_create_add_remove_put_lifecycle",
+      "single_instance_usb_gadget_ep0_add_delete_lifecycle",
+      "runtime_affine_for_loop_with_preserved_zero_or_one_start",
+      "source_local_ast_call_identity_argument_return_control_evidence"
+    ],
+    "does_not_prove": [
+      "multi_instance_or_mode_split_usb_lifecycle",
+      "sdhci_wrapper_or_path_dependent_pdata",
+      "less_equal_or_compound_step_affine_loop",
+      "fixed_attempt_or_deadline_poll_termination",
+      "formal_call_lowering_or_runtime_callsite_registration",
+      "async_work_timer_callback_ownership"
+    ]
+  },
+  "dwc2_boundary": {
+    "driver": "dwc2",
+    "manifest": "drivers/multisource/dwc2.json",
+    "source_count": 10,
+    "contract_ops": 3608,
+    "generated_linux_sha256": "2ccc4570f21b6b3a704139c91c6a2d8375f385991282ef50793cc4aec5545d69",
+    "harness_baremetal": {
+      "lowered": 3246,
+      "blocked_unsupported_loop": 362,
+      "strict_complete": false
+    },
+    "linux": {
+      "candidate_definition_ops": 2051,
+      "evidence_only_ops": 77,
+      "authorized_ops": 2128,
+      "blocked_ops": 1480,
+      "strict_eligible_ops": 2051,
+      "runtime_registered_ops": 230,
+      "runtime_unregistered_ops": 1821,
+      "call_closure_evidence_ops": 46,
+      "call_closure_evidence_modules": 20,
+      "formal_call_edges": 891,
+      "disposition_counts": {
+        "blocked_linux_lifecycle_stub": 182,
+        "blocked_linux_lifecycle_unimplemented": 2,
+        "blocked_linux_root_unreachable": 934,
+        "blocked_unsupported_loop": 362,
+        "candidate_definition_emit": 2051,
+        "definition_evidence_only": 77,
+        "lowered": 0
+      },
+      "runtime_complete": false,
+      "strict_complete": false
+    }
+  },
+  "real_registration_controls": {
+    "gpio_pl061": {
+      "generated_linux_sha256": "1b1301a07296074d50c4c90e74adcf0c1baa2dcb0a0edb48046a5ffdbfe79f45",
+      "strict_ops": 31,
+      "runtime_registered_ops": 30,
+      "complete": false
+    },
+    "visconti_pll": {
+      "generated_linux_sha256": "6c18b785598860e95065e409ff81fe5bb9bf11646f87b04f7e5d58dd5c49c07a",
+      "strict_ops": 30,
+      "runtime_registered_ops": 30,
+      "complete": true
+    },
+    "sdhci_iproc": {
+      "generated_linux_sha256": "bcef1d3d5600a503c4174b49d70262708eaab24c5e379f9bc8f09c5777271213",
+      "strict_ops": 2,
+      "runtime_registered_ops": 2,
+      "complete": true
+    },
+    "sdhci_npcm": {
+      "generated_linux_sha256": "4a1442289b32084ebe428fbfe67f4f61888559cce59bfcf07e1bf5b09026ad26",
+      "strict_ops": 1,
+      "runtime_registered_ops": 0,
+      "complete": false
+    }
+  },
+  "mutation_gates": [
+    "sdhci_wrong_pdata_ops_or_host_identity",
+    "sdhci_missing_or_reordered_add_host",
+    "usb_hcd_missing_drvdata_remove_or_put",
+    "usb_gadget_missing_delete_ep0_or_ops",
+    "same_signature_callback_target_swap",
+    "runtime_affine_nonzero_start_preservation",
+    "formal_call_closure_evidence_never_authorizes_receipts"
+  ],
+  "reproduction": [
+    "python3 tests/test_extractor.py",
+    "python3 tests/test_backend_lowering_plan.py",
+    "python3 tests/test_dataflow_read_return.py",
+    "python3 tests/test_device_spec_json.py",
+    "python3 tests/test_generated_c_ast_oracle.py",
+    "python3 tests/test_linux_registration_ast_oracle.py",
+    "python3 tests/test_metrics_c20_readiness.py",
+    "python3 -m extractor driver -s drivers/multisource/dwc2.json -o /tmp/reharness-c21-freeze-dwc2 --alias-mode off",
+    "python3 -m extractor driver -s drivers/test/gpio-pl061.c -o /tmp/reharness-c21-freeze-pl061 --alias-mode off",
+    "python3 -m extractor driver -s drivers/test/pll.c -o /tmp/reharness-c21-freeze-pll --alias-mode off",
+    "python3 -m extractor driver -s linux/drivers/mmc/host/sdhci-iproc.c -o /tmp/reharness-c21-freeze-iproc --alias-mode off",
+    "python3 -m extractor driver -s linux/drivers/mmc/host/sdhci-npcm.c -o /tmp/reharness-c21-freeze-npcm --alias-mode off"
+  ]
+}
