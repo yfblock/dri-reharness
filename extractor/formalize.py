@@ -199,7 +199,7 @@ def _bounded_loop(frame: dict, macros) -> dict | None:
 
 
 def _runtime_bounded_loop(frame: dict) -> dict | None:
-    """Prove a canonical loop whose finite count is device state."""
+    """Prove a monotonic loop whose finite upper bound is runtime state."""
     if frame.get("loop_kind") != "for":
         return None
     init = (frame.get("init") or "").strip().rstrip(";")
@@ -207,26 +207,60 @@ def _runtime_bounded_loop(frame: dict) -> dict | None:
     step = (frame.get("step") or "").strip().rstrip(";")
     init_match = re.fullmatch(
         r"(?:[A-Za-z_]\w*(?:\s+[A-Za-z_]\w*)*\s+)?"
-        r"([A-Za-z_]\w*)\s*=\s*0", init)
+        r"([A-Za-z_]\w*)\s*=\s*(0|1)", init)
     if not init_match:
         return None
-    var = init_match.group(1)
+    var, start_text = init_match.groups()
+    start = int(start_text)
     guard_match = re.fullmatch(
         rf"{re.escape(var)}\s*<\s*"
-        r"([A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)+)", guard)
+        r"([A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)*)", guard)
     if not guard_match or not re.fullmatch(
             rf"(?:{re.escape(var)}\+\+|\+\+{re.escape(var)})", step):
         return None
-    bound = guard_match.group(1)
+    bound_text = guard_match.group(1)
+    bound_root = re.match(r"[A-Za-z_]\w*", bound_text).group(0)
+    declaration_kind = (frame.get("guard_declarations") or {}).get(bound_root)
+    bound_field = re.search(r"(?:->|\.)\s*([A-Za-z_]\w*)$", bound_text)
+    modeled_bound_fields = {
+        "nr_ports", "max_ports", "num_channels", "num_eps", "fifo_count",
+        "word_count", "dword_count", "desc_count", "fifo_size",
+    }
+    if (declaration_kind != "PARM_DECL"
+            and (declaration_kind != "VAR_DECL" or bound_field is None
+                 or bound_field.group(1) not in modeled_bound_fields)):
+        return None
+    bound = F.parse_expr(bound_text)
+    if "Top" in bound:
+        return None
+    count = bound if start == 0 else {
+        "Ite": {
+            "guard": {
+                "BinOp": {
+                    "op": "Lt", "left": {"Const": start},
+                    "right": copy.deepcopy(bound),
+                },
+            },
+            "then": {
+                "BinOp": {
+                    "op": "Sub", "left": copy.deepcopy(bound),
+                    "right": {"Const": start},
+                },
+            },
+            "else": {"Const": 0},
+        },
+    }
     return {
-        "count": F.parse_expr(bound),
+        "count": count,
+        "bound_expr": bound,
+        "relation": "<",
         "reliability": "Exact",
         "bounded": True,
         "dynamic_bound": True,
         "induction_var": var,
-        "start": 0,
+        "start": start,
         "stride": 1,
-        "proof": "canonical monotonic loop bounded by device state",
+        "proof": "affine monotonic loop bounded by runtime scalar/state",
     }
 
 
@@ -541,6 +575,13 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "call_semantics_proven": False,
                 "rescued_symbols": [],
             }),
+            "call_graph": {
+                "schema": 1,
+                "oracle": "source-ast-call-v1",
+                "claim": "source-local call identity and callsite dataflow",
+                "calls": stats.get("formal_calls", []),
+                "lowering_enabled": False,
+            },
             "subsystem_summary_analysis": {
                 "synthetic_functions": stats.get(
                     "synthetic_subsystem_functions", 0),

@@ -409,12 +409,19 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
                 if ch.kind == cx.CursorKind.FOR_STMT:
                     init = source_text(ch.translation_unit, parts[0]) if parts else ""
                     step = source_text(ch.translation_unit, parts[2]) if len(parts) > 2 else ""
+                guard_declarations = {}
+                for ref in parts[pred_idx].walk_preorder():
+                    if (ref.kind == cx.CursorKind.DECL_REF_EXPR
+                            and ref.referenced is not None):
+                        guard_declarations[ref.spelling] = \
+                            ref.referenced.kind.name
                 frame = {
                     "kind": "loop",
                     "loop_kind": ch.kind.name.replace("_STMT", "").lower(),
                     "guard": cond,
                     "init": init,
                     "step": step,
+                    "guard_declarations": guard_declarations,
                     "source": source_text(ch.translation_unit, ch),
                 }
                 new_stack = stack + [frame] if cond else stack

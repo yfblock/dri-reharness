@@ -284,6 +284,7 @@ _MODELED_STATE_FIELDS = {
     "gpio_sdir": "UInt",
     "flags": "UInt",
     "nr_ports": "UInt",
+    "max_ports": "UInt",
 }
 
 

@@ -73,6 +73,15 @@ struct device { int unused; };
 struct platform_device { struct device dev; };
 struct irq_desc { int unused; };
 struct irq_data { int unused; };
+struct dev_pm_ops;
+struct clk_hw;
+struct of_device_id;
+struct sdhci_host;
+struct sdhci_pltfm_data;
+struct hc_driver;
+struct usb_hcd;
+struct usb_gadget;
+struct usb_ep;
 struct gpio_chip;
 struct gpio_irq_chip {
     void (*parent_handler)(struct irq_desc *);
@@ -84,7 +93,11 @@ struct gpio_chip {
     int (*get)(struct gpio_chip *, unsigned int);
     struct gpio_irq_chip irq;
 };
-struct device_driver { const char *name; };
+struct device_driver {
+    const char *name;
+    const struct dev_pm_ops *pm;
+    const struct of_device_id *of_match_table;
+};
 struct platform_driver {
     int (*probe)(struct platform_device *);
     void (*remove)(struct platform_device *);
@@ -96,6 +109,20 @@ int devm_gpiochip_add_data_with_key(
 void gpio_irq_chip_set_chip(struct gpio_irq_chip *, const struct irq_chip *);
 unsigned int readl(void *);
 void writel(unsigned int, void *);
+int devm_clk_hw_register(struct device *, struct clk_hw *);
+const void *device_get_match_data(const struct device *);
+struct sdhci_host *sdhci_pltfm_init(
+    struct platform_device *, const struct sdhci_pltfm_data *, unsigned long);
+int sdhci_add_host(struct sdhci_host *);
+struct usb_hcd *usb_create_hcd(const struct hc_driver *, struct device *,
+                               const char *);
+int usb_add_hcd(struct usb_hcd *, unsigned int, unsigned int);
+void usb_remove_hcd(struct usb_hcd *);
+void usb_put_hcd(struct usb_hcd *);
+void platform_set_drvdata(struct platform_device *, void *);
+void *platform_get_drvdata(struct platform_device *);
+int usb_add_gadget_udc(struct device *, struct usb_gadget *);
+void usb_del_gadget_udc(struct usb_gadget *);
 """
 
 
@@ -149,6 +176,220 @@ static int (*__inittest(void))(void)
 """
 
 
+CLOCK_PM_SOURCE = r"""
+#include "kernel_stubs.h"
+struct clk_hw;
+struct clk_ops { int (*enable)(struct clk_hw *); };
+struct clk_init_data { const struct clk_ops *ops; };
+struct clk_hw { const struct clk_init_data *init; };
+struct dev_pm_ops { int (*suspend)(struct device *); };
+struct priv { struct clk_hw hw; };
+
+static int generated_suspend(struct device *dev)
+{
+    __rh_op_op_suspend: { (void)readl(dev); }
+    return 0;
+}
+
+static int generated_enable(struct clk_hw *hw)
+{
+    __rh_op_op_enable: { writel(1, hw); }
+    return 0;
+}
+
+static const struct dev_pm_ops generated_pm_ops = {
+    .suspend = generated_suspend,
+};
+static const struct clk_ops generated_clk_ops = {
+    .enable = generated_enable,
+};
+static const struct clk_init_data generated_clk_init = {
+    .ops = &generated_clk_ops,
+};
+
+static int generated_probe(struct platform_device *pdev)
+{
+    static struct priv g;
+    g.hw.init = &generated_clk_init;
+    return devm_clk_hw_register(&pdev->dev, &g.hw);
+}
+
+static struct platform_driver generated_driver = {
+    .probe = generated_probe,
+    .driver = { .name = "registration-test", .pm = &generated_pm_ops },
+};
+static int generated_driver_init(void)
+{
+    return __platform_driver_register(&generated_driver, &__this_module);
+}
+static int (*__inittest(void))(void) { return generated_driver_init; }
+"""
+
+
+SDHCI_SOURCE = r"""
+#include "kernel_stubs.h"
+struct sdhci_host { int unused; };
+struct sdhci_ops {
+    unsigned int (*read_l)(struct sdhci_host *, int);
+};
+struct sdhci_pltfm_data { const struct sdhci_ops *ops; };
+struct of_device_id { const char *compatible; const void *data; };
+
+static unsigned int generated_read_l(struct sdhci_host *host, int reg)
+{
+    __rh_op_op_read: { (void)readl(host); }
+    return (unsigned int)reg;
+}
+
+static unsigned int generated_other_read_l(struct sdhci_host *host, int reg)
+{
+    return readl(host) + (unsigned int)reg;
+}
+
+static const struct sdhci_ops generated_sdhci_ops = {
+    .read_l = generated_read_l,
+};
+static const struct sdhci_pltfm_data generated_pdata = {
+    .ops = &generated_sdhci_ops,
+};
+static const struct sdhci_pltfm_data generated_fallback = {
+    .ops = &generated_sdhci_ops,
+};
+static const struct sdhci_pltfm_data generated_wrong_pdata = {
+    .ops = 0,
+};
+static const struct of_device_id generated_matches[] = {
+    { .compatible = "vendor,controller", .data = &generated_pdata },
+    { }
+};
+
+static int generated_probe(struct platform_device *pdev)
+{
+    const struct sdhci_pltfm_data *pdata;
+    struct sdhci_host *host;
+    int ret;
+
+    pdata = device_get_match_data(&pdev->dev);
+    if (!pdata)
+        pdata = &generated_fallback;
+    host = sdhci_pltfm_init(pdev, pdata, 0);
+    if (!host)
+        return -1;
+    ret = sdhci_add_host(host);
+    if (ret)
+        return ret;
+    return 0;
+}
+
+static struct platform_driver generated_driver = {
+    .probe = generated_probe,
+    .driver = {
+        .name = "registration-test",
+        .of_match_table = generated_matches,
+    },
+};
+static int generated_driver_init(void)
+{
+    return __platform_driver_register(&generated_driver, &__this_module);
+}
+static int (*__inittest(void))(void) { return generated_driver_init; }
+"""
+
+
+USB_HCD_SOURCE = r"""
+#include "kernel_stubs.h"
+struct hc_driver { int (*irq)(struct usb_hcd *); };
+struct usb_hcd { int unused; };
+
+static int generated_irq(struct usb_hcd *hcd)
+{
+    __rh_op_op_irq: { (void)readl(hcd); }
+    return 0;
+}
+static const struct hc_driver generated_hc_driver = {
+    .irq = generated_irq,
+};
+
+static int generated_probe(struct platform_device *pdev)
+{
+    struct usb_hcd *hcd;
+    hcd = usb_create_hcd(&generated_hc_driver, &pdev->dev, "hcd");
+    if (!hcd)
+        return -1;
+    platform_set_drvdata(pdev, hcd);
+    return usb_add_hcd(hcd, 0, 0);
+}
+static void generated_remove(struct platform_device *pdev)
+{
+    struct usb_hcd *hcd = platform_get_drvdata(pdev);
+    usb_remove_hcd(hcd);
+    usb_put_hcd(hcd);
+}
+static struct platform_driver generated_driver = {
+    .probe = generated_probe,
+    .remove = generated_remove,
+    .driver = { .name = "registration-test" },
+};
+static int generated_driver_init(void)
+{
+    return __platform_driver_register(&generated_driver, &__this_module);
+}
+static int (*__inittest(void))(void) { return generated_driver_init; }
+"""
+
+
+USB_GADGET_SOURCE = r"""
+#include "kernel_stubs.h"
+struct usb_gadget_ops { int (*udc_start)(struct usb_gadget *); };
+struct usb_ep_ops { int (*queue)(struct usb_ep *); };
+struct usb_ep { const struct usb_ep_ops *ops; };
+struct usb_gadget {
+    const struct usb_gadget_ops *ops;
+    struct usb_ep *ep0;
+};
+
+static int generated_udc_start(struct usb_gadget *gadget)
+{
+    __rh_op_op_start: { (void)readl(gadget); }
+    return 0;
+}
+static int generated_queue(struct usb_ep *ep)
+{
+    __rh_op_op_queue: { (void)readl(ep); }
+    return 0;
+}
+static const struct usb_gadget_ops generated_gadget_ops = {
+    .udc_start = generated_udc_start,
+};
+static const struct usb_ep_ops generated_ep_ops = {
+    .queue = generated_queue,
+};
+static struct usb_ep generated_ep = { .ops = &generated_ep_ops };
+static struct usb_gadget generated_gadget = {
+    .ops = &generated_gadget_ops,
+    .ep0 = &generated_ep,
+};
+static int generated_probe(struct platform_device *pdev)
+{
+    return usb_add_gadget_udc(&pdev->dev, &generated_gadget);
+}
+static void generated_remove(struct platform_device *pdev)
+{
+    usb_del_gadget_udc(&generated_gadget);
+}
+static struct platform_driver generated_driver = {
+    .probe = generated_probe,
+    .remove = generated_remove,
+    .driver = { .name = "registration-test" },
+};
+static int generated_driver_init(void)
+{
+    return __platform_driver_register(&generated_driver, &__this_module);
+}
+static int (*__inittest(void))(void) { return generated_driver_init; }
+"""
+
+
 def _fixture(root: Path, source: str = SOURCE):
     header = root / "kernel_stubs.h"
     generated = root / "registration_test.c"
@@ -185,6 +426,218 @@ def test_linux_registration_accepts_exact_platform_gpio_irq_chain(tmp_path):
         if isinstance(item.get("location"), dict):
             item["location"]["file"] = "/different/output/root/generated.c"
     assert registration_route_fingerprint(route) == original
+
+
+def test_linux_registration_accepts_typed_pm_and_clock_object_chains(tmp_path):
+    contract = {
+        "schema": 1,
+        "driver": "registration-test",
+        "register_operations": [
+            {"op_id": "op_suspend", "module": "source_suspend",
+             "kind": "Read"},
+            {"op_id": "op_enable", "module": "source_enable",
+             "kind": "Write"},
+        ],
+    }
+    device = DeviceSpec(
+        name="registration-test",
+        functions=[
+            FunctionSpec(
+                name="source_suspend", signature=Signature(),
+                role="suspend", ris_ref="source_suspend",
+                is_callback_entry=True,
+                callback_table="dev_pm_ops.suspend"),
+            FunctionSpec(
+                name="source_enable", signature=Signature(),
+                role="enable", ris_ref="source_enable",
+                is_callback_entry=True,
+                callback_table="clk_ops.enable"),
+        ],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": row["op_id"], "module": row["module"],
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        } for row in contract["register_operations"]],
+    }
+    generated, command = _fixture(tmp_path, CLOCK_PM_SOURCE)
+    report = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command)
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == [
+        "op_enable", "op_suspend"]
+    callbacks = {route["callback"] for route in report["registration_routes"]}
+    assert "dev_pm_ops.suspend" in callbacks
+    assert "clk_ops.enable" in callbacks
+
+
+def _verify_sdhci(root: Path, source: str = SDHCI_SOURCE) -> dict:
+    contract = {
+        "schema": 1,
+        "driver": "registration-test",
+        "register_operations": [{
+            "op_id": "op_read", "module": "source_read_l", "kind": "Read",
+        }],
+    }
+    device = DeviceSpec(
+        name="registration-test",
+        functions=[FunctionSpec(
+            name="source_read_l", signature=Signature(), role="read_config",
+            ris_ref="source_read_l", is_callback_entry=True,
+            callback_table="sdhci_ops.read_l",
+        )],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": "op_read", "module": "source_read_l",
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        }],
+    }
+    generated, command = _fixture(root, source)
+    return verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command)
+
+
+def test_linux_registration_accepts_exact_sdhci_lifecycle(tmp_path):
+    report = _verify_sdhci(tmp_path)
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == ["op_read"]
+    route = next(route for route in report["registration_routes"]
+                 if route["callback"] == "sdhci_ops.read_l")
+    kinds = [item["kind"] for item in route["registration"]["chain"]]
+    assert {"match_data_edge", "finite_pdata_fallback"} & set(kinds)
+    assert "sdhci_pltfm_init" in kinds
+    assert "sdhci_host_result" in kinds
+    assert "sdhci_add_host" in kinds
+
+
+def test_linux_registration_rejects_sdhci_identity_mutations(tmp_path):
+    mutations = [
+        SDHCI_SOURCE.replace(
+            ".ops = &generated_sdhci_ops,", ".ops = 0,", 2),
+        SDHCI_SOURCE.replace(
+            "sdhci_pltfm_init(pdev, pdata, 0)",
+            "sdhci_pltfm_init(pdev, &generated_wrong_pdata, 0)"),
+        SDHCI_SOURCE.replace(
+            "struct sdhci_host *host;",
+            "struct sdhci_host *host;\n    struct sdhci_host *other_host;").replace(
+            "sdhci_add_host(host)", "sdhci_add_host(other_host)"),
+        SDHCI_SOURCE.replace(
+            "ret = sdhci_add_host(host);", "ret = 0;"),
+        SDHCI_SOURCE.replace(
+            ".read_l = generated_read_l,",
+            ".read_l = generated_other_read_l,"),
+    ]
+    for index, source in enumerate(mutations):
+        case = tmp_path / str(index)
+        case.mkdir()
+        report = _verify_sdhci(case, source)
+        assert report["complete"] is False, (index, report)
+        assert report["runtime_registered_op_ids"] == [], (index, report)
+
+
+def _verify_usb(root: Path, source: str, callbacks: list[tuple[str, str]],
+                op_ids: list[str]) -> dict:
+    contract = {
+        "schema": 1, "driver": "registration-test",
+        "register_operations": [
+            {"op_id": op_id, "module": module, "kind": "Read"}
+            for op_id, (module, _callback) in zip(op_ids, callbacks)
+        ],
+    }
+    device = DeviceSpec(
+        name="registration-test",
+        functions=[FunctionSpec(
+            name=module, signature=Signature(), role="read_config",
+            ris_ref=module, is_callback_entry=True, callback_table=callback,
+        ) for module, callback in callbacks],
+    )
+    plan = {
+        "schema": 3, "oracle": "backend-lowering-plan-v3",
+        "driver": "registration-test", "backend": "linux",
+        "entries": [{
+            "op_id": op_id, "module": module,
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        } for op_id, (module, _callback) in zip(op_ids, callbacks)],
+    }
+    generated, command = _fixture(root, source)
+    return verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command)
+
+
+def test_linux_registration_accepts_single_instance_usb_lifecycles(tmp_path):
+    hcd_root = tmp_path / "hcd"
+    hcd_root.mkdir()
+    hcd = _verify_usb(
+        hcd_root, USB_HCD_SOURCE,
+        [("source_irq", "hc_driver.irq")], ["op_irq"])
+    assert hcd["complete"] is True, hcd
+    assert hcd["runtime_registered_op_ids"] == ["op_irq"]
+    hcd_route = next(route for route in hcd["registration_routes"]
+                     if route["callback"] == "hc_driver.irq")
+    hcd_kinds = {item["kind"]
+                 for item in hcd_route["registration"]["chain"]}
+    assert {"usb_create_hcd", "usb_add_hcd", "usb_remove_hcd",
+            "usb_put_hcd"} <= hcd_kinds
+
+    gadget_root = tmp_path / "gadget"
+    gadget_root.mkdir()
+    gadget = _verify_usb(
+        gadget_root, USB_GADGET_SOURCE,
+        [("source_start", "usb_gadget_ops.udc_start"),
+         ("source_queue", "usb_ep_ops.queue")],
+        ["op_start", "op_queue"])
+    assert gadget["complete"] is True, gadget
+    assert gadget["runtime_registered_op_ids"] == ["op_queue", "op_start"]
+
+
+def test_linux_registration_rejects_usb_lifecycle_mutations(tmp_path):
+    hcd_mutations = [
+        USB_HCD_SOURCE.replace(
+            "platform_set_drvdata(pdev, hcd);", "(void)hcd;"),
+        USB_HCD_SOURCE.replace(
+            "usb_remove_hcd(hcd);", "(void)hcd;"),
+        USB_HCD_SOURCE.replace(
+            "usb_put_hcd(hcd);", "(void)hcd;"),
+        USB_HCD_SOURCE.replace(
+            ".irq = generated_irq,", ".irq = 0,"),
+    ]
+    for index, source in enumerate(hcd_mutations):
+        root = tmp_path / f"hcd-{index}"
+        root.mkdir()
+        report = _verify_usb(
+            root, source, [("source_irq", "hc_driver.irq")], ["op_irq"])
+        assert report["complete"] is False, (index, report)
+        assert report["runtime_registered_op_ids"] == [], (index, report)
+
+    gadget_mutations = [
+        USB_GADGET_SOURCE.replace(
+            "usb_del_gadget_udc(&generated_gadget);", "(void)pdev;"),
+        USB_GADGET_SOURCE.replace(
+            ".ep0 = &generated_ep,", ".ep0 = 0,"),
+        USB_GADGET_SOURCE.replace(
+            ".ops = &generated_gadget_ops,", ".ops = 0,"),
+    ]
+    for index, source in enumerate(gadget_mutations):
+        root = tmp_path / f"gadget-{index}"
+        root.mkdir()
+        report = _verify_usb(
+            root, source,
+            [("source_start", "usb_gadget_ops.udc_start"),
+             ("source_queue", "usb_ep_ops.queue")],
+            ["op_start", "op_queue"])
+        assert report["complete"] is False, (index, report)
 
 
 def test_linux_registration_rejects_missing_or_shadowed_driver_root(tmp_path):

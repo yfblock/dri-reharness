@@ -359,14 +359,17 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                     and loop.get("loop_kind") == "for"):
                 if loop.get("dynamic_bound"):
                     induction = loop.get("induction_var", "__reharness_i")
-                    count = expr_to_c(loop.get("count"))
+                    bound = expr_to_c(
+                        loop.get("bound_expr") or loop.get("count"))
+                    relation = loop.get("relation", "<")
+                    start = int(loop.get("start", 0))
                     stride = int(loop.get("stride", 1))
                     step = (f"{induction}++" if stride == 1
                             else f"{induction} += {stride}")
                     out.append(
-                        f"{pad}for (uint32_t {induction} = 0, "
-                        f"__reharness_limit = {count}; "
-                        f"{induction} < __reharness_limit; {step}) {{")
+                        f"{pad}for (uint32_t {induction} = {start}, "
+                        f"__reharness_limit = {bound}; "
+                        f"{induction} {relation} __reharness_limit; {step}) {{")
                 else:
                     init = loop.get("init", "").strip().rstrip(";")
                     step = loop.get("step", "").strip().rstrip(";")

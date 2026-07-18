@@ -857,7 +857,8 @@ def test_structured_control_preserves_loop_and_branch_evidence():
     assert len(module["ops"]) == 1 and "Loop" in module["ops"][0]
     loop = module["ops"][0]["Loop"]
     assert loop["loop_kind"] == "for"
-    assert loop["reliability"] == "Conservative"
+    assert loop["reliability"] == "Exact"
+    assert loop["dynamic_bound"] is True
     assert expr_display(loop["guard"]) == "(i < count)"
     assert loop["init"] == "i = 0"
     assert loop["step"] == "i++"
@@ -867,15 +868,16 @@ def test_structured_control_preserves_loop_and_branch_evidence():
                for leaf in leaves)
     metrics = driver_metrics(result.formal)
     assert metrics["loop"] == 1 and metrics["cond"] == 2
+    assert metrics["conservative_loop"] == 0
     readiness = score(result.device_spec, result.formal, result.warnings,
                       result.facts)
     assert readiness["backend_harness_ready"] is False
-    assert any("conservative loop" in blocker
-               for blocker in readiness["blockers"])
+    assert not any("conservative loop" in blocker
+                   for blocker in readiness["blockers"])
     code = harness_gen.generate(
         result.formal, result.device_spec,
         default_bind(result.device_spec, "harness"))
-    assert "REHARNESS_UNSUPPORTED_LOOP" in code
+    assert "REHARNESS_UNSUPPORTED_LOOP" not in code
 
 
 def test_canonical_bounded_loop_is_proved_and_lowered():
@@ -904,6 +906,44 @@ def test_canonical_bounded_loop_is_proved_and_lowered():
         result.formal, result.device_spec,
         default_bind(result.device_spec, "harness"))
     assert "for (i = 0; (i < 0x4); i++)" in code
+    assert "REHARNESS_UNSUPPORTED_LOOP" not in code
+
+
+def test_runtime_scalar_affine_loop_preserves_nonzero_start():
+    import tempfile
+    from extractor.formal import expr_display
+    from extractor.spec import default_bind
+    from generator import harness as harness_gen
+
+    with tempfile.TemporaryDirectory() as directory:
+        source = os.path.join(directory, "runtime_affine_loop.c")
+        with open(source, "w", encoding="utf-8") as stream:
+            stream.write(r"""
+typedef unsigned int u32;
+struct runtime_dev { void *base; u32 count; };
+extern void writel(u32, void *);
+void runtime_affine_loop(struct runtime_dev *d)
+{
+    u32 i;
+    for (i = 1; i < d->count; i++)
+        writel(i, d->base);
+}
+""")
+        result = extract_ris(ExtractorConfig(
+            source=source, linux_root="/nonexistent"))
+    module = _module(result.formal, "runtime_affine_loop")
+    loop = module["ops"][0]["Loop"]
+    assert loop["reliability"] == "Exact"
+    assert loop["bounded"] is True
+    assert loop["dynamic_bound"] is True
+    assert loop["start"] == 1
+    assert loop["relation"] == "<"
+    assert "?" in expr_display(loop["count"])
+    code = harness_gen.generate(
+        result.formal, result.device_spec,
+        default_bind(result.device_spec, "harness"))
+    assert "for (uint32_t i = 1," in code
+    assert "i < __reharness_limit; i++)" in code
     assert "REHARNESS_UNSUPPORTED_LOOP" not in code
 
 
@@ -1546,6 +1586,13 @@ def test_inlined_read_return_binds_the_caller_lhs():
     assert read["var"] == "value"
     rendered = expr_display(write["value"])
     assert "value" in rendered and "mask" in rendered
+    calls = result.formal["metadata"]["call_graph"]["calls"]
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["resolution_authority"] == "direct_function_declaration"
+    assert call["argument_mapping"][0]["parameter"] == "base"
+    assert call["return_binding"]["destination"] == "value"
+    assert call["multiplicity"]["runtime_count_proven"] is False
 
 
 def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
@@ -1587,8 +1634,8 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
         assert plan["accounting_complete"] is True, (backend, plan)
         assert plan["lowering_complete"] is False
         assert plan["required_ops"] == plan["planned_ops"] == 3608
-        assert plan["lowered_ops"] == 3182
-        assert plan["blocked_ops"] == 426
+        assert plan["lowered_ops"] == 3246
+        assert plan["blocked_ops"] == 362
 
     linux_code = linux_gen.generate(
         result.formal, result.device_spec,
@@ -1597,14 +1644,14 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     linux_plan = verify_backend_lowering_plan(
         result.formal, contract, "linux", device_spec=result.device_spec,
         lowering_report=linux_lowering)
-    assert linux_plan["candidate_definition_ops"] == 2023
+    assert linux_plan["candidate_definition_ops"] == 2051
     assert linux_plan["evidence_only_ops"] == 77
-    assert linux_plan["authorized_ops"] == 2100
-    assert linux_plan["blocked_ops"] == 1508
+    assert linux_plan["authorized_ops"] == 2128
+    assert linux_plan["blocked_ops"] == 1480
     assert linux_plan["disposition_counts"][
-        "blocked_unsupported_loop"] == 426
+        "blocked_unsupported_loop"] == 362
     assert linux_plan["disposition_counts"][
-        "blocked_linux_root_unreachable"] == 898
+        "blocked_linux_root_unreachable"] == 934
     assert linux_plan["disposition_counts"][
         "blocked_linux_lifecycle_stub"] == 182
     assert linux_plan["disposition_counts"][

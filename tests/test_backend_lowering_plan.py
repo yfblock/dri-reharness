@@ -685,6 +685,37 @@ def test_linux_definition_routes_authorization_and_loop_precedence():
             assert entry["receipt_authorized"] is False
 
 
+def test_linux_call_closure_evidence_is_reported_but_not_authorized():
+    formal, contract, device_spec = _linux_fixture()
+    formal["metadata"]["call_graph"] = {
+        "schema": 1,
+        "oracle": "source-ast-call-v1",
+        "lowering_enabled": False,
+        "calls": [{
+            "caller_module": "probe",
+            "callee_module": "helper",
+            "resolution_authority": "direct_function_declaration",
+            "callsite": {"source": "fixture.c", "line": 10,
+                         "column": 2, "offset": 100, "order": 1},
+            "return_binding": {"status": "exact", "kind": "discarded"},
+            "control": [],
+            "multiplicity": {"kind": "syntactic_callsite",
+                             "per_caller_invocation": 1,
+                             "runtime_count_proven": False},
+        }],
+    }
+    plan = build_backend_lowering_plan(formal, "linux", device_spec)
+    helper = next(entry for entry in plan["entries"]
+                  if entry["op_id"] == "op_helper")
+    assert helper["disposition"] == "blocked_linux_root_unreachable"
+    assert helper["receipt_authorized"] is False
+    evidence = helper["call_closure_evidence"]
+    assert evidence["status"] == "ast_reachable_but_lowering_disabled"
+    assert evidence["strict_authorized"] is False
+    assert evidence["path"][0]["callee_module"] == "helper"
+    assert plan["summary"]["call_closure_evidence_ops"] == 1
+
+
 def test_linux_runtime_registration_and_ast_leaf_complete_strict_plan():
     formal, contract, device_spec = _linux_runtime_fixture()
     plan = build_backend_lowering_plan(formal, "linux", device_spec)

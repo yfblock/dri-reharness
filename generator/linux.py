@@ -40,7 +40,7 @@ _MODELED_STATE_FIELDS = {
     "total_data", "target_frame", "frame_number", "dma",
     "hpi_regstep",
     "sie_num",
-    "flags", "nr_ports",
+    "flags", "nr_ports", "max_ports",
 }
 
 
@@ -671,10 +671,16 @@ def _normalize_ops(ops, state_prefix: str | None = None,
                 safe_function_calls)
             op["Loop"]["count"], c = _normalize_expr(
                 op["Loop"].get("count"), state_prefix, safe_function_calls)
+            if op["Loop"].get("bound_expr") is not None:
+                op["Loop"]["bound_expr"], b = _normalize_expr(
+                    op["Loop"].get("bound_expr"), state_prefix,
+                    safe_function_calls)
+            else:
+                b = False
             op["Loop"]["body"], a = _normalize_ops(
                 op["Loop"].get("body", []), state_prefix,
                 safe_function_calls, contract_digests, contract_recipes)
-            changed |= a or c or g
+            changed |= a or b or c or g
         elif "Seq" in op:
             op["Seq"]["ops"], a = _normalize_ops(
                 op["Seq"].get("ops", []), state_prefix,

@@ -5,7 +5,10 @@ Pass 2: build the call graph; for each function, inline callees that are
 themselves target functions with MMIO ops (depth-limited, recursion-safe).
 """
 from __future__ import annotations
-from .ast_model import (Func, function_calls, callback_entry_symbols)
+from .ast_model import (
+    Func, callback_entry_symbols, function_calls, source_text,
+    walk_with_control,
+)
 from .dataflow import extract_function, FuncExtraction
 from .wrappers import infer_wrapper_summaries
 from .indirect import infer_indirect_targets, resolve_indirect_call
@@ -21,6 +24,113 @@ def _callee_id(call) -> str:
 
 def _resolved_callee_id(call, indirect_targets: dict[str, str]) -> str:
     return resolve_indirect_call(call, indirect_targets) or _callee_id(call)
+
+
+def _cursor_parents(root) -> dict[int, object]:
+    parents: dict[int, object] = {}
+
+    def visit(node) -> None:
+        for child in node.get_children():
+            parents[child.hash] = node
+            visit(child)
+
+    visit(root)
+    return parents
+
+
+def _return_binding(call_cursor, parents: dict[int, object]) -> dict:
+    current = call_cursor
+    while current.hash in parents:
+        current = parents[current.hash]
+        kind = current.kind.name
+        if kind == "VAR_DECL":
+            return {
+                "status": "exact", "kind": "declaration_initializer",
+                "destination": current.spelling,
+                "destination_usr": current.get_usr() or None,
+                "destination_type": current.type.get_canonical().spelling,
+            }
+        if kind == "BINARY_OPERATOR":
+            children = list(current.get_children())
+            tokens = [token.spelling for token in current.get_tokens()]
+            if len(children) == 2 and tokens.count("=") == 1:
+                return {
+                    "status": "exact", "kind": "assignment",
+                    "destination": source_text(
+                        current.translation_unit, children[0]).strip(),
+                    "destination_type": (
+                        children[0].type.get_canonical().spelling),
+                }
+        if kind == "RETURN_STMT":
+            return {"status": "exact", "kind": "return"}
+        if kind in {"COMPOUND_STMT", "FUNCTION_DECL"}:
+            break
+    return {"status": "exact", "kind": "discarded"}
+
+
+def _formal_calls(funcs: list[Func], indirect_targets: dict[str, str]) -> list[dict]:
+    """Build versioned, AST-authoritative source-local call evidence."""
+    by_symbol = {_func_id(func): func for func in funcs}
+    rows = []
+    for caller in funcs:
+        parents = _cursor_parents(caller.cursor)
+        controls: dict[int, list[dict]] = {}
+        for node, stack in walk_with_control(caller.cursor):
+            if node.kind.name == "CALL_EXPR":
+                controls[node.location.offset] = [dict(frame) for frame in stack]
+        order = 0
+        for call in function_calls(caller.cursor):
+            callee_symbol = _resolved_callee_id(call, indirect_targets)
+            callee = by_symbol.get(callee_symbol)
+            if callee is None:
+                continue
+            order += 1
+            location = call.cursor.location
+            arguments = []
+            for index, expression in enumerate(call.arg_text):
+                parameter = callee.params[index] if index < len(callee.params) \
+                    else (None, None)
+                arguments.append({
+                    "index": index,
+                    "expression": expression.strip(),
+                    "parameter": parameter[0],
+                    "parameter_type": parameter[1],
+                    "argument_type": (
+                        call.args[index].type.get_canonical().spelling),
+                })
+            direct_symbol = _callee_id(call)
+            rows.append({
+                "schema": 1,
+                "caller_usr": _func_id(caller),
+                "caller_module": caller.module_name or caller.name,
+                "callee_usr": callee_symbol,
+                "callee_module": callee.module_name or callee.name,
+                "callsite": {
+                    "source": (location.file.name
+                               if location and location.file else None),
+                    "line": location.line if location else 0,
+                    "column": location.column if location else 0,
+                    "offset": location.offset if location else 0,
+                    "order": order,
+                },
+                "argument_mapping": arguments,
+                "return_binding": _return_binding(call.cursor, parents),
+                "control": controls.get(
+                    location.offset if location else 0, []),
+                "resolution_authority": (
+                    "direct_function_declaration"
+                    if direct_symbol == callee_symbol
+                    else "static_indirect_target"),
+                "multiplicity": {
+                    "kind": "syntactic_callsite",
+                    "per_caller_invocation": 1,
+                    "runtime_count_proven": False,
+                },
+            })
+    rows.sort(key=lambda row: (
+        row["caller_module"], row["callsite"]["source"] or "",
+        row["callsite"]["offset"], row["callee_module"]))
+    return rows
 
 
 def _op_fingerprint(extraction: FuncExtraction) -> tuple:
@@ -297,6 +407,7 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
             resolve_indirect_call(call, indirect_targets) is not None
             for func in funcs for call in function_calls(func.cursor)),
         "callee_rescue": rescue_stats,
+        "formal_calls": _formal_calls(funcs, indirect_targets),
     }
 
 
@@ -431,6 +542,7 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
             resolve_indirect_call(call, indirect_targets) is not None
             for func in funcs for call in function_calls(func.cursor)),
         "callee_rescue": rescue_stats,
+        "formal_calls": _formal_calls(funcs, indirect_targets),
     }
     return (expanded, inlined_names,
             callback_entries, stats)

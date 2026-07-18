@@ -9,7 +9,7 @@ a separate (currently unproved) property.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Mapping
 import copy
 import hashlib
@@ -318,11 +318,74 @@ def _summary(entries: list[dict]) -> dict[str, Any]:
             for entry in entries),
         "ast_leaf_proven_ops": sum(
             entry.get("ast_leaf_proven") is True for entry in entries),
+        "call_closure_evidence_ops": sum(
+            isinstance(entry.get("call_closure_evidence"), dict)
+            for entry in entries),
         "blocked_ops": sum(counts[name] for name in BLOCKED_DISPOSITIONS),
         "disposition_counts": {
             name: counts[name] for name in sorted(DISPOSITIONS)
         },
     }
+
+
+def _attach_call_closure_evidence(
+        entries: list[dict], formal: dict, routes: dict[str, dict]) -> None:
+    """Annotate, but never authorize, AST-proven callback call closure."""
+    call_graph = (formal.get("metadata") or {}).get("call_graph") or {}
+    if (call_graph.get("schema") != 1
+            or call_graph.get("oracle") != "source-ast-call-v1"
+            or call_graph.get("lowering_enabled") is not False):
+        return
+    calls = call_graph.get("calls")
+    if not isinstance(calls, list):
+        return
+    adjacency: dict[str, list[dict]] = defaultdict(list)
+    for call in calls:
+        if not isinstance(call, dict):
+            continue
+        caller = call.get("caller_module")
+        callee = call.get("callee_module")
+        if (not isinstance(caller, str) or not caller
+                or not isinstance(callee, str) or not callee
+                or call.get("resolution_authority") not in {
+                    "direct_function_declaration", "static_indirect_target"}):
+            continue
+        adjacency[caller].append(call)
+    roots = sorted(
+        module for module, route in routes.items()
+        if route.get("role") == "probe" or route.get("callback"))
+    paths: dict[str, list[dict]] = {root: [] for root in roots}
+    queue = list(roots)
+    while queue:
+        caller = queue.pop(0)
+        for call in adjacency.get(caller, []):
+            callee = call["callee_module"]
+            if callee in paths:
+                continue
+            paths[callee] = [*paths[caller], {
+                "caller_module": caller,
+                "callee_module": callee,
+                "callsite": copy.deepcopy(call.get("callsite")),
+                "resolution_authority": call.get("resolution_authority"),
+                "return_binding": copy.deepcopy(call.get("return_binding")),
+                "control": copy.deepcopy(call.get("control")),
+                "multiplicity": copy.deepcopy(call.get("multiplicity")),
+            }]
+            queue.append(callee)
+    for entry in entries:
+        module = entry.get("module")
+        if (entry.get("disposition") != "blocked_linux_root_unreachable"
+                or module not in paths or not paths[module]):
+            continue
+        entry["call_closure_evidence"] = {
+            "schema": 1,
+            "status": "ast_reachable_but_lowering_disabled",
+            "path": paths[module],
+            "strict_authorized": False,
+            "reason": (
+                "Formal Call evidence identifies a callback-root path, but "
+                "argument/return/control lowering is not yet enabled"),
+        }
 
 
 def build_backend_lowering_plan(
@@ -354,6 +417,8 @@ def build_backend_lowering_plan(
         for entry in _plan_module_ops(
             module, backend, routes.get(module.get("name")), evidence_only)
     ]
+    if backend == "linux":
+        _attach_call_closure_evidence(entries, formal, routes)
     return {
         "schema": SCHEMA,
         "oracle": ORACLE,
@@ -412,6 +477,7 @@ def _entry_shape(entry: dict) -> dict:
             "runtime_registration_proven", "ast_leaf_proven",
             "registration_route_id", "enclosing_loops",
             "blocking_loop",
+            "call_closure_evidence",
         )
     }
 
