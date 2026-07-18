@@ -329,6 +329,7 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     formal = build_formal_ris(
         driver_name, descriptor, funcs, extractions, combined_macros,
         stats, inlined_names)
+    stats.pop("_call_closure_overlays", None)
     formal["metadata"]["sources"] = list(sources)
     from .smt import validate_formal_paths
     path_validation = validate_formal_paths(formal)
@@ -606,6 +607,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
 
     formal = build_formal_ris(driver_name, source, funcs, extractions, macros,
                               stats, inlined_names)
+    stats.pop("_call_closure_overlays", None)
     from .smt import validate_formal_paths
     path_validation = validate_formal_paths(formal)
     formal["metadata"]["path_validation"] = path_validation

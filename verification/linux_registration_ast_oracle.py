@@ -1499,14 +1499,21 @@ def verify_linux_registration_ast(
         plan_entry = plan_by_id.get(op_id) or {}
         strict_eligible = plan_entry.get("strict_eligible") is True
         module = contract_row.get("module")
-        authority = routes_by_module.get(module) or {}
+        # For verified call closure the contract operation remains owned by
+        # its helper module, while its unique AST anchor is emitted in the
+        # registered root callback named by the lowering-plan route.  Ordinary
+        # entries retain the independent DeviceSpec callback authority.
+        plan_route = plan_entry.get("route") or {}
+        authority = (plan_route
+                     if plan_route.get("kind") == "verified_call_closure"
+                     else routes_by_module.get(module) or {})
         expected_callback = authority.get("callback")
         anchor = anchor_by_id.get(op_id)
         matching = []
         errors = []
         if strict_eligible:
             if expected_callback is None:
-                errors.append("DeviceSpec route has no callback owner")
+                errors.append("lowering plan route has no callback owner")
             if expected_callback and expected_callback.split(".", 1)[0] not in \
                     SUPPORTED_CALLBACK_TABLES:
                 errors.append("unsupported_registration_shape")

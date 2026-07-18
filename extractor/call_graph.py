@@ -5,6 +5,9 @@ Pass 2: build the call graph; for each function, inline callees that are
 themselves target functions with MMIO ops (depth-limited, recursion-safe).
 """
 from __future__ import annotations
+import copy
+from collections import Counter, defaultdict
+from collections.abc import Callable
 from .ast_model import (
     Func, callback_entry_symbols, function_calls, source_text,
     walk_with_control,
@@ -131,6 +134,311 @@ def _formal_calls(funcs: list[Func], indirect_targets: dict[str, str]) -> list[d
         row["caller_module"], row["callsite"]["source"] or "",
         row["callsite"]["offset"], row["callee_module"]))
     return rows
+
+
+def _op_site(op) -> tuple[str, str] | None:
+    evidence = op.evidence or {}
+    owner = evidence.get("symbol")
+    site_id = evidence.get("site_id")
+    if not isinstance(owner, str) or not owner:
+        return None
+    if not isinstance(site_id, str) or not site_id:
+        return None
+    return owner, site_id
+
+
+def _op_occurrence(op) -> tuple:
+    evidence = op.evidence or {}
+    path = tuple(
+        (item.get("function"), item.get("line"), item.get("callee"),
+         item.get("indirect_expression"))
+        for item in evidence.get("inlined_at", [])
+        if isinstance(item, dict)
+    )
+    return (
+        _op_site(op), path, op.kind, repr(op.addr), op.width, op.value,
+        op.condition, tuple(op.cond_stack), repr(op.control_stack), op.var,
+    )
+
+
+def _with_ops(extraction: FuncExtraction, ops: list) -> FuncExtraction:
+    return FuncExtraction(
+        name=extraction.name,
+        params=list(extraction.params),
+        return_expr=extraction.return_expr,
+        return_read_var=extraction.return_read_var,
+        ops=list(ops),
+        calls=list(extraction.calls),
+        warnings=list(extraction.warnings),
+    )
+
+
+def _eligible_call_edges(calls: list[dict]) -> set[tuple[str, str]]:
+    """Return exact, non-recursive edges suitable for frontier propagation."""
+    grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for call in calls:
+        caller = call.get("caller_usr")
+        callee = call.get("callee_usr")
+        if isinstance(caller, str) and isinstance(callee, str):
+            grouped[(caller, callee)].append(call)
+
+    def row_valid(call: dict) -> bool:
+        if call.get("resolution_authority") not in {
+                "direct_function_declaration", "static_indirect_target"}:
+            return False
+        if (call.get("return_binding") or {}).get("status") != "exact":
+            return False
+        multiplicity = call.get("multiplicity") or {}
+        if (multiplicity.get("kind") != "syntactic_callsite"
+                or multiplicity.get("per_caller_invocation") != 1):
+            return False
+        if any((frame or {}).get("kind") == "loop"
+               for frame in call.get("control") or []):
+            return False
+        arguments = call.get("argument_mapping")
+        if not isinstance(arguments, list):
+            return False
+        return all(
+            isinstance(argument, dict)
+            and isinstance(argument.get("parameter"), str)
+            and bool(argument.get("parameter"))
+            and isinstance(argument.get("parameter_type"), str)
+            and bool(argument.get("parameter_type"))
+            and isinstance(argument.get("argument_type"), str)
+            and bool(argument.get("argument_type"))
+            for argument in arguments)
+
+    candidates = {
+        edge for edge, rows in grouped.items()
+        if edge[0] != edge[1] and rows and all(row_valid(row) for row in rows)
+    }
+    adjacency: dict[str, set[str]] = defaultdict(set)
+    for caller, callee in candidates:
+        adjacency[caller].add(callee)
+
+    def reaches(start: str, target: str) -> bool:
+        pending = [start]
+        seen = set()
+        while pending:
+            node = pending.pop()
+            if node == target:
+                return True
+            if node in seen:
+                continue
+            seen.add(node)
+            pending.extend(adjacency.get(node, ()))
+        return False
+
+    return {
+        edge for edge in candidates
+        if not reaches(edge[1], edge[0])
+    }
+
+
+def _selective_frontier_call_closure(
+        funcs: list[Func], expanded: dict[str, FuncExtraction],
+        frontiers: dict[str, FuncExtraction], callback_entries: set[str],
+        formal_calls: list[dict],
+        extract_one: Callable[[str, dict[str, FuncExtraction]], FuncExtraction],
+        *, max_rounds: int = 6,
+        ) -> tuple[
+            dict[str, FuncExtraction], set[str], dict,
+            dict[str, FuncExtraction]]:
+    """Propagate only uncovered helper evidence through verified call edges.
+
+    The general depth expansion intentionally remains bounded.  This pass
+    carries the small direct-evidence rescue frontier through exact AST call
+    edges, then accepts a helper only when each of its source sites appears
+    exactly once in one callback entry.  This avoids both dropped helpers and
+    the callsite explosion caused by globally increasing inline depth.
+    """
+    if not frontiers or not callback_entries:
+        return expanded, set(), {
+            "schema": 1, "oracle": "selective-call-frontier-v1",
+            "accepted_symbols": [], "accepted_sites": 0,
+            "rounds": [], "rejected_symbols": sorted(frontiers),
+        }, {}
+    func_by_id = {_func_id(func): func for func in funcs}
+    eligible_edges = _eligible_call_edges(formal_calls)
+    rows_by_edge: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for row in formal_calls:
+        edge = (row.get("caller_usr"), row.get("callee_usr"))
+        if edge in eligible_edges:
+            rows_by_edge[edge].append(row)
+    direct_callees: dict[str, set[str]] = defaultdict(set)
+    for caller, callee in eligible_edges:
+        direct_callees[caller].add(callee)
+
+    frontier_sites_by_symbol = {
+        symbol: {
+            site for op in extraction.ops
+            if (site := _op_site(op)) is not None
+        }
+        for symbol, extraction in frontiers.items()
+    }
+    all_frontier_sites = set().union(
+        *frontier_sites_by_symbol.values()) if frontier_sites_by_symbol else set()
+    working = dict(expanded)
+    working.update(frontiers)
+    round_rows = []
+    for depth in range(1, max_rounds + 1):
+        carriers = {
+            symbol for symbol, extraction in working.items()
+            if any(_op_site(op) in all_frontier_sites
+                   for op in extraction.ops)
+        }
+        candidates = sorted(
+            caller for caller, callees in direct_callees.items()
+            if caller in func_by_id and callees & carriers)
+        updates: dict[str, FuncExtraction] = {}
+        new_occurrences = 0
+        for caller in candidates:
+            cache: dict[str, FuncExtraction] = {}
+            allowed = direct_callees.get(caller, set())
+            for symbol, extraction in working.items():
+                if symbol == caller:
+                    continue
+                if symbol in allowed:
+                    cache[symbol] = extraction
+                else:
+                    cache[symbol] = _with_ops(
+                        extraction, [
+                            op for op in extraction.ops
+                            if _op_site(op) not in all_frontier_sites
+                        ])
+            candidate = extract_one(caller, cache)
+            current = working.get(caller)
+            if current is None:
+                continue
+            existing_keys = Counter(_op_occurrence(op) for op in current.ops)
+            candidate_keys = Counter(_op_occurrence(op) for op in candidate.ops)
+            if any(candidate_keys[key] < count
+                   for key, count in existing_keys.items()):
+                continue
+            kept = []
+            remaining = Counter(existing_keys)
+            before_frontier = Counter(
+                _op_occurrence(op) for op in current.ops
+                if _op_site(op) in all_frontier_sites)
+            for op in candidate.ops:
+                key = _op_occurrence(op)
+                if remaining[key] > 0:
+                    kept.append(op)
+                    remaining[key] -= 1
+                elif _op_site(op) in all_frontier_sites:
+                    kept.append(op)
+            after_frontier = Counter(
+                _op_occurrence(op) for op in kept
+                if _op_site(op) in all_frontier_sites)
+            added = sum((after_frontier - before_frontier).values())
+            if added:
+                updates[caller] = _with_ops(candidate, kept)
+                new_occurrences += added
+        working.update(updates)
+        round_rows.append({
+            "depth": depth, "updated_functions": len(updates),
+            "new_frontier_occurrences": new_occurrences,
+        })
+        if not updates:
+            break
+
+    callback_occurrences: Counter = Counter()
+    callback_owners: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for callback in callback_entries:
+        extraction = working.get(callback)
+        if extraction is None:
+            continue
+        for op in extraction.ops:
+            site = _op_site(op)
+            if site in all_frontier_sites:
+                callback_occurrences[site] += 1
+                callback_owners[site].add(callback)
+    accepted = set()
+    accepted_callbacks: dict[str, str] = {}
+    for symbol, sites in frontier_sites_by_symbol.items():
+        if not sites or any(callback_occurrences[site] != 1 for site in sites):
+            continue
+        owners = set().union(*(callback_owners[site] for site in sites))
+        if len(owners) != 1:
+            continue
+        accepted.add(symbol)
+        accepted_callbacks[symbol] = next(iter(owners))
+
+    accepted_sites = set().union(*(
+        frontier_sites_by_symbol[symbol] for symbol in accepted
+    )) if accepted else set()
+    overlays: dict[str, FuncExtraction] = {}
+    invalid_callbacks = set()
+    for callback in set(accepted_callbacks.values()):
+        proposed = working.get(callback)
+        original = expanded.get(callback)
+        if proposed is None or original is None:
+            continue
+        original_keys = Counter(_op_occurrence(op) for op in original.ops)
+        remaining = Counter(original_keys)
+        kept = []
+        for op in proposed.ops:
+            key = _op_occurrence(op)
+            if remaining[key] > 0:
+                kept.append(op)
+                remaining[key] -= 1
+                continue
+            site = _op_site(op)
+            if site not in accepted_sites:
+                continue
+            copied = copy.deepcopy(op)
+            copied.evidence = dict(copied.evidence or {})
+            copied.evidence["call_closure"] = {
+                "schema": 1,
+                "oracle": "selective-call-frontier-v1",
+                "source_symbol": site[0],
+                "callback_symbol": callback,
+            }
+            kept.append(copied)
+        if any(remaining.values()):
+            invalid_callbacks.add(callback)
+        else:
+            overlays[callback] = _with_ops(proposed, kept)
+    if invalid_callbacks:
+        accepted = {
+            symbol for symbol in accepted
+            if accepted_callbacks.get(symbol) not in invalid_callbacks
+        }
+        accepted_sites = set().union(*(
+            frontier_sites_by_symbol[symbol] for symbol in accepted
+        )) if accepted else set()
+        overlays = {
+            callback: extraction for callback, extraction in overlays.items()
+            if callback not in invalid_callbacks
+        }
+
+    return expanded, accepted, {
+        "schema": 1,
+        "oracle": "selective-call-frontier-v1",
+        "eligible_edges": len(eligible_edges),
+        "accepted_symbols": sorted(accepted),
+        "accepted_modules": sorted(
+            func_by_id[symbol].module_name or func_by_id[symbol].name
+            for symbol in accepted if symbol in func_by_id),
+        "accepted_sites": len(accepted_sites),
+        "callback_modules": sorted({
+            func_by_id[callback].module_name or func_by_id[callback].name
+            for callback in accepted_callbacks.values()
+            if callback in func_by_id
+        }),
+        "routes": sorted(({
+            "module": func_by_id[symbol].module_name
+            or func_by_id[symbol].name,
+            "symbol": symbol,
+            "callback_module": (
+                func_by_id[accepted_callbacks[symbol]].module_name
+                or func_by_id[accepted_callbacks[symbol]].name),
+            "callback_symbol": accepted_callbacks[symbol],
+        } for symbol in accepted), key=lambda row: (
+            row["callback_module"], row["module"])),
+        "rounds": round_rows,
+        "rejected_symbols": sorted(set(frontiers) - accepted),
+    }, overlays
 
 
 def _op_fingerprint(extraction: FuncExtraction) -> tuple:
@@ -459,28 +767,32 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
             elif cs.name in names:
                 unresolved_internal.add((caller, cs.name))
 
+    def extract_one(symbol: str, inline_cache=None) -> FuncExtraction:
+        f = func_by_id[symbol]
+        unit = owner[symbol]
+        cache = inline_cache
+        if cache and symbol in cache:
+            cache = {name: ex for name, ex in cache.items()
+                     if name != symbol}
+        return extract_function(
+            f, unit["macros"], unit["tu"],
+            source_lines=unit["source_lines"],
+            inline_cache=cache,
+            mmio_globals=unit["mmio_globals"],
+            mmio_alias_facts=unit.get("mmio_alias_facts"),
+            wrapper_summaries=wrapper_summaries,
+            indirect_targets=indirect_targets,
+            callback_entries=callback_entries,
+            max_depth=1,
+            include_framework=include_framework,
+            extra_blacklist=extra_blacklist,
+        )
+
     def extract_all(inline_cache=None) -> dict[str, FuncExtraction]:
         result: dict[str, FuncExtraction] = {}
         for f in funcs:
             symbol = _func_id(f)
-            unit = owner[symbol]
-            cache = inline_cache
-            if cache and symbol in cache:
-                cache = {name: ex for name, ex in cache.items()
-                         if name != symbol}
-            result[symbol] = extract_function(
-                f, unit["macros"], unit["tu"],
-                source_lines=unit["source_lines"],
-                inline_cache=cache,
-                mmio_globals=unit["mmio_globals"],
-                mmio_alias_facts=unit.get("mmio_alias_facts"),
-                wrapper_summaries=wrapper_summaries,
-                indirect_targets=indirect_targets,
-                callback_entries=callback_entries,
-                max_depth=1,
-                include_framework=include_framework,
-                extra_blacklist=extra_blacklist,
-            )
+            result[symbol] = extract_one(symbol, inline_cache)
         return result
 
     direct = extract_all()
@@ -524,8 +836,17 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
     (inlined_names, rescue_stats, rescue_frontiers) = (
         _coverage_aware_inlined_names(
             direct, expanded, inlined_into_caller - callback_entries))
+    formal_calls = _formal_calls(funcs, indirect_targets)
+    (expanded, call_closed, closure_stats,
+     closure_overlays) = _selective_frontier_call_closure(
+        funcs, expanded, rescue_frontiers, callback_entries, formal_calls,
+        extract_one)
     for symbol, frontier in rescue_frontiers.items():
         expanded[symbol] = frontier
+    rescue_stats = dict(rescue_stats)
+    rescue_stats["call_closure_accepted_symbols"] = sorted(call_closed)
+    rescue_stats["call_closure_accepted_sites"] = closure_stats[
+        "accepted_sites"]
     stats = {
         "call_edges": len(edges),
         "cross_tu_call_edges": len(cross_tu_edges),
@@ -542,7 +863,9 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
             resolve_indirect_call(call, indirect_targets) is not None
             for func in funcs for call in function_calls(func.cursor)),
         "callee_rescue": rescue_stats,
-        "formal_calls": _formal_calls(funcs, indirect_targets),
+        "formal_calls": formal_calls,
+        "selective_call_closure": closure_stats,
+        "_call_closure_overlays": closure_overlays,
     }
     return (expanded, inlined_names,
             callback_entries, stats)

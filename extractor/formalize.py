@@ -508,6 +508,182 @@ def _module(func: Func, ex: FuncExtraction, id_counter: list[int], macros) -> di
     return {"name": func.module_name or func.name, "ops": ops, "source": source}
 
 
+def _register_leaf(op: dict) -> tuple[str, dict] | tuple[None, None]:
+    kind = next((name for name in ("Read", "Write", "ReadModifyWrite")
+                 if name in op), None)
+    return (kind, op[kind]) if kind is not None else (None, None)
+
+
+def _formal_occurrence_identity(op: dict) -> tuple | None:
+    """Return a fail-closed identity for one already-formalized register op."""
+    kind, body = _register_leaf(op)
+    if kind is None:
+        return None
+    evidence = body.get("evidence") or {}
+    symbol = evidence.get("symbol")
+    site_id = evidence.get("site_id")
+    if not isinstance(symbol, str) or not isinstance(site_id, str):
+        return None
+    path = tuple(
+        (item.get("function"), item.get("line"), item.get("callee"),
+         item.get("indirect_expression"))
+        for item in evidence.get("inlined_at", [])
+        if isinstance(item, dict)
+    )
+    return kind, symbol, site_id, path
+
+
+def _formalize_call_closure_overlays(
+        funcs: list[Func], modules: list[dict], overlays: dict,
+        closure: dict, macros) -> tuple[dict[str, list[dict]], dict]:
+    """Build callback views while retaining canonical module/op identity.
+
+    Selective closure is only enabled for a callback when every register leaf
+    in its alternate view maps to exactly one canonical operation.  Original
+    callback leaves use their complete formal occurrence identity; propagated
+    leaves use their definition-owned ``(symbol, site_id)`` source identity.
+    """
+    if not isinstance(overlays, dict) or not overlays:
+        disabled = copy.deepcopy(closure)
+        disabled.update({
+            "accepted_symbols": [], "accepted_modules": [],
+            "accepted_sites": 0, "callback_modules": [],
+            "routes": [], "overlays": {}, "overlay_register_ops": 0,
+        })
+        return {}, disabled
+
+    func_by_symbol = {func.symbol_id or func.name: func for func in funcs}
+    closure_module_by_symbol = {
+        route.get("symbol"): route.get("module")
+        for route in closure.get("routes") or []
+        if isinstance(route, dict)
+        and isinstance(route.get("symbol"), str)
+        and isinstance(route.get("module"), str)
+    }
+    occurrence_index: dict[tuple[str, tuple], list[str]] = {}
+    site_index: dict[tuple[str, str, str], list[str]] = {}
+    canonical_by_id: dict[str, dict] = {}
+    for module in modules:
+        module_name = module.get("name")
+        for op in walk_leaf_ops(module.get("ops", [])):
+            kind, body = _register_leaf(op)
+            if kind is None:
+                continue
+            op_id = body.get("op_id")
+            if isinstance(op_id, str) and op_id:
+                canonical_by_id[op_id] = op
+            identity = _formal_occurrence_identity(op)
+            if isinstance(module_name, str) and identity is not None:
+                occurrence_index.setdefault(
+                    (module_name, identity), []).append(op_id)
+            evidence = body.get("evidence") or {}
+            symbol = evidence.get("symbol")
+            site_id = evidence.get("site_id")
+            if (isinstance(symbol, str) and symbol
+                    and isinstance(site_id, str) and site_id):
+                site_index.setdefault(
+                    (module_name, symbol, site_id), []).append(op_id)
+
+    successful: dict[str, list[dict]] = {}
+    successful_callbacks: set[str] = set()
+    accepted_site_keys: set[tuple[str, str]] = set()
+    overlay_register_ops = 0
+    for callback_symbol, extraction in overlays.items():
+        func = func_by_symbol.get(callback_symbol)
+        if func is None or not isinstance(extraction, FuncExtraction):
+            continue
+        callback_module = func.module_name or func.name
+        alternate = _module(func, extraction, [0], macros)
+        used_ids: set[str] = set()
+        used_callback_ids: set[str] = set()
+        occurrence_positions: dict[tuple, int] = {}
+        callback_site_keys: set[tuple[str, str]] = set()
+        mapped = 0
+        valid = True
+        for op in walk_leaf_ops(alternate.get("ops", [])):
+            kind, body = _register_leaf(op)
+            if kind is None:
+                continue
+            evidence = body.get("evidence") or {}
+            call_closure = evidence.get("call_closure") or {}
+            if call_closure.get("oracle") == "selective-call-frontier-v1":
+                source_symbol = call_closure.get("source_symbol")
+                site_id = evidence.get("site_id")
+                source_module = closure_module_by_symbol.get(source_symbol)
+                candidates = site_index.get(
+                    (source_module, source_symbol, site_id), [])
+                site_key = (source_symbol, site_id)
+            else:
+                identity = _formal_occurrence_identity(op)
+                candidates = occurrence_index.get(
+                    (callback_module, identity), [])
+                site_key = None
+            candidates = [op_id for op_id in candidates
+                          if isinstance(op_id, str) and op_id]
+            if site_key is not None:
+                selected = candidates[0] if len(candidates) == 1 else None
+            else:
+                occurrence_key = (callback_module, identity)
+                position = occurrence_positions.get(occurrence_key, 0)
+                selected = (candidates[position]
+                            if position < len(candidates) else None)
+                occurrence_positions[occurrence_key] = position + 1
+            if selected is None or selected in used_ids:
+                valid = False
+                break
+            body["op_id"] = selected
+            used_ids.add(selected)
+            if site_key is None:
+                used_callback_ids.add(selected)
+                # The deeper propagation pass is used only to position new
+                # closure leaves.  Preserve every pre-existing callback leaf
+                # byte-for-byte from canonical Formal so no incidental
+                # re-extraction refinement changes its semantic contract.
+                op.clear()
+                op.update(copy.deepcopy(canonical_by_id[selected]))
+            mapped += 1
+            if site_key is not None:
+                callback_site_keys.add(site_key)
+        expected_callback_ids = {
+            op_id for (module_name, _identity), op_ids
+            in occurrence_index.items() if module_name == callback_module
+            for op_id in op_ids if isinstance(op_id, str) and op_id
+        }
+        if not valid or used_callback_ids != expected_callback_ids:
+            continue
+        successful[callback_module] = alternate["ops"]
+        successful_callbacks.add(callback_module)
+        accepted_site_keys.update(callback_site_keys)
+        overlay_register_ops += mapped
+
+    requested_routes = closure.get("routes") or []
+    routes = [copy.deepcopy(route) for route in requested_routes
+              if isinstance(route, dict)
+              and route.get("callback_module") in successful_callbacks]
+    accepted_symbols = sorted({route.get("symbol") for route in routes
+                               if isinstance(route.get("symbol"), str)})
+    accepted_modules = sorted({route.get("module") for route in routes
+                               if isinstance(route.get("module"), str)})
+    rejected = set(closure.get("rejected_symbols") or [])
+    rejected.update(
+        route.get("symbol") for route in requested_routes
+        if isinstance(route, dict)
+        and route.get("callback_module") not in successful_callbacks
+        and isinstance(route.get("symbol"), str))
+    finalized = copy.deepcopy(closure)
+    finalized.update({
+        "accepted_symbols": accepted_symbols,
+        "accepted_modules": accepted_modules,
+        "accepted_sites": len(accepted_site_keys),
+        "callback_modules": sorted(successful_callbacks),
+        "routes": routes,
+        "overlays": successful,
+        "overlay_register_ops": overlay_register_ops,
+        "rejected_symbols": sorted(rejected),
+    })
+    return successful, finalized
+
+
 def _register_map(funcs, extractions, macros) -> list[dict]:
     """Register map = the device registers actually accessed by the driver
     (reg_name values appearing in extracted ops), resolved to their offsets."""
@@ -552,6 +728,30 @@ def build_formal_ris(driver_name: str, source_path: str,
             continue
         modules.append(_module(f, ex, id_counter, macros))
 
+    closure_overlays, selective_closure = _formalize_call_closure_overlays(
+        funcs, modules, stats.get("_call_closure_overlays", {}),
+        stats.get("selective_call_closure", {
+            "schema": 1,
+            "oracle": "selective-call-frontier-v1",
+            "accepted_symbols": [],
+            "accepted_sites": 0,
+            "rounds": [],
+        }), macros)
+    module_names = {module.get("name") for module in modules}
+    funcs_by_symbol = {func.symbol_id or func.name: func for func in funcs}
+    for route in selective_closure.get("routes", []):
+        callback_module = route.get("callback_module")
+        callback_symbol = route.get("callback_symbol")
+        func = funcs_by_symbol.get(callback_symbol)
+        if (func is None or callback_module in module_names
+                or callback_module not in closure_overlays):
+            continue
+        # Preserve a zero-op canonical definition anchor for callbacks whose
+        # only register semantics arrive through the alternate closure view.
+        modules.append(_module(
+            func, FuncExtraction(name=func.name), id_counter, macros))
+        module_names.add(callback_module)
+
     return {
         "driver": driver_name,
         "version": "0.1.0",
@@ -580,7 +780,8 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "oracle": "source-ast-call-v1",
                 "claim": "source-local call identity and callsite dataflow",
                 "calls": stats.get("formal_calls", []),
-                "lowering_enabled": False,
+                "lowering_enabled": bool(closure_overlays),
+                "selective_closure": selective_closure,
             },
             "subsystem_summary_analysis": {
                 "synthetic_functions": stats.get(

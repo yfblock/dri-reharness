@@ -1595,6 +1595,123 @@ def test_inlined_read_return_binds_the_caller_lhs():
     assert call["multiplicity"]["runtime_count_proven"] is False
 
 
+def test_selective_call_frontier_closes_one_exact_callback_path():
+    import tempfile
+    from extractor.call_graph import _eligible_call_edges
+    from extractor.formal import walk_leaf_ops
+    from extractor.spec import default_bind
+    from generator import linux as linux_gen
+    from verification.backend_lowering_oracle import (
+        build_generation_contract, verify_backend_lowering)
+    from verification.backend_lowering_plan import verify_backend_lowering_plan
+
+    def run(entry_body: str, mid2_body: str = "mid3(dev);"):
+        with tempfile.TemporaryDirectory() as directory:
+            sources = {
+                "leaf.c": (
+                    "struct platform_device;\n"
+                    "extern void writel(unsigned, void *);\n"
+                    "void leaf(struct platform_device *dev) "
+                    "{ writel(1, (void *)dev); }\n"),
+                "mid3.c": (
+                    "struct platform_device;\n"
+                    "void leaf(struct platform_device *);\n"
+                    "void mid3(struct platform_device *dev) { leaf(dev); }\n"),
+                "mid2.c": (
+                    "struct platform_device;\n"
+                    "void mid3(struct platform_device *);\n"
+                    "void mid1(struct platform_device *);\n"
+                    f"void mid2(struct platform_device *dev) {{ {mid2_body} }}\n"),
+                "mid1.c": (
+                    "struct platform_device;\n"
+                    "void mid2(struct platform_device *);\n"
+                    "void mid1(struct platform_device *dev) { mid2(dev); }\n"),
+                "entry.c": (
+                    "struct platform_device { int unused; };\n"
+                    "struct platform_driver { "
+                    "int (*probe)(struct platform_device *); };\n"
+                    "void mid1(struct platform_device *);\n"
+                    "static int generated_probe(struct platform_device *dev) "
+                    f"{{ {entry_body} return 0; }}\n"
+                    "static struct platform_driver generated_driver = "
+                    "{ .probe = generated_probe };\n"),
+            }
+            for name, text in sources.items():
+                with open(os.path.join(directory, name), "w",
+                          encoding="utf-8") as stream:
+                    stream.write(text)
+            manifest = os.path.join(directory, "driver.json")
+            with open(manifest, "w", encoding="utf-8") as stream:
+                json.dump({
+                    "schema": 1, "name": "selective-call-frontier",
+                    "sources": list(sources),
+                }, stream)
+            result = extract_ris(ExtractorConfig(
+                source=manifest, linux_root="/nonexistent",
+                max_inline_depth=3))
+            contract = build_generation_contract(result.formal)
+            plan = verify_backend_lowering_plan(
+                result.formal, contract, "linux",
+                device_spec=result.device_spec)
+            return result, plan
+
+    positive, plan = run("mid1(dev);")
+    closure = positive.formal["metadata"]["call_graph"]["selective_closure"]
+    assert closure["accepted_sites"] == 1
+    assert closure["accepted_modules"] == ["leaf"]
+    assert positive.stats["total_ops"] == 1
+    assert [module["name"] for module in positive.formal["modules"]] == [
+        "leaf", "generated_probe"]
+    canonical_leaf = next(walk_leaf_ops(
+        positive.formal["modules"][0]["ops"]))
+    overlay_leaf = next(walk_leaf_ops(
+        closure["overlays"]["generated_probe"]))
+    assert canonical_leaf["Write"]["op_id"] == overlay_leaf["Write"]["op_id"]
+    assert "call_closure" not in canonical_leaf["Write"]["evidence"]
+    assert overlay_leaf["Write"]["evidence"]["call_closure"]["oracle"] == \
+        "selective-call-frontier-v1"
+    assert plan["candidate_definition_ops"] == 1
+    assert plan["disposition_counts"]["blocked_linux_root_unreachable"] == 0
+    assert plan["entries"][0]["route"]["kind"] == "verified_call_closure"
+    assert plan["entries"][0]["route"]["callback"] == \
+        "platform_driver.probe"
+    generated = linux_gen.generate(
+        positive.formal, positive.device_spec,
+        default_bind(positive.device_spec, "linux"), positive.facts)
+    lowering = verify_backend_lowering(positive.formal, generated)
+    assert lowering["complete"] is True, lowering
+    assert generated.count(
+        f"id={canonical_leaf['Write']['op_id']} ") == 1
+
+    looped, looped_plan = run("for (int i = 0; i < 2; i++) mid1(dev);")
+    assert looped.formal["metadata"]["call_graph"]["selective_closure"][
+        "accepted_sites"] == 0
+    assert looped_plan["disposition_counts"][
+        "blocked_linux_root_unreachable"] == 1
+
+    duplicated, duplicate_plan = run("mid1(dev); mid1(dev);")
+    assert duplicated.formal["metadata"]["call_graph"]["selective_closure"][
+        "accepted_sites"] == 0
+    assert duplicate_plan["disposition_counts"][
+        "blocked_linux_root_unreachable"] == 1
+
+    def call(caller: str, callee: str) -> dict:
+        return {
+            "caller_usr": caller, "callee_usr": callee,
+            "resolution_authority": "direct_function_declaration",
+            "return_binding": {"status": "exact", "kind": "discarded"},
+            "multiplicity": {"kind": "syntactic_callsite",
+                             "per_caller_invocation": 1},
+            "control": [],
+            "argument_mapping": [{
+                "parameter": "dev", "parameter_type": "void *",
+                "argument_type": "void *",
+            }],
+        }
+    assert _eligible_call_edges([
+        call("cycle_a", "cycle_b"), call("cycle_b", "cycle_a")]) == set()
+
+
 def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     from extractor.spec import default_bind
     from generator import linux as linux_gen
@@ -1618,6 +1735,12 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     assert rescue["rescued_direct_ops"] == 48
     assert result.formal["metadata"]["assurance_scope"][
         "callee_rescue_semantics_complete"] is False
+    closure = result.formal["metadata"]["call_graph"]["selective_closure"]
+    assert closure["accepted_sites"] == 5
+    assert closure["accepted_modules"] == [
+        "dwc2_calc_frame_interval", "dwc2_set_clock_switch_timer"]
+    assert closure["callback_modules"] == [
+        "_dwc2_hcd_irq", "_dwc2_hcd_resume"]
 
     contract = build_generation_contract(result.formal)
     rows = {row["op_id"]: row for row in contract["register_operations"]}
@@ -1644,14 +1767,14 @@ def test_real_linux_dwc2_ten_source_driver_models_usb_callbacks_and_state():
     linux_plan = verify_backend_lowering_plan(
         result.formal, contract, "linux", device_spec=result.device_spec,
         lowering_report=linux_lowering)
-    assert linux_plan["candidate_definition_ops"] == 2051
+    assert linux_plan["candidate_definition_ops"] == 2056
     assert linux_plan["evidence_only_ops"] == 77
-    assert linux_plan["authorized_ops"] == 2128
-    assert linux_plan["blocked_ops"] == 1480
+    assert linux_plan["authorized_ops"] == 2133
+    assert linux_plan["blocked_ops"] == 1475
     assert linux_plan["disposition_counts"][
         "blocked_unsupported_loop"] == 362
     assert linux_plan["disposition_counts"][
-        "blocked_linux_root_unreachable"] == 934
+        "blocked_linux_root_unreachable"] == 929
     assert linux_plan["disposition_counts"][
         "blocked_linux_lifecycle_stub"] == 182
     assert linux_plan["disposition_counts"][

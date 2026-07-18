@@ -182,6 +182,55 @@ def _harness_route(module_name: str | None) -> dict[str, Any]:
     }
 
 
+def _selective_closure_routes(
+        formal: dict, routes: dict[str, dict[str, Any]],
+        evidence_only: set[str]) -> dict[str, dict[str, Any]]:
+    """Add only source-proven helper routes with a public callback root."""
+    call_graph = (formal.get("metadata") or {}).get("call_graph") or {}
+    closure = call_graph.get("selective_closure") or {}
+    if (call_graph.get("schema") != 1
+            or call_graph.get("oracle") != "source-ast-call-v1"
+            or call_graph.get("lowering_enabled") is not True
+            or closure.get("schema") != 1
+            or closure.get("oracle") != "selective-call-frontier-v1"):
+        return routes
+    overlays = closure.get("overlays")
+    if not isinstance(overlays, dict):
+        return routes
+    augmented = dict(routes)
+    for row in closure.get("routes") or []:
+        if not isinstance(row, dict):
+            continue
+        helper = row.get("module")
+        callback_module = row.get("callback_module")
+        if (not isinstance(helper, str) or not helper
+                or not isinstance(callback_module, str)
+                or callback_module not in overlays
+                or (helper in augmented
+                    and (augmented[helper].get("role") == "probe"
+                         or augmented[helper].get("callback")))):
+            continue
+        root = routes.get(callback_module)
+        if not isinstance(root, dict):
+            continue
+        # A private multi-source evidence route cannot become a public root.
+        if callback_module in evidence_only:
+            continue
+        callback = root.get("callback")
+        if not isinstance(callback, str) or not callback:
+            continue
+        augmented[helper] = {
+            "kind": "verified_call_closure",
+            "role": "helper",
+            "callback": callback,
+            "function": helper,
+            "callback_module": callback_module,
+            "callback_symbol": row.get("callback_symbol"),
+            "provenance": "metadata.call_graph.selective_closure",
+        }
+    return augmented
+
+
 def _linux_disposition(
         module_name: str | None, route: dict[str, Any] | None,
         evidence_only: set[str], blocking_loop: dict | None,
@@ -333,8 +382,7 @@ def _attach_call_closure_evidence(
     """Annotate, but never authorize, AST-proven callback call closure."""
     call_graph = (formal.get("metadata") or {}).get("call_graph") or {}
     if (call_graph.get("schema") != 1
-            or call_graph.get("oracle") != "source-ast-call-v1"
-            or call_graph.get("lowering_enabled") is not False):
+            or call_graph.get("oracle") != "source-ast-call-v1"):
         return
     calls = call_graph.get("calls")
     if not isinstance(calls, list):
@@ -411,6 +459,8 @@ def build_backend_lowering_plan(
         routes = {}
     evidence_only = (_private_multisource_evidence_functions(formal)
                      if backend == "linux" else set())
+    if backend == "linux":
+        routes = _selective_closure_routes(formal, routes, evidence_only)
     entries = [
         entry
         for module in modules

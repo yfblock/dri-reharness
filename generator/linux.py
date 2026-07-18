@@ -649,7 +649,9 @@ def _normalize_ops(ops, state_prefix: str | None = None,
             body = (original.get("Read") or original.get("Write")
                     or original.get("ReadModifyWrite"))
             if body and body.get("op_id"):
-                contract_digests[body["op_id"]] = ris_op_digest(original)
+                contract_digests[body["op_id"]] = (
+                    body.get("_backend_contract_digest")
+                    or ris_op_digest(original))
     if contract_recipes is None:
         contract_recipes = lowering_recipes(ops)
     out = copy.deepcopy(ops)
@@ -755,6 +757,9 @@ def _normalize_module_ops(
     """
     canonical_ops = module.get("ops", [])
     contract_recipes = lowering_recipes(canonical_ops)
+    if backend_ops is not None:
+        for op_id, recipe in lowering_recipes(backend_ops).items():
+            contract_recipes.setdefault(op_id, recipe)
     safe_ops, changed = _normalize_ops(
         canonical_ops if backend_ops is None else backend_ops,
         state_prefix, safe_function_calls,
@@ -1089,6 +1094,7 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
                    regs: dict[str, int], bind,
                    safe_function_calls: set[str] | None = None,
                    banked_gpio: bool = False,
+                   backend_ops: list | None = None,
                    ) -> tuple[str | None, str | None]:
     spec = _callback_signature(table_field, priv, banked_gpio)
     if spec is None:
@@ -1096,7 +1102,7 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     state_owner = ("bank" if banked_gpio
                    and table_field.startswith("gpio_chip.") else "g")
     safe_ops, normalized, contract_recipes = _normalize_module_ops(
-        module, state_owner, safe_function_calls)
+        module, state_owner, safe_function_calls, backend_ops=backend_ops)
     if table_field == "gpio_chip.set_multiple":
         for op in walk_leaf_ops(safe_ops):
             body = op.get("ReadModifyWrite") or op.get("Write")
@@ -1398,11 +1404,39 @@ def _emit_usb_callback_tables(device_name: str,
     return out
 
 
+def _selective_overlay_ops(formal: dict, module_name: str) -> list | None:
+    overlay = (formal.get("metadata", {}).get("call_graph", {})
+               .get("selective_closure", {}).get("overlays", {})
+               .get(module_name))
+    if not isinstance(overlay, list):
+        return None
+    canonical_digests = {}
+    for module in formal.get("modules", []):
+        for op in walk_leaf_ops(module.get("ops", [])):
+            body = op.get("Read") or op.get("Write") or op.get(
+                "ReadModifyWrite")
+            if body and isinstance(body.get("op_id"), str):
+                canonical_digests[body["op_id"]] = ris_op_digest(op)
+    out = copy.deepcopy(overlay)
+    for op in walk_leaf_ops(out):
+        body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
+        if body and body.get("op_id") in canonical_digests:
+            body["_backend_contract_digest"] = canonical_digests[
+                body["op_id"]]
+    return out
+
+
 def _probe_ops(device_spec, formal: dict):
     probe = next((f for f in device_spec.functions if f.role == "probe"), None)
     if probe is None:
         return None, None
     module = next((m for m in formal["modules"] if m["name"] == probe.ris_ref), None)
+    overlay = _selective_overlay_ops(formal, probe.ris_ref)
+    if isinstance(overlay, list):
+        module = dict(module or {
+            "name": probe.ris_ref, "source": None,
+        })
+        module["ops"] = overlay
     return probe, module
 
 
@@ -2364,6 +2398,20 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}
     callbacks = _callback_map(bind, facts, device_spec)
     modules = {m["name"]: m for m in formal["modules"]}
+    selective_closure = formal.get("metadata", {}).get(
+        "call_graph", {}).get("selective_closure", {})
+    closure_overlays = selective_closure.get("overlays", {})
+    if not isinstance(closure_overlays, dict):
+        closure_overlays = {}
+    # A callback may have no canonical register operations of its own.  Keep
+    # canonical Formal untouched and expose an overlay-only virtual module to
+    # code generation so the registered callback can still own the closure.
+    for module_name, ops in closure_overlays.items():
+        if (isinstance(module_name, str) and module_name
+                and isinstance(ops, list) and module_name not in modules):
+            modules[module_name] = {
+                "name": module_name, "ops": [], "source": None,
+            }
     summary_groups = formal.get("metadata", {}).get(
         "subsystem_summary_analysis", {}).get("summaries", {})
     if device_spec.cls == "sdhci" and isinstance(summary_groups, dict):
@@ -2379,7 +2427,8 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     }
 
     def backend_ops(module: dict):
-        ops = module.get("ops", [])
+        overlay = _selective_overlay_ops(formal, module.get("name"))
+        ops = overlay if isinstance(overlay, list) else module.get("ops", [])
         return (_bound_resource_probe_ops(ops)
                 if module.get("name") in probe_refs else ops)
     callbacks_for_codegen = {
@@ -2505,7 +2554,7 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
                 continue
         code, problem = _emit_callback(
             fn, module, field, priv, regs, bind, safe_function_calls,
-            banked_gpio=banked_gpio)
+            banked_gpio=banked_gpio, backend_ops=backend_ops(module))
         if code:
             callback_code.append(code)
         if problem:
