@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "milestone": "C22",
+  "generated_at": "2026-07-18T17:43:39+08:00",
+  "implementation_commit": "dd4f69bd2d29a2b4ae97db61e706a7d64f3c3bf3",
+  "tests": {
+    "core": 134,
+    "device_spec_json": 5,
+    "generated_c_ast": 8,
+    "linux_registration_ast": 10,
+    "lowering_plan": 21,
+    "read_provenance": 2,
+    "readiness": 1,
+    "total": 181
+  },
+  "claims": {
+    "proves": [
+      "canonical Formal module and register op IDs remain stable under selective call closure",
+      "source-local direct/static callback-to-helper closure with exact argument and return bindings",
+      "one syntactic callsite per caller invocation and fail-closed duplicate/loop/recursive closure",
+      "verified helper definition routes anchored to a public registered callback",
+      "canonical receipt digests are preserved for callback overlays",
+      "callback overlay lowering preserves exactly-once AST anchors"
+    ],
+    "does_not_prove": [
+      "USB HCD callback invocation by the Linux kernel",
+      "USB HCD runtime lifecycle registration for newly closed helper operations",
+      "multi-instance or mode-split callback lifecycle",
+      "whole-program call semantics beyond the selective rescue frontier",
+      "path semantics inside the callback beyond existing Formal control evidence"
+    ]
+  },
+  "dwc2_boundary": {
+    "driver": "dwc2",
+    "manifest": "drivers/multisource/dwc2.json",
+    "source_count": 10,
+    "contract_ops": 3608,
+    "generated_linux_sha256": "bdbc443e3e9cd65f7af794b0d66f32ee045d79500e32cfc05cf1b1ee1db74eeb",
+    "harness_baremetal": {
+      "lowered": 3246,
+      "blocked_unsupported_loop": 362,
+      "strict_complete": false
+    },
+    "selective_closure": {
+      "accepted_sites": 5,
+      "accepted_modules": [
+        "dwc2_calc_frame_interval",
+        "dwc2_set_clock_switch_timer"
+      ],
+      "callback_modules": [
+        "_dwc2_hcd_irq",
+        "_dwc2_hcd_resume"
+      ],
+      "overlay_register_ops": 235,
+      "formal_call_edges": 891
+    },
+    "linux": {
+      "candidate_definition_ops": 2056,
+      "evidence_only_ops": 77,
+      "authorized_ops": 2133,
+      "blocked_ops": 1475,
+      "strict_eligible_ops": 2056,
+      "runtime_registered_ops": 230,
+      "runtime_unregistered_ops": 1826,
+      "call_closure_evidence_ops_remaining": 41,
+      "lowering_receipts": 2133,
+      "digest_mismatches": 0,
+      "ast_leaf_complete": true,
+      "registration_duplicate_anchors": 0,
+      "kbuild_compiles": true,
+      "disposition_counts": {
+        "blocked_linux_lifecycle_stub": 182,
+        "blocked_linux_lifecycle_unimplemented": 2,
+        "blocked_linux_root_unreachable": 929,
+        "blocked_unsupported_loop": 362,
+        "candidate_definition_emit": 2056,
+        "definition_evidence_only": 77,
+        "lowered": 0
+      },
+      "runtime_complete": false,
+      "strict_complete": false
+    }
+  },
+  "mutation_gates": [
+    "selective closure loop call is rejected",
+    "selective closure duplicate callsite is rejected",
+    "selective closure recursive SCC is rejected",
+    "canonical helper and callback overlay op IDs must match uniquely",
+    "canonical callback digest drift is rejected",
+    "verified closure route requires a public callback root",
+    "formal call evidence alone never authorizes runtime registration"
+  ],
+  "reproduction": [
+    "python3 tests/test_extractor.py",
+    "python3 tests/test_backend_lowering_plan.py",
+    "python3 tests/test_dataflow_read_return.py",
+    "python3 tests/test_device_spec_json.py",
+    "python3 tests/test_generated_c_ast_oracle.py",
+    "python3 tests/test_linux_registration_ast_oracle.py",
+    "python3 tests/test_metrics_c20_readiness.py",
+    "python3 -m extractor driver -s drivers/multisource/dwc2.json -o /tmp/reharness-c22-dwc2 --alias-mode off"
+  ]
+}
