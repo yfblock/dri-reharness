@@ -12,6 +12,7 @@ import argparse
 from collections import Counter
 from collections.abc import Mapping
 import copy
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -45,8 +46,8 @@ AUTHORIZED_DISPOSITIONS = {
     "lowered", "candidate_definition_emit", "definition_evidence_only",
 }
 STRICT_ELIGIBLE_DISPOSITIONS = {"lowered", "candidate_definition_emit"}
-SCHEMA = 2
-ORACLE = "backend-lowering-plan-v2"
+SCHEMA = 3
+ORACLE = "backend-lowering-plan-v3"
 
 
 def _register_kind(op: dict) -> str | None:
@@ -189,12 +190,13 @@ def _linux_disposition(
     if blocking_loop is not None:
         return "blocked_unsupported_loop", _blocked_loop_reason(blocking_loop)
     callback = (route or {}).get("callback")
-    if callback == "platform_driver.remove":
+    if isinstance(callback, str) and callback.endswith(".remove"):
         return (
             "blocked_linux_lifecycle_stub",
-            "Linux remove lifecycle route is emitted only as a backend stub",
+            "Linux remove lifecycle route is replaced by a backend-owned "
+            "cleanup implementation",
         )
-    if callback == "platform_driver.shutdown":
+    if isinstance(callback, str) and callback.endswith(".shutdown"):
         return (
             "blocked_linux_lifecycle_unimplemented",
             "Linux shutdown lifecycle route is not implemented by the backend",
@@ -229,6 +231,9 @@ def _authorization_fields(disposition: str, backend: str) -> dict[str, Any]:
         # conservative until a separate registration attestation exists.
         "runtime_registration_proven": (
             False if backend == "linux" and authorized else None),
+        "ast_leaf_proven": (
+            False if backend == "linux" and strict_eligible else None),
+        "registration_route_id": None,
     }
 
 
@@ -308,6 +313,11 @@ def _summary(entries: list[dict]) -> dict[str, Any]:
                               for entry in entries),
         "strict_eligible_ops": sum(bool(entry["strict_eligible"])
                                    for entry in entries),
+        "runtime_registered_ops": sum(
+            entry.get("runtime_registration_proven") is True
+            for entry in entries),
+        "ast_leaf_proven_ops": sum(
+            entry.get("ast_leaf_proven") is True for entry in entries),
         "blocked_ops": sum(counts[name] for name in BLOCKED_DISPOSITIONS),
         "disposition_counts": {
             name: counts[name] for name in sorted(DISPOSITIONS)
@@ -320,7 +330,7 @@ def build_backend_lowering_plan(
     """Return the canonical Formal/DeviceSpec-derived backend plan."""
     if backend not in SUPPORTED_BACKENDS:
         raise ValueError(
-            f"backend lowering plan v2 does not support backend {backend!r}")
+            f"backend lowering plan v3 does not support backend {backend!r}")
     modules = formal.get("modules")
     if not isinstance(modules, list):
         raise ValueError("Formal RIS has no modules list")
@@ -356,6 +366,7 @@ def build_backend_lowering_plan(
             "cardinality": "exactly-once",
             "authorization_axis": "definition-receipt",
             "runtime_axis": "independent-registration-attestation",
+            "linux_ast_axis": "generated-c-ast-leaf-v1-required-subset",
             "blocked_entries_authorize_receipts": False,
             "linux_precedence": ["loop", "lifecycle", "root"],
             "supported_backends": sorted(SUPPORTED_BACKENDS),
@@ -398,7 +409,8 @@ def _entry_shape(entry: dict) -> dict:
         for key in (
             "module", "op_id", "kind", "disposition", "reason", "route",
             "receipt_authorized", "strict_eligible",
-            "runtime_registration_proven", "enclosing_loops",
+            "runtime_registration_proven", "ast_leaf_proven",
+            "registration_route_id", "enclosing_loops",
             "blocking_loop",
         )
     }
@@ -426,6 +438,59 @@ def _report_id_set(report: dict, key: str) -> tuple[set[str], bool]:
         else:
             ids.add(op_id)
     return ids, valid
+
+
+def _route_fingerprint(route: dict) -> str:
+    """Rebuild the registration oracle's stable route identity."""
+    binding = route.get("binding") or {}
+    owner = binding.get("owner") or {}
+    owner_key = None
+    if owner:
+        owner_key = (
+            owner.get("root_usr"),
+            tuple(field.get("field_usr") for field in owner.get("fields") or []),
+        )
+    identity = {
+        "callback": route.get("callback"),
+        "target_usr": route.get("target_usr"),
+        "binding": {
+            "kind": binding.get("kind"),
+            "field_usr": binding.get("field_usr"),
+            "owner": owner_key,
+        },
+        "registration": (route.get("registration") or {}).get("chain"),
+    }
+    encoded = json.dumps(
+        identity, sort_keys=True, separators=(",", ":"), default=str
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()[:16]
+
+
+def _report_list(
+        report: dict, key: str, errors: list[str], prefix: str,
+        ) -> list[Any]:
+    value = report.get(key)
+    if not isinstance(value, list):
+        errors.append(f"{prefix}_{key}_missing")
+        return []
+    return value
+
+
+def _valid_kbuild_context(context: Any) -> bool:
+    if not isinstance(context, dict):
+        return False
+    if context.get("origin") != "kbuild-cmd":
+        return False
+    if not isinstance(context.get("provenance"), str) or not context[
+            "provenance"]:
+        return False
+    for key in ("raw_command_sha256", "arguments_sha256"):
+        value = context.get(key)
+        if (not isinstance(value, str) or len(value) != 64
+                or any(char not in "0123456789abcdef" for char in value)):
+            return False
+    return (type(context.get("argument_count")) is int
+            and context["argument_count"] > 0)
 
 
 def _reconcile_lowering_report(
@@ -503,14 +568,439 @@ def _reconcile_lowering_report(
     }
 
 
+def _linux_runtime_evidence(
+        canonical: dict, contract_ids: set[str],
+        runtime_attestation: dict | None,
+        ast_leaf_report: dict | None,
+        expected_generated_sha: str | None,
+        expected_compile_context: dict | None,
+        artifact_authority_errors: list[str],
+        ) -> dict[str, Any]:
+    """Validate independent per-op runtime and Linux AST evidence."""
+    canonical_by_id = {
+        entry["op_id"]: entry for entry in canonical["entries"]
+        if isinstance(entry.get("op_id"), str)
+    }
+    strict_ids = {
+        entry["op_id"] for entry in canonical["entries"]
+        if entry.get("strict_eligible") is True
+        and isinstance(entry.get("op_id"), str)
+    }
+    registration_errors: list[str] = []
+    registration_rows: dict[str, dict] = {}
+    registration_ids: set[str] = set()
+    registration_sha = None
+    registration_context = None
+    if runtime_attestation is None:
+        registration_errors.append("runtime_attestation_missing")
+    elif not isinstance(runtime_attestation, dict):
+        registration_errors.append("invalid_runtime_attestation")
+    else:
+        if runtime_attestation.get("schema") != 1:
+            registration_errors.append("runtime_attestation_schema_mismatch")
+        if runtime_attestation.get("oracle") != "linux-registration-ast-v1":
+            registration_errors.append("runtime_attestation_oracle_mismatch")
+        if runtime_attestation.get("driver") != canonical.get("driver"):
+            registration_errors.append("runtime_attestation_driver_mismatch")
+        for key in ("contract_driver", "device_spec_driver"):
+            if runtime_attestation.get(key) != canonical.get("driver"):
+                registration_errors.append(
+                    f"runtime_attestation_{key}_mismatch")
+        registration_sha = runtime_attestation.get("generated_sha256")
+        if not isinstance(registration_sha, str) or not registration_sha:
+            registration_errors.append("runtime_attestation_generated_sha_missing")
+        registration_context = runtime_attestation.get("compile_context")
+        if not _valid_kbuild_context(registration_context):
+            registration_errors.append("runtime_attestation_compile_context_missing")
+
+        global_registration_failure = False
+        for key in (
+                "parse_errors", "route_errors", "missing_plan_ids",
+                "unknown_plan_ids", "duplicate_anchors"):
+            values = _report_list(
+                runtime_attestation, key, registration_errors,
+                "runtime_attestation")
+            if values:
+                global_registration_failure = True
+                registration_errors.append(
+                    f"runtime_attestation_{key}_present")
+
+        routes = _report_list(
+            runtime_attestation, "registration_routes", registration_errors,
+            "runtime_attestation")
+        route_counts = Counter(
+            route.get("route_id") for route in routes
+            if isinstance(route, dict))
+        if (len(route_counts) != len(routes)
+                or any(not isinstance(route_id, str) or not route_id
+                       or count != 1
+                       for route_id, count in route_counts.items())):
+            registration_errors.append("runtime_attestation_route_ids_invalid")
+        route_by_id = {
+            route["route_id"]: route for route in routes
+            if isinstance(route, dict)
+            and isinstance(route.get("route_id"), str)
+            and route.get("route_id")
+            and route_counts[route["route_id"]] == 1
+        }
+        if any(route_id != _route_fingerprint(route)
+               for route_id, route in route_by_id.items()):
+            registration_errors.append(
+                "runtime_attestation_route_fingerprint_mismatch")
+
+        operations = _report_list(
+            runtime_attestation, "operations", registration_errors,
+            "runtime_attestation")
+        counts = Counter(
+            row.get("op_id") for row in operations if isinstance(row, dict))
+        if set(counts) != contract_ids or any(count != 1 for count in counts.values()):
+            registration_errors.append("runtime_attestation_operation_set_mismatch")
+        registration_rows = {
+            row["op_id"]: row for row in operations
+            if isinstance(row, dict)
+            and isinstance(row.get("op_id"), str)
+            and counts[row["op_id"]] == 1
+        }
+        claimed, valid = _report_id_set(
+            runtime_attestation, "runtime_registered_op_ids")
+        if not valid:
+            registration_errors.append("invalid_runtime_registered_op_ids")
+        registration_ids = claimed
+        if not registration_ids <= strict_ids:
+            registration_errors.append("runtime_attestation_authorizes_non_candidate")
+        unregistered, valid = _report_id_set(
+            runtime_attestation, "runtime_unregistered_op_ids")
+        if not valid or unregistered != strict_ids - registration_ids:
+            registration_errors.append(
+                "runtime_attestation_unregistered_set_mismatch")
+        if runtime_attestation.get("strict_eligible_ops") != len(strict_ids):
+            registration_errors.append(
+                "runtime_attestation_strict_count_mismatch")
+        if runtime_attestation.get("runtime_registered_ops") != len(
+                registration_ids):
+            registration_errors.append(
+                "runtime_attestation_registered_count_mismatch")
+
+        for op_id in sorted(contract_ids):
+            row = registration_rows.get(op_id) or {}
+            expected = canonical_by_id.get(op_id) or {}
+            expected_strict = expected.get("strict_eligible") is True
+            expected_callback = (expected.get("route") or {}).get("callback")
+            if row.get("module") != expected.get("module"):
+                registration_errors.append(
+                    "runtime_attestation_operation_module_mismatch")
+            if row.get("strict_eligible") is not expected_strict:
+                registration_errors.append(
+                    "runtime_attestation_operation_eligibility_mismatch")
+            if row.get("expected_callback") != expected_callback:
+                registration_errors.append(
+                    "runtime_attestation_operation_callback_mismatch")
+            row_errors = row.get("errors")
+            if not isinstance(row_errors, list):
+                registration_errors.append(
+                    "runtime_attestation_operation_errors_invalid")
+                row_errors = []
+            proven = row.get("runtime_registration_proven")
+            if type(proven) is not bool or proven is not (op_id in registration_ids):
+                registration_errors.append(
+                    "runtime_attestation_operation_claim_mismatch")
+            route = row.get("route")
+            if proven is True:
+                anchor = row.get("anchor")
+                if (not isinstance(anchor, dict)
+                        or anchor.get("op_id") != op_id
+                        or not isinstance(anchor.get("function_usr"), str)
+                        or not anchor.get("direct_compound")):
+                    registration_errors.append(
+                        "runtime_attestation_anchor_identity_mismatch")
+                if not isinstance(route, dict):
+                    registration_errors.append(
+                        "runtime_attestation_route_id_missing")
+                    continue
+                route_id = route.get("route_id")
+                if (not isinstance(route_id, str) or not route_id
+                        or route_by_id.get(route_id) != route):
+                    registration_errors.append(
+                        "runtime_attestation_route_reference_mismatch")
+                if (route.get("runtime_entry_registered") is not True
+                        or route.get("callback") != expected_callback
+                        or route.get("target_usr") != (
+                            anchor or {}).get("function_usr")
+                        or row_errors):
+                    registration_errors.append(
+                        "runtime_attestation_route_claim_mismatch")
+        observed_claims = {
+            op_id for op_id, row in registration_rows.items()
+            if row.get("runtime_registration_proven") is True
+        }
+        if observed_claims != registration_ids:
+            registration_errors.append("runtime_attestation_claim_set_mismatch")
+        expected_complete = (
+            not global_registration_failure
+            and registration_ids == strict_ids)
+        if (type(runtime_attestation.get("complete")) is not bool
+                or runtime_attestation.get("complete") is not expected_complete):
+            registration_errors.append(
+                "runtime_attestation_complete_claim_mismatch")
+
+    ast_errors: list[str] = []
+    ast_proven_ids: set[str] = set()
+    ast_sha = None
+    ast_context = None
+    if ast_leaf_report is None:
+        ast_errors.append("linux_ast_leaf_report_missing")
+    elif not isinstance(ast_leaf_report, dict):
+        ast_errors.append("invalid_linux_ast_leaf_report")
+    else:
+        if ast_leaf_report.get("schema") != 1:
+            ast_errors.append("linux_ast_leaf_schema_mismatch")
+        if ast_leaf_report.get("oracle") != "generated-c-ast-leaf-v1":
+            ast_errors.append("linux_ast_leaf_oracle_mismatch")
+        if ast_leaf_report.get("driver") != canonical.get("driver"):
+            ast_errors.append("linux_ast_leaf_driver_mismatch")
+        ast_sha = ast_leaf_report.get("generated_sha256")
+        if not isinstance(ast_sha, str) or not ast_sha:
+            ast_errors.append("linux_ast_leaf_generated_sha_missing")
+        ast_context = ast_leaf_report.get("compile_context")
+        if not _valid_kbuild_context(ast_context):
+            ast_errors.append("linux_ast_leaf_compile_context_missing")
+        required, valid = _report_id_set(ast_leaf_report, "required_op_ids")
+        if not valid or required != strict_ids:
+            ast_errors.append("linux_ast_leaf_required_set_mismatch")
+        if ast_leaf_report.get("required_ops") != len(contract_ids):
+            ast_errors.append("linux_ast_leaf_required_count_mismatch")
+        if ast_leaf_report.get("required_ast_ops") != len(strict_ids):
+            ast_errors.append("linux_ast_leaf_subset_count_mismatch")
+        if ast_leaf_report.get("contract_ops") != len(contract_ids):
+            ast_errors.append("linux_ast_leaf_contract_count_mismatch")
+
+        ast_failure_fields: dict[str, list[Any]] = {}
+        for key in (
+                "duplicate_expected_ids", "unknown_required_ids",
+                "parse_errors", "missing_anchors", "duplicate_anchors",
+                "unknown_anchors", "malformed_anchors",
+                "unsupported_expected_ops", "primitive_mismatches",
+                "unanchored_primitives"):
+            ast_failure_fields[key] = _report_list(
+                ast_leaf_report, key, ast_errors, "linux_ast_leaf")
+        for key in (
+                "duplicate_expected_ids", "unknown_required_ids",
+                "parse_errors", "duplicate_anchors", "unknown_anchors",
+                "unanchored_primitives"):
+            if ast_failure_fields[key]:
+                ast_errors.append(f"linux_ast_leaf_{key}_present")
+
+        checks = _report_list(
+            ast_leaf_report, "operation_checks", ast_errors,
+            "linux_ast_leaf")
+        check_counts = Counter(
+            row.get("op_id") for row in checks if isinstance(row, dict))
+        if set(check_counts) != contract_ids or any(
+                count != 1 for count in check_counts.values()):
+            ast_errors.append("linux_ast_leaf_operation_set_mismatch")
+        checks_by_id = {
+            row["op_id"]: row for row in checks
+            if isinstance(row, dict)
+            and isinstance(row.get("op_id"), str)
+            and check_counts[row["op_id"]] == 1
+        }
+        for op_id in sorted(contract_ids):
+            row = checks_by_id.get(op_id) or {}
+            expected = canonical_by_id.get(op_id) or {}
+            is_required = op_id in strict_ids
+            if row.get("kind") != expected.get("kind"):
+                ast_errors.append("linux_ast_leaf_operation_kind_mismatch")
+            if row.get("required") is not is_required:
+                ast_errors.append(
+                    "linux_ast_leaf_operation_required_mismatch")
+            if type(row.get("matches")) is not bool:
+                ast_errors.append("linux_ast_leaf_operation_matches_invalid")
+            if row.get("matches") is True and row.get("expected") != row.get(
+                    "observed"):
+                ast_errors.append("linux_ast_leaf_shape_claim_mismatch")
+        ast_proven_ids = {
+            op_id for op_id, row in checks_by_id.items()
+            if op_id in strict_ids and row.get("matches") is True
+        }
+        if not ast_proven_ids <= strict_ids:
+            ast_errors.append("linux_ast_leaf_proves_non_candidate")
+        expected_ast_complete = not any(ast_failure_fields.values())
+        if (type(ast_leaf_report.get("complete")) is not bool
+                or ast_leaf_report.get("complete") is not expected_ast_complete
+                or expected_ast_complete != (ast_proven_ids == strict_ids)):
+            ast_errors.append("linux_ast_leaf_complete_claim_mismatch")
+    if (registration_sha and ast_sha and registration_sha != ast_sha):
+        ast_errors.append("linux_runtime_generated_sha_mismatch")
+    if (expected_generated_sha is not None
+            and registration_sha != expected_generated_sha):
+        registration_errors.append(
+            "runtime_attestation_generated_artifact_mismatch")
+    if (expected_generated_sha is not None and ast_sha != expected_generated_sha):
+        ast_errors.append("linux_ast_leaf_generated_artifact_mismatch")
+    if (registration_context is not None and ast_context is not None
+            and registration_context != ast_context):
+        ast_errors.append("linux_runtime_compile_context_mismatch")
+    if (expected_compile_context is not None
+            and registration_context != expected_compile_context):
+        registration_errors.append(
+            "runtime_attestation_compile_context_authority_mismatch")
+    if (expected_compile_context is not None
+            and ast_context != expected_compile_context):
+        ast_errors.append("linux_ast_leaf_compile_context_authority_mismatch")
+
+    authority_valid = not artifact_authority_errors
+    registration_valid = not registration_errors and authority_valid
+    ast_valid = not ast_errors and authority_valid
+    effective_ids = (
+        registration_ids & ast_proven_ids
+        if registration_valid and ast_valid else set())
+    for entry in canonical["entries"]:
+        op_id = entry.get("op_id")
+        if entry.get("disposition") != "candidate_definition_emit":
+            continue
+        entry["ast_leaf_proven"] = op_id in ast_proven_ids and ast_valid
+        entry["runtime_registration_proven"] = op_id in effective_ids
+        row = registration_rows.get(op_id) or {}
+        route = row.get("route") or {}
+        entry["registration_route_id"] = (
+            route.get("route_id") if op_id in effective_ids else None)
+    canonical["summary"] = _summary(canonical["entries"])
+    return {
+        "runtime_attestation_valid": registration_valid,
+        "runtime_attestation_complete": (
+            registration_valid and registration_ids == strict_ids),
+        "runtime_attestation_errors": sorted(set(registration_errors)),
+        "runtime_attested_op_ids": sorted(registration_ids),
+        "linux_ast_leaf_valid": ast_valid,
+        "linux_ast_leaf_complete": ast_valid and ast_proven_ids == strict_ids,
+        "linux_ast_leaf_errors": sorted(set(ast_errors)),
+        "linux_ast_leaf_proven_op_ids": sorted(ast_proven_ids),
+        "runtime_and_ast_proven_op_ids": sorted(effective_ids),
+        "runtime_generated_sha256": registration_sha or ast_sha,
+        "runtime_compile_context": registration_context or ast_context,
+        "runtime_artifact_authority_valid": authority_valid,
+        "runtime_artifact_authority_errors": sorted(
+            set(artifact_authority_errors)),
+        "strict_candidate_op_ids": sorted(strict_ids),
+    }
+
+
 def verify_backend_lowering_plan(
         formal: dict, contract: dict, backend: str, plan: dict | None = None,
         device_spec: Any = None, lowering_report: dict | None = None,
+        runtime_attestation: dict | None = None,
+        ast_leaf_report: dict | None = None,
+        generated_artifact: str | Path | None = None,
+        kbuild_cmd: str | Path | None = None,
         ) -> dict:
     """Verify a candidate plan against Formal, DeviceSpec, and contract."""
     canonical = build_backend_lowering_plan(formal, backend, device_spec)
-    candidate = copy.deepcopy(plan if plan is not None else canonical)
     contract_rows = _rows(contract, "register_operations")
+    raw_contract_ids = {
+        row.get("op_id") for row in contract_rows
+        if isinstance(row.get("op_id"), str) and row.get("op_id")
+    }
+    expected_generated_sha = None
+    expected_compile_context = None
+    expected_clang_args: list[str] | None = None
+    artifact_authority_errors: list[str] = []
+    if backend == "linux" and (
+            runtime_attestation is not None or ast_leaf_report is not None):
+        if generated_artifact is None:
+            artifact_authority_errors.append("generated_artifact_missing")
+        else:
+            artifact_path = Path(generated_artifact).resolve()
+            if not artifact_path.is_file():
+                artifact_authority_errors.append("generated_artifact_unavailable")
+            else:
+                expected_generated_sha = hashlib.sha256(
+                    artifact_path.read_bytes()).hexdigest()
+        if kbuild_cmd is None or generated_artifact is None:
+            artifact_authority_errors.append("kbuild_context_authority_missing")
+        else:
+            try:
+                from verification.linux_registration_ast_oracle import (
+                    linux_kbuild_compile_context,
+                )
+                expected_clang_args, expected_compile_context = \
+                    linux_kbuild_compile_context(
+                        Path(generated_artifact).resolve(),
+                        Path(kbuild_cmd).resolve())
+            except Exception as exc:
+                artifact_authority_errors.append(
+                    "kbuild_context_authority_invalid:"
+                    f"{type(exc).__name__}:{exc}")
+        canonical_can_be_strict = bool(canonical["entries"]) and all(
+            entry.get("disposition") == "candidate_definition_emit"
+            for entry in canonical["entries"])
+        if (canonical_can_be_strict and not artifact_authority_errors
+                and expected_clang_args is not None):
+            try:
+                from types import SimpleNamespace
+                from verification.generated_c_ast_oracle import (
+                    verify_generated_c_ast,
+                )
+                from verification.linux_registration_ast_oracle import (
+                    verify_linux_registration_ast,
+                )
+                registration_device_spec = device_spec
+                if isinstance(device_spec, Mapping):
+                    registration_device_spec = SimpleNamespace(
+                        name=_get(device_spec, "name"),
+                        functions=[SimpleNamespace(
+                            name=_get(function, "name"),
+                            ris_ref=_get(function, "ris_ref"),
+                            role=_get(function, "role", "unknown"),
+                            callback_table=(
+                                _get(function, "callback_table")
+                                or _get(function, "callback")),
+                        ) for function in _device_functions(device_spec)],
+                    )
+                strict_ids = {
+                    entry["op_id"] for entry in canonical["entries"]
+                    if entry.get("strict_eligible") is True
+                }
+                recomputed_ast = verify_generated_c_ast(
+                    contract, Path(generated_artifact),
+                    clang_args=expected_clang_args,
+                    required_op_ids=strict_ids,
+                    compile_context=expected_compile_context)
+                recomputed_registration = verify_linux_registration_ast(
+                    contract, registration_device_spec,
+                    Path(generated_artifact), canonical,
+                    kbuild_cmd=Path(kbuild_cmd))
+                if ast_leaf_report != recomputed_ast:
+                    artifact_authority_errors.append(
+                        "linux_ast_leaf_independent_reverification_mismatch")
+                if runtime_attestation != recomputed_registration:
+                    artifact_authority_errors.append(
+                        "runtime_attestation_independent_reverification_mismatch")
+            except Exception as exc:
+                artifact_authority_errors.append(
+                    "runtime_evidence_independent_reverification_failed:"
+                    f"{type(exc).__name__}:{exc}")
+    runtime_evidence = (
+        _linux_runtime_evidence(
+            canonical, raw_contract_ids, runtime_attestation,
+            ast_leaf_report, expected_generated_sha,
+            expected_compile_context, artifact_authority_errors)
+        if backend == "linux" else {
+            "runtime_attestation_valid": True,
+            "runtime_attestation_complete": True,
+            "runtime_attestation_errors": [],
+            "runtime_registered_op_ids": [],
+            "linux_ast_leaf_valid": True,
+            "linux_ast_leaf_complete": True,
+            "linux_ast_leaf_errors": [],
+            "linux_ast_leaf_proven_op_ids": [],
+            "runtime_and_ast_proven_op_ids": [],
+            "runtime_generated_sha256": None,
+            "runtime_compile_context": None,
+            "runtime_artifact_authority_valid": True,
+            "runtime_artifact_authority_errors": [],
+            "strict_candidate_op_ids": [],
+        })
+    candidate = copy.deepcopy(plan if plan is not None else canonical)
     plan_rows = _rows(candidate, "entries")
     canonical_rows = canonical["entries"]
 
@@ -583,9 +1073,17 @@ def verify_backend_lowering_plan(
                 problems.append("loop-blocked entry has no enclosing_loops")
         elif entry.get("blocking_loop"):
             problems.append("non-loop-blocked entry retains a blocking_loop")
-        if (backend == "linux" and expected_authorized
-                and entry.get("runtime_registration_proven") is not False):
-            problems.append("Linux definition candidate claims runtime registration")
+        if (backend == "linux"
+                and entry.get("runtime_registration_proven") is True
+                and disposition != "candidate_definition_emit"):
+            problems.append(
+                "non-candidate Linux entry claims runtime registration")
+        if (backend == "linux"
+                and entry.get("runtime_registration_proven") is True
+                and (entry.get("ast_leaf_proven") is not True
+                     or not isinstance(entry.get("registration_route_id"), str))):
+            problems.append(
+                "runtime-registered Linux entry lacks AST/route proof")
         if problems:
             malformed_plan_entries.append({
                 "index": index,
@@ -618,7 +1116,11 @@ def verify_backend_lowering_plan(
             or mismatch["expected"].get("strict_eligible")
             != mismatch["observed"].get("strict_eligible")
             or mismatch["expected"].get("runtime_registration_proven")
-            != mismatch["observed"].get("runtime_registration_proven")))
+            != mismatch["observed"].get("runtime_registration_proven")
+            or mismatch["expected"].get("ast_leaf_proven")
+            != mismatch["observed"].get("ast_leaf_proven")
+            or mismatch["expected"].get("registration_route_id")
+            != mismatch["observed"].get("registration_route_id")))
 
     disposition_counts = Counter(entry.get("disposition") for entry in plan_rows)
     authorized_ids = {
@@ -643,8 +1145,25 @@ def verify_backend_lowering_plan(
     lowering_complete = (
         definition_alignment_complete and not blocked_ids
         and disposition_counts["definition_evidence_only"] == 0)
+    strict_candidate_ids = {
+        entry["op_id"] for entry in plan_rows
+        if entry.get("strict_eligible") is True
+        and isinstance(entry.get("op_id"), str)
+    }
+    effective_runtime_ids = {
+        entry["op_id"] for entry in plan_rows
+        if entry.get("runtime_registration_proven") is True
+        and entry.get("ast_leaf_proven") is True
+        and isinstance(entry.get("op_id"), str)
+    }
     runtime_complete = (
-        lowering_complete if backend != "linux" else False)
+        lowering_complete if backend != "linux" else bool(
+            lowering_complete
+            and strict_candidate_ids
+            and runtime_evidence["runtime_attestation_valid"]
+            and runtime_evidence["linux_ast_leaf_valid"]
+            and runtime_evidence["runtime_artifact_authority_valid"]
+            and effective_runtime_ids == strict_candidate_ids))
     strict_complete = lowering_complete and runtime_complete
     complete = lowering_complete if backend != "linux" else strict_complete
 
@@ -671,6 +1190,9 @@ def verify_backend_lowering_plan(
         "authorized_ops": len(authorized_ids),
         "strict_eligible_ops": sum(
             entry.get("strict_eligible") is True for entry in plan_rows),
+        "strict_eligible_op_ids": sorted(strict_candidate_ids),
+        "runtime_registered_ops": len(effective_runtime_ids),
+        "runtime_registered_op_ids": sorted(effective_runtime_ids),
         "blocked_ops": len(blocked_ids),
         "disposition_counts": {
             name: disposition_counts[name] for name in sorted(DISPOSITIONS)
@@ -694,6 +1216,7 @@ def verify_backend_lowering_plan(
         "entries": plan_rows,
     }
     result.update(reconciliation)
+    result.update(runtime_evidence)
     return result
 
 
@@ -719,6 +1242,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="DeviceSpec JSON (required for Linux)")
     parser.add_argument("--lowering-report",
                         help="optional backend lowering receipt report JSON")
+    parser.add_argument("--runtime-attestation",
+                        help="Linux registration AST report JSON")
+    parser.add_argument("--ast-leaf-report",
+                        help="Linux required-subset AST leaf report JSON")
+    parser.add_argument("--generated-artifact",
+                        help="generated Linux module C used as SHA authority")
+    parser.add_argument("--kbuild-cmd",
+                        help="exact generated module .o.cmd context authority")
     parser.add_argument("--plan",
                         help="optional serialized candidate plan to verify")
     parser.add_argument("--output", help="optional JSON report path")
@@ -739,10 +1270,22 @@ def main(argv: list[str] | None = None) -> int:
         lowering_report = (
             json.loads(Path(args.lowering_report).read_text(encoding="utf-8"))
             if args.lowering_report else None)
+        runtime_attestation = (
+            json.loads(Path(args.runtime_attestation).read_text(
+                encoding="utf-8"))
+            if args.runtime_attestation else None)
+        ast_leaf_report = (
+            json.loads(Path(args.ast_leaf_report).read_text(encoding="utf-8"))
+            if args.ast_leaf_report else None)
         plan = (json.loads(Path(args.plan).read_text(encoding="utf-8"))
                 if args.plan else None)
         report = verify_backend_lowering_plan(
-            formal, contract, args.backend, plan, device_spec, lowering_report)
+            formal, contract, args.backend, plan=plan,
+            device_spec=device_spec, lowering_report=lowering_report,
+            runtime_attestation=runtime_attestation,
+            ast_leaf_report=ast_leaf_report,
+            generated_artifact=args.generated_artifact,
+            kbuild_cmd=args.kbuild_cmd)
     except Exception as exc:
         report = {
             "schema": SCHEMA,

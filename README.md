@@ -9,11 +9,11 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - 版本化语料：drivers/test/ 内含 19 个单源测试驱动；drivers/multisource/ 包含真实 Kbuild 多源模块 manifest。
 - 版本化内核：linux/ 是固定到实验 commit 的 Git submodule。
 - 三个确定性后端：harness 18/19、bare-metal 18/19、Linux 17/19 可编译；未编译项保留明确日志，不用 stub 成功替代。
-- 严格语义 readiness（C19 Linux definition/runtime 分轴 gate）：harness 4/19、bare-metal 4/19、Linux 0/19，三个后端共同 0/19。H/B 保留 C17 AST primitive gate；Linux 虽仍有 17/19 可编译，但 receipt 只证明函数定义已发射，尚无独立 registration/callsite attestation，因此不再把 `__maybe_unused` 或 evidence-only callback 冒充为 runtime-reachable strict 完成。
+- 严格语义 readiness：C19 冻结矩阵为 harness 4/19、bare-metal 4/19、Linux 0/19，三个后端共同 0/19。C20 新增 Linux required-subset AST 与 registration identity attestation，并在 lowering plan v3 中取交集；FTGPIO 定向正例达到 35/35 AST、35/35 registration 和 Linux strict，尚未据此重写完整 19-driver 冻结矩阵。DWC2 虽为 2023/2023 AST，registration 仅 62/2023，仍 strict false。
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。C15 将 DWC2/ASPEED 的 unaccounted source site 从 48/4 降为 0，但 direct evidence frontier 仍显式阻塞 call-semantics strict 声明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
 - 原始 MMIO 对照：907 个源码 primitive、1,091 个 direct AST 操作、C19 当前 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
-- 测试套件：159 tests（132 core + 7 generated-C AST + 13 lowering-plan + 2 read-provenance + 5 DeviceSpec JSON）；测试入口先执行冻结 holdout/specialization guard。
+- 测试套件：173 tests（132 core + 8 generated-C AST + 5 Linux registration AST + 20 lowering-plan + 1 C20 readiness + 2 read-provenance + 5 DeviceSpec JSON）；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；C15 机器报告给出 scoped strict 5/19。`whole_program_complete` 由 linked analysis、调用语义、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
@@ -52,6 +52,8 @@ C17 为公共 harness/bare-metal lowering 增加 `__rh_op_<op_id>` LabelStmt + d
 C18 将 backend lowering recipe 绑定到 canonical Formal，禁止 probe success-path 重写后重新猜测 primitive ownership；同时用独立 lowering plan 将 DWC2 H/B 的 3608 个 contract ops 精确分解为 3182 lowered + 426 `blocked_unsupported_loop`，不为未证明循环伪造 receipt/anchor。direct-read-return 也改为只信任 MMIO classifier 证明的 return provenance，不再因 `device_property_read_bool` 一类名称含 `read` 的普通 helper 篡改 RMW 数据流。
 
 C19 将 lowering plan 扩展到 Linux，并与真实 receipt report 做授权集对账。DWC2 精确分为 2023 个 definition candidate、77 个 evidence-only ops、426 个 loop blocker、898 个 root blocker与 184 个 lifecycle blocker；C67X00/ASPEED 也分别闭合为 26/6 和 133/21 authorized/blocked。新的 versioned DeviceSpec JSON 为 verifier 和 LLM bundle 提供严格、可重载的函数/root 证据。定义已发射与 runtime 已注册仍明确分离。
+
+C20 对 Linux 生成代码增加独立 required-subset leaf AST 与 registration AST oracle，并由 `backend-lowering-plan-v3` 依据实际 generated-C artifact SHA、精确 Kbuild `.o.cmd` context、操作集合、callback/function USR、typed field、精确对象路径、registration call 和 module-init root 重建有效身份链。FTGPIO 的 35 个 strict candidate 全部通过；DWC2 的 2023 个 candidate 虽全部通过 leaf AST，只有 62 个落入 v1 支持的 registration route，因此 Linux strict 仍为 false。DWC2 的 H/B 仍是 3182 lowered + 426 loop-blocked，Linux 仍是 2100 authorized + 1508 blocked。该证明尚不覆盖 kernel callback invocation、callback 内路径语义或 USB endpoint/gadget/HCD lifecycle。
 
 Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_chip.init_hw` 绑定会按字段语义归类；clock provider 会保留多套 `clk_ops`、纯标量 rate 算术、源码内 helper、父时钟/provider 注册以及对应 OF 变体。Sodaville 的 PCI ID、12-line GPIO generic dat/set/dirout 行为和 mask/unmask/EOI IRQ lifecycle 由版本化源码保守恢复。只有经过显式 source-private 重绑定且真实 Kbuild 通过的 callback 才可消除 unsupported marker。
 
@@ -142,6 +144,7 @@ python3 tools/generate_paper_results.py
 - [C17 generated-C AST anchors、primitive ownership 与负向结果](docs/generated-c-ast-anchors-c17.md)
 - [C18 DWC2 lowering plan、canonical recipe 与 read provenance](docs/dwc2-lowering-plan-c18.md)
 - [C19 Linux definition plan、DeviceSpec JSON 与 runtime boundary](docs/linux-definition-plan-c19.md)
+- [C20 Linux generated-AST、registration identity attestation 与 fail-closed 边界](docs/linux-registration-attestation-c20.md)
 
 ## 依赖
 

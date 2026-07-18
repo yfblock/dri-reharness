@@ -82,6 +82,32 @@ def test_ast_oracle_accepts_exact_read_write_rmw_and_helper_boundaries(tmp_path)
     assert report["unanchored_primitives"] == []
 
 
+def test_ast_oracle_required_subset_allows_planned_missing_ops(tmp_path):
+    contract = _contract(
+        _row("op_1", "Read"),
+        _row("op_2", "Write"),
+    )
+    source = _write(tmp_path, """
+    __rh_op_op_1: { (void)harness_read32(base); }
+""")
+    subset = verify_generated_c_ast(
+        contract, source, required_op_ids={"op_1"})
+    assert subset["complete"] is True
+    assert subset["required_ast_ops"] == 1
+    assert subset["missing_anchors"] == []
+    assert subset["nonrequired_missing_anchors"] == ["op_2"]
+
+    full = verify_generated_c_ast(
+        contract, source, required_op_ids={"op_1", "op_2"})
+    assert full["complete"] is False
+    assert full["missing_anchors"] == ["op_2"]
+
+    unknown = verify_generated_c_ast(
+        contract, source, required_op_ids={"op_1", "op_unknown"})
+    assert unknown["complete"] is False
+    assert unknown["unknown_required_ids"] == ["op_unknown"]
+
+
 def test_ast_oracle_rejects_wrong_kind_width_endian_and_rmw_cardinality(tmp_path):
     contract = _contract(
         _row("op_1", "Read", "B4", byte_order="big"),

@@ -7,10 +7,10 @@ step: libclang must see one ``__rh_op_<op_id>`` LabelStmt per expected
 operation and the label's direct CompoundStmt must contain exactly the MMIO
 primitive shape required by the generation contract.
 
-This first version targets the self-contained harness and bare-metal
-backends.  It proves primitive cardinality, direction, width, byte order and
-W1C selection.  It does not yet prove address/value expressions, guards or
-cross-operation ordering.
+For Linux, callers must additionally provide provenance for arguments derived
+from the exact generated module Kbuild ``.o.cmd``.  The oracle records that
+context so a downstream verifier can bind this leaf proof to an independent
+registration proof over the same translation unit.
 """
 from __future__ import annotations
 
@@ -296,7 +296,9 @@ def _extract_ast(source: Path, clang_args: list[str], clang_library: str | None)
 def verify_generated_c_ast(
         contract_or_formal: dict, generated: str | Path, *,
         clang_args: list[str] | None = None,
-        clang_library: str | None = None) -> dict:
+        clang_library: str | None = None,
+        required_op_ids: set[str] | None = None,
+        compile_context: dict[str, Any] | None = None) -> dict:
     """Return a fail-closed JSON-serializable structural verification report."""
     source = Path(generated).resolve()
     if not source.is_file():
@@ -307,13 +309,19 @@ def verify_generated_c_ast(
         str(op_id) for op_id, count in expected_counts.items()
         if not op_id or count != 1)
     expected = {row["op_id"]: row for row in rows if row.get("op_id")}
+    required_ids = (set(expected) if required_op_ids is None
+                    else set(required_op_ids))
+    unknown_required_ids = sorted(required_ids - set(expected))
 
     diagnostics, anchors, primitive_calls = _extract_ast(
         source, clang_args or [], clang_library)
     parse_errors = [item for item in diagnostics if item["severity"] >= 3]
     anchor_counts = Counter(anchor["op_id"] for anchor in anchors)
     missing_anchors = sorted(
-        op_id for op_id in expected if anchor_counts[op_id] == 0)
+        op_id for op_id in required_ids if anchor_counts[op_id] == 0)
+    nonrequired_missing_anchors = sorted(
+        op_id for op_id in expected
+        if op_id not in required_ids and anchor_counts[op_id] == 0)
     duplicate_anchors = sorted(
         op_id for op_id, count in anchor_counts.items()
         if op_id in expected and count != 1)
@@ -340,20 +348,22 @@ def verify_generated_c_ast(
             row.get("kind") in ("Read", "Write", "ReadModifyWrite")
             and row.get("width") in WIDTH_BITS
             and row.get("reliability") != "Unsupported")
+        required = op_id in required_ids
         matches = bool(anchor and anchor["direct_compound"]
                        and supported_contract
                        and observed == expected_shape)
         check = {
             "op_id": op_id,
             "kind": row.get("kind"),
+            "required": required,
             "expected": expected_shape,
             "observed": observed,
             "matches": matches,
         }
         operation_checks.append(check)
-        if not supported_contract:
+        if required and not supported_contract:
             unsupported_expected_ops.append(op_id)
-        elif anchor and not matches:
+        elif required and anchor and not matches:
             primitive_mismatches.append(check)
 
     unanchored = [item for item in primitive_calls if item["anchor"] is None]
@@ -372,6 +382,7 @@ def verify_generated_c_ast(
 
     complete = not any((
         duplicate_expected_ids,
+        unknown_required_ids,
         parse_errors,
         missing_anchors,
         duplicate_anchors,
@@ -385,7 +396,10 @@ def verify_generated_c_ast(
         "schema": 1,
         "oracle": "generated-c-ast-leaf-v1",
         "claim_scope": {
-            "backend_scope": ["harness", "baremetal"],
+            "backend_scope": ["harness", "baremetal", "linux"],
+            "linux_context_requirement": (
+                "caller must supply arguments sanitized from the exact "
+                "generated module Kbuild .o.cmd"),
             "proves": [
                 "unique_ast_anchor",
                 "primitive_cardinality",
@@ -407,13 +421,19 @@ def verify_generated_c_ast(
         "driver": contract.get("driver"),
         "generated": str(source),
         "generated_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "compile_context": compile_context,
         "required_ops": len(rows),
+        "required_ast_ops": len(required_ids),
+        "required_op_ids": sorted(required_ids),
+        "unknown_required_ids": unknown_required_ids,
+        "contract_ops": len(rows),
         "anchors": len(anchors),
         "known_primitive_calls": len(primitive_calls),
         "duplicate_expected_ids": duplicate_expected_ids,
         "parse_errors": parse_errors,
         "diagnostics": diagnostics,
         "missing_anchors": missing_anchors,
+        "nonrequired_missing_anchors": nonrequired_missing_anchors,
         "duplicate_anchors": duplicate_anchors,
         "unknown_anchors": unknown_anchors,
         "malformed_anchors": malformed_anchors,

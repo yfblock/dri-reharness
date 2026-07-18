@@ -116,6 +116,10 @@ def test_zero_shot_blocker_normalization_and_common_root_selection():
         "independent runtime registration/callsite attestation"
     ) == "linux_runtime_attestation"
     assert normalize_blocker(
+        "linux backend has 12 strict candidate operation(s) without "
+        "independent runtime registration/callsite attestation"
+    ) == "linux_runtime_attestation"
+    assert normalize_blocker(
         "harness backend has 8 register operation(s) explicitly blocked by "
         "unsupported loop lowering"
     ) == "unsupported_loop_lowering"

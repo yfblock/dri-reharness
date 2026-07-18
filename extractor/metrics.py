@@ -452,6 +452,119 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 and plan.get("strict_complete") is True
                 and lowering.get("complete") is True)
 
+        def _sha256(value):
+            return bool(
+                isinstance(value, str) and len(value) == 64
+                and all(char in "0123456789abcdef" for char in value))
+
+        def _kbuild_context(value):
+            return bool(
+                isinstance(value, dict)
+                and value.get("origin") == "kbuild-cmd"
+                and isinstance(value.get("provenance"), str)
+                and value.get("provenance")
+                and _sha256(value.get("raw_command_sha256"))
+                and _sha256(value.get("arguments_sha256"))
+                and type(value.get("argument_count")) is int
+                and value.get("argument_count") > 0)
+
+        def _linux_ast_ready(report):
+            ast = report.get("linux_ast_leaf")
+            return bool(
+                report.get("linux_ast_leaf_required") is True
+                and report.get("linux_ast_leaf_complete") is True
+                and isinstance(ast, dict)
+                and ast.get("schema") == 1
+                and ast.get("oracle") == "generated-c-ast-leaf-v1"
+                and ast.get("complete") is True
+                and _sha256(ast.get("generated_sha256"))
+                and _kbuild_context(ast.get("compile_context"))
+                and isinstance(ast.get("required_op_ids"), list)
+                and ast.get("required_ast_ops") == len(
+                    ast.get("required_op_ids")))
+
+        def _linux_registration_ready(report):
+            registration = report.get("linux_registration_ast")
+            return bool(
+                report.get("linux_registration_ast_required") is True
+                and report.get("linux_registration_ast_complete") is True
+                and isinstance(registration, dict)
+                and registration.get("schema") == 1
+                and registration.get("oracle") ==
+                    "linux-registration-ast-v1"
+                and registration.get("complete") is True
+                and _sha256(registration.get("generated_sha256"))
+                and _kbuild_context(registration.get("compile_context"))
+                and isinstance(
+                    registration.get("runtime_registered_op_ids"), list)
+                and registration.get("runtime_registered_ops") == len(
+                    registration.get("runtime_registered_op_ids")))
+
+        def _linux_effective_plan_ready(report):
+            plan = report.get("backend_lowering_plan")
+            ast = report.get("linux_ast_leaf")
+            registration = report.get("linux_registration_ast")
+            if not all(isinstance(item, dict) for item in (
+                    plan, ast, registration)):
+                return False
+            entries = plan.get("entries")
+            strict_ids = plan.get("strict_eligible_op_ids")
+            runtime_ids = plan.get("runtime_registered_op_ids")
+            if not all(isinstance(item, list) for item in (
+                    entries, strict_ids, runtime_ids)):
+                return False
+            entry_ids = [entry.get("op_id") for entry in entries
+                         if isinstance(entry, dict)]
+            if (len(entry_ids) != len(entries)
+                    or len(set(entry_ids)) != len(entry_ids)
+                    or set(strict_ids) != set(runtime_ids)
+                    or len(set(strict_ids)) != len(strict_ids)):
+                return False
+            entries_by_id = {entry["op_id"]: entry for entry in entries}
+            if any(
+                    op_id not in entries_by_id
+                    or entries_by_id[op_id].get("strict_eligible") is not True
+                    or entries_by_id[op_id].get(
+                        "runtime_registration_proven") is not True
+                    or entries_by_id[op_id].get("ast_leaf_proven") is not True
+                    or not isinstance(entries_by_id[op_id].get(
+                        "registration_route_id"), str)
+                    or not entries_by_id[op_id]["registration_route_id"]
+                    for op_id in strict_ids):
+                return False
+            generated_sha = plan.get("runtime_generated_sha256")
+            compile_context = plan.get("runtime_compile_context")
+            return bool(
+                report.get("backend_lowering_plan_required") is True
+                and plan.get("schema") == 3
+                and plan.get("oracle") == "backend-lowering-plan-v3"
+                and plan.get("required_ops") == len(entries)
+                and plan.get("strict_eligible_ops") == len(strict_ids)
+                and plan.get("runtime_registered_ops") == len(runtime_ids)
+                and registration.get("runtime_registered_op_ids") ==
+                    runtime_ids
+                and ast.get("required_op_ids") == strict_ids
+                and _sha256(generated_sha)
+                and ast.get("generated_sha256") == generated_sha
+                and registration.get("generated_sha256") == generated_sha
+                and _kbuild_context(compile_context)
+                and ast.get("compile_context") == compile_context
+                and registration.get("compile_context") == compile_context
+                and report.get(
+                    "backend_lowering_plan_runtime_complete") is True
+                and report.get(
+                    "backend_lowering_plan_strict_complete") is True
+                and plan.get("runtime_attestation_valid") is True
+                and plan.get("runtime_attestation_complete") is True
+                and plan.get("linux_ast_leaf_valid") is True
+                and plan.get("linux_ast_leaf_complete") is True
+                and plan.get("runtime_artifact_authority_valid") is True
+                and not plan.get("runtime_artifact_authority_errors")
+                and not plan.get("runtime_attestation_errors")
+                and not plan.get("linux_ast_leaf_errors")
+                and plan.get("runtime_complete") is True
+                and plan.get("strict_complete") is True)
+
         for backend in ("harness", "baremetal", "linux"):
             generated = _gr(backend)
             if not generated:
@@ -483,6 +596,37 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                       "backend_lowering_plan_reconciliation_complete")):
                 blockers.append(
                     f"{backend} backend lowering receipt reconciliation failed")
+            if backend == "linux":
+                ast = generated.get("linux_ast_leaf")
+                if (generated.get("linux_ast_leaf_required") is not True
+                        or not isinstance(ast, dict)):
+                    blockers.append(
+                        "linux backend required-subset AST attestation "
+                        "unavailable")
+                elif not _linux_ast_ready(generated):
+                    blockers.append(
+                        "linux backend required-subset AST attestation failed")
+
+                registration = generated.get("linux_registration_ast")
+                if (generated.get("linux_registration_ast_required") is not True
+                        or not isinstance(registration, dict)):
+                    blockers.append(
+                        "linux backend registration attestation unavailable")
+                elif not _linux_registration_ready(generated):
+                    blockers.append(
+                        "linux backend registration attestation failed")
+
+                plan = generated.get("backend_lowering_plan")
+                if (generated.get("backend_lowering_plan_required") is not True
+                        or not isinstance(plan, dict)
+                        or plan.get("schema") != 3
+                        or plan.get("oracle") != "backend-lowering-plan-v3"):
+                    blockers.append(
+                        "linux backend effective lowering plan v3 unavailable")
+                elif not _linux_effective_plan_ready(generated):
+                    blockers.append(
+                        "linux backend effective lowering plan v3 strict proof "
+                        "failed")
             lowering = generated.get("backend_lowering", {})
             if lowering and not lowering.get("complete", False):
                 plan = generated.get("backend_lowering_plan") or {}
@@ -611,11 +755,16 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             linux_plan = lx.get("backend_lowering_plan") or {}
             if (linux_plan.get("definition_alignment_complete")
                     and not linux_plan.get("runtime_complete")
-                    and linux_plan.get("authorized_ops", 0)):
+                    and linux_plan.get("strict_eligible_ops", 0)):
+                unregistered = max(
+                    0,
+                    linux_plan.get("strict_eligible_ops", 0)
+                    - linux_plan.get("runtime_registered_ops", 0),
+                )
                 blockers.append(
                     "linux backend has "
-                    f"{linux_plan['authorized_ops']} emitted definition "
-                    "operation(s) without independent runtime "
+                    f"{unregistered} strict candidate operation(s) without "
+                    "independent runtime "
                     "registration/callsite attestation")
             linux_source_ready = (not gpio_source_required or bool(
                 lx.get("gpio_mmio_source_oracle_passed")))
@@ -641,6 +790,9 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                                and function_spec_quality >= 0.6
                                and not unbound_callbacks
                                and _lowering_plan_ready(lx)
+                               and _linux_ast_ready(lx)
+                               and _linux_registration_ready(lx)
+                               and _linux_effective_plan_ready(lx)
                                and lx.get("backend_lowering_complete", True)
                                and not lx.get("has_todo")
                                and not lx.get("unsupported")

@@ -1,8 +1,10 @@
 """CLI entry: `python3 -m extractor extract --source ... --output out.ris`"""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 import os
+from pathlib import Path
 import sys
 
 from .extractor import ExtractorConfig, extract_ris
@@ -226,6 +228,9 @@ def main(argv: list[str] | None = None) -> int:
         from verification.backend_lowering_plan import (
             verify_backend_lowering_plan)
         from verification.generated_c_ast_oracle import verify_generated_c_ast
+        from verification.linux_registration_ast_oracle import (
+            linux_kbuild_compile_context,
+            verify_linux_registration_ast)
 
         res = extract_ris(_config_from_args(args))
         name = res.formal["driver"]
@@ -239,6 +244,45 @@ def main(argv: list[str] | None = None) -> int:
         def _w(base: str, path: str, text: str):
             with open(os.path.join(base, path), "w", encoding="utf-8") as fh:
                 fh.write(text.rstrip() + "\n")
+
+        def _ast_error_report(oracle: str, generated: str, exc,
+                              **extra) -> dict:
+            report = {
+                "schema": 1,
+                "oracle": oracle,
+                "driver": name,
+                "complete": False,
+                "generated": generated,
+                "verifier_error": type(exc).__name__,
+                "message": str(exc),
+                **extra,
+            }
+            if os.path.isfile(generated):
+                with open(generated, "rb") as handle:
+                    report["generated_sha256"] = hashlib.sha256(
+                        handle.read()).hexdigest()
+            return report
+
+        def _lowering_plan_fields(plan: dict | None) -> dict:
+            return {
+                "backend_lowering_plan_accounting_complete": bool(
+                    plan and plan.get("accounting_complete")),
+                "backend_lowering_plan_classification_complete": bool(
+                    plan and plan.get("classification_complete")),
+                "backend_lowering_plan_lowering_complete": bool(
+                    plan and plan.get("lowering_complete")),
+                "backend_lowering_plan_authorization_complete": bool(
+                    plan and plan.get("authorization_complete")),
+                "backend_lowering_plan_reconciliation_complete": bool(
+                    plan and plan.get("reconciliation_complete")),
+                "backend_lowering_plan_definition_alignment_complete": bool(
+                    plan and plan.get("definition_alignment_complete")),
+                "backend_lowering_plan_runtime_complete": bool(
+                    plan and plan.get("runtime_complete")),
+                "backend_lowering_plan_strict_complete": bool(
+                    plan and plan.get("strict_complete")),
+                "backend_lowering_plan": plan,
+            }
 
         print(f"🚀 driver pipeline: {name} → {outdir}/")
         # ── core reconstruction inputs (recom.md) ──
@@ -311,38 +355,24 @@ def main(argv: list[str] | None = None) -> int:
                     }
                 _w(ver_dir, f"{backend}-ast-leaf.json", json.dumps(
                     ast_leaf, indent=2, sort_keys=True))
+            linux_registration_ast = None
             gr: dict = {
                 "has_todo": has_todo, "unsupported": unsupported,
                 "backend_lowering_complete": lowering["complete"],
                 "backend_lowering": lowering,
                 "backend_lowering_plan_required": True,
-                "backend_lowering_plan_accounting_complete": bool(
-                    lowering_plan
-                    and lowering_plan.get("accounting_complete")),
-                "backend_lowering_plan_classification_complete": bool(
-                    lowering_plan
-                    and lowering_plan.get("classification_complete")),
-                "backend_lowering_plan_lowering_complete": bool(
-                    lowering_plan and lowering_plan.get("lowering_complete")),
-                "backend_lowering_plan_authorization_complete": bool(
-                    lowering_plan
-                    and lowering_plan.get("authorization_complete")),
-                "backend_lowering_plan_reconciliation_complete": bool(
-                    lowering_plan
-                    and lowering_plan.get("reconciliation_complete")),
-                "backend_lowering_plan_definition_alignment_complete": bool(
-                    lowering_plan
-                    and lowering_plan.get("definition_alignment_complete")),
-                "backend_lowering_plan_runtime_complete": bool(
-                    lowering_plan and lowering_plan.get("runtime_complete")),
-                "backend_lowering_plan_strict_complete": bool(
-                    lowering_plan and lowering_plan.get("strict_complete")),
-                "backend_lowering_plan": lowering_plan,
+                **_lowering_plan_fields(lowering_plan),
                 "backend_ast_leaf_required": backend in {
-                    "harness", "baremetal"},
+                    "harness", "baremetal", "linux"},
                 "backend_ast_leaf_complete": bool(
                     ast_leaf and ast_leaf.get("complete")),
                 "backend_ast_leaf": ast_leaf,
+                "linux_ast_leaf_required": backend == "linux",
+                "linux_ast_leaf_complete": False,
+                "linux_ast_leaf": None,
+                "linux_registration_ast_required": backend == "linux",
+                "linux_registration_ast_complete": False,
+                "linux_registration_ast": None,
                 **source_oracle, **sdhci_oracle, **virtio_oracle,
                 **w1c_contract,
             }
@@ -474,6 +504,73 @@ def main(argv: list[str] | None = None) -> int:
                 gr["syntax_ok"] = r.returncode == 0
                 if r.returncode != 0:
                     _w(ver_dir, "linux.compile.log", r.stdout + "\n" + r.stderr)
+                required_ids = set(
+                    lowering_plan.get("strict_eligible_op_ids") or [])
+                kbuild_cmd = os.path.join(
+                    build_dir, f".{module_name}.o.cmd")
+                if r.returncode == 0:
+                    linux_compile_context = None
+                    try:
+                        clang_args, linux_compile_context = \
+                            linux_kbuild_compile_context(
+                                Path(module_c), Path(kbuild_cmd))
+                        ast_leaf = verify_generated_c_ast(
+                            generation_contract, module_c,
+                            clang_args=clang_args,
+                            required_op_ids=required_ids,
+                            compile_context=linux_compile_context)
+                    except Exception as exc:
+                        ast_leaf = _ast_error_report(
+                            "generated-c-ast-leaf-v1", module_c, exc,
+                            required_op_ids=sorted(required_ids),
+                            required_ast_ops=len(required_ids),
+                            compile_context=linux_compile_context)
+                    try:
+                        linux_registration_ast = verify_linux_registration_ast(
+                            generation_contract, res.device_spec, module_c,
+                            lowering_plan, kbuild_cmd=kbuild_cmd)
+                    except Exception as exc:
+                        linux_registration_ast = _ast_error_report(
+                            "linux-registration-ast-v1", module_c, exc,
+                            runtime_registered_op_ids=[], operations=[])
+                else:
+                    failure = RuntimeError(
+                        "Linux Kbuild did not succeed; AST evidence unavailable")
+                    ast_leaf = _ast_error_report(
+                        "generated-c-ast-leaf-v1", module_c, failure,
+                        required_op_ids=sorted(required_ids),
+                        required_ast_ops=len(required_ids))
+                    linux_registration_ast = _ast_error_report(
+                        "linux-registration-ast-v1", module_c, failure,
+                        runtime_registered_op_ids=[], operations=[])
+
+                _w(ver_dir, "linux-ast-leaf.json", json.dumps(
+                    ast_leaf, indent=2, sort_keys=True))
+                _w(ver_dir, "linux-registration-ast.json", json.dumps(
+                    linux_registration_ast, indent=2, sort_keys=True))
+                lowering_plan = verify_backend_lowering_plan(
+                    res.formal, generation_contract, "linux",
+                    device_spec=res.device_spec,
+                    lowering_report=lowering,
+                    runtime_attestation=linux_registration_ast,
+                    ast_leaf_report=ast_leaf,
+                    generated_artifact=module_c,
+                    kbuild_cmd=kbuild_cmd)
+                _w(ver_dir, "linux-lowering-plan.json", json.dumps(
+                    lowering_plan, indent=2, sort_keys=True))
+                gr.update(_lowering_plan_fields(lowering_plan))
+                gr.update({
+                    "backend_ast_leaf_complete": bool(
+                        ast_leaf and ast_leaf.get("complete")),
+                    "backend_ast_leaf": ast_leaf,
+                    "linux_ast_leaf_complete": bool(
+                        ast_leaf and ast_leaf.get("complete")),
+                    "linux_ast_leaf": ast_leaf,
+                    "linux_registration_ast_complete": bool(
+                        linux_registration_ast
+                        and linux_registration_ast.get("complete")),
+                    "linux_registration_ast": linux_registration_ast,
+                })
                 results[backend] = ("kernel module compiles" if r.returncode == 0
                                     else "kernel compile FAILED")
             gen_results[backend] = gr

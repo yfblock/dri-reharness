@@ -76,8 +76,17 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
      r"^linux backend has \d+ register operation\(s\) explicitly blocked "
      r"by a missing Linux definition root$"),
     ("linux_runtime_attestation",
-     r"^linux backend has \d+ emitted definition operation\(s\) without "
+     r"^linux backend has \d+ (?:emitted definition|strict candidate) "
+     r"operation\(s\) without "
      r"independent runtime registration/callsite attestation$"),
+    ("linux_ast_required_subset",
+     r"^linux backend required-subset AST attestation "
+     r"(?:unavailable|failed)$"),
+    ("linux_registration_attestation",
+     r"^linux backend registration attestation (?:unavailable|failed)$"),
+    ("linux_effective_plan_v3",
+     r"^linux backend effective lowering plan v3 "
+     r"(?:unavailable|strict proof failed)$"),
     ("lowering_reconciliation",
      r"^(?:harness|baremetal|linux) backend lowering receipt "
      r"reconciliation failed$"),
@@ -89,6 +98,8 @@ BLOCKER_RULES: tuple[tuple[str, str], ...] = (
 UMBRELLA_BLOCKERS = {
     "linux_definition_root", "linux_lifecycle_stub",
     "linux_lifecycle_unimplemented", "linux_runtime_attestation",
+    "linux_ast_required_subset", "linux_registration_attestation",
+    "linux_effective_plan_v3",
     "linux_semantic_binding", "lowering_accounting_discrepancy",
     "lowering_reconciliation",
 }
