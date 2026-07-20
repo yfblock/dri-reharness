@@ -59,9 +59,10 @@ The following legacy entries are removed after their callers are migrated:
 ## Canonical ownership additions
 
 - `plan.md` moves to `docs/plans/original-implementation-plan.md`.
-- `initramfs_edu.cpio.gz`, `initramfs_plat.cpio.gz`, and
+- Existing `initramfs_edu.cpio.gz`, `initramfs_plat.cpio.gz`, and
   `initramfs_run.cpio.gz` move to `artifacts/initramfs/` with their existing
-  basenames.
+  basenames. These files remain ignored, regenerable runtime artifacts and are
+  not required to exist in a clean checkout.
 - `src/extractor/`, `src/generator/`, and `src/synthesis.py` remain the only
   implementation locations.
 - `qa/tests/`, `qa/verification/`, and `qa/native-tests/` remain the only QA
@@ -159,8 +160,8 @@ revision, and benchmark membership must remain unchanged.
 3. root `run.sh` is a regular executable file;
 4. `.gitmodules` points to `vendor/linux`;
 5. active project files do not refer to removed root paths;
-6. the three initramfs images and original plan exist only at their canonical
-   destinations.
+6. the original plan exists at its canonical destination, and any generated
+   initramfs images exist only below `artifacts/initramfs/`.
 
 The reference scanner uses explicit exclusions for `.git/`, `vendor/linux/`,
 `tools/pi/node_modules/`, generated artifacts, frozen experiment results, and
