@@ -12,6 +12,7 @@ from typing import Optional
 import clang.cindex as cx
 
 from . import mmio
+from . import transactions
 from . import taint as T
 from .taint import (
     BasePtr, Offset, ReadTaint, Const, SymExpr, Top, AbsVal,
@@ -43,6 +44,7 @@ class Op:
     control_stack: list = field(default_factory=list)  # structured cond/loop frames
     evidence: dict = field(default_factory=dict)    # auditable source provenance
     state_field: Optional[str] = None  # StateRead/StateWrite persistent field
+    transaction: dict = field(default_factory=dict)  # typed non-MMIO transfer
 
 
 # ── expression evaluation ────────────────────────────────────────────
@@ -770,6 +772,12 @@ def _instantiate_op(op: Op, mapping: dict[str, str], macros=None,
     import copy
     out = copy.copy(op)
     out.evidence = copy.deepcopy(op.evidence)
+    out.transaction = copy.deepcopy(op.transaction)
+    for key in ("target", "selector", "count", "buffer", "value",
+                "result", "changed_result", "update_mask", "update_value"):
+        if out.transaction.get(key) is not None:
+            out.transaction[key] = _substitute_text(
+                str(out.transaction[key]), mapping)
     out.addr = _substitute_addr(op.addr, mapping)
     if "Indirect" in out.addr and out.addr["Indirect"].get("expr"):
         original_expr = out.addr["Indirect"]["expr"]
@@ -1155,6 +1163,29 @@ def extract_function(func: Func, macros, tu, *,
         if mmio.is_ioremap(name):
             if lhs:
                 store[_norm_key(lhs)] = BasePtr(lhs)
+            continue
+
+        transaction = transactions.contract_for_call(cs, lhs)
+        if transaction is not None:
+            from .accounting import transaction_callsite_evidence
+            evidence = transaction_callsite_evidence(func, cs, transaction)
+            kind = {
+                "read": "TransactionRead",
+                "write": "TransactionWrite",
+                "update": "TransactionUpdate",
+            }[transaction["kind"]]
+            result.ops.append(Op(
+                kind=kind, addr=addr_fixed(0), width=0,
+                condition=cond, cond_stack=cond_stack,
+                control_stack=control_stack,
+                var=transaction.get("result"),
+                source_loc=f"{func.name}:{cs.line}", line=cs.line,
+                evidence=evidence, transaction=transaction))
+            result_name = transaction.get("result")
+            if result_name:
+                store[_norm_key(result_name)] = SymExpr(result_name)
+            if lhs and transaction.get("result_convention") != "return_value":
+                store[_norm_key(lhs)] = SymExpr(lhs)
             continue
 
         if mmio.is_mmio_read(access_name):

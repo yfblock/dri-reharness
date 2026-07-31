@@ -250,8 +250,7 @@ def is_mmio_read(name: str) -> bool:
             or name in SUBSYSTEM_MMIO_READ_LAYOUTS
             or name in DIRECT_ADDRESS_READ_LAYOUTS
             or name in VIRTIO_CONFIG_READ_FNS
-            or name in VIRTQUEUE_READ_FNS
-            or name in REGMAP_READ_FNS)
+            or name in VIRTQUEUE_READ_FNS)
 
 
 def is_mmio_write(name: str) -> bool:
@@ -259,12 +258,11 @@ def is_mmio_write(name: str) -> bool:
             or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS
             or name in DIRECT_ADDRESS_WRITE_LAYOUTS
             or name in VIRTIO_CONFIG_WRITE_FNS
-            or name in VIRTQUEUE_WRITE_FNS
-            or name in REGMAP_WRITE_FNS)
+            or name in VIRTQUEUE_WRITE_FNS)
 
 
 def is_mmio_rmw(name: str) -> bool:
-    return name in REGMAP_RMW_FNS
+    return False
 
 
 def is_unsupported_register_access(name: str) -> bool:

@@ -95,7 +95,7 @@ def module_metrics(module: dict) -> dict:
     ops = [op for op in walk_leaf_ops(module["ops"])
            if not (semantic_only & set(op))]
     total = len(ops)
-    sym = fixed = comp = unsafe_comp = rmw = 0
+    sym = fixed = comp = unsafe_comp = rmw = transactions = 0
     unknown_val = 0
     for o in ops:
         addr = (o.get("Read") or o.get("Write") or o.get("ReadModifyWrite") or {}).get("addr")
@@ -110,6 +110,9 @@ def module_metrics(module: dict) -> dict:
                 unsafe_comp += 1
         if "ReadModifyWrite" in o:
             rmw += 1
+        if any(kind in o for kind in (
+                "TransactionRead", "TransactionWrite", "TransactionUpdate")):
+            transactions += 1
         # unknown value: Write/RMW value or transform is Top or contains Top
         val = None
         if "Write" in o:
@@ -134,6 +137,7 @@ def module_metrics(module: dict) -> dict:
         "computed": comp,
         "unsafe_computed": unsafe_comp,
         "rmw": rmw,
+        "transactions": transactions,
         "unknown_value": unknown_val,
         "cond": cond,
         "loop": loop,
@@ -146,7 +150,7 @@ def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     mods = [module_metrics(m) for m in formal["modules"]]
     agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed",
                            "unsafe_computed", "rmw", "unknown_value", "cond",
-                           "loop", "conservative_loop")}
+                           "loop", "conservative_loop", "transactions")}
     for m in mods:
         for k in agg:
             agg[k] += m[k]
@@ -163,7 +167,10 @@ def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     for module in formal.get("modules", []):
         for op in walk_leaf_ops(module.get("ops", [])):
             body = (op.get("Read") or op.get("Write")
-                    or op.get("ReadModifyWrite"))
+                    or op.get("ReadModifyWrite")
+                    or op.get("TransactionRead")
+                    or op.get("TransactionWrite")
+                    or op.get("TransactionUpdate"))
             if body is not None:
                 level = body.get("reliability", "Unknown")
                 reliability[level] = reliability.get(level, 0) + 1
@@ -312,6 +319,11 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     if unsupported_ops:
         blockers.append(
             f"{unsupported_ops} register operation(s) use unsupported access domain")
+    transaction_ops = met.get("transactions", 0)
+    transactions_ready = transaction_ops == 0
+    if transaction_ops:
+        blockers.append(
+            f"{transaction_ops} typed hardware transaction(s) lack backend/runtime validation")
     unsupported_control = met.get("control_accounting", {}).get("unsupported", 0)
     if unsupported_control:
         blockers.append(
@@ -380,7 +392,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         for op in walk_leaf_ops(module.get("ops", [])))
     has_register_access = (
         met["symbolic"] + met["fixed"] + met["computed"] > 0
-        or supported_subsystem_access)
+        or supported_subsystem_access or transaction_ops > 0)
     if not has_register_access:
         blockers.append("no MMIO register accesses")
 
@@ -396,6 +408,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     baremetal_subsystem_ready = generic_subsystem_ready
     baremetal_ready = (accounting_ready and callee_semantics_ready
                        and path_ready and has_register_access
+                       and transactions_ready
                        and generic_subsystem_ready
                        and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                        and unsupported_ops == 0
@@ -404,6 +417,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                        and ris_quality >= 0.7)
     linux_ready = (accounting_ready and callee_semantics_ready
                    and path_ready and has_register_access
+                   and transactions_ready
                    and linux_subsystem_ready
                    and met["unsafe_computed"] == 0
                    and met["unknown_value"] == 0
@@ -414,7 +428,8 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                    and not unbound_callbacks)
     harness_ready = baremetal_ready  # trace check applied below if gen_results present
 
-    # Tighten readiness with actual generated-code quality (recom.md §"Make
+    # Tighten readiness with actual generated-code quality
+    # (docs/plans/output-artifact-recommendations.md §"Make
     # Readiness Scoring Stricter"): a backend is ready only if its generated C
     # compiles, has no TODOs, and (harness) passes RIS trace equivalence.
     if gen_results:
@@ -690,6 +705,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 and h_source_ready)
             harness_ready = bool(accounting_ready and callee_semantics_ready
                                  and path_ready and has_register_access
+                                 and transactions_ready
                                  and harness_subsystem_ready
                                  and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                  and unsupported_ops == 0
@@ -719,6 +735,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
                 and bm_source_ready)
             baremetal_ready = bool(accounting_ready and callee_semantics_ready
                                    and path_ready and has_register_access
+                                   and transactions_ready
                                    and baremetal_subsystem_ready
                                    and met["unsafe_computed"] == 0 and met["unknown_value"] == 0
                                    and unsupported_ops == 0
@@ -781,6 +798,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
             # backend readiness as a prerequisite.
             linux_ready = bool(accounting_ready and callee_semantics_ready
                                and path_ready
+                               and transactions_ready
                                and linux_subsystem_ready
                                and linux_source_ready
                                and met["unsafe_computed"] == 0

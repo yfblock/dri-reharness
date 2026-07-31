@@ -5,7 +5,8 @@ serialized to/from `.dspec`. Code generators consume (RIS, DeviceSpec, bind).
 
   FunctionSpec = (Signature, Role, Context, Requires, Ensures, Effects, RISRef)
   DeviceSpec   = (State, Resources, Registers, Functions, Invariants, Class)
-  Effect       = RegEffect | StateEffect | ResourceEffect | EventEffect
+  Effect       = RegEffect | TransactionEffect | StateEffect
+               | ResourceEffect | EventEffect
 """
 from __future__ import annotations
 import copy
@@ -810,7 +811,8 @@ class FactsSpec:
         return "\n".join(lines)
 
 
-# ── multi-backend .bind (merged file, recom.md §"Merge Backend Bind Files") ──
+# ── multi-backend .bind (merged file,
+# docs/plans/output-artifact-recommendations.md §"Merge Backend Bind Files") ──
 
 def display_bind_set(binds: list[BindSpec]) -> str:
     """Emit multiple backend blocks into one .bind file."""

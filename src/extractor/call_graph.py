@@ -452,7 +452,8 @@ def _op_fingerprint(extraction: FuncExtraction) -> tuple:
          tuple(op.cond_stack), repr(op.control_stack), op.reg_name, op.var,
          (op.evidence or {}).get("symbol"),
          (op.evidence or {}).get("site_id"),
-         repr((op.evidence or {}).get("inlined_at", [])))
+         repr((op.evidence or {}).get("inlined_at", [])),
+         repr(op.transaction))
         for op in extraction.ops) + ((
             "return", extraction.return_expr, extraction.return_read_var),)
 
@@ -467,7 +468,9 @@ def _evidence_sites(
     sites: set[tuple[str, str]] = set()
     without_evidence = 0
     for op in extraction.ops:
-        if op.kind not in {"Read", "Write", "ReadModifyWrite"}:
+        if op.kind not in {
+                "Read", "Write", "ReadModifyWrite", "TransactionRead",
+                "TransactionWrite", "TransactionUpdate"}:
             continue
         site_id = (op.evidence or {}).get("site_id")
         owner = (op.evidence or {}).get("symbol")
@@ -495,7 +498,9 @@ def _direct_evidence_frontier(
     """
     ops = []
     for op in extraction.ops:
-        if op.kind not in {"Read", "Write", "ReadModifyWrite"}:
+        if op.kind not in {
+                "Read", "Write", "ReadModifyWrite", "TransactionRead",
+                "TransactionWrite", "TransactionUpdate"}:
             continue
         evidence = op.evidence or {}
         site_id = evidence.get("site_id")

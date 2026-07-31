@@ -4,7 +4,8 @@ A mathematically-grounded representation of register interaction sequences:
   Expr   = Const | Var | BinOp{op,left,right} | Ite{guard,then,else}
          | Bits{hi,lo,expr} | Top
   RegAddr= Fixed{base,offset} | Symbolic{device,register} | Computed(Expr)
-  RISOp  = Read | Write | ReadModifyWrite | StateRead | StateWrite
+  RISOp  = Read | Write | ReadModifyWrite | TransactionRead
+         | TransactionWrite | TransactionUpdate | StateRead | StateWrite
          | OutputWrite | Return | Delay | Cond | Seq | Loop
   FormalRIS = {driver, version, modules[], register_map[], metadata}
 
@@ -315,6 +316,28 @@ def op_display(op: dict, indent: int = 0) -> str:
     if "ReadModifyWrite" in op:
         o = op["ReadModifyWrite"]
         return f"{pad}RMW({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['transform'])} -- {o['intent']}{suffix(o)}"
+    if "TransactionRead" in op:
+        o = op["TransactionRead"]
+        selector = (expr_display(o["selector"])
+                    if o.get("selector") is not None else "-")
+        return (f"{pad}TXREAD[{o['transport']}] "
+                f"{expr_display(o['target'])}@{selector} "
+                f"{o['payload']}{suffix(o)}")
+    if "TransactionWrite" in op:
+        o = op["TransactionWrite"]
+        selector = (expr_display(o["selector"])
+                    if o.get("selector") is not None else "-")
+        return (f"{pad}TXWRITE[{o['transport']}] "
+                f"{expr_display(o['target'])}@{selector} "
+                f"{o['payload']}{suffix(o)}")
+    if "TransactionUpdate" in op:
+        o = op["TransactionUpdate"]
+        selector = (expr_display(o["selector"])
+                    if o.get("selector") is not None else "-")
+        return (f"{pad}TXUPDATE[{o['transport']}] "
+                f"{expr_display(o['target'])}@{selector} "
+                f"mask={expr_display(o['mask'])} value={expr_display(o['value'])}"
+                f"{suffix(o)}")
     if "StateRead" in op:
         o = op["StateRead"]
         return f"{pad}{o['var']} := STATE({o['field']}){suffix(o)}"
@@ -434,7 +457,7 @@ def walk_all_ops(ops) -> "object":
 def emitted_stats(formal: dict) -> dict:
     """Count ops actually emitted in the .ris (only emitted modules' ops),
     excluding inlined-skipped helpers. Cond/Loop counted at all nesting depths."""
-    reads = writes = rmw = conds = 0
+    reads = writes = rmw = transactions = conds = 0
     for m in formal["modules"]:
         for op in walk_all_ops(m["ops"]):
             if "Cond" in op or "Loop" in op:
@@ -446,6 +469,11 @@ def emitted_stats(formal: dict) -> dict:
                 writes += 1
             elif "ReadModifyWrite" in op:
                 rmw += 1
+            elif any(kind in op for kind in (
+                    "TransactionRead", "TransactionWrite",
+                    "TransactionUpdate")):
+                transactions += 1
     return {"mmio_reads": reads, "mmio_writes": writes, "rmw": rmw,
+            "transactions": transactions,
             "conditions_recorded": conds,
-            "total_ops": reads + writes + rmw}
+            "total_ops": reads + writes + rmw + transactions}

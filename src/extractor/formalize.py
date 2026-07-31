@@ -73,6 +73,55 @@ def _semantic_fields(op: Op, op_id: str, value=None) -> dict:
     }
 
 
+def _transaction_fields(op: Op, op_id: str, expressions: list[dict]) -> dict:
+    contract = op.transaction
+    unknown_value = any(_expr_has_top(expr) for expr in expressions)
+    width_known = contract.get("element_width") in {1, 2, 4, 8}
+    path_precision = "syntactic" if op.cond_stack else "unconditional"
+    reliability = ("Unknown" if unknown_value
+                   else "Conservative" if not width_known or op.cond_stack
+                   else "Exact")
+    return {
+        "op_id": op_id,
+        "evidence": dict(op.evidence),
+        "reliability": reliability,
+        "path_precision": path_precision,
+        "access_domain": contract.get("transport", "unknown_transaction"),
+        "transport": contract.get("transport", "unknown"),
+    }
+
+
+def _transaction_endpoint(contract: dict) -> dict:
+    return {
+        "target": F.parse_expr(contract.get("target")),
+        "selector": (F.parse_expr(contract.get("selector"))
+                     if contract.get("selector") is not None else None),
+    }
+
+
+def _transaction_payload(contract: dict, *, read: bool = False) -> dict:
+    width = F.width_of(contract.get("element_width", 0)) \
+        if contract.get("element_width") in {1, 2, 4, 8} else "Unknown"
+    if contract.get("payload_kind") == "buffer":
+        body = {
+            "element_width": width,
+            "buffer": F.parse_expr(contract.get("buffer")),
+            "count": F.parse_expr(contract.get("count", "1")),
+            "count_unit": contract.get("count_unit", "elements"),
+        }
+        if contract.get("protocol"):
+            body["protocol"] = contract["protocol"]
+        return {"Buffer": body}
+    body = {"width": width}
+    if read:
+        body["var"] = contract.get("result") or "transaction_result"
+    else:
+        body["value"] = F.parse_expr(contract.get("value"))
+    if contract.get("byte_order"):
+        body["byte_order"] = contract["byte_order"]
+    return {"Scalar": body}
+
+
 def _to_risop(op: Op, id_counter: list[int]) -> dict:
     addr = F.formal_addr(op.addr, op.reg_name)
     width = F.width_of(op.width)
@@ -95,6 +144,63 @@ def _to_risop(op: Op, id_counter: list[int]) -> dict:
                 "intent": op.intent}
         body.update(_common_fields(op, op_id, addr, transform))
         return {"ReadModifyWrite": body}
+    if op.kind == "TransactionRead":
+        endpoint = _transaction_endpoint(op.transaction)
+        payload = _transaction_payload(op.transaction, read=True)
+        body = {**endpoint, "payload": payload}
+        if op.transaction.get("protocol"):
+            body["protocol"] = op.transaction["protocol"]
+        if op.transaction.get("result"):
+            body["result"] = op.transaction["result"]
+            body["result_convention"] = op.transaction.get(
+                "result_convention", "return_value")
+        expressions = [endpoint["target"], endpoint.get("selector")]
+        if "Buffer" in payload:
+            expressions.extend([payload["Buffer"]["buffer"],
+                                payload["Buffer"]["count"]])
+        body.update(_transaction_fields(
+            op, op_id, [expr for expr in expressions if expr is not None]))
+        return {"TransactionRead": body}
+    if op.kind == "TransactionWrite":
+        endpoint = _transaction_endpoint(op.transaction)
+        payload = _transaction_payload(op.transaction)
+        body = {**endpoint, "payload": payload}
+        if op.transaction.get("protocol"):
+            body["protocol"] = op.transaction["protocol"]
+        if op.transaction.get("result"):
+            body["result"] = op.transaction["result"]
+            body["result_convention"] = op.transaction.get(
+                "result_convention", "return_value")
+        expressions = [endpoint["target"], endpoint.get("selector")]
+        if "Scalar" in payload:
+            expressions.append(payload["Scalar"]["value"])
+        else:
+            expressions.extend([payload["Buffer"]["buffer"],
+                                payload["Buffer"]["count"]])
+        body.update(_transaction_fields(
+            op, op_id, [expr for expr in expressions if expr is not None]))
+        return {"TransactionWrite": body}
+    if op.kind == "TransactionUpdate":
+        endpoint = _transaction_endpoint(op.transaction)
+        mask = F.parse_expr(op.transaction.get("update_mask"))
+        value = F.parse_expr(op.transaction.get("update_value"))
+        width = (F.width_of(op.transaction.get("element_width", 0))
+                 if op.transaction.get("element_width") in {1, 2, 4, 8}
+                 else "Unknown")
+        body = {**endpoint, "width": width, "mask": mask, "value": value,
+                "semantics": op.transaction.get(
+                    "update_semantics", "masked_replace")}
+        if op.transaction.get("helper_contract"):
+            body["helper_contract"] = op.transaction["helper_contract"]
+        if (op.transaction.get("transport") == "mfd"
+                and (op.evidence or {}).get("callee")):
+            body["helper_symbol"] = op.evidence["callee"]
+        if op.transaction.get("changed_result"):
+            body["changed_result"] = op.transaction["changed_result"]
+        body.update(_transaction_fields(
+            op, op_id, [endpoint["target"], mask, value]
+            + ([endpoint["selector"]] if endpoint["selector"] else [])))
+        return {"TransactionUpdate": body}
     if op.kind == "StateRead":
         body = {"field": op.state_field, "var": op.var or f"s{id_counter[0]}",
                 "width": width}
@@ -509,8 +615,9 @@ def _module(func: Func, ex: FuncExtraction, id_counter: list[int], macros) -> di
 
 
 def _register_leaf(op: dict) -> tuple[str, dict] | tuple[None, None]:
-    kind = next((name for name in ("Read", "Write", "ReadModifyWrite")
-                 if name in op), None)
+    kind = next((name for name in (
+                 "Read", "Write", "ReadModifyWrite", "TransactionRead",
+                 "TransactionWrite", "TransactionUpdate") if name in op), None)
     return (kind, op[kind]) if kind is not None else (None, None)
 
 
@@ -708,6 +815,38 @@ def _register_map(funcs, extractions, macros) -> list[dict]:
     return out
 
 
+def _transaction_map(funcs, extractions, macros) -> list[dict]:
+    """Selectors used by non-MMIO transactions, kept outside register_map."""
+    seen: dict[tuple[str, str], dict] = {}
+    for func in funcs:
+        extraction = extractions.get(func.symbol_id or func.name)
+        if not extraction:
+            continue
+        for op in extraction.ops:
+            contract = op.transaction
+            selector = contract.get("selector") if contract else None
+            if not isinstance(selector, str):
+                continue
+            selector = selector.strip()
+            if not re.fullmatch(r"[A-Za-z_]\w*", selector):
+                continue
+            value = macros.offset(selector)
+            if value is None:
+                continue
+            transport = contract.get("transport", "unknown")
+            key = (transport, selector)
+            seen[key] = {
+                "transport": transport,
+                "name": selector,
+                "value": int(value),
+                "element_width": (
+                    F.width_of(contract["element_width"])
+                    if contract.get("element_width") in {1, 2, 4, 8}
+                    else "Unknown"),
+            }
+    return [seen[key] for key in sorted(seen)]
+
+
 def build_formal_ris(driver_name: str, source_path: str,
                      funcs: list[Func],
                      extractions: dict[str, FuncExtraction],
@@ -757,6 +896,7 @@ def build_formal_ris(driver_name: str, source_path: str,
         "version": "0.1.0",
         "modules": modules,
         "register_map": _register_map(funcs, extractions, macros),
+        "transaction_map": _transaction_map(funcs, extractions, macros),
         "metadata": {
             "source": source_path,
             "extracted_at": stats.get("extracted_at", ""),
@@ -790,9 +930,10 @@ def build_formal_ris(driver_name: str, source_path: str,
             },
             "function_macros": stats.get("function_macros", {}),
             "assurance_scope": {
-                "claim": "recognized register-access and structured-control universe",
+                "claim": "recognized hardware-access and structured-control universe",
                 "register_accesses": (
-                    "known MMIO/regmap APIs plus direct volatile and inline-asm detection"),
+                    "typed MMIO, regmap, I2C and public MFD helper transactions "
+                    "plus direct volatile and inline-asm detection"),
                 "control_flow": (
                     "source statement CFG with dominance/joins, structured lexical paths, "
                     "resolved forward-goto guards, switch exclusivity, and bounded loops"),

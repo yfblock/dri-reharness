@@ -356,7 +356,10 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     for module in formal.get("modules", []):
         for op in walk_leaf_ops(module.get("ops", [])):
             body = (op.get("Read") or op.get("Write")
-                    or op.get("ReadModifyWrite"))
+                    or op.get("ReadModifyWrite")
+                    or op.get("TransactionRead")
+                    or op.get("TransactionWrite")
+                    or op.get("TransactionUpdate"))
             if body and body.get("op_id"):
                 op_ids.append(body["op_id"])
     quality = driver_metrics(formal)
@@ -393,6 +396,8 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         "loops_proved": quality.get("conservative_loop", 0) == 0,
         "access_domains_supported": (
             quality.get("reliability", {}).get("Unsupported", 0) == 0),
+        "transactions_backend_validated": (
+            quality.get("transactions", 0) == 0),
     }
     whole_program_complete = all(whole_program_gates.values())
     alias_analysis["whole_program_gates"] = whole_program_gates
@@ -426,6 +431,11 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     stats["callback_binding_analysis"] = binding_analysis
     device_spec = infer_device_spec(
         formal, funcs, fn_specs, descriptor, combined_text)
+    from .usb_lifecycle import infer_usb_hcd_lifecycle
+    usb_hcd_lifecycle = infer_usb_hcd_lifecycle(
+        funcs, device_spec, formal)
+    formal["metadata"]["usb_hcd_lifecycle"] = usb_hcd_lifecycle
+    stats["usb_hcd_lifecycle"] = usb_hcd_lifecycle
     register_names = {r["name"] for r in formal.get("register_map", [])}
     fact_parts = []
     for unit in units:
@@ -643,6 +653,11 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     formal["metadata"]["callback_binding_analysis"] = binding_analysis
     stats["callback_binding_analysis"] = binding_analysis
     device_spec = infer_device_spec(formal, funcs, fn_specs, source, source_text)
+    from .usb_lifecycle import infer_usb_hcd_lifecycle
+    usb_hcd_lifecycle = infer_usb_hcd_lifecycle(
+        funcs, device_spec, formal)
+    formal["metadata"]["usb_hcd_lifecycle"] = usb_hcd_lifecycle
+    stats["usb_hcd_lifecycle"] = usb_hcd_lifecycle
     register_names = {r["name"] for r in formal.get("register_map", [])}
     facts = infer_facts(source_text, source, tu, macros, cb_bindings,
                         register_names, formal=formal, driver_name=driver_name)

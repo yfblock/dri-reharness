@@ -54,6 +54,9 @@ class CallSite:
     cursor: object
     arg_text: list[str] = field(default_factory=list)  # source text per arg
     callee_text: str = ""             # exact source spelling of callee expression
+    callee_decl_path: str = ""        # public declaration provenance, if resolved
+    callee_result_type: str = ""       # declared result type
+    callee_param_types: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -137,6 +140,28 @@ def function_calls(func_cursor) -> list[CallSite]:
             callee_text = source_text(c.translation_unit, children[0]).strip() \
                 if children else ""
             line = c.location.line if c.location and c.location.file else 0
+            ref = c.referenced
+            if ref is None and children:
+                for sub in children[0].walk_preorder():
+                    candidate = sub.referenced
+                    if (candidate is not None
+                            and candidate.kind == cx.CursorKind.FUNCTION_DECL):
+                        ref = candidate
+                        break
+            decl_path = ""
+            result_type = ""
+            param_types: list[str] = []
+            if ref is not None and ref.kind == cx.CursorKind.FUNCTION_DECL:
+                loc = ref.location
+                if loc is not None and loc.file is not None:
+                    decl_path = _abs(loc.file.name) or ""
+                result_type = (ref.result_type.spelling
+                               if ref.result_type is not None else "")
+                param_types = [
+                    child.type.spelling if child.type is not None else ""
+                    for child in ref.get_children()
+                    if child.kind == cx.CursorKind.PARM_DECL
+                ]
             cs = CallSite(
                 name=callee_name(c),
                 symbol_id=call_symbol_id(c),
@@ -145,6 +170,9 @@ def function_calls(func_cursor) -> list[CallSite]:
                 cursor=c,
                 arg_text=[source_text(c.translation_unit, a) for a in args],
                 callee_text=callee_text,
+                callee_decl_path=decl_path,
+                callee_result_type=result_type,
+                callee_param_types=param_types,
             )
             calls.append(cs)
     calls.sort(key=lambda c: c.line)

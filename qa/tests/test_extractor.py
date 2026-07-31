@@ -1122,42 +1122,148 @@ def test_static_ops_table_indirect_call_is_resolved_and_propagated():
                for item in summarized + inlined)
 
 
-def test_regmap_operations_are_accounted_but_domain_blocked():
+def test_regmap_operations_use_typed_transaction_ir_and_lower_regmap_backend():
     from extractor.formal import walk_leaf_ops
     from extractor.metrics import driver_metrics, score
     from extractor.spec import default_bind
     from generator import harness as harness_gen
 
-    source = os.path.join(REHARNESS, "tests", "fixtures", "regmap_access.c")
+    source = os.path.join(FIXTURES_ROOT, "regmap_access.c")
     result = extract_ris(ExtractorConfig(source=source))
     module = _module(result.formal, "regmap_access")
     leaves = list(walk_leaf_ops(module["ops"]))
-    assert len(leaves) == 3
+    assert len(leaves) == 4
     assert {next(iter(leaf)) for leaf in leaves} == {
-        "Read", "Write", "ReadModifyWrite"}
-    assert all((leaf.get("Read") or leaf.get("Write")
-                or leaf.get("ReadModifyWrite"))["access_domain"] == "regmap"
-               for leaf in leaves)
-    assert all((leaf.get("Read") or leaf.get("Write")
-                or leaf.get("ReadModifyWrite"))["reliability"] == "Unsupported"
-               for leaf in leaves)
+        "TransactionRead", "TransactionWrite", "TransactionUpdate"}
+    bodies = [(leaf.get("TransactionRead")
+               or leaf.get("TransactionWrite")
+               or leaf.get("TransactionUpdate")) for leaf in leaves]
+    assert all(body["access_domain"] == "regmap" for body in bodies)
+    assert all("addr" not in body for body in bodies)
+    assert all(body["target"] == {"Var": "map"} for body in bodies)
+    assert [body["selector"] for body in bodies] == [
+        {"Var": "reg"},
+        {"BinOp": {"op": "Add", "left": {"Var": "reg"},
+                   "right": {"Const": 4}}},
+        {"BinOp": {"op": "Add", "left": {"Var": "reg"},
+                   "right": {"Const": 8}}},
+        {"BinOp": {"op": "Add", "left": {"Var": "reg"},
+                   "right": {"Const": 12}}},
+    ]
+    assert all(body["reliability"] == "Conservative" for body in bodies)
+    assert leaves[-1]["TransactionRead"]["payload"]["Buffer"] == {
+        "element_width": "Unknown", "buffer": {"Var": "values"},
+        "count": {"Const": 2}, "count_unit": "register_values"}
+    assert result.formal["transaction_map"] == []
     accounting = result.formal["metadata"]["access_accounting"]
     assert accounting["source_accesses"] == 4
-    assert accounting["emitted"] == 3
-    assert accounting["unsupported"] == 1
+    assert accounting["emitted"] == 4
+    assert accounting["unsupported"] == 0
     assert accounting["unaccounted"] == 0
-    assert accounting["strict_complete"] is False
+    assert accounting["strict_complete"] is True
     metrics = driver_metrics(result.formal)
-    assert metrics["reliability"]["Unsupported"] == 3
+    assert metrics["transactions"] == 4
+    assert metrics["reliability"]["Conservative"] == 4
     readiness = score(result.device_spec, result.formal, result.warnings,
                       result.facts)
     assert readiness["backend_linux_ready"] is False
-    assert any("unsupported access domain" in blocker
-               for blocker in readiness["blockers"])
     code = harness_gen.generate(
         result.formal, result.device_spec,
         default_bind(result.device_spec, "harness"))
-    assert code.count("REHARNESS_UNSUPPORTED_ACCESS_DOMAIN") == 3
+    assert code.count("REHARNESS_TRANSACTION_OP") == 4
+    assert code.count("REHARNESS_UNSUPPORTED_TRANSACTION") == 0
+    from verification.backend_lowering_oracle import verify_backend_lowering
+    lowering = verify_backend_lowering(result.formal, code)
+    assert lowering["complete"] is True
+    assert lowering["transaction_accounting_complete"] is True
+    assert lowering["required_transactions"] == 4
+    assert len(lowering["unsupported_transactions"]) == 0
+
+
+def test_i2c_smbus_holdout_no_longer_has_zero_hardware_ops():
+    from extractor.formal import walk_leaf_ops
+
+    source = os.path.join(
+        LINUX_SOURCE_ROOT, "drivers", "gpio", "gpio-tpic2810.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    leaves = [
+        op["TransactionWrite"]
+        for module in result.formal["modules"]
+        for op in walk_leaf_ops(module["ops"])
+        if "TransactionWrite" in op
+    ]
+    assert leaves
+    assert all(body["transport"] == "i2c_smbus" for body in leaves)
+    assert all(body["payload"]["Scalar"]["width"] == "B1"
+               for body in leaves)
+    assert all(body["selector"] == {"Var": "TPIC2810_WS_COMMAND"}
+               for body in leaves)
+    accounting = result.formal["metadata"]["access_accounting"]
+    assert accounting["source_accesses"] == 1
+    assert accounting["emitted"] == 1
+    assert accounting["strict_complete"] is True
+    assert result.stats["transactions"] >= 1
+    assert [(resource.type, resource.bind)
+            for resource in result.device_spec.resources] == [
+                ("TransactionResource", "i2c_smbus")]
+    assert any(effect.kind == "transaction"
+               for function in result.device_spec.functions
+               for effect in function.effects)
+
+
+def test_public_mfd_register_helpers_form_transactions_fail_closed():
+    from extractor.formal import walk_leaf_ops
+    from extractor.metrics import score
+
+    source = os.path.join(
+        LINUX_SOURCE_ROOT, "drivers", "clk", "clk-twl6040.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    leaves = [
+        op["TransactionUpdate"]
+        for module in result.formal["modules"]
+        for op in walk_leaf_ops(module["ops"])
+        if "TransactionUpdate" in op
+    ]
+    assert len(leaves) == 2
+    assert all(body["transport"] == "mfd" for body in leaves)
+    assert all(body["width"] == "B1" for body in leaves)
+    assert leaves[0]["value"] == {"Var": "reset_mask"}
+    assert leaves[1]["value"] == {"Const": 0}
+    assert {row["name"] for row in result.formal["transaction_map"]} == {
+        "TWL6040_REG_HPPLLCTL", "TWL6040_REG_LPPLLCTL"}
+    accounting = result.formal["metadata"]["access_accounting"]
+    assert accounting["source_accesses"] == accounting["emitted"] == 2
+    assert accounting["strict_complete"] is True
+    assert [(resource.type, resource.bind)
+            for resource in result.device_spec.resources] == [
+                ("TransactionResource", "mfd")]
+    readiness = score(result.device_spec, result.formal, result.warnings,
+                      result.facts)
+    assert readiness["backend_linux_ready"] is False
+    assert any("typed hardware transaction" in blocker
+               for blocker in readiness["blockers"])
+
+
+def test_private_set_bits_name_is_not_inferred_as_mfd_transaction():
+    from types import SimpleNamespace
+    from extractor.transactions import contract_for_call
+
+    call = SimpleNamespace(
+        name="device_set_bits", arg_text=["dev", "reg", "mask"],
+        callee_decl_path="/tmp/private_driver.c",
+        callee_param_types=["struct device *", "unsigned int", "u8"])
+    assert contract_for_call(call) is None
+
+
+def test_transaction_source_oracle_catches_semantic_mutations():
+    from verification.transaction_ir_oracle import mutation_suite
+
+    source = os.path.join(FIXTURES_ROOT, "regmap_access.c")
+    result = extract_ris(ExtractorConfig(source=source))
+    report = mutation_suite(result.formal, source)
+    assert report["complete"] is True
+    assert report["mutations_detected"] == {
+        "transport": True, "selector": True, "kind": True, "order": True}
 
 
 def test_volatile_and_inline_asm_accesses_block_false_strict_completion():
@@ -3345,6 +3451,106 @@ def test_callback_binding_covers_irq_pm_and_clock_forms():
     assert got["resume_fn"]["field"] == "resume"
     assert got["clk_prepare"]["table"] == "clk_ops"
     assert got["clk_set_rate"]["field"] == "set_rate"
+
+
+def test_callback_binding_uses_owner_qualified_subsystem_roles():
+    src = textwrap.dedent("""
+        struct clk_hw { int value; };
+        struct clk_ops { int (*is_prepared)(struct clk_hw *); };
+        struct sdhci_host { int value; };
+        struct sdhci_ops {
+            void (*voltage_switch)(struct sdhci_host *);
+            void (*set_clock)(struct sdhci_host *, unsigned int);
+        };
+        struct mmc_host { int value; };
+        struct mmc_ios { int value; };
+        struct mmc_host_ops {
+            int (*start_signal_voltage_switch)(struct mmc_host *, struct mmc_ios *);
+            int (*execute_sd_hs_tuning)(struct mmc_host *, void *);
+        };
+        static int prepared(struct clk_hw *hw) { return 0; }
+        static void voltage(struct sdhci_host *host) {}
+        static void clock(struct sdhci_host *host, unsigned int hz) {}
+        static int switch_voltage(struct mmc_host *host, struct mmc_ios *ios) { return 0; }
+        static int tuning(struct mmc_host *host, void *card) { return 0; }
+        static const struct clk_ops clk = { .is_prepared = prepared };
+        static const struct sdhci_ops sdhci = {
+            .voltage_switch = voltage, .set_clock = clock,
+        };
+        static const struct mmc_host_ops mmc = {
+            .start_signal_voltage_switch = switch_voltage,
+            .execute_sd_hs_tuning = tuning,
+        };
+    """)
+    got = _ast_callback_bindings(src)
+    assert got["prepared"]["role"] == "get_status"
+    assert got["voltage"]["role"] == "write_config"
+    assert got["clock"]["role"] == "write_config"
+    assert got["switch_voltage"]["role"] == "write_config"
+    assert got["tuning"]["role"] == "write_config"
+
+
+def test_callback_binding_keeps_private_owner_semantics_fail_closed():
+    src = textwrap.dedent("""
+        struct private_ops { void (*set_clock)(void *); };
+        static void callback(void *state) {}
+        static const struct private_ops ops = { .set_clock = callback };
+    """)
+    got = _ast_callback_bindings(src)
+    assert got["callback"]["role"] == "unknown"
+
+
+def test_usb_lifecycle_oracle_ignores_synthetic_functions_without_ast():
+    from types import SimpleNamespace
+    from extractor.ast_model import Func
+    from extractor.usb_lifecycle import infer_usb_hcd_lifecycle
+
+    synthetic = Func(
+        name="synthetic_callback", line=1, cursor=None,
+        source_path="", symbol_id="synthetic_callback",
+        module_name="synthetic_callback", synthetic_role="read_config")
+    result = infer_usb_hcd_lifecycle(
+        [synthetic], SimpleNamespace(functions=[]),
+        {"metadata": {"call_graph": {"calls": []}}})
+    assert result["status"] == "unproven"
+    assert result["tables"] == []
+    assert result["reasons"] == ["no USB HCD lifecycle calls in source AST"]
+
+
+def test_linux_callback_signatures_cover_public_clock_and_sdhci_roles():
+    from generator.linux import _callback_signature, _canonical_args
+
+    prepared = _callback_signature(
+        "clk_ops.is_prepared", "demo_priv", False)
+    voltage = _callback_signature(
+        "sdhci_ops.voltage_switch", "demo_priv", False)
+    set_clock = _callback_signature(
+        "sdhci_ops.set_clock", "demo_priv", False)
+    assert prepared[:2] == ("int", "struct clk_hw *hw")
+    assert voltage[:2] == ("void", "struct sdhci_host *host")
+    assert set_clock[:2] == (
+        "void", "struct sdhci_host *host, unsigned int clock")
+    assert _canonical_args("clk_ops.is_prepared") == [
+        ("hw", "struct clk_hw *")]
+    assert _canonical_args("sdhci_ops.hw_reset") == [
+        ("host", "struct sdhci_host *")]
+
+
+def test_poll_accessors_are_not_declared_as_scalar_locals():
+    from generator.common import value_var_names
+
+    ops = [{"Loop": {
+        "guard": {"Var": (
+            "read_poll_timeout(sdhci_readl, tmp, tmp & READY, "
+            "10, 1000, false, host, STATUS)")},
+        "init": "read_poll_timeout(sdhci_readl, tmp, tmp & READY, 10, 1000, false, host, STATUS)",
+        "step": "",
+        "body": [],
+    }}]
+    names = value_var_names(ops)
+    assert "tmp" in names
+    assert "sdhci_readl" not in names
+    assert "read_poll_timeout" not in names
 
 
 def test_callback_binding_dynamic_gpio_irq_chip_init_hw():

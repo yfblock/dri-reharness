@@ -13,6 +13,7 @@ import re
 import clang.cindex as cx
 
 from . import mmio
+from . import transactions
 from .ast_model import function_calls
 from .formal import walk_leaf_ops
 
@@ -63,6 +64,34 @@ def callsite_evidence(func, call, access_kind: str,
             evidence["summary_contract"] = "linux.sdhci_ops"
             if access_name.startswith("sdhci_be32bs_"):
                 evidence["byte_order"] = "big"
+    return evidence
+
+
+def transaction_callsite_evidence(func, call, contract: dict) -> dict:
+    """Auditable provenance for a typed non-MMIO transaction."""
+    loc = getattr(call.cursor, "location", None)
+    source = (os.path.abspath(loc.file.name)
+              if loc is not None and loc.file is not None
+              else os.path.abspath(func.source_path))
+    evidence = {
+        "site_id": access_site_id(source, call),
+        "source": source,
+        "line": getattr(loc, "line", 0) or call.line or 0,
+        "column": getattr(loc, "column", 0) or 0,
+        "offset": getattr(loc, "offset", 0) or 0,
+        "function": func.name,
+        "symbol": func.symbol_id or func.name,
+        "callee": call.name,
+        "ast_kind": "CALL_EXPR",
+        "access_kind": contract["kind"],
+        "width_bytes": contract.get("element_width", 0),
+        "origin": "public_transaction_api",
+        "access_domain": contract["transport"],
+        "transaction_payload": contract.get("payload_kind", "scalar"),
+        "callee_decl_path": getattr(call, "callee_decl_path", ""),
+    }
+    if contract["transport"] == "mfd":
+        evidence["origin"] = "public_mfd_helper_contract"
     return evidence
 
 
@@ -176,7 +205,12 @@ def discover_source_accesses(funcs, extra_blacklist: set[str] | None = None
         for call in function_calls(func.cursor):
             access_name = mmio.effective_access_name(
                 call.name, call.callee_text)
-            if mmio.is_mmio_read(access_name):
+            transaction = transactions.contract_for_call(call)
+            if transaction is not None:
+                kind = transaction["kind"]
+                evidence = transaction_callsite_evidence(
+                    func, call, transaction)
+            elif mmio.is_mmio_read(access_name):
                 kind = "read"
             elif mmio.is_mmio_write(access_name):
                 kind = "write"
@@ -188,8 +222,9 @@ def discover_source_accesses(funcs, extra_blacklist: set[str] | None = None
                 kind = "summary"
             else:
                 continue
-            evidence = callsite_evidence(
-                func, call, kind, effective_name=access_name)
+            if transaction is None:
+                evidence = callsite_evidence(
+                    func, call, kind, effective_name=access_name)
             site_id = evidence["site_id"]
             if site_id in seen:
                 continue
@@ -223,7 +258,9 @@ def build_access_accounting(funcs, formal: dict,
         for op in walk_leaf_ops(module.get("ops", [])):
             body = (op.get("Read") or op.get("Write")
                     or op.get("ReadModifyWrite") or op.get("StateRead")
-                    or op.get("StateWrite"))
+                    or op.get("StateWrite") or op.get("TransactionRead")
+                    or op.get("TransactionWrite")
+                    or op.get("TransactionUpdate"))
             if body is None:
                 continue
             op_id = body.get("op_id", "")
@@ -244,7 +281,7 @@ def build_access_accounting(funcs, formal: dict,
             site["ris_ops"] = sorted(set(op_ids))
         elif site["status"] == "pending":
             site["status"] = "unaccounted"
-            site["reason"] = "recognized source MMIO call produced no RIS op"
+            site["reason"] = "recognized source hardware access produced no RIS op"
 
     counts = {
         "source_accesses": len(sites),

@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops, walk_all_ops
 from .common import (ops_to_c, local_decls, value_var_names,
-                     lowering_recipes)
+                     lowering_recipes, transaction_runtime_prelude)
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
 from .subsystem_runner import (emit_gpio_callback_runner, subsystem_callback_plan,
@@ -59,6 +59,24 @@ def generate(formal: dict, device_spec, bind) -> str:
     dev = device_spec.name
     priv = bind.type_of("DeviceState") or f"struct {dev}_priv"
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}
+    tx_selectors = {r["name"]: r["value"]
+                    for r in formal.get("transaction_map", [])}
+    constants = {**regs, **tx_selectors}
+    has_regmap_transactions = any(
+        any(name in op and op[name].get("transport") == "regmap" for name in
+            ("TransactionRead", "TransactionWrite", "TransactionUpdate"))
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
+    has_i2c_transactions = any(
+        any(name in op and op[name].get("transport") in {"i2c", "i2c_smbus"}
+            for name in ("TransactionRead", "TransactionWrite", "TransactionUpdate"))
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
+    has_mfd_transactions = any(
+        any(name in op and op[name].get("transport") == "mfd" for name in
+            ("TransactionRead", "TransactionWrite", "TransactionUpdate"))
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
     base = bind.state_expr("dev.base") or "dev->base"
 
     L: list[str] = []
@@ -151,6 +169,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("static inline void harness_write16be(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 1); }")
     L.append("static inline void harness_write32be(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 1); }")
     L.append("static inline void reharness_delay_ns(uint32_t ns) { (void)ns; }")
+    L.extend(transaction_runtime_prelude("harness"))
     L.append('#define REHARNESS_CALLBACK_BEGIN(n) printf("[reharness-callback-begin] %u\\n", (unsigned)(n))')
     L.append('#define REHARNESS_CALLBACK_MARKER(name) printf("[reharness-callback] %s\\n", (name))')
     L.append('#define REHARNESS_CALLBACK_RESULT(v) printf("[reharness-result] 0x%llx\\n", (unsigned long long)(v))')
@@ -163,7 +182,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append('#define REHARNESS_W1C_END() printf("[reharness-w1c-end]\\n")')
     L.append("")
     # register macros
-    for name, off in regs.items():
+    for name, off in constants.items():
         L.append(f"#define {name} 0x{off:x}")
     function_macros = _portable_function_macros(formal)
     safe_function_calls = set(function_macros)
@@ -197,9 +216,9 @@ def generate(formal: dict, device_spec, bind) -> str:
                        if re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v)}
         upper_refs |= set(re.findall(r"\b[A-Z][A-Za-z0-9_]{2,}\b", repr(safe_ops)))
         upper_calls |= set(re.findall(r"\b([A-Z][A-Za-z0-9_]{2,})\s*\(", repr(safe_ops)))
-    for name in sorted(upper_calls - set(regs) - set(function_macros)):
+    for name in sorted(upper_calls - set(constants) - set(function_macros)):
         L.append(f"#ifndef {name}\n#define {name}(...) 0\n#endif")
-    for name in sorted(upper_refs - upper_calls - set(regs) - {"MMIO", "TODO"}):
+    for name in sorted(upper_refs - upper_calls - set(constants) - {"MMIO", "TODO"}):
         L.append(f"#ifndef {name}\n#define {name} 0\n#endif")
     if normalized_any or portable_skip:
         L.append("/* REHARNESS_UNSUPPORTED: source-private expressions normalized */")
@@ -209,6 +228,12 @@ def generate(formal: dict, device_spec, bind) -> str:
                     if s.name not in {"base", "clk", "num_irqs"}]
     L.append(f"{priv} {{")
     L.append("    uintptr_t base;")
+    if has_regmap_transactions:
+        L.append("    void *regmap;")
+    if has_i2c_transactions:
+        L.append("    void *client;")
+    if has_mfd_transactions:
+        L.append("    void *mfd;")
     for state in state_fields:
         ctype = ("uintptr_t" if state.type == "MmioBase" else
                  "uint32_t *" if state.type == "UIntArray" else
@@ -236,7 +261,15 @@ def generate(formal: dict, device_spec, bind) -> str:
         params = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
         params = (params + ", ") if params else ""
         params += f"{priv} *dev"
-        has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
+        # The subsystem callback runner invokes accessors based on their
+        # declared signature (return_type != "Void").  A portable-skipped
+        # body is emptied, so it would otherwise be emitted as ``void`` while
+        # the caller still captures a result (``void value not ignored``).
+        # Honor the signature in that case and return a zero value.
+        if portable_skip:
+            has_return = fn.signature.return_type != "Void"
+        else:
+            has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
         return_type = _c_type(fn.signature.return_type, bind) if has_return else "void"
         L.append(f"static {return_type} {fn.name}({params}) {{")
         # declare read vars + value/guard locals (common.local_decls skips
@@ -249,6 +282,8 @@ def generate(formal: dict, device_spec, bind) -> str:
         L.append(ops_to_c(safe_ops, bind, "base", regs, indent=1,
                           state_expr="dev",
                           _lowering_recipes=contract_recipes))
+        if portable_skip and has_return:
+            L.append("    return 0;")
         L.append("}")
         L.append("")
 
@@ -260,6 +295,15 @@ def generate(formal: dict, device_spec, bind) -> str:
     # test main: call probe (or first function) and dump trace
     entry = next((fn for fn in device_spec.functions if fn.role == "probe"), None)
     entry = entry or (device_spec.functions[0] if device_spec.functions else None)
+    transaction_entries = [
+        fn for fn in device_spec.functions
+        if any(any(name in op and op[name].get("transport") in
+                   {"regmap", "i2c", "i2c_smbus", "mfd"}
+                   for name in ("TransactionRead", "TransactionWrite",
+                                "TransactionUpdate"))
+               for op in walk_leaf_ops(
+                   func_by_name.get(fn.ris_ref, {}).get("ops", [])))
+    ]
     L.append("int main(void) {")
     for state in state_fields:
         if state.type == "UIntArray":
@@ -293,10 +337,11 @@ def generate(formal: dict, device_spec, bind) -> str:
             init.append(f".{state.name} = 2")
     L.append(f"    {priv} dev = {{ {', '.join(init)} }};")
     L.append("    harness_seed_mmio();")
-    if entry:
-        keep = [p for p in entry.signature.params if p.type != "DeviceState"]
+    calls = transaction_entries or ([entry] if entry else [])
+    for call in calls:
+        keep = [p for p in call.signature.params if p.type != "DeviceState"]
         call_args = ", ".join(["0"] * len(keep)) + (", " if keep else "") + "&dev"
-        L.append(f"    {entry.name}({call_args});")
+        L.append(f"    {call.name}({call_args});")
     if subsystem_callback_plan(formal, device_spec):
         L.append("    harness_seed_mmio();")
         L.append("    reharness_run_subsystem_callbacks(&dev);")

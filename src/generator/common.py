@@ -14,6 +14,18 @@ _C_KEYWORDS = {
 }
 
 
+def _called_names_in_text(text: str) -> set[str]:
+    names = set(re.findall(r"\b([A-Za-z_]\w*)\s*\(", text or ""))
+    # Linux polling macros take the read accessor as their first argument and
+    # invoke it internally.  That identifier is a function, not a scalar
+    # local, even though source syntax does not place `(` immediately after it.
+    for match in re.finditer(
+            r"\bread_poll_timeout(?:_atomic)?\s*\(\s*([A-Za-z_]\w*)",
+            text or ""):
+        names.add(match.group(1))
+    return names
+
+
 def _vars_in_expr(e) -> set[str]:
     if e is None:
         return set()
@@ -30,6 +42,7 @@ def _vars_in_expr(e) -> set[str]:
                         or before.endswith(("->", "."))):
                     continue
                 out.add(m.group(0))
+        out -= _called_names_in_text(v)
     if "BinOp" in e:
         out |= _vars_in_expr(e["BinOp"]["left"])
         out |= _vars_in_expr(e["BinOp"]["right"])
@@ -52,10 +65,11 @@ def value_var_names(ops) -> set[str]:
             names |= _vars_in_expr(op["Loop"].get("guard"))
             for loop_text in (op["Loop"].get("init", ""),
                               op["Loop"].get("step", "")):
-                names |= {
+                loop_names = {
                     name for name in re.findall(r"\b[A-Za-z_]\w*\b", loop_text)
                     if name not in _C_KEYWORDS
                 }
+                names |= loop_names - _called_names_in_text(loop_text)
         body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
         if body and "Computed" in body.get("addr", {}):
             names |= _vars_in_expr(body["addr"]["Computed"])
@@ -70,6 +84,89 @@ def value_var_names(ops) -> set[str]:
         elif "Return" in op:
             names |= _vars_in_expr(op["Return"].get("value"))
     return names
+
+
+def transaction_local_decls(ops, already_declared: set[str], indent: int = 1) -> str:
+    """Declare opaque transaction handles and payload locals for generated C.
+
+    Source transaction handles are intentionally opaque: the backend ABI takes
+    ``void *`` and owns the transport model.  Existing function parameters are
+    never redeclared.
+    """
+    ids: set[str] = set()
+    buffers: set[str] = set()
+    reads: set[str] = set()
+    values: set[str] = set()
+
+    def expr_ids(expr):
+        return _vars_in_expr(expr)
+
+    def visit(items):
+        for op in items or []:
+            kind = transaction_kind(op)
+            if kind:
+                body = op[kind]
+                target = body.get("target") or {}
+                ids.update(expr_ids(target))
+                values.update(expr_ids(body.get("selector")))
+                if kind == "TransactionRead":
+                    payload = body.get("payload") or {}
+                    if "Scalar" in payload:
+                        name = payload["Scalar"].get("var")
+                        if isinstance(name, str):
+                            reads.add(name)
+                    elif "Buffer" in payload:
+                        result = body.get("result")
+                        if isinstance(result, str):
+                            reads.add(result)
+                        name = payload["Buffer"].get("buffer")
+                        buffers.update(expr_ids(name))
+                        values.update(expr_ids(payload["Buffer"].get("count")))
+                elif kind == "TransactionWrite":
+                    payload = body.get("payload") or {}
+                    if "Scalar" in payload:
+                        scalar_value = payload["Scalar"].get("value")
+                        values.update(expr_ids(scalar_value))
+                    elif "Buffer" in payload:
+                        buffers.update(expr_ids(payload["Buffer"].get("buffer")))
+                        values.update(expr_ids(payload["Buffer"].get("count")))
+                else:
+                    values.update(expr_ids(body.get("mask")))
+                    values.update(expr_ids(body.get("value")))
+                    changed = body.get("changed_result")
+                    if isinstance(changed, str):
+                        reads.add(changed)
+                continue
+            if "Cond" in op:
+                visit(op["Cond"].get("then_ops")); visit(op["Cond"].get("else_ops"))
+            elif "Loop" in op:
+                visit(op["Loop"].get("guard_ops")); visit(op["Loop"].get("body"))
+            elif "Seq" in op:
+                visit(op["Seq"].get("ops"))
+    visit(ops)
+    declared = set(already_declared)
+    pad = "    " * indent
+    lines: list[str] = []
+    for name in sorted(reads):
+        if _is_simple_id(name) and name not in declared:
+            lines.append(f"{pad}uint32_t {name} = 0;")
+            declared.add(name)
+    for name in sorted(values - declared):
+        if _is_simple_id(name) and name not in _C_KEYWORDS \
+                and not re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name):
+            lines.append(f"{pad}uint32_t {name} = 0;")
+            declared.add(name)
+    for name in sorted(buffers):
+        if _is_simple_id(name) and name not in declared:
+            lines.append(f"{pad}uint32_t {name}[64] = {{0}};")
+            declared.add(name)
+    for name in sorted(ids - declared):
+        if (not _is_simple_id(name) or name in _C_KEYWORDS
+                or re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name)):
+            continue
+        lines.append(f"{pad}void *{name} = 0;")
+        declared.add(name)
+    return "\n".join(lines)
 
 
 def lowering_recipes(ops: list) -> dict[str, dict]:
@@ -156,6 +253,15 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
                          and _is_simple_id(o["StateRead"]["var"])
                          and o["StateRead"]["var"] not in declared
                          and o["StateRead"]["var"] not in read_vars})
+    read_vars += sorted({
+        o["TransactionRead"].get("payload", {}).get("Scalar", {}).get("var")
+        for o in walk_leaf_ops(ops) if "TransactionRead" in o
+        and _is_simple_id(
+            o["TransactionRead"].get("payload", {}).get(
+                "Scalar", {}).get("var", ""))
+        and o["TransactionRead"]["payload"]["Scalar"]["var"] not in declared
+        and o["TransactionRead"]["payload"]["Scalar"]["var"] not in read_vars
+    })
     declared |= set(read_vars)
     for v in read_vars:
         lines.append(f"{pad}{ctype} {v} = 0;")
@@ -171,6 +277,9 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
         if v in _C_KEYWORDS or re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v):
             continue
         lines.append(f"{pad}{ctype} {v} = 0;")
+    tx = transaction_local_decls(ops, declared, indent)
+    if tx:
+        lines.append(tx)
     return "\n".join(lines)
 
 
@@ -238,6 +347,279 @@ def lowering_receipt(op: dict, disposition: str = "lowered") -> str:
     return ("/* REHARNESS_RIS_OP "
             f"id={body.get('op_id', '?')} kind={kind} "
             f"status={disposition} digest={digest} */")
+
+
+TRANSACTION_KINDS = ("TransactionRead", "TransactionWrite", "TransactionUpdate")
+
+
+def transaction_kind(op: dict) -> str | None:
+    return next((name for name in TRANSACTION_KINDS if name in op), None)
+
+
+def transaction_digest(op: dict) -> str:
+    """Stable digest for the backend-independent transaction contract."""
+    kind = transaction_kind(op)
+    if kind is None:
+        return "0000000000000000"
+    body = copy.deepcopy(op[kind])
+    for key in ("op_id", "evidence", "reliability", "path_precision",
+                "access_domain", "transport", "_backend_contract_digest"):
+        body.pop(key, None)
+    encoded = json.dumps({"schema": 1, "kind": kind, "body": body},
+                         sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()[:16]
+
+
+def transaction_receipt(op: dict, disposition: str = "lowered") -> str:
+    kind = transaction_kind(op) or "Unknown"
+    body = op.get(kind, {})
+    digest = body.get("_backend_contract_digest") or transaction_digest(op)
+    return ("/* REHARNESS_TRANSACTION_OP "
+            f"id={body.get('op_id', '?')} kind={kind} "
+            f"transport={body.get('transport', 'unknown')} "
+            f"status={disposition} digest={digest} */")
+
+
+def _transaction_anchor(op: dict, seen: set[str]) -> str:
+    kind = transaction_kind(op)
+    body = op.get(kind, {}) if kind else {}
+    op_id = body.get("op_id")
+    if not isinstance(op_id, str) or not re.fullmatch(r"[A-Za-z0-9_]+", op_id):
+        raise ValueError(f"transaction operation has invalid op_id: {op_id!r}")
+    if op_id in seen:
+        raise ValueError(f"duplicate transaction operation id: {op_id}")
+    seen.add(op_id)
+    return f"__rh_txn_{op_id}"
+
+
+def _transaction_expr(value: dict | None, default: str = "0") -> str:
+    if value is None:
+        return default
+    return expr_to_c(value)
+
+
+def _transaction_scalar_width(payload: dict) -> str:
+    width = payload.get("width") or payload.get("element_width")
+    return {"B1": "uint8_t", "B2": "uint16_t", "B4": "uint32_t",
+            "B8": "uint64_t"}.get(width, "uint32_t")
+
+
+def _i2c_helper(kind: str, body: dict, buffered: bool = False) -> str:
+    protocol = body.get("protocol") or "smbus_byte_data"
+    prefix = "reharness_i2c_master" if protocol == "raw" else "reharness_i2c_smbus"
+    action = "read" if kind == "TransactionRead" else "write"
+    if protocol == "raw":
+        return f"{prefix}_{'recv' if action == 'read' else 'send'}"
+    if buffered:
+        return f"{prefix}_{action}_{'i2c_block' if protocol == 'i2c_block' else 'block_data'}"
+    return f"{prefix}_{action}_{protocol.removeprefix('smbus_')}"
+
+
+def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bind=None) -> None:
+    """Emit the shared transaction ABI used by all three generated backends."""
+    kind = transaction_kind(op)
+    if kind is None:
+        return
+    body = op[kind]
+    target = _transaction_expr(body.get("target"), "0")
+    selector = _transaction_expr(body.get("selector"), "0")
+    transport = body.get("transport", "unknown")
+    if transport not in {"regmap", "i2c_smbus", "i2c", "mfd"}:
+        out.append(f"{pad}{transaction_receipt(op, 'rejected')}")
+        out.append(f"{pad}{_transaction_anchor(op, seen)}: {{")
+        out.append(f"{pad}    /* REHARNESS_UNSUPPORTED_TRANSACTION: {transport} */")
+        out.append(f"{pad}}}")
+        return
+    out.append(f"{pad}{transaction_receipt(op)}")
+    out.append(f"{pad}{_transaction_anchor(op, seen)}: {{")
+    out.append(f'{pad}    reharness_transaction_mark("{body.get("op_id", "?")}");')
+    if transport == "mfd":
+        target = _transaction_expr(body.get("target"), "0")
+        selector = _transaction_expr(body.get("selector"), "0")
+        mask = _transaction_expr(body.get("mask"), "0")
+        value = _transaction_expr(body.get("value"), "0")
+        if getattr(bind, "backend", None) == "linux":
+            helper = body.get("helper_symbol")
+            if not isinstance(helper, str) or not re.fullmatch(r"[A-Za-z_]\w*", helper):
+                out.append(f"{pad}    /* REHARNESS_UNSUPPORTED_MFD_HELPER */")
+            elif body.get("helper_contract") == "set_bits":
+                out.append(f"{pad}    (void){helper}((void *)({target}), {selector}, {mask});")
+                out.append(f"{pad}    reharness_mfd_trace(\"U\", {selector}, 1, {mask});")
+            elif body.get("helper_contract") == "clear_bits":
+                out.append(f"{pad}    (void){helper}((void *)({target}), {selector}, {mask});")
+                out.append(f"{pad}    reharness_mfd_trace(\"U\", {selector}, 1, 0);")
+            else:
+                out.append(f"{pad}    (void){helper}((void *)({target}), {selector}, {value});")
+                out.append(f"{pad}    reharness_mfd_trace(\"W\", {selector}, 1, {value});")
+        elif kind == "TransactionRead":
+            var = (body.get("payload") or {}).get("Scalar", {}).get("var") or body.get("result") or "transaction_result"
+            out.append(f"{pad}    {var} = 0;")
+            out.append(f"{pad}    (void)reharness_mfd_read((void *)({target}), {selector}, (unsigned int *)&{var});")
+        elif kind == "TransactionWrite":
+            payload = body.get("payload") or {}
+            value = _transaction_expr((payload.get("Scalar") or {}).get("value"), value)
+            out.append(f"{pad}    (void)reharness_mfd_write((void *)({target}), {selector}, (unsigned int)({value}));")
+        else:
+            out.append(f"{pad}    (void)reharness_mfd_update((void *)({target}), {selector}, (unsigned int)({mask}), (unsigned int)({value}));")
+        out.append(f"{pad}}}")
+        return
+    if transport in {"i2c_smbus", "i2c"}:
+        payload = body.get("payload") or {}
+        buffered = "Buffer" in payload
+        helper = _i2c_helper(kind, body, buffered)
+        if buffered:
+            p = payload["Buffer"]
+            buf = _transaction_expr(p.get("buffer"), "0")
+            count = _transaction_expr(p.get("count"), "1")
+            if body.get("protocol") == "raw":
+                args = f"(void *)({target}), (void *)({buf}), {count}"
+            else:
+                args = f"(void *)({target}), {selector}, (void *)({buf}), {count}"
+            call = f"{helper}({args})"
+            result = body.get("result") if kind == "TransactionRead" else None
+            if isinstance(result, str) and _is_simple_id(result):
+                out.append(f"{pad}    {result} = {call};")
+            else:
+                out.append(f"{pad}    (void){call};")
+        elif kind == "TransactionRead":
+            p = payload.get("Scalar", {})
+            var = p.get("var") or "transaction_result"
+            out.append(f"{pad}    {var} = 0;")
+            args = (f"(void *)({target}), (unsigned int *)&{var}"
+                    if body.get("protocol") == "smbus_byte"
+                    else f"(void *)({target}), {selector}, (unsigned int *)&{var}")
+            out.append(f"{pad}    (void){helper}({args});")
+            out.append(f"{pad}    (void){var};")
+        else:
+            p = payload.get("Scalar", {})
+            value = _transaction_expr(p.get("value"), "0")
+            args = (f"(void *)({target}), (unsigned int)({value})"
+                    if body.get("protocol") == "smbus_byte"
+                    else f"(void *)({target}), {selector}, (unsigned int)({value})")
+            out.append(f"{pad}    (void){helper}({args});")
+        out.append(f"{pad}}}")
+        return
+    if kind == "TransactionRead":
+        payload = body.get("payload") or {}
+        if "Buffer" in payload:
+            p = payload["Buffer"]
+            buf = _transaction_expr(p.get("buffer"), "0")
+            count = _transaction_expr(p.get("count"), "1")
+            out.append(f"{pad}    (void)reharness_regmap_bulk_read((void *)({target}), {selector}, {buf}, {count});")
+        else:
+            p = payload.get("Scalar", {})
+            var = p.get("var") or "transaction_result"
+            ctype = _transaction_scalar_width(p)
+            out.append(f"{pad}    {var} = 0;")
+            out.append(f"{pad}    (void)reharness_regmap_read((void *)({target}), {selector}, (unsigned int *)&{var});")
+            out.append(f"{pad}    (void){var};")
+    elif kind == "TransactionWrite":
+        payload = body.get("payload") or {}
+        if "Buffer" in payload:
+            p = payload["Buffer"]
+            buf = _transaction_expr(p.get("buffer"), "0")
+            count = _transaction_expr(p.get("count"), "1")
+            out.append(f"{pad}    (void)reharness_regmap_bulk_write((void *)({target}), {selector}, {buf}, {count});")
+        else:
+            p = payload.get("Scalar", {})
+            value = _transaction_expr(p.get("value"), "0")
+            out.append(f"{pad}    (void)reharness_regmap_write((void *)({target}), {selector}, (unsigned int)({value}));")
+    else:
+        mask = _transaction_expr(body.get("mask"), "0")
+        value = _transaction_expr(body.get("value"), "0")
+        changed = body.get("changed_result")
+        call = (f"reharness_regmap_update((void *)({target}), {selector}, "
+                f"(unsigned int)({mask}), (unsigned int)({value}))")
+        if changed and _is_simple_id(changed):
+            out.append(f"{pad}    {changed} = ({call} != 0);")
+        else:
+            out.append(f"{pad}    (void){call};")
+    out.append(f"{pad}}}")
+
+
+def transaction_runtime_prelude(backend: str) -> list[str]:
+    """C ABI shared by generated regmap transaction leaves."""
+    if backend == "linux":
+        return [
+            "#include <linux/regmap.h>",
+            "#include <linux/i2c.h>",
+            "static const char *reharness_txn_current_id = \"?\";",
+            "static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }",
+            "#define reharness_txn_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
+            "#define reharness_i2c_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=i2c_smbus selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
+            "#define reharness_i2c_raw_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=i2c selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
+            "#define reharness_mfd_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=mfd selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
+            "static inline int reharness_regmap_read(void *t, unsigned int r, unsigned int *v) { int ret = regmap_read((struct regmap *)t, r, v); if (!ret) reharness_txn_trace(\"R\", r, 1, *v); return ret; }",
+            "static inline int reharness_regmap_write(void *t, unsigned int r, unsigned int v) { int ret = regmap_write((struct regmap *)t, r, v); if (!ret) reharness_txn_trace(\"W\", r, 1, v); return ret; }",
+            "static inline int reharness_regmap_update(void *t, unsigned int r, unsigned int m, unsigned int v) { int ret = regmap_update_bits((struct regmap *)t, r, m, v); if (!ret) reharness_txn_trace(\"U\", r, 1, v & m); return ret; }",
+            "static inline int reharness_regmap_bulk_read(void *t, unsigned int r, unsigned int *b, unsigned int n) { int ret = regmap_bulk_read((struct regmap *)t, r, b, n); if (!ret) reharness_txn_trace(\"BR\", r, n, n ? b[0] : 0); return ret; }",
+            "static inline int reharness_regmap_bulk_write(void *t, unsigned int r, const unsigned int *b, unsigned int n) { int ret = regmap_bulk_write((struct regmap *)t, r, b, n); if (!ret) reharness_txn_trace(\"BW\", r, n, n ? b[0] : 0); return ret; }",
+            "static inline int reharness_i2c_smbus_read_byte(void *t, unsigned int *v) { int r = i2c_smbus_read_byte((struct i2c_client *)t); if (r >= 0) { *v = (unsigned int)r; reharness_i2c_trace(\"R\", 0, 1, *v); } return r < 0 ? r : 0; }",
+            "static inline int reharness_i2c_smbus_write_byte(void *t, unsigned int v) { int r = i2c_smbus_write_byte((struct i2c_client *)t, v); if (!r) reharness_i2c_trace(\"W\", 0, 1, v); return r; }",
+            "static inline int reharness_i2c_smbus_read_byte_data(void *t, unsigned int r, unsigned int *v) { int x = i2c_smbus_read_byte_data((struct i2c_client *)t, r); if (x >= 0) { *v = (unsigned int)x; reharness_i2c_trace(\"R\", r, 1, *v); } return x < 0 ? x : 0; }",
+            "static inline int reharness_i2c_smbus_write_byte_data(void *t, unsigned int r, unsigned int v) { int x = i2c_smbus_write_byte_data((struct i2c_client *)t, r, v); if (!x) reharness_i2c_trace(\"W\", r, 1, v); return x; }",
+            "static inline int reharness_i2c_smbus_read_word_data(void *t, unsigned int r, unsigned int *v) { int x = i2c_smbus_read_word_data((struct i2c_client *)t, r); if (x >= 0) { *v = (unsigned int)x; reharness_i2c_trace(\"R\", r, 1, *v); } return x < 0 ? x : 0; }",
+            "static inline int reharness_i2c_smbus_write_word_data(void *t, unsigned int r, unsigned int v) { int x = i2c_smbus_write_word_data((struct i2c_client *)t, r, v); if (!x) reharness_i2c_trace(\"W\", r, 1, v); return x; }",
+            "static inline int reharness_i2c_smbus_read_word_data_swapped(void *t, unsigned int r, unsigned int *v) { int x = i2c_smbus_read_word_swapped((struct i2c_client *)t, r); if (x >= 0) { *v = (unsigned int)x; reharness_i2c_trace(\"R\", r, 1, *v); } return x < 0 ? x : 0; }",
+            "static inline int reharness_i2c_smbus_write_word_data_swapped(void *t, unsigned int r, unsigned int v) { int x = i2c_smbus_write_word_swapped((struct i2c_client *)t, r, v); if (!x) reharness_i2c_trace(\"W\", r, 1, v); return x; }",
+            "static inline int reharness_i2c_smbus_read_block_data(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_read_block_data((struct i2c_client *)t, r, b); if (x >= 0) reharness_i2c_trace(\"BR\", r, x, x ? ((u8 *)b)[0] : 0); return x; }",
+            "static inline int reharness_i2c_smbus_write_block_data(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_write_block_data((struct i2c_client *)t, r, n, b); if (!x) reharness_i2c_trace(\"BW\", r, n, n ? ((u8 *)b)[0] : 0); return x; }",
+            "static inline int reharness_i2c_smbus_read_i2c_block(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_read_i2c_block_data((struct i2c_client *)t, r, n, b); if (x >= 0) reharness_i2c_trace(\"BR\", r, x, x ? ((u8 *)b)[0] : 0); return x; }",
+            "static inline int reharness_i2c_smbus_write_i2c_block(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_write_i2c_block_data((struct i2c_client *)t, r, n, b); if (!x) reharness_i2c_trace(\"BW\", r, n, n ? ((u8 *)b)[0] : 0); return x; }",
+            "static inline int reharness_i2c_master_recv(void *t, void *b, unsigned int n) { int x = i2c_master_recv((struct i2c_client *)t, b, n); if (x >= 0) reharness_i2c_raw_trace(\"BR\", 0, x, x ? ((u8 *)b)[0] : 0); return x; }",
+            "static inline int reharness_i2c_master_send(void *t, void *b, unsigned int n) { int x = i2c_master_send((struct i2c_client *)t, b, n); if (x >= 0) reharness_i2c_raw_trace(\"BW\", 0, x, x ? ((u8 *)b)[0] : 0); return x; }",
+        ]
+    trace = (
+        'printf("[txn %lu] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\\n", '
+        'reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);')
+    guard = "REHARNESS_BAREMETAL_ORACLE" if backend == "baremetal" else None
+    return [
+        "static uint32_t reharness_regmap_state[256];",
+        "static uint8_t reharness_i2c_state[256];",
+        "static uint32_t reharness_mfd_state[256];",
+        "static unsigned long reharness_txn_trace_count;",
+        "static const char *reharness_txn_current_id = \"?\";",
+        "static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }",
+        "static inline void reharness_txn_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
+        *(([f"#ifdef {guard}", "    " + trace, "#else",
+            "    (void)kind; (void)selector; (void)count; (void)value;",
+            "#endif"] if guard else ["    " + trace])),
+        "}",
+        "static inline void reharness_i2c_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
+        *(([f"#ifdef {guard}", "    " + trace.replace("transport=regmap", "transport=i2c_smbus"), "#else",
+            "    (void)kind; (void)selector; (void)count; (void)value;", "#endif"] if guard else ["    " + trace.replace("transport=regmap", "transport=i2c_smbus")])) ,
+        "}",
+        "static inline void reharness_i2c_raw_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
+        *(([f"#ifdef {guard}", "    " + trace.replace("transport=regmap", "transport=i2c"), "#else",
+            "    (void)kind; (void)selector; (void)count; (void)value;", "#endif"] if guard else ["    " + trace.replace("transport=regmap", "transport=i2c")])) ,
+        "}",
+        "static inline void reharness_mfd_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
+        *(([f"#ifdef {guard}", "    " + trace.replace("transport=regmap", "transport=mfd"), "#else",
+            "    (void)kind; (void)selector; (void)count; (void)value;", "#endif"] if guard else ["    " + trace.replace("transport=regmap", "transport=mfd")])) ,
+        "}",
+        "static inline int reharness_regmap_read(void *t, uint32_t r, uint32_t *v) { (void)t; *v = reharness_regmap_state[r & 255u]; reharness_txn_trace(\"R\", r, 1, *v); return 0; }",
+        "static inline int reharness_regmap_write(void *t, uint32_t r, uint32_t v) { (void)t; reharness_regmap_state[r & 255u] = v; reharness_txn_trace(\"W\", r, 1, v); return 0; }",
+        "static inline int reharness_regmap_update(void *t, uint32_t r, uint32_t m, uint32_t v) { (void)t; uint32_t old = reharness_regmap_state[r & 255u]; uint32_t next = (old & ~m) | (v & m); reharness_regmap_state[r & 255u] = next; reharness_txn_trace(\"U\", r, 1, next); return old != next; }",
+        "static inline int reharness_regmap_bulk_read(void *t, uint32_t r, uint32_t *b, uint32_t n) { (void)t; for (uint32_t i = 0; i < n; ++i) b[i] = reharness_regmap_state[(r + i) & 255u]; reharness_txn_trace(\"BR\", r, n, n ? b[0] : 0); return 0; }",
+        "static inline int reharness_regmap_bulk_write(void *t, uint32_t r, const uint32_t *b, uint32_t n) { (void)t; for (uint32_t i = 0; i < n; ++i) reharness_regmap_state[(r + i) & 255u] = b[i]; reharness_txn_trace(\"BW\", r, n, n ? b[0] : 0); return 0; }",
+        "static inline int reharness_i2c_smbus_read_byte(void *t, unsigned int *v) { (void)t; *v = reharness_i2c_state[0]; reharness_i2c_trace(\"R\", 0, 1, *v); return 0; }",
+        "static inline int reharness_i2c_smbus_write_byte(void *t, unsigned int v) { (void)t; reharness_i2c_state[0] = (uint8_t)v; reharness_i2c_trace(\"W\", 0, 1, v); return 0; }",
+        "static inline int reharness_i2c_smbus_read_byte_data(void *t, unsigned int r, unsigned int *v) { (void)t; *v = reharness_i2c_state[r & 255u]; reharness_i2c_trace(\"R\", r, 1, *v); return 0; }",
+        "static inline int reharness_i2c_smbus_write_byte_data(void *t, unsigned int r, unsigned int v) { (void)t; reharness_i2c_state[r & 255u] = (uint8_t)v; reharness_i2c_trace(\"W\", r, 1, v); return 0; }",
+        "static inline int reharness_i2c_smbus_read_word_data(void *t, unsigned int r, unsigned int *v) { return reharness_i2c_smbus_read_byte_data(t, r, v); }",
+        "static inline int reharness_i2c_smbus_write_word_data(void *t, unsigned int r, unsigned int v) { return reharness_i2c_smbus_write_byte_data(t, r, v); }",
+        "static inline int reharness_i2c_smbus_read_word_data_swapped(void *t, unsigned int r, unsigned int *v) { return reharness_i2c_smbus_read_word_data(t, r, v); }",
+        "static inline int reharness_i2c_smbus_write_word_data_swapped(void *t, unsigned int r, unsigned int v) { return reharness_i2c_smbus_write_word_data(t, r, v); }",
+        "static inline int reharness_i2c_smbus_read_block_data(void *t, unsigned int r, void *b, unsigned int n) { (void)t; for (unsigned int i = 0; i < n; ++i) ((uint8_t *)b)[i] = reharness_i2c_state[(r + i) & 255u]; reharness_i2c_trace(\"BR\", r, n, n ? ((uint8_t *)b)[0] : 0); return (int)n; }",
+        "static inline int reharness_i2c_smbus_write_block_data(void *t, unsigned int r, void *b, unsigned int n) { (void)t; for (unsigned int i = 0; i < n; ++i) reharness_i2c_state[(r + i) & 255u] = ((uint8_t *)b)[i]; reharness_i2c_trace(\"BW\", r, n, n ? ((uint8_t *)b)[0] : 0); return 0; }",
+        "static inline int reharness_i2c_smbus_read_i2c_block(void *t, unsigned int r, void *b, unsigned int n) { return reharness_i2c_smbus_read_block_data(t, r, b, n); }",
+        "static inline int reharness_i2c_smbus_write_i2c_block(void *t, unsigned int r, void *b, unsigned int n) { return reharness_i2c_smbus_write_block_data(t, r, b, n); }",
+        "static inline int reharness_i2c_master_recv(void *t, void *b, unsigned int n) { (void)t; for (unsigned int i = 0; i < n; ++i) ((uint8_t *)b)[i] = reharness_i2c_state[i & 255u]; reharness_i2c_raw_trace(\"BR\", 0, n, n ? ((uint8_t *)b)[0] : 0); return (int)n; }",
+        "static inline int reharness_i2c_master_send(void *t, void *b, unsigned int n) { (void)t; for (unsigned int i = 0; i < n; ++i) reharness_i2c_state[i & 255u] = ((uint8_t *)b)[i]; reharness_i2c_raw_trace(\"BW\", 0, n, n ? ((uint8_t *)b)[0] : 0); return (int)n; }",
+        "static inline int reharness_mfd_read(void *t, unsigned int r, unsigned int *v) { (void)t; *v = reharness_mfd_state[r & 255u]; reharness_mfd_trace(\"R\", r, 1, *v); return 0; }",
+        "static inline int reharness_mfd_write(void *t, unsigned int r, unsigned int v) { (void)t; reharness_mfd_state[r & 255u] = v; reharness_mfd_trace(\"W\", r, 1, v); return 0; }",
+        "static inline int reharness_mfd_update(void *t, unsigned int r, unsigned int m, unsigned int v) { (void)t; unsigned int old = reharness_mfd_state[r & 255u]; unsigned int next = (old & ~m) | (v & m); reharness_mfd_state[r & 255u] = next; reharness_mfd_trace(\"U\", r, 1, next); return old != next; }",
+    ]
 
 
 def _operation_anchor(op: dict, seen: set[str]) -> str:
@@ -328,6 +710,9 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
     pad = "    " * indent
     out: list[str] = []
     for op in ops:
+        if transaction_kind(op) is not None:
+            _transaction_lowering(op, pad, out, _anchor_ids, bind)
+            continue
         leaf = (op.get("Read") or op.get("Write")
                 or op.get("ReadModifyWrite"))
         if leaf is not None and leaf.get("reliability") == "Unsupported":

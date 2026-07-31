@@ -5,7 +5,7 @@ Enriches extracted RIS with backend-independent semantics:
     back to function-name hints
   - signature: C param types → abstract types (LogicalIRQ, DeviceState, UInt...)
   - binds: MMIO base + device state from the address expressions used in the RIS
-  - effects: writes_register(REG) for each accessed Symbolic register, plus a
+  - effects: writes_register(REG) and typed non-MMIO transactions, plus a
     role-derived event effect (e.g. interrupt_ack → clears_interrupt(line))
   - requires/ensures: role-derived Hoare-style skeletons
 """
@@ -139,6 +139,7 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
     # effects: writes_register for each Symbolic register touched
     effects: list[Effect] = []
     seen_regs: set[str] = set()
+    seen_transactions: set[tuple[str, str, str]] = set()
     for op in walk_leaf_ops(module["ops"]):
         addr = (op.get("Read") or op.get("Write") or op.get("ReadModifyWrite") or {}).get("addr", {})
         if "Symbolic" in addr:
@@ -146,6 +147,25 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
             if reg not in seen_regs and ("Write" in op or "ReadModifyWrite" in op):
                 seen_regs.add(reg)
                 effects.append(reg_effect(reg))
+        transaction_kind = next((kind for kind in (
+            "TransactionRead", "TransactionWrite", "TransactionUpdate")
+            if kind in op), None)
+        if transaction_kind:
+            body = op[transaction_kind]
+            transport = body.get("transport", "unknown")
+            selector = body.get("selector")
+            key = (transaction_kind, transport, repr(selector))
+            if key not in seen_transactions:
+                seen_transactions.add(key)
+                verb = {"TransactionRead": "reads",
+                        "TransactionWrite": "writes",
+                        "TransactionUpdate": "updates"}[transaction_kind]
+                effects.append(Effect(
+                    "transaction",
+                    f"{verb}_transaction({transport})",
+                    {"operation": transaction_kind,
+                     "transport": transport,
+                     "selector": selector}))
     # role event effect
     sem = ROLE_SEMANTICS.get(role)
     if sem and sem[0]:
@@ -389,14 +409,28 @@ def infer_device_spec(formal: dict, funcs: list[Func],
             existing.add(field)
 
     # resources
+    transaction_transports = sorted({
+        (op.get("TransactionRead") or op.get("TransactionWrite")
+         or op.get("TransactionUpdate") or {}).get("transport")
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", []))
+        if (op.get("TransactionRead") or op.get("TransactionWrite")
+            or op.get("TransactionUpdate"))
+    } - {None})
     if fixed_bases and all(index is not None for index in fixed_bases.values()):
         resources = [
             Resource(f"mmio{index}", "MmioResource", True, base)
             for base, index in sorted(
                 fixed_bases.items(), key=lambda item: (int(item[1]), item[0]))
         ]
-    else:
+    elif not transaction_transports:
         resources = [Resource("mmio0", "MmioResource", True, "base")]
+    else:
+        resources = []
+    resources.extend(
+        Resource(f"transaction{index}", "TransactionResource", True,
+                 transport)
+        for index, transport in enumerate(transaction_transports))
     if has_clk:
         resources.append(Resource("clk0", "ClockResource", True, "clk"))
     if has_irq:
@@ -538,6 +572,42 @@ FIELD_ROLE: dict[str, tuple[str, str]] = {
     "exit": ("remove", "thread"),
 }
 
+# Some public callback ABIs reuse field names whose meaning is only
+# unambiguous in the owning table.  Keep these contracts owner-qualified so
+# new drivers can inherit the semantics without basename, compatible-string,
+# or private-prefix rules.  Unknown/private owners remain evidence-only.
+OWNER_FIELD_ROLE: dict[str, dict[str, tuple[str, str]]] = {
+    "clk_ops": {
+        "is_prepared": ("get_status", "thread"),
+    },
+    "sdhci_ops": {
+        "voltage_switch": ("write_config", "thread"),
+        "set_clock": ("write_config", "thread"),
+        "set_bus_width": ("write_config", "thread"),
+        "set_uhs_signaling": ("write_config", "thread"),
+        "set_power": ("write_config", "thread"),
+        "hw_reset": ("reset", "thread"),
+    },
+    "mmc_host_ops": {
+        "start_signal_voltage_switch": ("write_config", "thread"),
+        "execute_tuning": ("write_config", "thread"),
+        "prepare_hs400_tuning": ("write_config", "thread"),
+        "execute_hs400_tuning": ("write_config", "thread"),
+        "prepare_sd_hs_tuning": ("write_config", "thread"),
+        "execute_sd_hs_tuning": ("write_config", "thread"),
+        "hs400_enhanced_strobe": ("write_config", "thread"),
+        "request": ("setup_queue", "thread"),
+        "request_atomic": ("setup_queue", "atomic"),
+    },
+}
+
+
+def _callback_field_role(owner: str, field: str) -> tuple[str, str]:
+    owner_roles = OWNER_FIELD_ROLE.get(owner)
+    if owner_roles and field in owner_roles:
+        return owner_roles[field]
+    return FIELD_ROLE.get(field, ("unknown", "thread"))
+
 _CALLBACK_TYPE_ROLES: dict[str, tuple[str, str]] = {
     "irq_handler_t": ("interrupt_handler", "irq"),
 }
@@ -630,7 +700,7 @@ def _binding_info(func: Func, field_cursor, kind: str, evidence_cursor,
     if not field or not owner:
         return None
     role, context = (
-        FIELD_ROLE.get(field, ("unknown", "thread"))
+        _callback_field_role(owner, field)
         if owner in _ROLE_BEARING_CALLBACK_TYPES
         else ("unknown", "thread"))
     loc = evidence_cursor.location
@@ -922,7 +992,8 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
 
     # constants = int macros that are reconstruction-relevant.
     # Drop compiler builtins, kernel-wide config/arch noise, and anything not
-    # driver-prefixed or referenced (recom.md §"Trim .facts").
+    # driver-prefixed or referenced
+    # (docs/plans/output-artifact-recommendations.md §"Trim .facts").
     constants: dict = {}
     for name in macros.names():
         if name.startswith("_") or name in register_names:

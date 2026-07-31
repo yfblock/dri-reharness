@@ -20,7 +20,8 @@ from .subsystem_runner import (portable_sdhci_accessor_only,
                                portable_virtio_state_only)
 from .common import (ops_to_c, local_decls, value_var_names,
                      _replace_expr_var, addr_to_c, lowering_receipt,
-                     ris_op_digest, lowering_recipes)
+                     ris_op_digest, lowering_recipes,
+                     transaction_runtime_prelude, transaction_digest)
 
 _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
@@ -639,6 +640,19 @@ def _normalize_expr(expr, state_prefix: str | None = None,
     return out, changed
 
 
+def _normalize_transaction_expr(expr, state_prefix, safe_function_calls,
+                                transport=None):
+    """Bind common regmap handles to the generated Linux private state."""
+    if (state_prefix and isinstance(expr, dict) and "Var" in expr):
+        if transport == "mfd" and "->" in expr["Var"]:
+            return {"Var": f"{state_prefix}->mfd"}, True
+        if re.search(r"(?:->|\.)?(?:map|regmap)$", expr["Var"]):
+            return {"Var": f"{state_prefix}->regmap"}, True
+        if re.search(r"(?:->|\.)client$", expr["Var"]):
+            return {"Var": f"{state_prefix}->client"}, True
+    return _normalize_expr(expr, state_prefix, safe_function_calls)
+
+
 def _normalize_ops(ops, state_prefix: str | None = None,
                    safe_function_calls: set[str] | None = None,
                    contract_digests: dict[str, str] | None = None,
@@ -647,11 +661,19 @@ def _normalize_ops(ops, state_prefix: str | None = None,
         contract_digests = {}
         for original in walk_leaf_ops(ops):
             body = (original.get("Read") or original.get("Write")
-                    or original.get("ReadModifyWrite"))
+                    or original.get("ReadModifyWrite")
+                    or original.get("TransactionRead")
+                    or original.get("TransactionWrite")
+                    or original.get("TransactionUpdate"))
             if body and body.get("op_id"):
-                contract_digests[body["op_id"]] = (
-                    body.get("_backend_contract_digest")
-                    or ris_op_digest(original))
+                digest = body.get("_backend_contract_digest")
+                if not digest:
+                    digest = (ris_op_digest(original)
+                              if not any(name in original for name in
+                                         ("TransactionRead", "TransactionWrite",
+                                          "TransactionUpdate"))
+                              else transaction_digest(original))
+                contract_digests[body["op_id"]] = digest
     if contract_recipes is None:
         contract_recipes = lowering_recipes(ops)
     out = copy.deepcopy(ops)
@@ -694,6 +716,44 @@ def _normalize_ops(ops, state_prefix: str | None = None,
                 safe_function_calls)
             changed |= a
         else:
+            transaction_body = (op.get("TransactionRead")
+                                or op.get("TransactionWrite")
+                                or op.get("TransactionUpdate"))
+            if transaction_body is not None:
+                op_id = transaction_body.get("op_id")
+                if op_id in contract_digests:
+                    transaction_body["_backend_contract_digest"] = contract_digests[op_id]
+                transaction_body["target"], a = _normalize_transaction_expr(
+                    transaction_body.get("target"), state_prefix,
+                    safe_function_calls, transaction_body.get("transport"))
+                changed |= a
+                transaction_body["selector"], a = _normalize_transaction_expr(
+                    transaction_body.get("selector"), state_prefix,
+                    safe_function_calls)
+                changed |= a
+                payload = transaction_body.get("payload") or {}
+                scalar = payload.get("Scalar")
+                if scalar and scalar.get("value") is not None:
+                    scalar["value"], a = _normalize_expr(
+                        scalar.get("value"), state_prefix, safe_function_calls)
+                    changed |= a
+                buffer_body = payload.get("Buffer")
+                if buffer_body:
+                    buffer_body["buffer"], a = _normalize_expr(
+                        buffer_body.get("buffer"), state_prefix,
+                        safe_function_calls)
+                    changed |= a
+                    buffer_body["count"], a = _normalize_expr(
+                        buffer_body.get("count"), state_prefix,
+                        safe_function_calls)
+                    changed |= a
+                for key in ("mask", "value"):
+                    if key in transaction_body:
+                        transaction_body[key], a = _normalize_expr(
+                            transaction_body.get(key), state_prefix,
+                            safe_function_calls)
+                        changed |= a
+                continue
             body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
             if "StateRead" in op:
                 body = op["StateRead"]
@@ -844,6 +904,7 @@ def _callback_signature(table_field: str, priv: str, banked_gpio: bool = False):
         "clk_ops.unprepare": ("void", "struct clk_hw *hw", clk_pre),
         "clk_ops.enable": ("int", "struct clk_hw *hw", clk_pre),
         "clk_ops.disable": ("void", "struct clk_hw *hw", clk_pre),
+        "clk_ops.is_prepared": ("int", "struct clk_hw *hw", clk_pre),
         "clk_ops.is_enabled": ("int", "struct clk_hw *hw", clk_pre),
         "clk_ops.recalc_rate": (
             "unsigned long", "struct clk_hw *hw, unsigned long parent_rate", clk_pre),
@@ -867,6 +928,19 @@ def _callback_signature(table_field: str, priv: str, banked_gpio: bool = False):
             "void", "struct sdhci_host *host, u16 val, int reg", sdhci_pre),
         "sdhci_ops.write_b": (
             "void", "struct sdhci_host *host, u8 val, int reg", sdhci_pre),
+        "sdhci_ops.voltage_switch": (
+            "void", "struct sdhci_host *host", sdhci_pre),
+        "sdhci_ops.set_clock": (
+            "void", "struct sdhci_host *host, unsigned int clock", sdhci_pre),
+        "sdhci_ops.set_bus_width": (
+            "void", "struct sdhci_host *host, int width", sdhci_pre),
+        "sdhci_ops.set_uhs_signaling": (
+            "void", "struct sdhci_host *host, unsigned int timing", sdhci_pre),
+        "sdhci_ops.set_power": (
+            "void", "struct sdhci_host *host, unsigned char mode, unsigned short vdd",
+            sdhci_pre),
+        "sdhci_ops.hw_reset": (
+            "void", "struct sdhci_host *host", sdhci_pre),
         "usb_ep_ops.enable": (
             "int", "struct usb_ep *ep, const struct usb_endpoint_descriptor *desc",
             ep_pre),
@@ -986,6 +1060,7 @@ def _canonical_args(table_field: str):
         "clk_ops.unprepare": [("hw", "struct clk_hw *")],
         "clk_ops.enable": [("hw", "struct clk_hw *")],
         "clk_ops.disable": [("hw", "struct clk_hw *")],
+        "clk_ops.is_prepared": [("hw", "struct clk_hw *")],
         "clk_ops.is_enabled": [("hw", "struct clk_hw *")],
         "clk_ops.recalc_rate": [
             ("hw", "struct clk_hw *"), ("parent_rate", "unsigned long")],
@@ -1012,6 +1087,17 @@ def _canonical_args(table_field: str):
         "sdhci_ops.write_b": [
             ("host", "struct sdhci_host *"), ("val", "u8"),
             ("reg", "int")],
+        "sdhci_ops.voltage_switch": [("host", "struct sdhci_host *")],
+        "sdhci_ops.set_clock": [
+            ("host", "struct sdhci_host *"), ("clock", "unsigned int")],
+        "sdhci_ops.set_bus_width": [
+            ("host", "struct sdhci_host *"), ("width", "int")],
+        "sdhci_ops.set_uhs_signaling": [
+            ("host", "struct sdhci_host *"), ("timing", "unsigned int")],
+        "sdhci_ops.set_power": [
+            ("host", "struct sdhci_host *"), ("mode", "unsigned char"),
+            ("vdd", "unsigned short")],
+        "sdhci_ops.hw_reset": [("host", "struct sdhci_host *")],
         "usb_ep_ops.enable": [
             ("ep", "struct usb_ep *"),
             ("desc", "const struct usb_endpoint_descriptor *")],
@@ -1152,7 +1238,7 @@ def _emit_callback(fn, module: dict, table_field: str, priv: str,
     elif ret in {"int", "long", "unsigned long"}:
         result = _last_read_var(module) if table_field in {
             "gpio_chip.get", "gpio_chip.get_direction",
-            "clk_ops.is_enabled", "clk_ops.recalc_rate",
+            "clk_ops.is_prepared", "clk_ops.is_enabled", "clk_ops.recalc_rate",
             "usb_ep_ops.fifo_status", "usb_gadget_ops.get_frame",
             "hc_driver.get_frame_number", "hc_driver.hub_status_data"} else None
         lines.append(f"\treturn {result or 0};")
@@ -1219,6 +1305,49 @@ def _emit_evidence_only_callback(fn, module: dict, priv: str,
             and not any("Return" in op for op in walk_leaf_ops(safe_ops))):
         lines.append(f"\treturn {_last_read_var(module) or 0};")
     lines.extend(["}", ""])
+    return "\n".join(lines)
+
+
+def _mfd_include_paths(formal: dict) -> list[str]:
+    """Return validated public MFD headers required by transaction helpers."""
+    paths: set[str] = set()
+    for module in formal.get("modules", []):
+        for op in walk_leaf_ops(module.get("ops", [])):
+            body = (op.get("TransactionRead") or op.get("TransactionWrite")
+                    or op.get("TransactionUpdate"))
+            if not body or body.get("transport") != "mfd":
+                continue
+            path = (body.get("evidence") or {}).get("callee_decl_path", "")
+            normalized = path.replace("\\", "/")
+            marker = "/include/linux/mfd/"
+            if marker not in normalized:
+                continue
+            suffix = normalized.split("/include/linux/", 1)[1]
+            if re.fullmatch(r"mfd/[A-Za-z0-9_.-]+\.h", suffix):
+                paths.add(f"<linux/{suffix}>")
+    return sorted(paths)
+
+
+def _emit_transaction_runner(fn, module: dict, priv: str, regs: dict[str, int],
+                             bind, safe_function_calls: set[str]) -> str:
+    """Emit an unregistered, source-proven transaction leaf for Linux audit."""
+    safe_ops, _normalized, contract_recipes = _normalize_module_ops(
+        module, "g", safe_function_calls)
+    keep = [p for p in fn.signature.params if p.type != "DeviceState"]
+    params = ", ".join(
+        f"{bind.type_of(p.type) or 'u32'} {p.name}" for p in keep)
+    params = (params + ", ") if params else ""
+    params += f"struct {priv} *g"
+    lines = [f"static void __rh_transaction_{fn.name}({params})", "{", "\tuintptr_t base = (uintptr_t)g->base;"]
+    declared = {p.name for p in keep} | {"base"}
+    decls = local_decls(safe_ops, declared, regs, indent=1, ctype="u32")
+    if decls:
+        lines.append(decls.replace("    ", "\t"))
+    body = ops_to_c(safe_ops, bind, "base", regs, indent=1,
+                    state_expr="g", _lowering_recipes=contract_recipes)
+    if body:
+        lines.append(body.replace("    ", "\t"))
+    lines.append("}")
     return "\n".join(lines)
 
 
@@ -1829,8 +1958,8 @@ def _emit_sdhci_platform(formal, device_spec, facts, priv,
     if has_private_ops:
         L += [f"static const struct sdhci_ops {cid}_ops = {{"]
         for field in ("read_l", "read_w", "read_b", "write_l", "write_w",
-                      "write_b", "set_clock", "set_bus_width", "reset",
-                      "set_uhs_signaling"):
+                      "write_b", "voltage_switch", "set_clock", "set_bus_width", "reset",
+                      "set_uhs_signaling", "set_power", "hw_reset"):
             table = f"sdhci_ops.{field}"
             function = by_field.get(table) or delegates.get(table)
             if function:
@@ -1935,7 +2064,7 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
             clock_table_names[group] = table_name
             L += [f"static const struct clk_ops {table_name} = {{"]
             for field in ("prepare", "unprepare", "enable", "disable",
-                          "is_enabled", "recalc_rate", "determine_rate",
+                          "is_prepared", "is_enabled", "recalc_rate", "determine_rate",
                           "round_rate", "set_rate"):
                 function = fields.get(field)
                 if function:
@@ -1944,7 +2073,7 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
     elif has_clk_ops:
         L += [f"static const struct clk_ops {cid}_clk_ops = {{"]
         for field in ("prepare", "unprepare", "enable", "disable",
-                      "is_enabled", "recalc_rate", "determine_rate",
+                      "is_prepared", "is_enabled", "recalc_rate", "determine_rate",
                       "round_rate", "set_rate"):
             fn = by_field.get(f"clk_ops.{field}")
             if fn:
@@ -2396,8 +2525,16 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         return preserved_virtio
     priv = f"{_cid(dev)}_priv"
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}
+    tx_selectors = {r["name"]: r["value"]
+                    for r in formal.get("transaction_map", [])}
+    constants = {**regs, **tx_selectors}
     callbacks = _callback_map(bind, facts, device_spec)
     modules = {m["name"]: m for m in formal["modules"]}
+    has_regmap_transactions = any(
+        any(name in op and op[name].get("transport") == "regmap" for name in
+            ("TransactionRead", "TransactionWrite", "TransactionUpdate"))
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
     selective_closure = formal.get("metadata", {}).get(
         "call_graph", {}).get("selective_closure", {})
     closure_overlays = selective_closure.get("overlays", {})
@@ -2438,6 +2575,7 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
 
     callback_code: list[str] = []
     unsupported: list[str] = []
+    dropped_callbacks: set[str] = set()
     clock_model = (_clock_source_model(facts, priv)
                    if device_spec.cls == "clock" else None)
     if clock_model:
@@ -2557,6 +2695,12 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             banked_gpio=banked_gpio, backend_ops=backend_ops(module))
         if code:
             callback_code.append(code)
+        else:
+            # The callback could not be lowered (e.g. its field is not in the
+            # modeled signature table).  Drop it from the codegen callback map
+            # so backend callback tables do not reference an undefined static
+            # symbol; a designated-initializer table omits the field (NULL).
+            dropped_callbacks.add(fn.name)
         if problem:
             unsupported.append(problem)
 
@@ -2578,7 +2722,25 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         callback_code.append(_emit_evidence_only_callback(
             fn, module, priv, regs, bind, safe_function_calls))
 
+    emitted_names = {fn.name for fn in device_spec.functions
+                     if fn.name in callbacks_for_codegen}
+    for fn in device_spec.functions:
+        if fn.name in emitted_names:
+            continue
+        module = modules.get(fn.ris_ref)
+        if module is None:
+            continue
+        if any((op.get("TransactionRead") or op.get("TransactionWrite")
+                or op.get("TransactionUpdate"))
+               for op in walk_leaf_ops(module.get("ops", []))):
+            callback_code.append(_emit_transaction_runner(
+                fn, module, priv, regs, bind, safe_function_calls))
+
     callbacks = callbacks_for_codegen
+    if dropped_callbacks:
+        callbacks = {
+            fn: field for fn, field in callbacks_for_codegen.items()
+            if fn not in dropped_callbacks}
     is_pci = any(field.startswith("pci_driver.") for field in callbacks.values())
     has_delay = any("Delay" in op for module in formal.get("modules", [])
                     for op in walk_leaf_ops(module.get("ops", [])))
@@ -2595,6 +2757,7 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         includes += ["#include <linux/platform_device.h>",
                      "#include <linux/of_device.h>",
                      "#include <linux/gpio/driver.h>", "#include <linux/clk.h>"]
+    includes.extend(f"#include {path}" for path in _mfd_include_paths(formal))
     if any(field.startswith(("irq_chip.", "gpio_chip.", "gpio_irq_chip."))
            for field in callbacks.values()):
         includes += ["#include <linux/gpio/driver.h>", "#include <linux/irq.h>",
@@ -2622,10 +2785,14 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
                      '#include "sdhci-pltfm.h"']
     elif has_delay:
         includes += ["#include <linux/delay.h>"]
+    if re.search(r"\bread_poll_timeout(?:_atomic)?\s*\(", source_text):
+        includes += ["#include <linux/iopoll.h>"]
 
     L = [f"// Auto-generated deterministic Linux driver for {dev} (reharness)",
          "// SPDX-License-Identifier: GPL-2.0", *includes, ""]
-    for name, off in regs.items():
+    L.extend(transaction_runtime_prelude("linux"))
+    L.append("")
+    for name, off in constants.items():
         L.append(f"#ifndef {name}\n#define {name}\t0x{off:x}\n#endif")
     for name, definition in sorted(function_macros.items()):
         params = ", ".join(definition.get("params", []))
@@ -2634,13 +2801,13 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
             f"#ifndef {name}\n#define {name}({params}) {body}\n#endif")
     source_macros = _source_object_macros(facts)
     for name, value in source_macros.items():
-        if name not in regs:
+        if name not in constants:
             L.append(f"#ifndef {name}\n#define {name}\t{value}\n#endif")
     if facts is not None:
         for name, value in sorted(facts.constants.items()):
-            if name not in regs and name not in source_macros:
+            if name not in constants and name not in source_macros:
                 L.append(f"#ifndef {name}\n#define {name}\t0x{value:x}\n#endif")
-    known_constants = set(regs)
+    known_constants = set(constants)
     known_functions = set(function_macros)
     if facts is not None:
         known_constants |= set(facts.constants)
@@ -2654,6 +2821,23 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
         L += ["", f"struct {_bank_priv(priv)};"]
     L += ["", f"struct {priv} {{", "\tstruct device *dev;",
           "\tvoid __iomem *base;"]
+    if has_regmap_transactions:
+        L.append("\tstruct regmap *regmap;")
+    has_i2c_transactions = any(
+        any((name in op) and op[name].get("transport") in {"i2c", "i2c_smbus"}
+            for name in ("TransactionRead", "TransactionWrite", "TransactionUpdate"))
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
+    if has_i2c_transactions:
+        L.append("\tstruct i2c_client *client;")
+    has_mfd_transactions = any(
+        any((name in op) and op[name].get("transport") == "mfd"
+            for name in ("TransactionRead", "TransactionWrite",
+                         "TransactionUpdate"))
+        for module in formal.get("modules", [])
+        for op in walk_leaf_ops(module.get("ops", [])))
+    if has_mfd_transactions:
+        L.append("\tvoid *mfd;")
     if device_spec.cls == "sdhci":
         L.append("\tstruct sdhci_host *host;")
     if is_pci:
