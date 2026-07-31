@@ -30,7 +30,7 @@
       "driver": "aspeed-vhub",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 92,
-      "kbuild": "linux/drivers/usb/gadget/udc/aspeed-vhub/Makefile",
+      "kbuild": "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/Makefile",
       "kbuild_verified": true,
       "manifest": "drivers/multisource/aspeed-vhub.json",
       "metrics": {
@@ -107,10 +107,12 @@
           "callback entry without table binding: ast_vhub_wake_work",
           "harness backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
           "baremetal backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
           "linux backend has 3 register operation(s) explicitly blocked by a synthesized lifecycle stub",
           "linux backend has 8 register operation(s) explicitly blocked by a missing Linux definition root",
           "linux backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 133 emitted definition operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 133 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
@@ -121,7 +123,7 @@
       },
       "resolved_cross_tu_call_edges": 53,
       "ris_mmio_ops": 154,
-      "seconds": 40.245,
+      "seconds": 41.4,
       "source_count": 5,
       "source_lines": 3540,
       "source_mmio_primitives": {
@@ -130,11 +132,11 @@
         "writes": 77
       },
       "source_sha256": {
-        "linux/drivers/usb/gadget/udc/aspeed-vhub/core.c": "a014b560d11ee4d55c8eb2c8da8e5c8db542b338f5eeb7146a4663c6d3c08525",
-        "linux/drivers/usb/gadget/udc/aspeed-vhub/dev.c": "a6ac828891230ab4a850226a1b40f4fc9570ffd62b9d65173e962a0c3b4c3d07",
-        "linux/drivers/usb/gadget/udc/aspeed-vhub/ep0.c": "23dcac9fec0433e9b60217937ddcbcdf9a692554c7eb1929cea520ed04a9af08",
-        "linux/drivers/usb/gadget/udc/aspeed-vhub/epn.c": "4e848e00ceb063a2465a030001d276610f5a99fdf49c643d76c322705172727d",
-        "linux/drivers/usb/gadget/udc/aspeed-vhub/hub.c": "ec50f18e4c26f94e6dfeef6b8c7702a1b50e8fe02db69413105cb109b97fe8e2"
+        "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/core.c": "a014b560d11ee4d55c8eb2c8da8e5c8db542b338f5eeb7146a4663c6d3c08525",
+        "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/dev.c": "a6ac828891230ab4a850226a1b40f4fc9570ffd62b9d65173e962a0c3b4c3d07",
+        "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/ep0.c": "23dcac9fec0433e9b60217937ddcbcdf9a692554c7eb1929cea520ed04a9af08",
+        "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/epn.c": "4e848e00ceb063a2465a030001d276610f5a99fdf49c643d76c322705172727d",
+        "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/hub.c": "ec50f18e4c26f94e6dfeef6b8c7702a1b50e8fe02db69413105cb109b97fe8e2"
       },
       "unresolved_internal_calls": 0
     },
@@ -153,7 +155,7 @@
       "driver": "c67x00",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 89,
-      "kbuild": "linux/drivers/usb/c67x00/Makefile",
+      "kbuild": "vendor/linux/drivers/usb/c67x00/Makefile",
       "kbuild_verified": true,
       "manifest": "drivers/multisource/c67x00.json",
       "metrics": {
@@ -228,8 +230,10 @@
           "missing role for: c67x00_hcd_irq",
           "harness backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
           "baremetal backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
           "linux backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 26 emitted definition operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 24 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 0.5,
@@ -240,7 +244,7 @@
       },
       "resolved_cross_tu_call_edges": 30,
       "ris_mmio_ops": 32,
-      "seconds": 28.119,
+      "seconds": 29.636,
       "source_count": 4,
       "source_lines": 2239,
       "source_mmio_primitives": {
@@ -249,10 +253,10 @@
         "writes": 1
       },
       "source_sha256": {
-        "linux/drivers/usb/c67x00/c67x00-drv.c": "9ec73baea89217d558094a4c8691e0271346cc8c3618bdfadc7e9b6699de855b",
-        "linux/drivers/usb/c67x00/c67x00-hcd.c": "deb8ee1c7341bbbfd143d4ebfa1206a5d2d786e61b1278673fb9d04af06a969f",
-        "linux/drivers/usb/c67x00/c67x00-ll-hpi.c": "d3603eef5554dfdf63d77e120141062c4ac888bb36770020a909e6da269f316d",
-        "linux/drivers/usb/c67x00/c67x00-sched.c": "c7d461b75fd82aa667115caa5500c6173408a4644d189a53a46d7a8da0ac35cf"
+        "vendor/linux/drivers/usb/c67x00/c67x00-drv.c": "9ec73baea89217d558094a4c8691e0271346cc8c3618bdfadc7e9b6699de855b",
+        "vendor/linux/drivers/usb/c67x00/c67x00-hcd.c": "deb8ee1c7341bbbfd143d4ebfa1206a5d2d786e61b1278673fb9d04af06a969f",
+        "vendor/linux/drivers/usb/c67x00/c67x00-ll-hpi.c": "d3603eef5554dfdf63d77e120141062c4ac888bb36770020a909e6da269f316d",
+        "vendor/linux/drivers/usb/c67x00/c67x00-sched.c": "c7d461b75fd82aa667115caa5500c6173408a4644d189a53a46d7a8da0ac35cf"
       },
       "unresolved_internal_calls": 0
     },
@@ -271,7 +275,7 @@
       "driver": "dwc2",
       "duplicate_static_symbols": 0,
       "functions_analyzed": 445,
-      "kbuild": "linux/drivers/usb/dwc2/Makefile",
+      "kbuild": "vendor/linux/drivers/usb/dwc2/Makefile",
       "kbuild_verified": true,
       "manifest": "drivers/multisource/dwc2.json",
       "metrics": {
@@ -346,16 +350,18 @@
           "21 helper module(s) retained only for lexical access coverage; call semantics not proven",
           "286 unsafe dynamic register address(es) (414 computed total)",
           "85 clang error diagnostic(s)",
-          "167 conservative loop summary/summaries require validation",
+          "168 conservative loop summary/summaries require validation",
           "missing role for: dwc2_drd_role_sw_set, dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_wait_timer_fn, dwc2_hsotg_complete_setup",
           "callback entry without table binding: dwc2_conn_id_status_change, dwc2_wakeup_detected, dwc2_hcd_reset_func",
-          "harness backend has 426 register operation(s) explicitly blocked by unsupported loop lowering",
-          "baremetal backend has 426 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend has 362 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 362 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
           "linux backend has 182 register operation(s) explicitly blocked by a synthesized lifecycle stub",
           "linux backend has 2 register operation(s) explicitly blocked by an unimplemented lifecycle route",
-          "linux backend has 898 register operation(s) explicitly blocked by a missing Linux definition root",
-          "linux backend has 426 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 2100 emitted definition operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 929 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 362 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 2056 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
@@ -366,7 +372,7 @@
       },
       "resolved_cross_tu_call_edges": 140,
       "ris_mmio_ops": 3608,
-      "seconds": 137.939,
+      "seconds": 179.624,
       "source_count": 10,
       "source_lines": 21668,
       "source_mmio_primitives": {
@@ -375,16 +381,16 @@
         "writes": 362
       },
       "source_sha256": {
-        "linux/drivers/usb/dwc2/core.c": "2f075597eb34c6c09e02beee4f6682372129636248ace9e71797309dd12cf30f",
-        "linux/drivers/usb/dwc2/core_intr.c": "bb0f0b032bf0d87dd8f710e1a7a9ba47ffc9c8fbf9a3cf81d007dba6531ab8e4",
-        "linux/drivers/usb/dwc2/drd.c": "1d94fb8e1c81e97163459387e97e558face944dd15283003d46445a119727152",
-        "linux/drivers/usb/dwc2/gadget.c": "baf17cb89e78c8a63f0a9688af7697875018f162923118f72f1092df703f6d8d",
-        "linux/drivers/usb/dwc2/hcd.c": "56a91a8ff69fe8001100524d0df105ec491019fdbec6c13613da3bab7fdc45bb",
-        "linux/drivers/usb/dwc2/hcd_ddma.c": "0a9603f4a9cd2f6ff46e63b49db5dfe38e7b7203c457d1a39e301b09fd953c79",
-        "linux/drivers/usb/dwc2/hcd_intr.c": "cc998509cc806c4ea7beb6b5228a963158329643677d94436d1fac7aa3261f35",
-        "linux/drivers/usb/dwc2/hcd_queue.c": "92f2c031087447ef7c4aaf22563021e52271ca0c7c91697f092e9dc391855f9e",
-        "linux/drivers/usb/dwc2/params.c": "75c8a6f2e53ebf8c519ba0c3d44663de4fb71431e03c3865c557ddaedd24df04",
-        "linux/drivers/usb/dwc2/platform.c": "4e58907a9bf6f4e2b2cec4b87e4b4c269b284e0e792cdb6f14328459807eadc9"
+        "vendor/linux/drivers/usb/dwc2/core.c": "2f075597eb34c6c09e02beee4f6682372129636248ace9e71797309dd12cf30f",
+        "vendor/linux/drivers/usb/dwc2/core_intr.c": "bb0f0b032bf0d87dd8f710e1a7a9ba47ffc9c8fbf9a3cf81d007dba6531ab8e4",
+        "vendor/linux/drivers/usb/dwc2/drd.c": "1d94fb8e1c81e97163459387e97e558face944dd15283003d46445a119727152",
+        "vendor/linux/drivers/usb/dwc2/gadget.c": "baf17cb89e78c8a63f0a9688af7697875018f162923118f72f1092df703f6d8d",
+        "vendor/linux/drivers/usb/dwc2/hcd.c": "56a91a8ff69fe8001100524d0df105ec491019fdbec6c13613da3bab7fdc45bb",
+        "vendor/linux/drivers/usb/dwc2/hcd_ddma.c": "0a9603f4a9cd2f6ff46e63b49db5dfe38e7b7203c457d1a39e301b09fd953c79",
+        "vendor/linux/drivers/usb/dwc2/hcd_intr.c": "cc998509cc806c4ea7beb6b5228a963158329643677d94436d1fac7aa3261f35",
+        "vendor/linux/drivers/usb/dwc2/hcd_queue.c": "92f2c031087447ef7c4aaf22563021e52271ca0c7c91697f092e9dc391855f9e",
+        "vendor/linux/drivers/usb/dwc2/params.c": "75c8a6f2e53ebf8c519ba0c3d44663de4fb71431e03c3865c557ddaedd24df04",
+        "vendor/linux/drivers/usb/dwc2/platform.c": "4e58907a9bf6f4e2b2cec4b87e4b4c269b284e0e792cdb6f14328459807eadc9"
       },
       "unresolved_internal_calls": 68
     }
@@ -392,8 +398,8 @@
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "8ae82124c8754439be1db64b9644b3b496f78329"
+    "reharness_commit": "491ca60911d4731dbe3d16af51ff6ff0d46185f3"
   },
-  "generated_at": "2026-07-17T23:00:46.277962+00:00",
+  "generated_at": "2026-07-25T18:37:25.340254+00:00",
   "schema": 1
 }
