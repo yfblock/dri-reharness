@@ -3,9 +3,9 @@
 Assembles the reharness extraction output (.ris/.dspec/DeviceSpec JSON/
 .bind/.facts/score.txt)
 into a directory for the TS+Pi synthesizer to consume. The LLM synthesis itself
-is handled by tools/synth.mjs (TypeScript, Pi agent core SDK); the compile/QEMU/
-trace iteration loop is handled by run_e2e.sh (shell). This module is purely
-the Python-side bundle packager.
+is handled by ``tools/pi/synth.mjs``; the compile/QEMU/trace iteration loop is
+handled by ``scripts/e2e/run_e2e.sh``. This module is purely the Python-side
+bundle packager.
 """
 from __future__ import annotations
 import json

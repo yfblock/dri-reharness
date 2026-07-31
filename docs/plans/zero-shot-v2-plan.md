@@ -88,8 +88,8 @@ unavailable hardware behavior, record that boundary rather than replacing it
 with permissive fallback semantics.
 
 The completed unmodified baseline and the mechanically selected first blocker
-are recorded in `docs/zero-shot-v2-baseline.md`.
+are recorded in `docs/experiments/zero-shot-v2-baseline.md`.
 
 The first blocker implementation is complete and recorded in
-`docs/zero-shot-v2-callback-binding.md`: AST owner/field propagation removes
+`docs/experiments/zero-shot-v2-callback-binding.md`: AST owner/field propagation removes
 the false callback-binding cluster while preserving the missing-role cluster.

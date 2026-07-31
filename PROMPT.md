@@ -1,21 +1,21 @@
 # Reharness 当前维护提示
 
-reharness 是一个面向 Linux C 驱动的 AST/RIS 提取、语义推断和多后端生成系统。继续维护时，以代码、测试和 experiments/results/*.json 为准，不要恢复历史文档中的手抄统计。
+reharness 是一个面向 Linux C 驱动的 AST/RIS 提取、语义推断和多后端生成系统。继续维护时，以代码、测试和 `research/experiments/results/*.json` 为准，不要恢复历史文档中的手抄统计。
 
 ## 已完成基线
 
-- drivers/：19 个版本化测试驱动，不是外部 symlink。
-- linux/：固定 commit 的 Git submodule。
-- extractor：libclang、流敏感数据流、单/多 Translation Unit 过程间内联、路径条件 RMW/Ite 变换、callback enclosing-struct 推断、access/control accounting 与 SMT path validation。
+- `benchmarks/drivers/`：19 个版本化 baseline、冻结 holdout 和多源 manifest；根 `drivers/` 仅是兼容树。
+- `vendor/linux/`：固定 commit 的 Git submodule；根 `linux/` 是兼容链接。
+- `src/extractor/`：libclang、流敏感数据流、单/多 Translation Unit 过程间内联、路径条件 RMW/Ite 变换、callback enclosing-struct 推断、access/control accounting 与 SMT path validation。
 - alias：off、auto、required，默认 off；多源 manifest 使用 linked bitcode + 单次 WPA，required 模式禁止静默 fallback，并记录 SHA、工具版本和 source provenance。
 - specs：.ris、.dspec、.bind、.facts。
-- generators：harness、bare-metal、Linux；19/19 均编译。
+- generators：harness、bare-metal、Linux；19/19/18 编译（Linux 仅 `sdhci-esdhc-mcf` 因 Coldfire 平台宏 `ESDHC_DEFAULT_QUIRKS` 未编译）。
 - Linux：确定性 platform、PCI、GPIO/IRQ、clock provider 和 QEMU edu lifecycle；unsupported state 显式标记。
-- multi-source：真实 Kbuild 模块 C67X00（4 C）、ASPEED vHub（5 C）和 DWC2（10 C）；跨 TU MMIO 传播通过，harness/bare-metal 3/3、Linux 2/3 编译。
-- tests：101 passed；`./run.sh test` 首先执行 zero-shot specialization guard。
+- multi-source：真实 Kbuild 模块 C67X00（4 C）、ASPEED vHub（5 C）和 DWC2（10 C）；跨 TU MMIO 传播通过，harness/bare-metal/Linux 3/3/3 编译。
+- tests：205 passed；`./run.sh test` 首先执行 zero-shot specialization guard 与 repository-path 回归守卫。
 - generalization：`drivers/holdout/zero-shot-v1.json` 冻结 12 个 holdout。不得在 extractor/generator 中加入其 driver name、basename、私有前缀或 wrapper 特例。
 - compile context：默认 `auto`，优先使用显式/环境指定的 `compile_commands.json`，否则读取 kernel build `.cmd`；`required` 找不到上下文必须失败，`off` 仅用于对照实验。
-- zero-shot matrix：12/12 exact context、pipeline 与三后端编译；原 7 个 `no_register_access` 已全部获得 subsystem summary。GPIO callback runner 通过后 strict-ready 为 H=5/12、B=5/12、Linux=5/12；首个公共根因转为 3/12 的 conservative loop。
+- zero-shot matrix：12/12 exact context、pipeline 与三后端编译；原 7 个 `no_register_access` 已全部获得 subsystem summary。GPIO callback runner 通过后 strict-ready 为 H=7/12、B=7/12、Linux=5/12、all=5/12；首个公共根因仍为 `call_context`（5 个案例），Linux 在此之上叠加未完成的 registration/callsite 证明。
 - clock boundary：Highbank 22 个算术基线用例通过且 3/3 mutation 类别被检出；Visconti PLL 被保守拒绝并记录 private-state 原因。
 - QEMU：edu 值级 oracle 和 gpio-ftgpio010 函数边界+offset/order oracle 均通过；GPIO exerciser 覆盖 6/6 精确模块、7/7 调用、16/16 ops 和 7/7 寄存器偏移。
 - paper：统计由 tools/generate_paper_results.py 从实验 JSON 自动生成。
@@ -23,14 +23,14 @@ reharness 是一个面向 Linux C 驱动的 AST/RIS 提取、语义推断和多�
 冻结矩阵：
 
 ~~~text
-19 drivers, 470 ops
-357 symbolic, 74 fixed, 25 computed
-88 RMW, 117 conditions, 157 registers
-compile: harness=19, bare-metal=19, Linux=19
-strict ready: harness=2, bare-metal=2, Linux=7
-LLM synthesis ready=13
-scoped RIS reliability=8/19
-multi-source: 3 modules, 19 TUs, 27447 LoC, 4394 ops, H/B/L compile=3/3/2
+19 drivers, 485 ops
+366 symbolic, 64 fixed, 41 computed
+73 RMW, 123 conditions, 157 registers
+compile: harness=19, bare-metal=19, Linux=18
+strict ready: harness=4, bare-metal=4, Linux=0
+LLM synthesis ready=5
+scoped RIS reliability=5/19
+multi-source: 3 modules, 19 TUs, 27447 LoC, 4446 ops, H/B/L compile=3/3/3
 ~~~
 
 ## 重要语义约束

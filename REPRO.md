@@ -14,7 +14,7 @@
 - cpio 及构造 initramfs 所需的宿主工具
 - latexmk/pdfLaTeX（仅论文构建）
 
-项目不依赖宿主机上的外部 driver 或 Linux 源码目录。drivers/ 已纳入仓库，linux/ 由 submodule 固定版本。
+项目不依赖宿主机上的外部 driver 或 Linux 源码目录。驱动输入位于 `benchmarks/drivers/`，`vendor/linux/` 由 submodule 固定版本；旧 `drivers/`、`linux/` 路径作为兼容入口保留。
 
 ## 1. 初始化与构建实验内核
 
@@ -23,7 +23,7 @@ git submodule update --init
 ./tools/prepare_kernel.sh build
 ~~~
 
-脚本使用 kernel/linux-x86_64.config，在 kernel/build/ out-of-tree 构建，不修改 submodule 工作树。固定内核 release 和 commit 会写入实验 JSON。
+脚本使用 `platform/kernel/linux-x86_64.config`，在 `platform/kernel/build/` out-of-tree 构建，不修改 submodule 工作树。旧 `kernel/` 路径仍兼容。固定内核 release 和 commit 会写入实验 JSON。
 
 ## 2. 回归测试
 
@@ -31,10 +31,10 @@ git submodule update --init
 ./run.sh test
 ~~~
 
-预期：173 passed, 0 failed（132 core + 8 generated-C AST + 5 Linux
-registration AST + 20 lowering-plan + 1 C20 readiness + 2 read-provenance +
-5 DeviceSpec JSON）。测试前会打印 `zero-shot-v1` guard 报告并要求
-`passed=true`。
+预期：205 passed, 0 failed（15 repository-path + 143 core + 8 generated-C
+AST + 10 Linux registration AST + 21 lowering-plan + 1 C20 readiness + 2
+read-provenance + 5 DeviceSpec JSON）。测试前会打印 `zero-shot-v1` guard
+报告并要求 `passed=true`。
 
 ## 2a. 零样本 holdout 与 Kbuild compile context
 
@@ -74,14 +74,14 @@ exact compile context=12/12
 pipeline completed=12/12
 harness/bare-metal/Linux compile=12/12
 no_register_access=0/12
-strict-ready: harness=7/12 bare-metal=7/12 Linux=0/12 all=0/12
+strict-ready: harness=7/12 bare-metal=7/12 Linux=5/12 all=5/12
 cases with register hardware interactions=11/12
 first common RIS semantic blocker=call_context (5 drivers)
 ~~~
 
 GPIO callback runner 与独立 source differential 覆盖 width、endianness、shadow state 和 banked computed address。SDHCI NPCM、Dove、HLWD 通过 accessor/source lifecycle contract；virtio-input 的 config/virtqueue 被建模为 subsystem state，因此不伪造成 MMIO。DW APB 的每-bank chip ownership、selector/shadow、PM context、source-proven IRQ bank、parent IRQ dispatch 以及 ack/mask/type 语义由 13 个 mutation 覆盖。
 
-权威输出：`experiments/results/zero-shot-contexts.json` 和 `experiments/results/zero-shot-matrix.json`。详细设计与问题记录见 `docs/zero-shot-matrix-c10.md`。
+权威输出：`experiments/results/zero-shot-contexts.json` 和 `experiments/results/zero-shot-matrix.json`。详细设计与问题记录见 `docs/experiments/zero-shot-matrix-c10.md`。
 
 ## 3. 19-driver 确定性矩阵
 
@@ -167,7 +167,7 @@ required AST 通过，但只有 platform probe 下的 62/2023 operations 注册�
 context 一致；canonical 可 strict 时，plan v3 会独立重跑两个 AST oracle。
 
 权威冻结摘要：`experiments/results/c20-linux-registration-attestation.json`。
-详细设计：`docs/linux-registration-attestation-c20.md`。
+详细设计：`docs/milestones/linux-registration-attestation-c20.md`。
 
 ## 3e. C67X00 linked SVF 与 HPI oracle
 

@@ -9,7 +9,8 @@
 #   -p/--probe-pattern PAT      probe 成功 grep 模式 (如 "probed|registered|gpiochip")
 #   -t/--timeout N              默认 90
 set -u
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 cd "$PROJECT_DIR"
 
 KERNELDIR="${KERNELDIR:-$PROJECT_DIR/kernel/build}"

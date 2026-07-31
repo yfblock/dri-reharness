@@ -5,7 +5,7 @@
 > - 相关实现：`2d3736a feat: model GPIO and clock source-private callbacks`
 > - 冻结版本：`11e3564 chore: freeze strict-readiness artifact v5` / `paper-artifact-v5`
 
-本文讨论的是“大模型作为长期工程代理”的能力边界。大模型直接合成 Linux 驱动时出现的 DMA/IRQ 约束失守、内核 API 漂移、跨函数不一致、输出格式不稳定等问题，另见 [llm-limitations.md](llm-limitations.md)。两类场景必须区分：
+本文讨论的是“大模型作为长期工程代理”的能力边界。大模型直接合成 Linux 驱动时出现的 DMA/IRQ 约束失守、内核 API 漂移、跨函数不一致、输出格式不稳定等问题，另见 [llm-limitations.md](../plans/llm-limitations.md)。两类场景必须区分：
 
 - **代码合成器**：模型直接产出候选驱动，主要风险是生成代码本身不可靠。
 - **工程代理**：模型搜索、诊断、修改、运行验证、维护 Git 和论文制品，主要风险是错误假设、验证覆盖不足和长任务状态漂移。

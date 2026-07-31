@@ -1,4 +1,7 @@
 #!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+cd "$ROOT"
 EV="${1:?event}"; DET="${2:-}"
 TS=$(date '+%Y-%m-%d %H:%M:%S'); STAMP=$(date '+%Y%m%d-%H%M%S')
 LOG=history/timeline.md

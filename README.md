@@ -6,21 +6,21 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 
 ## 当前状态
 
-- 版本化语料：drivers/test/ 内含 19 个单源测试驱动；drivers/multisource/ 包含真实 Kbuild 多源模块 manifest。
-- 版本化内核：linux/ 是固定到实验 commit 的 Git submodule。
-- 三个确定性后端：harness 18/19、bare-metal 18/19、Linux 17/19 可编译；未编译项保留明确日志，不用 stub 成功替代。
+- 版本化语料：`benchmarks/drivers/baseline/` 内含 19 个单源测试驱动；`benchmarks/drivers/multisource/` 包含真实 Kbuild 多源模块 manifest。
+- 版本化内核：`vendor/linux/` 是固定到实验 commit 的 Git submodule。
+- 三个确定性后端：harness 19/19、bare-metal 19/19、Linux 18/19 可编译（Linux 仅 `sdhci-esdhc-mcf` 因 Coldfire 平台宏 `ESDHC_DEFAULT_QUIRKS` 未编译）；未编译项保留明确日志，不用 stub 成功替代。
 - 严格语义 readiness：C19 冻结矩阵为 harness 4/19、bare-metal 4/19、Linux 0/19，三个后端共同 0/19。C20 新增 Linux required-subset AST 与 registration identity attestation，并在 lowering plan v3 中取交集；FTGPIO 定向正例达到 35/35 AST、35/35 registration 和 Linux strict，尚未据此重写完整 19-driver 冻结矩阵。DWC2 虽为 2023/2023 AST，registration 仅 62/2023，仍 strict false。
 - 多源规模：C67X00（4 C）、ASPEED vHub（5 C）与 DWC2 dual-role（10 C），合计 19 TU / 27,447 LoC；三个后端均为 3/3 编译。C15 将 DWC2/ASPEED 的 unaccounted source site 从 48/4 降为 0，但 direct evidence frontier 仍显式阻塞 call-semantics strict 声明。
 - 跨 TU 质量：974 条内部调用边，其中 223 条跨 TU 边全部解析；578 条调用边传播了 MMIO 摘要。
 - 原始 MMIO 对照：907 个源码 primitive、1,091 个 direct AST 操作、C19 当前 3,794 个 RIS MMIO 操作（含为 lexical coverage 保留的 direct evidence frontier）。
-- 测试套件：173 tests（132 core + 8 generated-C AST + 5 Linux registration AST + 20 lowering-plan + 1 C20 readiness + 2 read-provenance + 5 DeviceSpec JSON）；测试入口先执行冻结 holdout/specialization guard。
+- 测试套件：205 tests（15 repository-path + 143 core + 8 generated-C AST + 10 Linux registration AST + 21 lowering-plan + 1 C20 readiness + 2 read-provenance + 5 DeviceSpec JSON）；测试入口先执行冻结 holdout/specialization guard。
 - 可靠性审计：每个 source site 与 RIS op 均带稳定证据；C15 机器报告给出 scoped strict 5/19。`whole_program_complete` 由 linked analysis、调用语义、CFG、路径、访问、值、循环和 evidence 等严格 gate 合取决定，不再是无条件常量。
 - Clock 边界验证：Highbank 22 个算术 oracle 用例通过，三类公式 mutation 均被检出；Visconti PLL 因未绑定的 `pll_base`、rate table 和 lock state 被保守拒绝。
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
 - C67X00 HPI：32/32 computed address 可安全 lowering；`hpi.base`、`hpi.regstep` 和 `sie_num` 显式建模。5 个 primitive、4 个原始 C↔RIS differential case 通过，4 类 mutation 全被检出。
 - SVF 别名分析：off、auto、required，默认 off；多源 manifest 会先链接所有 TU bitcode，再执行一次 WPA，并记录 linked-bitcode SHA、工具版本和 source provenance。C67X00 required run 成功链接 4 TU。
 - 零样本泛化基础：`drivers/holdout/zero-shot-v1.json` 冻结 12 个未用于实现的驱动；extractor/generator 出现这些驱动的专用标识会使 CI 失败。Kbuild importer 优先读取 `compile_commands.json`，否则自动读取对象对应的 `.cmd`，并把来源、参数与 SHA 写入 analysis metadata。
-- Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；C19 gate 下 harness/bare-metal strict 为 7/12，Linux 与三后端共同 strict 为 0/12。首个跨驱动 RIS blocker 仍是 5 个案例共有的 `call_context`，Linux 还叠加了未完成的 registration/callsite 证明。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
+- Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；当前 gate 下 harness/bare-metal strict 为 7/12，Linux 为 5/12，三后端共同 strict 为 5/12。首个跨驱动 RIS blocker 仍是 5 个案例共有的 `call_context`，Linux 还叠加了未完成的 registration/callsite 证明。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
 
 下表来自 C19 当前 19-driver 矩阵；AHCI direct evidence frontier 会增加真实未覆盖操作，因此计数与 C14 冻结结果不同：
 
@@ -30,6 +30,19 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 
 地址分类是刻意分开的：只有可静态命名的访问记为 Symbolic；常量偏移和运行时索引分别保留为 Fixed 与 Computed，不会伪造成“100% symbolic”。
 
+## Repository layout
+
+- `src/`：extractor、generators 和 synthesis bundle 实现。
+- `qa/`：自动化测试、独立 oracle、矩阵验证和 native trace tests。
+- `benchmarks/`：baseline、zero-shot holdout 和 multi-source 驱动输入。
+- `tools/pi/`：Pi coding-agent synthesizer 及其本地 Node 依赖。
+- `research/`：论文、版本化实验结果、历史记录和 known-good artifacts。
+- `platform/`：kernel build assets 和测试 root filesystems。
+- `vendor/`：固定版本的第三方源码树。
+- `artifacts/`：可重新生成的输出。
+
+迁移期间保留根目录旧路径作为兼容链接，因此现有命令、Python 导入和冻结 manifest 路径仍然有效；新代码和文档应优先使用上面的规范目录。
+
 ## RIS 与语义输出
 
 RIS 操作包括：
@@ -37,11 +50,14 @@ RIS 操作包括：
 - Read：var := R(width, addr)
 - Write：W(width, addr) = expr
 - ReadModifyWrite：RMW(width, addr) = transform
+- TransactionRead / TransactionWrite / TransactionUpdate：显式区分
+  regmap、I2C/SMBus 和公共 MFD helper 的 target、selector 与 scalar/buffer
+  payload；这些 target 不会伪装成 MMIO 地址
 - Cond、Loop、Delay
 
 表达式域为 Const、Var、BinOp、Ite、Bits、Top。switch/if 的互斥 RMW 路径会合成为嵌套 Ite，保留每条路径对原始读值的独立变换；仍无法解析的值才保留 Top 并阻止 strict readiness。Computed 地址保留完整动态 offset，只有包含不安全调用或未绑定成员的 computed expression 才阻止 readiness。
 
-RIS leaf op 还包含 `op_id`、source evidence、reliability、address/value/path precision 和 access domain。已识别 MMIO/regmap API、直接 volatile 解引用与 inline asm 都进入 access accounting；无法 lowering 的访问不会静默消失。显式 source-level CFG 记录 block、pred/succ、dominance/post-dominance、join、goto edge、backedge 与 loop header。结构化路径由 Z3 检查可满足性与 switch 互斥性；规范、静态有界的 `for` 循环可被证明并生成。简单参数型 early exit 和可界定的前向 goto 会转成 continuation guard，后向 goto 与未证明循环仍由 control accounting 显式阻塞。
+RIS leaf op 还包含 `op_id`、source evidence、reliability、address/value/path precision 和 access domain。已识别 MMIO、regmap、I2C/SMBus、公共 MFD transaction API、直接 volatile 解引用与 inline asm 都进入 access accounting；无法 lowering 的访问不会静默消失。显式 source-level CFG 记录 block、pred/succ、dominance/post-dominance、join、goto edge、backedge 与 loop header。结构化路径由 Z3 检查可满足性与 switch 互斥性；规范、静态有界的 `for` 循环可被证明并生成。简单参数型 early exit 和可界定的前向 goto 会转成 continuation guard，后向 goto 与未证明循环仍由 control accounting 显式阻塞。
 
 跨函数内联采用有界传播。若被 dedup 的 helper 自有 source site 没有出现在任何保留模块中，C15 会仅保留该 helper 中尚未覆盖的 definition-owned register evidence frontier，使访问不会消失。当前尚无正式 `Call`/call-context verifier，因此只要存在 helper flattening，无论是否触发 rescue，strict 与 LLM synthesis readiness 都保持 false；site coverage 不会被冒充为调用路径证明。
 
@@ -131,20 +147,20 @@ python3 tools/generate_paper_results.py
 
 实测复盘：
 
-- [LLM 直接合成驱动时的问题与能力边界](docs/llm-limitations.md)
-- [Codex 作为工程代理完成 v4→v5 时的问题与能力边界](docs/engineering-agent-retrospective-v5.md)
-- [Codex 作为工程代理完成 v5→v6 时的问题与能力边界](docs/engineering-agent-retrospective-v6.md)
-- [Codex 作为工程代理完成 v6→v7 时的问题与能力边界](docs/engineering-agent-retrospective-v7.md)
-- [Codex 作为工程代理完成 v7→v8 时的问题与能力边界](docs/engineering-agent-retrospective-v8.md)
-- [Codex 作为工程代理完成 sequential GPIO/SDHCI/W1C 阶段的问题与能力边界](docs/engineering-agent-retrospective-v9.md)
-- [Codex 作为工程代理完成 zero-shot 12/12 与 DW APB multi-bank 时的问题与能力边界](docs/engineering-agent-retrospective-v10.md)
-- [C11 subsystem library summaries 与零样本边界](docs/subsystem-library-summaries-c11.md)
-- [C15 coverage-aware callee rescue 与 call-context fail-closed 边界](docs/callee-rescue-c15.md)
-- [C16 generation contract 纯函数与 LLM 原子 attestation gate](docs/generation-attestation-c16.md)
-- [C17 generated-C AST anchors、primitive ownership 与负向结果](docs/generated-c-ast-anchors-c17.md)
-- [C18 DWC2 lowering plan、canonical recipe 与 read provenance](docs/dwc2-lowering-plan-c18.md)
-- [C19 Linux definition plan、DeviceSpec JSON 与 runtime boundary](docs/linux-definition-plan-c19.md)
-- [C20 Linux generated-AST、registration identity attestation 与 fail-closed 边界](docs/linux-registration-attestation-c20.md)
+- [LLM 直接合成驱动时的问题与能力边界](docs/plans/llm-limitations.md)
+- [Codex 作为工程代理完成 v4→v5 时的问题与能力边界](docs/retrospectives/engineering-agent-retrospective-v5.md)
+- [Codex 作为工程代理完成 v5→v6 时的问题与能力边界](docs/retrospectives/engineering-agent-retrospective-v6.md)
+- [Codex 作为工程代理完成 v6→v7 时的问题与能力边界](docs/retrospectives/engineering-agent-retrospective-v7.md)
+- [Codex 作为工程代理完成 v7→v8 时的问题与能力边界](docs/retrospectives/engineering-agent-retrospective-v8.md)
+- [Codex 作为工程代理完成 sequential GPIO/SDHCI/W1C 阶段的问题与能力边界](docs/retrospectives/engineering-agent-retrospective-v9.md)
+- [Codex 作为工程代理完成 zero-shot 12/12 与 DW APB multi-bank 时的问题与能力边界](docs/retrospectives/engineering-agent-retrospective-v10.md)
+- [C11 subsystem library summaries 与零样本边界](docs/milestones/subsystem-library-summaries-c11.md)
+- [C15 coverage-aware callee rescue 与 call-context fail-closed 边界](docs/milestones/callee-rescue-c15.md)
+- [C16 generation contract 纯函数与 LLM 原子 attestation gate](docs/milestones/generation-attestation-c16.md)
+- [C17 generated-C AST anchors、primitive ownership 与负向结果](docs/milestones/generated-c-ast-anchors-c17.md)
+- [C18 DWC2 lowering plan、canonical recipe 与 read provenance](docs/plans/dwc2-lowering-plan-c18.md)
+- [C19 Linux definition plan、DeviceSpec JSON 与 runtime boundary](docs/plans/linux-definition-plan-c19.md)
+- [C20 Linux generated-AST、registration identity attestation 与 fail-closed 边界](docs/milestones/linux-registration-attestation-c20.md)
 
 ## 依赖
 
@@ -157,19 +173,18 @@ python3 tools/generate_paper_results.py
 
 LLM 不是确定性测试、矩阵或 QEMU 结果的依赖。可选 synthesis loop 通过 REHARNESS_LLM_CMD 接入外部模型。
 
-## 目录
+## 目录兼容入口
 
 ~~~text
-drivers/                 版本化的 19-driver evaluation corpus
-drivers/multisource/     真实 Linux 多源 Kbuild 模块 manifest（4+ C 文件）
-drivers/holdout/         冻结的零样本泛化语料与 source SHA
-linux/                   固定 commit 的 Linux Git submodule
-kernel/                  实验 config、patch、构建说明和 out-of-tree build
-extractor/               AST 提取、数据流、语义推断、metrics、CLI
-generator/               harness / bare-metal / Linux 后端
-verification/            compile matrix、QEMU experiments、trace comparison
-experiments/results/     机器可读的冻结结果与日志
-tools/                   kernel、instrumentation、paper result 工具
-paper/                   论文源文件、自动结果宏和 PDF
-tests/                   回归测试
+drivers/                 -> benchmarks/drivers/ 下的分类链接
+linux/                   -> vendor/linux/
+kernel/                  -> platform/kernel/
+output/                  -> artifacts/output/
+extractor/               -> src/extractor/
+generator/               -> src/generator/
+verification/            -> qa/verification/
+tests/                   -> qa/tests/
+test/                    -> qa/native-tests/
+experiments/             -> research/experiments/
+paper/                   -> research/paper/
 ~~~

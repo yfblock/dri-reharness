@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Prepare or fully build the pinned experiment kernel without dirtying linux/.
+# Prepare or fully build the pinned experiment kernel without dirtying vendor/linux/.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SRC="${KERNEL_SOURCE:-$ROOT/linux}"
-OUT="${KERNEL_BUILD_DIR:-$ROOT/kernel/build}"
-CONFIG="${KERNEL_CONFIG:-$ROOT/kernel/linux-x86_64.config}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+SRC="${KERNEL_SOURCE:-$ROOT/vendor/linux}"
+OUT="${KERNEL_BUILD_DIR:-$ROOT/platform/kernel/build}"
+CONFIG="${KERNEL_CONFIG:-$ROOT/platform/kernel/linux-x86_64.config}"
 MODE="${1:-prepare}"
 JOBS="${JOBS:-$(nproc)}"
 

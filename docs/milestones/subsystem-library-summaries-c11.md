@@ -80,7 +80,7 @@ virtio 不应被伪装成设备 MMIO。分析器利用原始 macro spelling 恢�
 
 ## 8. 下一步
 
-1. 已在 C12 为合成 GPIO callbacks 建立 harness/bare-metal execution oracle，并只对 7/7 callback 全部通过的案例恢复 strict readiness；详见 `docs/gpio-callback-runner-c12.md`；
+1. 已在 C12 为合成 GPIO callbacks 建立 harness/bare-metal execution oracle，并只对 7/7 callback 全部通过的案例恢复 strict readiness；详见 `docs/milestones/gpio-callback-runner-c12.md`；
 2. 对 DW APB 的 `gpio_reg_convert()` 建立纯 helper return summary，减少 40 个 unsafe computed address；
 3. 建模常见 SDHCI core callbacks，并修复 NPCM/Dove clang diagnostics；
 4. 为 virtio 引入 config/queue 原生事件代数和 backend，而不是长期借用 unsupported register op 表示。

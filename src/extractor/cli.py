@@ -22,7 +22,8 @@ def _is_subsequence(sub, seq) -> bool:
 def _config_from_args(args) -> ExtractorConfig:
     return ExtractorConfig(
         source=args.source,
-        output=getattr(args, "output", "output/ris.ris") or "output/ris.ris",
+        output=(getattr(args, "output", "artifacts/output/ris.ris")
+                or "artifacts/output/ris.ris"),
         include_framework=getattr(args, "include_framework", False),
         extra_blacklist=[s.strip() for s in getattr(args, "blacklist", "").split(",")
                          if s.strip()],
@@ -39,7 +40,7 @@ def _add_analysis_options(parser, *, extended: bool = False) -> None:
     parser.add_argument("--driver-name", default=None,
                         help="override driver name (manifest name is used by default)")
     parser.add_argument("--linux-root", default=None,
-                        help="Linux tree (default: repository linux/ submodule)")
+                        help="Linux tree (default: repository vendor/linux/ submodule)")
     parser.add_argument("--alias-mode", choices=["off", "auto", "required"], default="off",
                         help="SVF alias analysis: off (fast default), auto, or required")
     parser.add_argument("--compile-commands", default=None,
@@ -65,8 +66,8 @@ def main(argv: list[str] | None = None) -> int:
     e = sub.add_parser("extract", help="Extract RIS (.ris spec language) from a C source file")
     e.add_argument("-s", "--source", required=True,
                    help="C source file or multi-source JSON manifest")
-    e.add_argument("-o", "--output", default="output/ris.ris",
-                   help="formal-language text output (.ris)")
+    e.add_argument("-o", "--output", default="artifacts/output/ris.ris",
+                   help="formal-language text output (.ris; default: artifacts/output/ris.ris)")
     e.add_argument("--json-output", default=None,
                    help="optional structured Formal RIS JSON output")
     _add_analysis_options(e, extended=True)
@@ -87,7 +88,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="C source file or multi-source JSON manifest")
     g.add_argument("-b", "--backend", required=True,
                    choices=["harness", "baremetal", "linux"])
-    g.add_argument("-o", "--output", default=None, help="output .c file")
+    g.add_argument("-o", "--output", default=None,
+                   help="output .c file (default: artifacts/output/<driver>_<backend>.c)")
     _add_analysis_options(g)
 
     sc = sub.add_parser("score", help="Generation readiness scoring")
@@ -99,7 +101,8 @@ def main(argv: list[str] | None = None) -> int:
                                        "+ all backends + trace verification")
     dr.add_argument("-s", "--source", required=True,
                     help="C source file or multi-source JSON manifest")
-    dr.add_argument("-o", "--outdir", default=None, help="output dir (default output/<name>/)")
+    dr.add_argument("-o", "--outdir", default=None,
+                    help="output dir (default: artifacts/output/<name>/)")
     _add_analysis_options(dr)
 
     fa = sub.add_parser("facts", help="Print source facts (.facts) for LLM synthesis")
@@ -112,7 +115,8 @@ def main(argv: list[str] | None = None) -> int:
     bu.add_argument("-s", "--source", required=True,
                     help="C source file or multi-source JSON manifest")
     bu.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
-    bu.add_argument("-o", "--outdir", default=None)
+    bu.add_argument("-o", "--outdir", default=None,
+                    help="bundle directory (default: artifacts/output/<driver>.bundle-<backend>/)")
     _add_analysis_options(bu)
 
     args = p.parse_args(argv)
@@ -189,7 +193,8 @@ def main(argv: list[str] | None = None) -> int:
                 res.formal, res.device_spec, bind, res.facts)
         else:
             code = gens[args.backend].generate(res.formal, res.device_spec, bind)
-        out = args.output or f"output/{res.formal['driver']}_{args.backend}.c"
+        out = (args.output
+               or f"artifacts/output/{res.formal['driver']}_{args.backend}.c")
         os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
         with open(out, "w", encoding="utf-8") as fh:
             fh.write(code)
@@ -223,6 +228,8 @@ def main(argv: list[str] | None = None) -> int:
             verify_virtio_state_contract)
         from verification.w1c_drain_oracle import (
             verify_w1c_drain_contract, verify_w1c_drain_runtime)
+        from verification.transaction_ir_oracle import (
+            verify_transaction_source)
         from verification.backend_lowering_oracle import (
             build_generation_contract, verify_backend_lowering)
         from verification.backend_lowering_plan import (
@@ -234,7 +241,7 @@ def main(argv: list[str] | None = None) -> int:
 
         res = extract_ris(_config_from_args(args))
         name = res.formal["driver"]
-        outdir = args.outdir or f"output/{name}"
+        outdir = args.outdir or f"artifacts/output/{name}"
         gen_dir = os.path.join(outdir, "generated")
         ver_dir = os.path.join(outdir, "verify")
         tmp_dir = os.path.join(ver_dir, "tmp")
@@ -285,7 +292,7 @@ def main(argv: list[str] | None = None) -> int:
             }
 
         print(f"🚀 driver pipeline: {name} → {outdir}/")
-        # ── core reconstruction inputs (recom.md) ──
+        # ── core reconstruction inputs (docs/plans/output-artifact-recommendations.md) ──
         generation_contract = build_generation_contract(res.formal)
         generation_contract["synthesis_readiness"] = score_fn(
             res.device_spec, res.formal, res.warnings, res.facts)
@@ -310,6 +317,8 @@ def main(argv: list[str] | None = None) -> int:
         sdhci_oracle = verify_sdhci_accessor_source_contract(res.formal)
         virtio_oracle = verify_virtio_state_contract(res.formal)
         w1c_contract = verify_w1c_drain_contract(res.formal, res.device_spec)
+        transaction_oracle = verify_transaction_source(
+            res.formal, os.path.abspath(args.source))
         _w(ver_dir, "gpio-mmio-source-oracle.json", json.dumps(
             source_oracle, indent=2, sort_keys=True))
         _w(ver_dir, "sdhci-accessor-oracle.json", json.dumps(
@@ -318,6 +327,8 @@ def main(argv: list[str] | None = None) -> int:
             virtio_oracle, indent=2, sort_keys=True))
         _w(ver_dir, "w1c-drain-oracle.json", json.dumps(
             w1c_contract, indent=2, sort_keys=True))
+        _w(ver_dir, "transaction-ir-oracle.json", json.dumps(
+            transaction_oracle, indent=2, sort_keys=True))
         binds, results, gen_results = [], {}, {}
         for backend, gen in gens.items():
             bind = default_bind(res.device_spec, backend)
@@ -374,6 +385,9 @@ def main(argv: list[str] | None = None) -> int:
                 "linux_registration_ast_complete": False,
                 "linux_registration_ast": None,
                 **source_oracle, **sdhci_oracle, **virtio_oracle,
+                "transaction_ir_oracle_complete": transaction_oracle[
+                    "complete"],
+                "transaction_ir_oracle": transaction_oracle,
                 **w1c_contract,
             }
 
@@ -494,9 +508,9 @@ def main(argv: list[str] | None = None) -> int:
                 if res.device_spec.cls == "sdhci":
                     makefile += "ccflags-y += -I$(srctree)/drivers/mmc/host\n"
                 _w(build_dir, "Makefile", makefile)
-                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                repo_root = Path(__file__).resolve().parents[2]
                 kernel_dir = os.environ.get(
-                    "KERNELDIR", os.path.join(repo_root, "kernel", "build"))
+                    "KERNELDIR", os.fspath(repo_root / "platform/kernel/build"))
                 r = subprocess.run(
                     ["make", "-C", kernel_dir, f"M={build_dir}", "modules"],
                     capture_output=True, text=True)
@@ -583,7 +597,7 @@ def main(argv: list[str] | None = None) -> int:
             "generation": gen_results,
         }, indent=2, sort_keys=True))
 
-        # merged .bind (recom.md §"Merge Backend Bind Files")
+        # merged .bind (docs/plans/output-artifact-recommendations.md §"Merge Backend Bind Files")
         _w(outdir, f"{name}.bind", display_bind_set(binds))
 
         # verification reports
@@ -622,7 +636,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "bundle":
         import synthesis
         res = extract_ris(_config_from_args(args))
-        outdir = args.outdir or f"output/{res.formal['driver']}.bundle-{args.backend}"
+        outdir = (args.outdir or
+                  f"artifacts/output/{res.formal['driver']}.bundle-{args.backend}")
         bdir = synthesis.build_bundle(res, args.backend, outdir)
         print(f"✅ bundle → {bdir}/")
         for f in sorted(os.listdir(bdir)):

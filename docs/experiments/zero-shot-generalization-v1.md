@@ -96,7 +96,7 @@ gpio-altera 源码把 `int *` 传给期望 `u32 *` 的 property API，libclang �
 
 冻结 12 个驱动中，只有当前内核配置实际构建的 object 天然拥有 `.cmd`。对其他 architecture/Kconfig 驱动，auto 会退回 guess，required 会失败。
 
-C10 已通过版本化的 7-profile recipe 和 materializer 解决该覆盖问题：12/12 holdout 都能从合并 compile database 获得 exact context。9 个案例来自对应架构 defconfig，3 个来自固定 x86 build；其中 `gpio-ge` 明确保留 non-native 标记。详细证据见 `docs/zero-shot-matrix-c10.md`。
+C10 已通过版本化的 7-profile recipe 和 materializer 解决该覆盖问题：12/12 holdout 都能从合并 compile database 获得 exact context。9 个案例来自对应架构 defconfig，3 个来自固定 x86 build；其中 `gpio-ge` 明确保留 non-native 标记。详细证据见 `docs/experiments/zero-shot-matrix-c10.md`。
 
 ### 4.6 Context 完整不等于语义完整
 

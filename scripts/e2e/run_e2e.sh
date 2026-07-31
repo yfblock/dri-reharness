@@ -4,8 +4,10 @@
 #   subsystem: gpio|clk|edu|generic|auto (从源码自动推断)
 #   skip_synth=1: 跳过 Pi 合成, 用已有驱动
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"
-cd "$HERE"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+HERE="$ROOT"
+cd "$ROOT"
 
 KERNELDIR="${KERNELDIR:-$HERE/kernel/build}"
 KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-$KERNELDIR/arch/x86/boot/bzImage}"
