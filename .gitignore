@@ -1,5 +1,6 @@
-# Generated RIS output (extractor artifacts)
-output/
+# Generated RIS output (canonical path plus compatibility entry)
+/artifacts/output/
+/output
 
 # Python bytecode & caches
 __pycache__/
@@ -7,8 +8,8 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
-# drivers/ is a versioned evaluation corpus.
-# linux/ is a pinned, initialized Git submodule (see .gitmodules).
+# benchmarks/drivers/ is the versioned evaluation corpus.
+# vendor/linux/ is the pinned, initialized Git submodule (see .gitmodules).
 
 # Editor / OS cruft
 *.swp
@@ -22,11 +23,14 @@ plan.md
 
 # QEMU/build artifacts (regenerable)
 /initramfs_*.cpio.gz
-/test_rootfs/
-/test_rootfs_run/
-/test_rootfs_plat/
+# Canonical rootfs trees plus compatibility entries
+/platform/rootfs/
+/test_rootfs
+/test_rootfs_run
+/test_rootfs_plat
 /test/edu_trace_test
 /test/gpio_trace_test
+/platform/kernel/build/
 /kernel/build/
 *.ko
 *.o
@@ -37,6 +41,12 @@ Module.symvers
 modules.order
 
 # LaTeX intermediates (the source and final PDF remain versioned)
+/research/paper/*.aux
+/research/paper/*.log
+/research/paper/*.out
+/research/paper/*.fls
+/research/paper/*.fdb_latexmk
+/research/paper/comment.cut
 /paper/*.aux
 /paper/*.log
 /paper/*.out
@@ -44,6 +54,6 @@ modules.order
 /paper/*.fdb_latexmk
 /paper/comment.cut
 
-# Node (Pi SDK synthesizer deps)
-node_modules/
-package-lock.json
+# Pi SDK dependencies live with the Pi tool
+/tools/pi/node_modules/
+/tools/pi/package-lock.json

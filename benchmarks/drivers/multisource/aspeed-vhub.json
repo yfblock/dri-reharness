@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "name": "aspeed-vhub",
+  "description": "Pinned Linux ASPEED virtual USB hub controller module",
+  "kbuild": "../../../vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/Makefile",
+  "kbuild_target": "aspeed-vhub.ko",
+  "kconfig": [
+    "CONFIG_USB_ASPEED_VHUB=m"
+  ],
+  "sources": [
+    "../../../vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/core.c",
+    "../../../vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/ep0.c",
+    "../../../vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/epn.c",
+    "../../../vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/dev.c",
+    "../../../vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/hub.c"
+  ]
+}

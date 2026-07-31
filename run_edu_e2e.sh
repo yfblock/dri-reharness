@@ -1,2 +1,1 @@
-#!/bin/bash
-exec "$(cd "$(dirname "$0")" && pwd)/run_e2e.sh" drivers/test/edu.c pci "$@"
+scripts/e2e/run_edu_e2e.sh

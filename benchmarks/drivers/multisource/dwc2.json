@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "dwc2",
+  "description": "Pinned Linux Synopsys DesignWare USB2 dual-role controller module",
+  "kbuild": "../../../vendor/linux/drivers/usb/dwc2/Makefile",
+  "kbuild_target": "dwc2.ko",
+  "kconfig": [
+    "CONFIG_USB_DWC2=m",
+    "CONFIG_USB_DWC2_DUAL_ROLE=y",
+    "CONFIG_DEBUG_FS=n"
+  ],
+  "sources": [
+    "../../../vendor/linux/drivers/usb/dwc2/core.c",
+    "../../../vendor/linux/drivers/usb/dwc2/core_intr.c",
+    "../../../vendor/linux/drivers/usb/dwc2/platform.c",
+    "../../../vendor/linux/drivers/usb/dwc2/drd.c",
+    "../../../vendor/linux/drivers/usb/dwc2/params.c",
+    "../../../vendor/linux/drivers/usb/dwc2/hcd.c",
+    "../../../vendor/linux/drivers/usb/dwc2/hcd_intr.c",
+    "../../../vendor/linux/drivers/usb/dwc2/hcd_queue.c",
+    "../../../vendor/linux/drivers/usb/dwc2/hcd_ddma.c",
+    "../../../vendor/linux/drivers/usb/dwc2/gadget.c"
+  ]
+}

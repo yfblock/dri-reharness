@@ -26,8 +26,8 @@ preflight() {
   if ! command -v node >/dev/null 2>&1; then
     echo "  ✗ node 未安装 (Pi SDK 需要)"; errors=$((errors+1))
   fi
-  if [ ! -f "$HERE/node_modules/@earendil-works/pi-coding-agent/package.json" ]; then
-    echo "  ✗ Pi SDK 未安装 (npm install)"; errors=$((errors+1))
+  if [ ! -f "$HERE/tools/pi/node_modules/@earendil-works/pi-coding-agent/package.json" ]; then
+    echo "  ✗ Pi SDK 未安装 (cd tools/pi && npm install)"; errors=$((errors+1))
   fi
   # QEMU
   if ! command -v qemu-system-x86_64 >/dev/null 2>&1; then
