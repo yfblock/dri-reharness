@@ -1,13 +1,13 @@
 #!/bin/bash
-# qemu_run.sh — 统一 QEMU runner (替换 qemu_edu.sh + qemu_platform.sh)
+# qemu_run.sh — manifest-configured QEMU runner
 # 用法: qemu_run.sh <module> [options]
 #   -b/--bus platform|pci       默认 platform
-#   -d/--device NAME            pci 时 -device NAME (如 edu); platform 时不用
+#   -d/--device NAME            pci 时传给 QEMU 的 device model
 #   -r/--registrar-target NAME  platform 时 device-registrar 注册的设备名
 #   -e/--exerciser PATH         测试程序路径 (空=probe-only, 只 insmod/rmmod)
-#   -a/--exerciser-args ARGS    测试程序参数 (如 /dev/gpiochip0)
+#   -a/--exerciser-args ARGS    测试程序参数
 #   -s/--success-pattern REGEX   exerciser success marker supplied by manifest
-#   -p/--probe-pattern PAT      probe 成功 grep 模式 (如 "probed|registered|gpiochip")
+#   -p/--probe-pattern PAT      probe 成功 grep 模式
 #   -t/--timeout N              默认 90
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -104,7 +104,8 @@ echo "=== insmod $MODULE_NAME ==="
 insmod /lib/modules/$MODULE_NAME.ko 2>&1
 sleep 0.3
 echo "=== dmesg ==="
-dmesg | grep -iE '$REGISTRAR_TARGET|$MODULE_NAME|probed|registered|probe|gpiochip|clk|ahci|mmc' | tail -25
+PATTERN="$PROBE_PATTERN|$REGISTRAR_TARGET|$MODULE_NAME"
+dmesg | grep -iE "$PATTERN" | tail -25
 INIT
 
 # exerciser (如果有)

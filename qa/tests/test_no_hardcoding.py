@@ -32,6 +32,7 @@ def test_e2e_entrypoint_is_manifest_only_compatibility_dispatch():
 def test_generic_qemu_runner_does_not_infer_success_from_exerciser_name():
     text = (ROOT / "scripts" / "qemu" / "qemu_run.sh").read_text(encoding="utf-8")
     assert "edu_trace_test" not in text
+    assert "gpiochip|clk|ahci|mmc" not in text
     assert "SUCCESS_PATTERN" in text
     assert "--success-pattern" in text
 
