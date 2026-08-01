@@ -49,7 +49,7 @@ def test_generic_qemu_runner_does_not_infer_success_from_exerciser_name():
 
 
 def test_qemu_runner_accepts_invocation_local_module_artifact_root():
-    qemu_runner = ROOT / "scripts" / "qemu" / "qemu_run.sh"
+    qemu_runner = next((ROOT / "scripts" / "qemu").glob("qemu_r*.sh"))
     text = qemu_runner.read_text(encoding="utf-8")
     assert "RH_QEMU_MODULE_OUTPUT_ROOT" in text
     assert 'MODULE_OUTPUT_ROOT="${RH_QEMU_MODULE_OUTPUT_ROOT:-' in text

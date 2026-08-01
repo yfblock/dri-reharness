@@ -9,6 +9,8 @@ else:
     import _bootstrap as _paths  # noqa: F401
 
 from verification.runtime_adapters import (  # noqa: E402
+    ManifestCompiler,
+    ManifestExtractor,
     ManifestComparator,
     ManifestRuntime,
     RuntimeAdapter,
@@ -177,3 +179,74 @@ def test_manifest_comparator_accepts_non_register_changes_when_trace_is_unchange
     _trace(baseline, [1, 2])
     _trace(candidate, [1, 2])
     assert ManifestComparator().compare(manifest, baseline, candidate)["ok"] is True
+
+
+def test_manifest_compiler_preserves_quoted_command_arguments(tmp_path: Path, monkeypatch):
+    from experiment_manifest import validate_manifest
+
+    root = Path(__file__).resolve().parents[2]
+    manifest = validate_manifest({
+        "schema": 2, "name": "quoted-command", "source": {"path": "README.md"},
+        "compile": {"backend": "linux", "language": "c",
+                     "context": 'command: compiler --label "value with spaces" --output {output}'},
+        "runtime": {"adapter": "qemu", "qemu": {
+            "machine": "test", "device": "test", "bus": "test", "module": "quoted",
+            "timeout_seconds": 1}},
+        "test": {"executable": "README.md"},
+        "trace": {"fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]},
+        "limits": {"compile": 1, "runtime": 1, "trace": 1},
+    }, repo_root=root)
+    captured = {}
+
+    class Completed:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        return Completed()
+
+    monkeypatch.setattr("verification.runtime_adapters.sanitize_source", lambda *args, **kwargs: None)
+    monkeypatch.setattr("verification.runtime_adapters.subprocess.run", fake_run)
+    result = ManifestCompiler(root, tmp_path).compile(manifest, {"code": "int init_module(void) { return 0; }"})
+
+    assert result["ok"] is True
+    assert captured["command"][:3] == ["compiler", "--label", "value with spaces"]
+    assert captured["command"][3] == "--output"
+
+
+def test_manifest_extractor_uses_fresh_evidence_directory_per_run(tmp_path: Path, monkeypatch):
+    from experiment_manifest import validate_manifest
+
+    root = Path(__file__).resolve().parents[2]
+    manifest = validate_manifest({
+        "schema": 2, "name": "evidence-isolation", "source": {"path": "README.md"},
+        "compile": {"backend": "linux", "language": "c", "context": "test"},
+        "runtime": {"adapter": "qemu", "qemu": {
+            "machine": "test", "device": "test", "bus": "test", "module": "evidence",
+            "timeout_seconds": 1}},
+        "test": {"executable": "README.md"},
+        "trace": {"fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]},
+        "limits": {"compile": 1, "runtime": 1, "trace": 1},
+    }, repo_root=root)
+
+    class Completed:
+        returncode = 0
+        stderr = ""
+
+    def fake_run(command, **kwargs):
+        output = Path(command[command.index("-o") + 1])
+        (output / "marker.formal.json").write_text("{}\n", encoding="utf-8")
+        return Completed()
+
+    monkeypatch.setattr("verification.runtime_adapters.subprocess.run", fake_run)
+    extractor = ManifestExtractor(root, tmp_path)
+    first = extractor.extract(manifest)
+    second = extractor.extract(manifest)
+
+    assert first["ok"] and second["ok"]
+    first_dir = Path(first["value"]["directory"])
+    second_dir = Path(second["value"]["directory"])
+    assert first_dir != second_dir
+    assert first_dir.is_dir() and second_dir.is_dir()

@@ -9,8 +9,10 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
+import tempfile
 from typing import Any, Mapping
 
 from experiment_manifest import ExperimentManifest
@@ -50,8 +52,11 @@ class ManifestExtractor:
         self.output_root = output_root or root / "artifacts" / "experiments"
 
     def extract(self, manifest: ExperimentManifest) -> dict[str, Any]:
-        out = self.output_root / "evidence"
-        out.mkdir(parents=True, exist_ok=True)
+        evidence_root = self.output_root / "evidence"
+        evidence_root.mkdir(parents=True, exist_ok=True)
+        # Each extraction gets a fresh directory so stale or concurrent bundle
+        # files cannot become part of the immutable evidence digest.
+        out = Path(tempfile.mkdtemp(prefix="run-", dir=evidence_root))
         command = ["python3", "-m", "extractor", "bundle", "-s",
                    str(manifest.source.path), "-b", manifest.compile.backend, "-o", str(out)]
         completed = subprocess.run(command, cwd=self.root, text=True,
@@ -85,8 +90,9 @@ class ManifestCompiler:
     def compile(self, manifest: ExperimentManifest, candidate: Any) -> dict[str, Any]:
         if not isinstance(candidate, Mapping) or not isinstance(candidate.get("code"), str):
             return _failure(FailureClass.CONTRACT, "candidate does not contain generated code", {}, "compile")
+        module = manifest.runtime.qemu.module
         out_dir = self.output_root / "candidate"
-        out = out_dir / f"{manifest.runtime.module}.c"
+        out = out_dir / f"{module}.c"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(candidate["code"], encoding="utf-8")
         receipt_path = out.with_suffix(".safety.json")
@@ -106,12 +112,19 @@ class ManifestCompiler:
         context = manifest.compile.context
         if context.startswith("command:"):
             template = context.removeprefix("command:").strip()
-            values = {"source": str(manifest.source.path), "module": manifest.runtime.module,
+            values = {"source": str(manifest.source.path), "module": module,
                       "output": str(out)}
-            command = template.format(**values).split()
+            try:
+                command = shlex.split(template.format(**values))
+            except ValueError as exc:
+                return _failure(FailureClass.CONTRACT, "compile context command is malformed",
+                                {"error": str(exc), "context": context}, "compile")
+            if not command:
+                return _failure(FailureClass.CONTRACT, "compile context command is empty",
+                                {"context": context}, "compile")
         elif context == "kbuild":
             (out.parent / "Makefile").write_text(
-                f"obj-m += {manifest.runtime.module}.o\n", encoding="utf-8")
+                f"obj-m += {module}.o\n", encoding="utf-8")
             command = ["make", "-C", str(self.root / "platform" / "kernel" / "build"),
                        "M=" + str(out.parent), "modules"]
         else:
@@ -122,12 +135,12 @@ class ManifestCompiler:
         if completed.returncode:
             return _failure(FailureClass.COMPILE, "candidate compilation failed",
                             {"return_code": completed.returncode, "stderr": completed.stderr[-8000:]}, "compile")
-        artifact = out.parent / f"{manifest.runtime.module}.ko"
+        artifact = out.parent / f"{module}.ko"
         return {"ok": True, "value": {"path": str(artifact), "source": str(out),
-                                        "module": manifest.runtime.module,
+                                        "module": module,
                                         "safety_receipt": str(receipt_path)},
                 "payload": {"path": str(artifact), "source": str(out),
-                            "module": manifest.runtime.module,
+                            "module": module,
                             "safety_receipt": str(receipt_path)}}
 
 
