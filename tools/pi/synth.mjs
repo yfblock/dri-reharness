@@ -24,6 +24,8 @@ function parseArgs(argv) {
     const k = argv[i];
     const v = argv[++i];
     if (k === "--prompt-file") a.promptFile = v;
+    else if (k === "--request-file") a.requestFile = v;
+    else if (k === "--response-file") a.responseFile = v;
     else if (k === "--out") a.out = v;
     else if (k === "--model") a.model = v; // provider/id
     else if (k === "--model-file") a.modelFile = v;
@@ -31,8 +33,8 @@ function parseArgs(argv) {
     else if (k === "--timeout") a.timeout = parseInt(v, 10); // 秒
     else { i--; }
   }
-  if (!a.promptFile || !a.out) {
-    console.error("用法: synth.mjs --prompt-file <path> --out <out.c> [--model provider/id]");
+  if ((!a.promptFile || !a.out) && !a.requestFile) {
+    console.error("用法: synth.mjs --prompt-file <path> --out <out.c> [--model provider/id] 或 --request-file <request.json>");
     process.exit(2);
   }
   return a;
@@ -51,13 +53,41 @@ function extractC(text) {
 }
 
 const args = parseArgs(process.argv);
+const structured = Boolean(args.requestFile);
 
-// ── 读 prompt ───────────────────────────────────────────────
+function emitResponse(document) {
+  const output = JSON.stringify(document);
+  if (args.responseFile) writeFileSync(args.responseFile, output + "\n");
+  if (structured) process.stdout.write(output + "\n");
+}
+
+function requestPrompt(document) {
+  return [
+    "Produce a target implementation from the supplied evidence package.",
+    "Return the implementation in a fenced C code block.",
+    "If a test scenario is needed, return one fenced JSON block containing a scenario array.",
+    "Treat repair feedback as authoritative and preserve the register contract.",
+    "REQUEST ENVELOPE:", JSON.stringify(document, null, 2),
+  ].join("\n");
+}
+
+// ── 读 prompt/request ──────────────────────────────────────
 let promptText;
 try {
-  promptText = readFileSync(args.promptFile, "utf-8");
+  if (structured) {
+    const request = JSON.parse(readFileSync(args.requestFile, "utf-8"));
+    if (!request || typeof request !== "object" || request.protocol_version !== 1 ||
+        !["synthesize", "repair"].includes(request.operation)) {
+      throw new Error("invalid request envelope");
+    }
+    promptText = requestPrompt(request);
+  } else {
+    promptText = readFileSync(args.promptFile, "utf-8");
+  }
 } catch (e) {
   console.error(`读 prompt 失败: ${e.message}`);
+  if (structured) emitResponse({ protocol_version: 1, ok: false,
+    error: { class: "contract", message: e.message } });
   process.exit(2);
 }
 
@@ -125,10 +155,33 @@ const code = extractC(buf);
 if (!code || code.length < 50) {
   console.error(`[synth] 未提取到有效 C 代码块 (输出 ${buf.length} 字节)`);
   // 把原始输出写到 .raw 便于排查
-  writeFileSync(args.out + ".raw", buf);
+  if (args.out) writeFileSync(args.out + ".raw", buf);
+  if (structured) emitResponse({ protocol_version: 1, ok: false,
+    error: { class: "contract", message: "model output did not contain valid C code" },
+    diagnostics: { raw_bytes: buf.length, raw_output: buf } });
   process.exit(5);
 }
 
-writeFileSync(args.out, code + "\n");
-process.stderr.write(`[synth] 已写 ${args.out} (${code.length} 字节)\n`);
+// Accept an optional scenario only from a valid JSON object emitted by the model.
+let scenario;
+const jsonBlocks = [...buf.matchAll(/```json\s*\n([\s\S]*?)\n```/g)];
+for (const match of jsonBlocks) {
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (parsed && Array.isArray(parsed.scenario) &&
+        parsed.scenario.every((item) => item && typeof item === "object" && !Array.isArray(item))) {
+      scenario = parsed.scenario;
+      break;
+    }
+  } catch (_) { /* diagnostic prose is ignored */ }
+}
+
+if (structured) {
+  emitResponse({ protocol_version: 1, ok: true, code,
+    ...(scenario ? { scenario } : {}),
+    diagnostics: { model_output_bytes: buf.length, raw_output: buf } });
+} else {
+  writeFileSync(args.out, code + "\n");
+  process.stderr.write(`[synth] 已写 ${args.out} (${code.length} 字节)\n`);
+}
 process.exit(0);

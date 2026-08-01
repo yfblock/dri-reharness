@@ -1,8 +1,8 @@
 #!/bin/bash
 # tools/pi/pi_synth.sh - Pi SDK synthesis entry for src/synthesis.py
-# 协议 (与原 REHARNESS_LLM_CMD shell 后端一致):
-#   stdin  = 完整 prompt 文本
-#   stdout = 合成的 C 代码 (synth.mjs 已提取 ```c 块)
+# 协议:
+#   stdin JSON = versioned Pi request envelope; stdout JSON = response envelope.
+#   Plain-text stdin remains supported for the historical prompt/C-code interface.
 # 退出码: 0 成功; 非0 失败。
 #
 # 实现: 把 stdin prompt 写临时文件, 调 node tools/synth.mjs, 它用 Pi
@@ -12,17 +12,33 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
 TMP_P="$(mktemp /tmp/pi_synth_prompt.XXXXXX.txt)"
 TMP_C="$(mktemp /tmp/pi_synth_out.XXXXXX.c)"
-trap 'rm -f "$TMP_P" "$TMP_C" "$TMP_C.raw"' EXIT
+TMP_E="$(mktemp /tmp/pi_synth_err.XXXXXX.txt)"
+TMP_O="$(mktemp /tmp/pi_synth_stdout.XXXXXX.txt)"
+trap 'rm -f "$TMP_P" "$TMP_C" "$TMP_C.raw" "$TMP_E" "$TMP_O"' EXIT
 cat > "$TMP_P"
 MODEL="${REHARNESS_LLM_MODEL:-}"          # e.g. ai-alexbd/glm-5.2 ; 空则用配置里第一个可用
 TIMEOUT_S="${REHARNESS_LLM_TIMEOUT:-600}"
-ARGS=(--prompt-file "$TMP_P" --out "$TMP_C" --timeout "$TIMEOUT_S")
+if [ "$(sed -e '/^[[:space:]]*$/d' "$TMP_P" | head -c 1)" = "{" ]; then
+  ARGS=(--request-file "$TMP_P" --timeout "$TIMEOUT_S")
+  STRUCTURED=1
+else
+  ARGS=(--prompt-file "$TMP_P" --out "$TMP_C" --timeout "$TIMEOUT_S")
+  STRUCTURED=0
+fi
 [ -n "$MODEL" ] && ARGS+=(--model "$MODEL")
-if node "$HERE/synth.mjs" "${ARGS[@]}" >/tmp/pi_synth.stderr 2>&1; then
-  cat "$TMP_C"
+if node "$HERE/synth.mjs" "${ARGS[@]}" >"$TMP_O" 2>"$TMP_E"; then
+  if [ "$STRUCTURED" -eq 1 ]; then
+    cat "$TMP_O"
+  else
+    cat "$TMP_C"
+  fi
   exit 0
 else
   echo "pi_synth 失败:" >&2
-  cat /tmp/pi_synth.stderr >&2
+  cat "$TMP_E" >&2
+  if [ "$STRUCTURED" -eq 1 ]; then
+    # Preserve a machine-readable failure when the Node process fails early.
+    printf '%s\n' '{"protocol_version":1,"ok":false,"error":{"class":"infrastructure","message":"Pi process failed"}}'
+  fi
   exit 1
 fi
