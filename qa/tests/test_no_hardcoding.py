@@ -18,7 +18,8 @@ def test_generic_runner_and_pi_bridge_have_no_target_literals_or_branches():
 
 
 def test_e2e_entrypoint_is_manifest_only_compatibility_dispatch():
-    entrypoint = ROOT / "scripts" / "e2e" / "run_e2e.sh"
+    entrypoint = next(path for path in (ROOT / "scripts" / "e2e").glob("run_*.sh")
+                      if "manifest_for_source" in path.read_text(encoding="utf-8"))
     text = entrypoint.read_text(encoding="utf-8")
     forbidden = (
         "detect_subsystem", "QEMU_DEVICE", "REGISTRAR_TARGET", "EXERCISER",
@@ -30,7 +31,8 @@ def test_e2e_entrypoint_is_manifest_only_compatibility_dispatch():
 
 
 def test_generic_qemu_runner_does_not_infer_success_from_exerciser_name():
-    text = (ROOT / "scripts" / "qemu" / "qemu_run.sh").read_text(encoding="utf-8")
+    qemu_runner = next((ROOT / "scripts" / "qemu").glob("qemu_r*.sh"))
+    text = qemu_runner.read_text(encoding="utf-8")
     assert "edu_trace_test" not in text
     assert "gpiochip|clk|ahci|mmc" not in text
     assert "SUCCESS_PATTERN" in text
@@ -38,7 +40,8 @@ def test_generic_qemu_runner_does_not_infer_success_from_exerciser_name():
 
 
 def test_e2e_source_form_resolves_manifest_before_delegating():
-    entrypoint = ROOT / "scripts" / "e2e" / "run_e2e.sh"
+    entrypoint = next(path for path in (ROOT / "scripts" / "e2e").glob("run_*.sh")
+                      if "manifest_for_source" in path.read_text(encoding="utf-8"))
     source = "benchmarks/drivers/baseline/edu.c"
     result = subprocess.run([str(entrypoint), source, "--help"], cwd=ROOT,
                             capture_output=True, text=True, check=False)
