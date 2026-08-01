@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 from typing import Any, Mapping
 
@@ -58,7 +59,8 @@ class ManifestCompiler:
     def compile(self, manifest: ExperimentManifest, candidate: Any) -> dict[str, Any]:
         if not isinstance(candidate, Mapping) or not isinstance(candidate.get("code"), str):
             return _failure(FailureClass.CONTRACT, "candidate does not contain generated code", {}, "compile")
-        out = self.root / "artifacts" / "experiments" / manifest.name / "candidate.c"
+        out_dir = self.root / "artifacts" / "experiments" / manifest.name / "candidate"
+        out = out_dir / f"{manifest.runtime.module}.c"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(candidate["code"], encoding="utf-8")
         context = manifest.compile.context
@@ -67,6 +69,11 @@ class ManifestCompiler:
             values = {"source": str(manifest.source.path), "module": manifest.runtime.module,
                       "output": str(out)}
             command = template.format(**values).split()
+        elif context == "kbuild":
+            (out.parent / "Makefile").write_text(
+                f"obj-m += {manifest.runtime.module}.o\n", encoding="utf-8")
+            command = ["make", "-C", str(self.root / "platform" / "kernel" / "build"),
+                       "M=" + str(out.parent), "modules"]
         else:
             return _failure(FailureClass.INFRASTRUCTURE,
                             "compile context has no configured command", {"context": context}, "compile")
@@ -75,8 +82,11 @@ class ManifestCompiler:
         if completed.returncode:
             return _failure(FailureClass.COMPILE, "candidate compilation failed",
                             {"return_code": completed.returncode, "stderr": completed.stderr[-8000:]}, "compile")
-        return {"ok": True, "value": {"path": str(out), "module": manifest.runtime.module},
-                "payload": {"path": str(out), "module": manifest.runtime.module}}
+        artifact = out.parent / f"{manifest.runtime.module}.ko"
+        return {"ok": True, "value": {"path": str(artifact), "source": str(out),
+                                        "module": manifest.runtime.module},
+                "payload": {"path": str(artifact), "source": str(out),
+                            "module": manifest.runtime.module}}
 
 
 class ManifestRuntime:
@@ -87,6 +97,11 @@ class ManifestRuntime:
         module = manifest.runtime.module
         if isinstance(candidate, Mapping):
             module = str(candidate.get("module", module))
+            artifact = candidate.get("path")
+            if artifact and role == "candidate":
+                destination = self.root / "artifacts" / "output" / module
+                destination.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(str(artifact), destination / f"{module}.ko")
         command = ["bash", "scripts/qemu/qemu_run.sh", module,
                    "--bus", manifest.runtime.bus, "--timeout", str(manifest.runtime.timeout_seconds)]
         if manifest.runtime.device:
