@@ -214,19 +214,35 @@ def _config_mask(config: Mapping[str, Any] | None) -> int | None:
     return None if value_mask is None else _mask(value_mask)
 
 
+def _config_address_mask(config: Mapping[str, Any] | None) -> int | None:
+    """Read the optional address normalization rule from a trace policy."""
+    if not config:
+        return None
+    value = config.get("address_mask")
+    if value is None:
+        masks = config.get("masks")
+        if isinstance(masks, Mapping):
+            value = masks.get("address")
+    return None if value is None else _mask(value)
+
+
 def normalize_event(event: TraceEvent | Mapping[str, Any], *, value_mask: Any = None,
                     config: Mapping[str, Any] | None = None) -> TraceEvent:
     """Convert one event to the canonical schema, applying only declared masks."""
     if not isinstance(event, TraceEvent):
         event = TraceEvent.from_dict(event)
     mask = _mask(value_mask) if value_mask is not None else _config_mask(config)
+    address_mask = _config_address_mask(config)
+    address = event.address
+    if address_mask is not None and isinstance(address, int):
+        address &= address_mask
     value = event.value if mask is None or event.value is None else event.value & mask
     return TraceEvent(
         phase=event.phase,
         function=event.function,
         kind=event.kind,
         width_bits=event.width_bits,
-        address=event.address,
+        address=address,
         value=value,
         sequence=event.sequence,
         source_op_id=event.source_op_id,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 if __package__:
@@ -8,11 +9,24 @@ else:
     import _bootstrap as _paths  # noqa: F401
 
 from verification.runtime_adapters import (  # noqa: E402
+    ManifestComparator,
     ManifestRuntime,
     RuntimeAdapter,
     RuntimeAdapterError,
     resolve_runtime_adapter,
 )
+
+
+def _trace(path: Path, values: list[int], *, addresses: list[int] | None = None) -> None:
+    events = []
+    for index, value in enumerate(values):
+        events.append({
+            "phase": "probe", "function": "runtime_probe", "kind": "read",
+            "width_bits": 32,
+            "address": (addresses or [0x10] * len(values))[index],
+            "value": value, "sequence": index,
+        })
+    path.write_text(json.dumps({"events": events}), encoding="utf-8")
 
 
 def test_runtime_command_is_manifest_driven(tmp_path: Path, monkeypatch):
@@ -115,3 +129,51 @@ def test_manifest_runtime_dispatches_registered_adapter(tmp_path: Path):
 
     assert result["ok"]
     assert calls == [("custom-adapter", "candidate")]
+
+
+def test_manifest_comparator_rejects_register_trace_mutation_and_reports_first_divergence(tmp_path: Path):
+    from experiment_manifest import validate_manifest
+
+    root = Path(__file__).resolve().parents[2]
+    manifest = validate_manifest({
+        "schema": 2, "name": "trace-gate", "source": {"path": "README.md"},
+        "compile": {"backend": "linux", "language": "c", "context": "test"},
+        "runtime": {"adapter": "qemu", "qemu": {
+            "machine": "test", "device": "test", "bus": "test", "module": "test",
+            "timeout_seconds": 1}},
+        "test": {"executable": "README.md"},
+        "trace": {"fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]},
+        "limits": {"compile": 1, "runtime": 1, "trace": 1},
+    }, repo_root=root)
+    baseline, candidate = tmp_path / "baseline.json", tmp_path / "candidate.json"
+    _trace(baseline, [1, 2, 3])
+    _trace(candidate, [1, 9, 3])
+
+    result = ManifestComparator().compare(manifest, baseline, candidate)
+
+    assert result["ok"] is False
+    feedback = result["feedback"]
+    assert feedback["failure_class"] == "trace"
+    assert feedback["details"]["divergence"]["index"] == 1
+    assert feedback["details"]["divergence"]["original"]["value"] == 2
+    assert feedback["details"]["divergence"]["candidate"]["value"] == 9
+
+
+def test_manifest_comparator_accepts_non_register_changes_when_trace_is_unchanged(tmp_path: Path):
+    from experiment_manifest import validate_manifest
+
+    root = Path(__file__).resolve().parents[2]
+    manifest = validate_manifest({
+        "schema": 2, "name": "trace-gate-equal", "source": {"path": "README.md"},
+        "compile": {"backend": "linux", "language": "c", "context": "test"},
+        "runtime": {"adapter": "qemu", "qemu": {
+            "machine": "test", "device": "test", "bus": "test", "module": "test",
+            "timeout_seconds": 1}},
+        "test": {"executable": "README.md"},
+        "trace": {"fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]},
+        "limits": {"compile": 1, "runtime": 1, "trace": 1},
+    }, repo_root=root)
+    baseline, candidate = tmp_path / "baseline.json", tmp_path / "candidate.json"
+    _trace(baseline, [1, 2])
+    _trace(candidate, [1, 2])
+    assert ManifestComparator().compare(manifest, baseline, candidate)["ok"] is True

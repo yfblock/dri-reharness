@@ -105,3 +105,10 @@ def test_compare_traces_applies_the_same_manifest_rules_to_both_sides():
     left = [{**event(0, 0x100000001).to_dict()}]
     right = [{**event(0, 1).to_dict()}]
     assert compare_traces(left, right, config={"value_mask": "0xffffffff"}).equal
+
+
+def test_compare_traces_applies_manifest_address_mask():
+    left = [{**event(0).to_dict(), "address": 0x10000010}]
+    right = [{**event(0).to_dict(), "address": 0x10}]
+    result = compare_traces(left, right, config={"address_mask": "0xffff"})
+    assert result.equal
