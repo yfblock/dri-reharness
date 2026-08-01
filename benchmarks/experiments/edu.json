@@ -30,7 +30,8 @@
   },
   "trace": {
     "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"],
-    "value_mask": "0xffffffff"
+    "value_mask": "0xffffffff",
+    "instrument": true
   },
   "limits": {
     "compile": 3,

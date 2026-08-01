@@ -34,7 +34,8 @@
   "trace": {
     "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id"],
     "value_mask": "0xffffffff",
-    "normalize_function": true
+    "normalize_function": true,
+    "instrument": true
   },
   "limits": {
     "compile": 3,

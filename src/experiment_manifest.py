@@ -29,7 +29,7 @@ _RUNTIME_FIELDS = {
     "probe_pattern", "registrar", "qemu_args",
 }
 _TEST_FIELDS = {"executable", "args", "actions", "success_pattern"}
-_TRACE_FIELDS = {"fields", "value_mask", "address_mask", "normalize_function"}
+_TRACE_FIELDS = {"fields", "value_mask", "address_mask", "normalize_function", "instrument"}
 _LIMIT_FIELDS = {"compile", "runtime", "trace", "total"}
 _TRACE_EVENT_FIELDS = {
     "phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id",
@@ -176,6 +176,7 @@ class TraceSpec:
     value_mask: int | None = None
     address_mask: int | None = None
     normalize_function: bool = True
+    instrument: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {"fields": list(self.fields)}
@@ -185,6 +186,8 @@ class TraceSpec:
             result["address_mask"] = hex(self.address_mask)
         if not self.normalize_function:
             result["normalize_function"] = False
+        if self.instrument:
+            result["instrument"] = True
         return result
 
 
@@ -348,6 +351,11 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
     )
     if not isinstance(trace.normalize_function, bool):
         raise ManifestError("trace.normalize_function must be boolean")
+    instrument = trace_doc.get("instrument", False)
+    if not isinstance(instrument, bool):
+        raise ManifestError("trace.instrument must be boolean")
+    trace = TraceSpec(trace.fields, trace.value_mask, trace.address_mask,
+                      trace.normalize_function, instrument)
 
     limits_doc = document["limits"]
     if not isinstance(limits_doc, Mapping):

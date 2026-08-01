@@ -64,6 +64,13 @@ class ManifestCompiler:
         out = out_dir / f"{manifest.runtime.module}.c"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(candidate["code"], encoding="utf-8")
+        if manifest.trace.instrument:
+            instrumented = subprocess.run(
+                ["python3", "tools/source/instrument_mmio.py", str(out)],
+                cwd=self.root, text=True, capture_output=True, check=False)
+            if instrumented.returncode:
+                return _failure(FailureClass.INFRASTRUCTURE, "candidate instrumentation failed",
+                                {"stderr": instrumented.stderr[-4000:]}, "compile")
         context = manifest.compile.context
         if context.startswith("command:"):
             template = context.removeprefix("command:").strip()
@@ -132,6 +139,13 @@ class ManifestRuntime:
             if generated.returncode:
                 return _failure(FailureClass.RUNTIME, "baseline source generation failed",
                                 {"return_code": generated.returncode, "stderr": generated.stderr[-4000:]}, role)
+            if manifest.trace.instrument:
+                instrumented = subprocess.run(
+                    ["python3", "tools/source/instrument_mmio.py", str(source)],
+                    cwd=self.root, text=True, capture_output=True, check=False)
+                if instrumented.returncode:
+                    return _failure(FailureClass.INFRASTRUCTURE, "baseline instrumentation failed",
+                                    {"stderr": instrumented.stderr[-4000:]}, role)
             (baseline_dir / "Makefile").write_text(f"obj-m += {module}.o\n", encoding="utf-8")
             built = subprocess.run(
                 ["make", "-C", str(self.root / "platform" / "kernel" / "build"),
