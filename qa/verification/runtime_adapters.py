@@ -89,8 +89,10 @@ class ManifestCompiler:
         out = out_dir / f"{manifest.runtime.module}.c"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(candidate["code"], encoding="utf-8")
+        receipt_path = out.with_suffix(".safety.json")
         try:
-            sanitize_source(out, manifest.runtime.safety_policy)
+            sanitize_source(out, manifest.runtime.safety_policy,
+                            receipt_path=receipt_path)
         except (OSError, SafetyPolicyError) as exc:
             return _failure(FailureClass.CONTRACT, "candidate violates safety policy",
                             {"error": str(exc)}, "compile")
@@ -122,9 +124,11 @@ class ManifestCompiler:
                             {"return_code": completed.returncode, "stderr": completed.stderr[-8000:]}, "compile")
         artifact = out.parent / f"{manifest.runtime.module}.ko"
         return {"ok": True, "value": {"path": str(artifact), "source": str(out),
-                                        "module": manifest.runtime.module},
+                                        "module": manifest.runtime.module,
+                                        "safety_receipt": str(receipt_path)},
                 "payload": {"path": str(artifact), "source": str(out),
-                            "module": manifest.runtime.module}}
+                            "module": manifest.runtime.module,
+                            "safety_receipt": str(receipt_path)}}
 
 
 class ManifestContractVerifier:

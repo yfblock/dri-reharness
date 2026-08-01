@@ -7,13 +7,15 @@ may reject a token or rewrite matching source text before compilation.
 from __future__ import annotations
 
 import re
+import hashlib
+import json
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from experiment_manifest import SafetyPolicy, load_manifest  # noqa: E402
+from experiment_manifest import SafetyPolicy, load_manifest, manifest_digest  # noqa: E402
 
 
 class SafetyPolicyError(ValueError):
@@ -40,12 +42,26 @@ def sanitize_text(source: str, policy: SafetyPolicy) -> tuple[str, tuple[str, ..
     return updated, observed
 
 
-def sanitize_source(path: str | Path, policy: SafetyPolicy) -> tuple[str, ...]:
+def sanitize_source(path: str | Path, policy: SafetyPolicy,
+                    *, receipt_path: str | Path | None = None) -> tuple[str, ...]:
     source_path = Path(path)
     original = source_path.read_text(encoding="utf-8")
     updated, observed = sanitize_text(original, policy)
     if updated != original:
         source_path.write_text(updated, encoding="utf-8")
+    if receipt_path is not None:
+        receipt = {
+            "schema": 1,
+            "policy_digest": manifest_digest(policy.to_dict()),
+            "source_before_sha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
+            "source_after_sha256": hashlib.sha256(updated.encode("utf-8")).hexdigest(),
+            "matched_tokens": list(observed),
+            "changed": updated != original,
+            "rewrite_rule_count": len(policy.rewrite_rules),
+        }
+        destination = Path(receipt_path)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return observed
 
 

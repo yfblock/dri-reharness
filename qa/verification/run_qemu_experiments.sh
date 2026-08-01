@@ -98,10 +98,17 @@ PY
         grep -q TRACE_MATCH_OK "$RESULTS/${MANIFEST_NAME}-trace.txt" || trace_ok=false
     fi
     python3 - "$ROWS_FILE" "$manifest" "$qemu_rc" "$trace_ok" <<'PY'
-import json, sys
+import hashlib, json, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "src"))
+from experiment_manifest import load_manifest
 path, manifest, qemu_rc, trace_ok = sys.argv[1:]
+m = load_manifest(manifest, repo_root=Path.cwd())
+source_digest = hashlib.sha256(m.source.path.read_bytes()).hexdigest()
 with open(path, "a", encoding="utf-8") as handle:
-    json.dump({"manifest": manifest, "qemu_returncode": int(qemu_rc),
+    json.dump({"manifest": manifest, "manifest_digest": m.digest,
+               "source_sha256": source_digest,
+               "qemu_returncode": int(qemu_rc),
                "trace_ok": trace_ok == "true"}, handle)
     handle.write("\n")
 PY
@@ -110,16 +117,23 @@ PY
     fi
 done
 
-python3 - "$ROWS_FILE" "$RESULTS/qemu.json" <<'PY'
-import datetime, json, os, subprocess, sys
+python3 - "$ROWS_FILE" "$RESULTS/qemu.json" "$KERNELDIR" <<'PY'
+import datetime, hashlib, json, os, subprocess, sys
+from pathlib import Path
 rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
 experiments = {}
 for row in rows:
     name = os.path.splitext(os.path.basename(row["manifest"]))[0]
     experiments[name] = {"probe": row["qemu_returncode"] == 0,
-                         "trace_oracle": row["trace_ok"]}
+                         "trace_oracle": row["trace_ok"],
+                         "manifest_digest": row["manifest_digest"],
+                         "source_sha256": row["source_sha256"]}
+kernel = Path(sys.argv[3]) / "arch/x86/boot/bzImage"
+kernel_sha256 = hashlib.sha256(kernel.read_bytes()).hexdigest() if kernel.is_file() else None
 data = {"schema": 1, "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "reharness_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "kernel_release": subprocess.check_output(["make", "-s", "-C", sys.argv[3], "kernelrelease"], text=True).strip(),
+        "kernel_bzimage_sha256": kernel_sha256,
         "experiments": experiments}
 with open(sys.argv[2], "w", encoding="utf-8") as handle:
     json.dump(data, handle, indent=2, sort_keys=True)
