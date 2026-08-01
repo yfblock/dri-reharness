@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 cd "$ROOT"
+export PYTHONPATH="$ROOT/src:$ROOT/qa:$ROOT/qa/verification${PYTHONPATH:+:$PYTHONPATH}"
 KERNELDIR="${KERNELDIR:-$ROOT/platform/kernel/build}"
 RESULTS="${RESULTS:-$ROOT/research/experiments/results}"
 mkdir -p "$RESULTS"
@@ -28,6 +29,7 @@ build_exerciser() {
 
 INFO_FILE="$(mktemp)"
 ROWS_FILE="$(mktemp)"
+overall_rc=0
 trap 'rm -f "$INFO_FILE" "$ROWS_FILE"' EXIT
 
 for manifest in benchmarks/experiments/*.json; do
@@ -101,7 +103,9 @@ with open(path, "a", encoding="utf-8") as handle:
                "trace_ok": trace_ok == "true"}, handle)
     handle.write("\n")
 PY
-    [ "$qemu_rc" -eq 0 ] && [ "$trace_ok" = true ]
+    if [ "$qemu_rc" -ne 0 ] || [ "$trace_ok" != true ]; then
+        overall_rc=1
+    fi
 done
 
 python3 - "$ROWS_FILE" "$RESULTS/qemu.json" <<'PY'
@@ -120,4 +124,9 @@ with open(sys.argv[2], "w", encoding="utf-8") as handle:
     handle.write("\n")
 PY
 
-echo "QEMU_EXPERIMENTS_OK"
+if [ "$overall_rc" -eq 0 ]; then
+    echo "QEMU_EXPERIMENTS_OK"
+else
+    echo "QEMU_EXPERIMENTS_FAILED" >&2
+fi
+exit "$overall_rc"

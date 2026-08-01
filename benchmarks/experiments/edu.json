@@ -27,7 +27,7 @@
       ]
     },
     "qemu": {
-      "machine": "q35",
+      "machine": "pc",
       "device": "edu",
       "bus": "pci",
       "module": "edu_drv",

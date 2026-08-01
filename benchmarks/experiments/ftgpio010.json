@@ -17,13 +17,13 @@
       "failure_class": "safety"
     },
     "qemu": {
-      "machine": "q35",
+      "machine": "pc",
       "device": "ftgpio010-gpio",
       "bus": "platform",
       "module": "ftgpio010_gpio",
       "timeout_seconds": 90,
       "probe_pattern": "probed|registered|gpiochip",
-      "registrar": "ftgpio010-gpio"
+      "registrar": "gpio-ftgpio010"
     }
   },
   "test": {

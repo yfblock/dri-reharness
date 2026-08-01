@@ -22,3 +22,17 @@ Each run is append-only under `artifacts/experiments/<name>/`:
 Target facts belong in the manifest or an explicitly selected runtime
 adapter. The generic runner and Pi bridge do not infer a subsystem, driver
 name, compatible string, or private register constant.
+
+Runtime policy is split into three manifest sections:
+
+- `runtime.pci_identity` supplies vendor/device identity to PCI generation;
+- `runtime.safety_policy` supplies forbidden tokens and reject/rewrite rules
+  to the generic source sanitizer;
+- `runtime.qemu` supplies machine, bus, device model, module, probe pattern,
+  timeout, and optional QEMU arguments.
+
+The deterministic QEMU verification command discovers every JSON manifest in
+`benchmarks/experiments/`; adding an experiment does not require a new shell
+branch. Device-specific wrapper scripts and demo aliases are intentionally not
+part of the public interface. Linux callback/API semantic tables remain in the
+generator because they model stable kernel interfaces, not a device identity.
