@@ -292,6 +292,7 @@ class ExperimentManifest:
     limits: IterationLimits
     repo_root: Path | None = None
     raw_document: Mapping[str, Any] | None = None
+    manifest_path: Path | None = None
 
     def to_dict(self) -> dict[str, Any]:
         root = self.repo_root
@@ -569,7 +570,12 @@ def load_manifest(path: str | os.PathLike[str] | Path, *, repo_root: str | os.Pa
     except (OSError, json.JSONDecodeError) as exc:
         raise ManifestError(f"cannot read manifest {path}: {exc}") from exc
     root = Path(repo_root).resolve() if repo_root is not None else _repo_root(manifest_path.parent)
-    return validate_manifest(document, repo_root=root, manifest_dir=manifest_path.parent)
+    manifest = validate_manifest(document, repo_root=root, manifest_dir=manifest_path.parent)
+    return ExperimentManifest(
+        manifest.schema, manifest.name, manifest.source, manifest.compile,
+        manifest.runtime, manifest.test, manifest.trace, manifest.limits,
+        manifest.repo_root, manifest.raw_document, manifest_path,
+    )
 
 
 def validate_trace_fields(fields: Any) -> tuple[str, ...]:

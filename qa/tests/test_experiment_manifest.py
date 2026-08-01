@@ -98,6 +98,7 @@ def test_repository_manifests_are_valid():
         document = json.loads(path.read_text(encoding="utf-8"))
         manifest = load_manifest(path, repo_root=root)
         assert manifest.name
+        assert manifest.manifest_path == path.resolve()
         assert manifest_digest(document) == manifest.digest
 
 

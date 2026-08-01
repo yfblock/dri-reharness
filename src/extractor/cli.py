@@ -90,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
                    choices=["harness", "baremetal", "linux"])
     g.add_argument("-o", "--output", default=None,
                    help="output .c file (default: artifacts/output/<driver>_<backend>.c)")
+    g.add_argument("--manifest", default=None,
+                   help="validated experiment manifest supplying runtime policy")
     _add_analysis_options(g)
 
     sc = sub.add_parser("score", help="Generation readiness scoring")
@@ -189,8 +191,13 @@ def main(argv: list[str] | None = None) -> int:
         bind = default_bind(res.device_spec, args.backend)
         gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
         if args.backend == "linux":
+            pci_identity = None
+            if args.manifest:
+                from experiment_manifest import load_manifest
+                pci_identity = load_manifest(args.manifest).runtime.pci_identity
             code = gens[args.backend].generate(
-                res.formal, res.device_spec, bind, res.facts)
+                res.formal, res.device_spec, bind, res.facts,
+                pci_identity=pci_identity)
         else:
             code = gens[args.backend].generate(res.formal, res.device_spec, bind)
         out = (args.output

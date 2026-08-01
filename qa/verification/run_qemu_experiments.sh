@@ -54,7 +54,8 @@ PY
     out_dir="$ROOT/artifacts/output/$MODULE"
     spec_dir="$ROOT/artifacts/output/manifest-$MANIFEST_NAME"
     mkdir -p "$out_dir" "$spec_dir"
-    python3 -m extractor gen -s "$SOURCE" -b "$BACKEND" -o "$out_dir/$MODULE.c"
+    python3 -m extractor gen -s "$SOURCE" -b "$BACKEND" -o "$out_dir/$MODULE.c" \
+        --manifest "$manifest"
     if [ "${MANIFEST_NAME:-}" ] && python3 - "$manifest" <<'PY'
 import sys
 from pathlib import Path

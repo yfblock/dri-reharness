@@ -149,7 +149,9 @@ class ManifestRuntime:
             source = baseline_dir / f"{module}.c"
             generated = subprocess.run(
                 ["python3", "-m", "extractor", "gen", "-s", str(manifest.source.path),
-                 "-b", manifest.compile.backend, "-o", str(source)],
+                 "-b", manifest.compile.backend, "-o", str(source),
+                 *(["--manifest", str(manifest.manifest_path)]
+                   if manifest.manifest_path is not None else [])],
                 cwd=self.root, text=True, capture_output=True, check=False)
             if generated.returncode:
                 return _failure(FailureClass.RUNTIME, "baseline source generation failed",
