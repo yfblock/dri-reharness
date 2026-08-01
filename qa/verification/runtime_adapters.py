@@ -18,6 +18,7 @@ from experiment_protocol import FailureClass, Feedback
 from synthesis import SubprocessPiBridge
 from trace_protocol import compare_runs, load_trace
 from verification.backend_lowering_oracle import verify_backend_lowering
+from tools.source.sanitize import SafetyPolicyError, sanitize_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,6 +73,11 @@ class ManifestCompiler:
         out = out_dir / f"{manifest.runtime.module}.c"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(candidate["code"], encoding="utf-8")
+        try:
+            sanitize_source(out, manifest.runtime.safety_policy)
+        except (OSError, SafetyPolicyError) as exc:
+            return _failure(FailureClass.CONTRACT, "candidate violates safety policy",
+                            {"error": str(exc)}, "compile")
         if manifest.trace.instrument:
             instrumented = subprocess.run(
                 ["python3", "tools/source/instrument_mmio.py", str(out)],

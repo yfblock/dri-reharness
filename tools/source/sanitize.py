@@ -1,17 +1,74 @@
 #!/usr/bin/env python3
-"""确定性后处理: 删掉触发 QEMU edu 中断风暴的 DMA 启动写 (writel(...IO_DMA_CMD...)).
-LLM 反复无视 'probe 禁 DMA' 约束; 这一行是风暴触发点, 删它即稳定, 其余 DMA 设置行无害。
-用法: python3 tools/sanitize.py <edu_drv.c>"""
-import re, sys
-p = sys.argv[1]
-s = open(p).read()
-orig = s
-# 删含 IO_DMA_CMD / DMA_CMD | DMA_IRQ 的 writel 行
-s = re.sub(r'^[ \t]*writel\([^;]*IO_DMA_CMD[^;]*\);[ \t]*\n', '', s, flags=re.M)
-s = re.sub(r'^[ \t]*writel\([^;]*DMA_CMD\s*\|\s*DMA_IRQ[^;]*\);[ \t]*\n', '', s, flags=re.M)
-if s != orig:
-    open(p, 'w').write(s)
-    n = orig.count('\n') - s.count('\n')
-    print(f"[sanitize] 删除 {n} 行 DMA 启动写 (IO_DMA_CMD) — 防止 QEMU 中断风暴", file=sys.stderr)
-else:
-    print("[sanitize] 无 DMA 启动写, 未改动", file=sys.stderr)
+"""Apply a manifest-declared source safety policy.
+
+The sanitizer has no knowledge of a device or register vocabulary.  A policy
+may reject a token or rewrite matching source text before compilation.
+"""
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src"))
+
+from experiment_manifest import SafetyPolicy, load_manifest  # noqa: E402
+
+
+class SafetyPolicyError(ValueError):
+    """Raised when source violates a manifest safety policy."""
+
+
+def sanitize_text(source: str, policy: SafetyPolicy) -> tuple[str, tuple[str, ...]]:
+    """Return sanitized source and the policy tokens observed in it."""
+    observed = tuple(token for token in policy.forbidden_tokens if token in source)
+    if not observed or policy.action == "allow":
+        return source, observed
+    if policy.action == "reject":
+        raise SafetyPolicyError(
+            f"source violates safety policy ({policy.failure_class}): {', '.join(observed)}"
+        )
+    updated = source
+    for rule in policy.rewrite_rules:
+        updated = re.sub(rule["pattern"], rule["replacement"], updated, flags=re.MULTILINE)
+    remaining = tuple(token for token in observed if token in updated)
+    if remaining:
+        raise SafetyPolicyError(
+            f"rewrite did not remove forbidden token(s) ({policy.failure_class}): {', '.join(remaining)}"
+        )
+    return updated, observed
+
+
+def sanitize_source(path: str | Path, policy: SafetyPolicy) -> tuple[str, ...]:
+    source_path = Path(path)
+    original = source_path.read_text(encoding="utf-8")
+    updated, observed = sanitize_text(original, policy)
+    if updated != original:
+        source_path.write_text(updated, encoding="utf-8")
+    return observed
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) not in {2, 3}:
+        print(f"usage: {argv[0]} SOURCE [MANIFEST]", file=sys.stderr)
+        return 2
+    source = Path(argv[1])
+    manifest_path = Path(argv[2]) if len(argv) == 3 else None
+    policy = SafetyPolicy()
+    if manifest_path is not None:
+        policy = load_manifest(manifest_path, repo_root=ROOT).runtime.safety_policy
+    try:
+        observed = sanitize_source(source, policy)
+    except (OSError, SafetyPolicyError, ValueError) as exc:
+        print(f"[sanitize] {exc}", file=sys.stderr)
+        return 1
+    if observed:
+        print(f"[sanitize] applied manifest safety policy to {len(observed)} token(s)", file=sys.stderr)
+    else:
+        print("[sanitize] no policy violations", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

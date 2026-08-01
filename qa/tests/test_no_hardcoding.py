@@ -17,6 +17,15 @@ def test_generic_runner_and_pi_bridge_have_no_target_literals_or_branches():
     assert "subsystem" not in text.lower()
 
 
+def test_generator_and_sanitizer_consume_policy_without_private_constants():
+    paths = [ROOT / "src" / "generator" / "linux.py",
+             ROOT / "tools" / "source" / "sanitize.py"]
+    text = "\n".join(path.read_text(encoding="utf-8") for path in paths)
+    assert "device_spec.name == \"edu\"" not in text
+    assert "IO_DMA_CMD" not in text
+    assert "DMA_IRQ" not in text
+
+
 def test_e2e_entrypoint_is_manifest_only_compatibility_dispatch():
     entrypoint = next(path for path in (ROOT / "scripts" / "e2e").glob("run_*.sh")
                       if "manifest_for_source" in path.read_text(encoding="utf-8"))

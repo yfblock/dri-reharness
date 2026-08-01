@@ -1590,9 +1590,14 @@ def _emit_probe_body(module, regs, bind, indent="\t",
     return out
 
 
-def _pci_ids(device_spec, facts) -> tuple[int, int] | None:
-    if device_spec.name == "edu":
-        return 0x1234, 0x11E8
+def _pci_ids(device_spec, facts, pci_identity=None) -> tuple[int, int] | None:
+    if pci_identity is not None:
+        vendor = getattr(pci_identity, "vendor", None)
+        device = getattr(pci_identity, "device", None)
+        if vendor is None and isinstance(pci_identity, dict):
+            vendor, device = pci_identity.get("vendor"), pci_identity.get("device")
+        if isinstance(vendor, int) and isinstance(device, int):
+            return vendor, device
     source = getattr(facts, "source", None) if facts is not None else None
     if source and os.path.isfile(source):
         text = open(source, "r", encoding="utf-8", errors="replace").read()
@@ -2361,7 +2366,7 @@ def _emit_platform(formal, device_spec, bind, facts, priv, regs,
 def _emit_pci(formal, device_spec, bind, facts, priv, regs,
               callbacks: dict[str, str], callback_code: list[str],
               unsupported: list[str], gpio_model: dict | None = None,
-              irq_model: dict | None = None) -> str:
+              irq_model: dict | None = None, pci_identity=None) -> str:
     dev = device_spec.name
     safe_function_calls = set(_portable_function_macros(formal))
     cid = _cid(dev)
@@ -2374,7 +2379,7 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
         probe_module = None
     bar = 5 if device_spec.cls == "ahci" else 0
     misc = dev == "edu"
-    ids = _pci_ids(device_spec, facts)
+    ids = _pci_ids(device_spec, facts, pci_identity)
     by_field = {field: fn for fn, field in callbacks.items()}
     modules = {module.get("name"): module
                for module in formal.get("modules", [])}
@@ -2517,7 +2522,7 @@ def _emit_pci(formal, device_spec, bind, facts, priv, regs,
     return "\n".join(L)
 
 
-def generate(formal: dict, device_spec, bind, facts=None) -> str:
+def generate(formal: dict, device_spec, bind, facts=None, pci_identity=None) -> str:
     dev = device_spec.name
     preserved_virtio = _source_preserved_virtio(
         formal, device_spec, facts)
@@ -2910,7 +2915,7 @@ def generate(formal: dict, device_spec, bind, facts=None) -> str:
     elif is_pci:
         body = _emit_pci(formal, device_spec, bind, facts, priv, regs,
                          callbacks, callback_code, unsupported,
-                         gpio_model, irq_model)
+                         gpio_model, irq_model, pci_identity)
     else:
         body = _emit_platform(formal, device_spec, bind, facts, priv, regs,
                               callbacks, callback_code, unsupported,
