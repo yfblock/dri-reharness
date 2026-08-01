@@ -105,7 +105,7 @@ insmod /lib/modules/$MODULE_NAME.ko 2>&1
 sleep 0.3
 echo "=== dmesg ==="
 PATTERN="$PROBE_PATTERN|$REGISTRAR_TARGET|$MODULE_NAME"
-dmesg | grep -iE "$PATTERN" | tail -25
+dmesg | grep -iE "\$PATTERN" | tail -25
 INIT
 
 # exerciser (如果有)
