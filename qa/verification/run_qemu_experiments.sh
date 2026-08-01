@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Deterministic (no LLM) QEMU experiments used by the paper.
+# Deterministic QEMU experiments discovered from validated manifests.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 cd "$ROOT"
 KERNELDIR="${KERNELDIR:-$ROOT/platform/kernel/build}"
-RESULTS="$ROOT/research/experiments/results"
+RESULTS="${RESULTS:-$ROOT/research/experiments/results}"
 mkdir -p "$RESULTS"
 
 if [ ! -f "$KERNELDIR/arch/x86/boot/bzImage" ]; then
@@ -14,104 +14,110 @@ if [ ! -f "$KERNELDIR/arch/x86/boot/bzImage" ]; then
 fi
 
 write_makefile() {
-    local dir="$1" module="$2"
-    printf 'obj-m += %s.o\n' "$module" > "$dir/Makefile"
+    printf 'obj-m += %s.o\n' "$2" > "$1/Makefile"
 }
 
 build_module() {
-    local dir="$1"
-    make -C "$KERNELDIR" M="$dir" clean >/dev/null
-    make -C "$KERNELDIR" M="$dir" modules >/dev/null
+    make -C "$KERNELDIR" M="$1" clean >/dev/null
+    make -C "$KERNELDIR" M="$1" modules >/dev/null
 }
 
 build_exerciser() {
-    local source="$1" output="$2"
-    "${CC:-cc}" -static -O2 -Wall -Wextra -o "$output" "$source"
+    "${CC:-cc}" -static -O2 -Wall -Wextra -o "$2" "$1"
 }
 
-normalize_log() {
-    tr -d '\r' | sed 's/[[:blank:]]*$//'
-}
+INFO_FILE="$(mktemp)"
+ROWS_FILE="$(mktemp)"
+trap 'rm -f "$INFO_FILE" "$ROWS_FILE"' EXIT
 
-build_exerciser qa/native-tests/edu_trace_test.c qa/native-tests/edu_trace_test
-build_exerciser qa/native-tests/gpio_trace_test.c qa/native-tests/gpio_trace_test
+for manifest in benchmarks/experiments/*.json; do
+    eval "$(python3 - "$manifest" <<'PY'
+import shlex, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "src"))
+from experiment_manifest import load_manifest
+m = load_manifest(sys.argv[1], repo_root=Path.cwd())
+def emit(name, value):
+    print(f"{name}={shlex.quote(str(value))}")
+emit("MANIFEST_NAME", m.name)
+emit("SOURCE", str(m.source.path.relative_to(Path.cwd())))
+emit("BACKEND", m.compile.backend)
+emit("MODULE", m.runtime.module)
+emit("BUS", m.runtime.bus)
+emit("TEST", str(m.test.executable.relative_to(Path.cwd())))
+emit("CALLS", "|".join(m.trace.exercised_calls))
+PY
+)"
 
-# ── QEMU edu: value-level oracle ────────────────────────────────────
-EDU_DIR="$ROOT/artifacts/output/edu_drv"
-mkdir -p "$EDU_DIR"
-python3 -m extractor gen -s benchmarks/drivers/baseline/edu.c -b linux -o "$EDU_DIR/edu_drv.c"
-write_makefile "$EDU_DIR" edu_drv
-build_module "$EDU_DIR"
-RH_QEMU_OUT=/tmp/reharness_qemu_edu_deterministic.txt \
-    bash scripts/qemu/qemu_run.sh edu_drv -b pci -d edu \
-      -e qa/native-tests/edu_trace_test -a /dev/edu_drv \
-      -p 'probed|edu device id|edu probed' -t 90 \
-      | normalize_log | tee "$RESULTS/qemu-edu-judge.txt"
-normalize_log < /tmp/reharness_qemu_edu_deterministic.txt \
-    > "$RESULTS/qemu-edu-serial.log"
-grep -q EDU_TRACE_OK "$RESULTS/qemu-edu-serial.log"
+    out_dir="$ROOT/artifacts/output/$MODULE"
+    spec_dir="$ROOT/artifacts/output/manifest-$MANIFEST_NAME"
+    mkdir -p "$out_dir" "$spec_dir"
+    python3 -m extractor gen -s "$SOURCE" -b "$BACKEND" -o "$out_dir/$MODULE.c"
+    if [ "${MANIFEST_NAME:-}" ] && python3 - "$manifest" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "src"))
+from experiment_manifest import load_manifest
+raise SystemExit(0 if load_manifest(sys.argv[1], repo_root=Path.cwd()).trace.instrument else 1)
+PY
+    then
+        python3 tools/source/instrument_mmio.py "$out_dir/$MODULE.c"
+    fi
+    write_makefile "$out_dir" "$MODULE"
+    build_module "$out_dir"
 
-# ── gpio-ftgpio010: offset/order trace oracle ───────────────────────
-FT_DIR="$ROOT/artifacts/output/gpio_ftgpio010"
-FT_SPEC="$ROOT/artifacts/output/deterministic-ftgpio"
-mkdir -p "$FT_DIR" "$FT_SPEC"
-python3 -m extractor gen -s benchmarks/drivers/baseline/gpio-ftgpio010.c -b linux \
-    -o "$FT_DIR/gpio_ftgpio010.c"
-python3 tools/source/instrument_mmio.py "$FT_DIR/gpio_ftgpio010.c"
-write_makefile "$FT_DIR" gpio_ftgpio010
-build_module "$FT_DIR"
-make -C qa/verification/device-registrar KERNELDIR="$KERNELDIR" >/dev/null
-python3 -m extractor extract -s benchmarks/drivers/baseline/gpio-ftgpio010.c \
-    -o "$FT_SPEC/gpio-ftgpio010.ris" \
-    --json-output "$FT_SPEC/gpio-ftgpio010.formal.json" >/dev/null
-python3 -m extractor spec -s benchmarks/drivers/baseline/gpio-ftgpio010.c \
-    -o "$FT_SPEC/gpio-ftgpio010.dspec" >/dev/null
-RH_QEMU_OUT=/tmp/reharness_qemu_ftgpio_deterministic.txt \
-    bash scripts/qemu/qemu_run.sh gpio_ftgpio010 -b platform -r gpio-ftgpio010 \
-      -e qa/native-tests/gpio_trace_test -a /dev/gpiochip0 \
-      -p 'probed|registered|gpiochip' -t 90 \
-      | normalize_log | tee "$RESULTS/qemu-ftgpio010-judge.txt"
-normalize_log < /tmp/reharness_qemu_ftgpio_deterministic.txt \
-    > "$RESULTS/qemu-ftgpio010-serial.log"
-FT_CALLS='ftgpio_gpio_probe=gpio_ftgpio010_probe,ftgpio_gpio_probe__gpio_generic_get_direction,ftgpio_gpio_probe__gpio_generic_direction_output,ftgpio_gpio_probe__gpio_generic_get_multiple,ftgpio_gpio_probe__gpio_generic_set_multiple,ftgpio_gpio_probe__gpio_generic_set_multiple,ftgpio_gpio_probe__gpio_generic_direction_input'
-python3 tools/reporting/trace_match.py "$RESULTS/qemu-ftgpio010-serial.log" \
-    --formal-json "$FT_SPEC/gpio-ftgpio010.formal.json" \
-    --exercised-calls "$FT_CALLS" \
-    2>&1 | tee "$RESULTS/qemu-ftgpio010-trace.txt"
-grep -q TRACE_MATCH_OK "$RESULTS/qemu-ftgpio010-trace.txt"
+    test_source="$ROOT/${TEST}.c"
+    if [ -f "$test_source" ]; then
+        build_exerciser "$test_source" "$ROOT/$TEST"
+    fi
+    if [ "$BUS" = "platform" ]; then
+        make -C qa/verification/device-registrar KERNELDIR="$KERNELDIR" >/dev/null
+    fi
 
-python3 - "$RESULTS/qemu.json" "$RESULTS/qemu-ftgpio010-trace.txt" <<'PY'
-import datetime, json, os, re, subprocess, sys
-root = os.getcwd()
-def run(*args):
-    return subprocess.check_output(args, text=True).strip()
-trace_report = open(sys.argv[2], encoding="utf-8").read()
-def coverage(pattern):
-    match = re.search(pattern, trace_report)
-    if not match:
-        raise SystemExit(f"missing QEMU coverage field: {pattern}")
-    return match.group(1)
-data = {
-    "schema": 1,
-    "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    "reharness_commit": run("git", "rev-parse", "HEAD"),
-    "linux_commit": run("git", "-C", "vendor/linux", "rev-parse", "HEAD"),
-    "kernel_release": run("make", "-s", "-C", "platform/kernel/build", "kernelrelease"),
-    "experiments": {
-        "edu": {"probe": True, "value_oracle": "EDU_TRACE_OK"},
-        "gpio-ftgpio010": {
-            "probe": True,
-            "trace_oracle": "TRACE_MATCH_OK",
-            "module_coverage": coverage(r"模块覆盖:\s*(\d+/\d+)"),
-            "call_coverage": coverage(r"调用覆盖:\s*(\d+/\d+)"),
-            "op_coverage": coverage(r"op 覆盖:\s*(\d+/\d+)"),
-            "register_coverage": coverage(r"寄存器覆盖:\s*(\d+/\d+)"),
-        },
-    },
-}
-with open(sys.argv[1], "w", encoding="utf-8") as f:
-    json.dump(data, f, indent=2, sort_keys=True)
-    f.write("\n")
+    serial="$RESULTS/${MANIFEST_NAME}-serial.log"
+    judge="$RESULTS/${MANIFEST_NAME}-judge.txt"
+    qemu_out="/tmp/reharness_qemu_${MANIFEST_NAME}.txt"
+    set +e
+    RH_QEMU_OUT="$qemu_out" bash scripts/qemu/qemu_run.sh --manifest "$manifest" \
+        | tr -d '\r' | sed 's/[[:blank:]]*$//' | tee "$judge"
+    qemu_rc=${PIPESTATUS[0]}
+    set -e
+    tr -d '\r' < "$qemu_out" | sed 's/[[:blank:]]*$//' > "$serial"
+    trace_ok=true
+    if [ -n "$CALLS" ]; then
+        python3 -m extractor extract -s "$SOURCE" -o "$spec_dir/$MANIFEST_NAME.ris" \
+            --json-output "$spec_dir/$MANIFEST_NAME.formal.json" >/dev/null
+        exercised="${CALLS//|/,}"
+        python3 tools/reporting/trace_match.py "$serial" \
+            --formal-json "$spec_dir/$MANIFEST_NAME.formal.json" \
+            --exercised-calls "$exercised" 2>&1 | tee "$RESULTS/${MANIFEST_NAME}-trace.txt"
+        grep -q TRACE_MATCH_OK "$RESULTS/${MANIFEST_NAME}-trace.txt" || trace_ok=false
+    fi
+    python3 - "$ROWS_FILE" "$manifest" "$qemu_rc" "$trace_ok" <<'PY'
+import json, sys
+path, manifest, qemu_rc, trace_ok = sys.argv[1:]
+with open(path, "a", encoding="utf-8") as handle:
+    json.dump({"manifest": manifest, "qemu_returncode": int(qemu_rc),
+               "trace_ok": trace_ok == "true"}, handle)
+    handle.write("\n")
+PY
+    [ "$qemu_rc" -eq 0 ] && [ "$trace_ok" = true ]
+done
+
+python3 - "$ROWS_FILE" "$RESULTS/qemu.json" <<'PY'
+import datetime, json, os, subprocess, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+experiments = {}
+for row in rows:
+    name = os.path.splitext(os.path.basename(row["manifest"]))[0]
+    experiments[name] = {"probe": row["qemu_returncode"] == 0,
+                         "trace_oracle": row["trace_ok"]}
+data = {"schema": 1, "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "reharness_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "experiments": experiments}
+with open(sys.argv[2], "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2, sort_keys=True)
+    handle.write("\n")
 PY
 
 echo "QEMU_EXPERIMENTS_OK"

@@ -177,7 +177,9 @@ class ManifestRuntime:
                 destination.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(artifact), destination / f"{module}.ko")
         command = ["bash", "scripts/qemu/qemu_run.sh", module,
-                   "--bus", manifest.runtime.bus, "--timeout", str(manifest.runtime.timeout_seconds)]
+                   "--bus", manifest.runtime.bus,
+                   "--machine", manifest.runtime.machine,
+                   "--timeout", str(manifest.runtime.timeout_seconds)]
         if manifest.runtime.device:
             command += ["--device", manifest.runtime.device]
         if manifest.runtime.registrar:
@@ -189,6 +191,8 @@ class ManifestRuntime:
             command += ["--success-pattern", manifest.test.success_pattern]
         if manifest.runtime.probe_pattern:
             command += ["--probe-pattern", manifest.runtime.probe_pattern]
+        for argument in manifest.runtime.qemu_args:
+            command += ["--qemu-arg", argument]
         completed = subprocess.run(command, cwd=self.root, text=True,
                                    capture_output=True, check=False)
         trace_path = self.output_root / f"{role}.trace"

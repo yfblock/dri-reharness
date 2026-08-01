@@ -42,7 +42,16 @@
     "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id"],
     "value_mask": "0xffffffff",
     "normalize_function": true,
-    "instrument": true
+    "instrument": true,
+    "exercised_calls": [
+      "ftgpio_gpio_probe=gpio_ftgpio010_probe",
+      "ftgpio_gpio_probe__gpio_generic_get_direction",
+      "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "ftgpio_gpio_probe__gpio_generic_get_multiple",
+      "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "ftgpio_gpio_probe__gpio_generic_direction_input"
+    ]
   },
   "limits": {
     "compile": 3,

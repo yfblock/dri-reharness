@@ -8,6 +8,8 @@
 #   -a/--exerciser-args ARGS    测试程序参数
 #   -s/--success-pattern REGEX   exerciser success marker supplied by manifest
 #   -p/--probe-pattern PAT      probe 成功 grep 模式
+#   -m/--machine NAME           QEMU machine model
+#   --manifest PATH             load all runtime/test policy from manifest
 #   -t/--timeout N              默认 90
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,7 +24,9 @@ OUT="${RH_QEMU_OUT:-/tmp/reharness_qemu_run.txt}"
 
 # 默认值
 MODULE_NAME=""
+MANIFEST=""
 BUS="platform"
+MACHINE="q35"
 QEMU_DEVICE=""
 REGISTRAR_TARGET=""
 EXERCISER=""
@@ -30,23 +34,56 @@ EXERCISER_ARGS=""
 PROBE_PATTERN="probed|registered"
 SUCCESS_PATTERN=""
 TIMEOUT=90
+QEMU_EXTRA_ARGS=()
 
 # 参数解析
-MODULE_NAME="${1:?用法: qemu_run.sh <module> [options]}"
-shift
+if [ "${1:-}" = "--manifest" ]; then
+    MANIFEST="${2:?--manifest requires a path}"
+    shift 2
+else
+    MODULE_NAME="${1:?用法: qemu_run.sh <module> [options]}"
+    shift
+fi
 while [ $# -gt 0 ]; do
   case "$1" in
     -b|--bus) BUS="$2"; shift 2 ;;
+    -m|--machine) MACHINE="$2"; shift 2 ;;
     -d|--device) QEMU_DEVICE="$2"; shift 2 ;;
     -r|--registrar-target) REGISTRAR_TARGET="$2"; shift 2 ;;
     -e|--exerciser) EXERCISER="$2"; shift 2 ;;
     -a|--exerciser-args) EXERCISER_ARGS="$2"; shift 2 ;;
     -s|--success-pattern) SUCCESS_PATTERN="$2"; shift 2 ;;
+    --qemu-arg) QEMU_EXTRA_ARGS+=("$2"); shift 2 ;;
     -p|--probe-pattern) PROBE_PATTERN="$2"; shift 2 ;;
     -t|--timeout) TIMEOUT="$2"; shift 2 ;;
     *) echo "未知参数: $1"; exit 1 ;;
   esac
 done
+
+if [ -n "$MANIFEST" ]; then
+    eval "$(python3 - "$MANIFEST" <<'PY'
+import shlex, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "src"))
+from experiment_manifest import load_manifest
+m = load_manifest(sys.argv[1], repo_root=Path.cwd())
+q = m.runtime.qemu
+def emit(name, value):
+    print(f"{name}={shlex.quote(str(value))}")
+emit("MODULE_NAME", q.module)
+emit("BUS", q.bus)
+emit("MACHINE", q.machine)
+emit("QEMU_DEVICE", q.device)
+emit("TIMEOUT", q.timeout_seconds)
+emit("PROBE_PATTERN", q.probe_pattern or "probe|registered")
+emit("REGISTRAR_TARGET", q.registrar or "")
+emit("EXERCISER", str(m.test.executable.relative_to(Path.cwd())))
+emit("EXERCISER_ARGS", " ".join(m.test.args))
+emit("SUCCESS_PATTERN", m.test.success_pattern or "")
+print("QEMU_EXTRA_ARGS=(" + " ".join(shlex.quote(item) for item in q.qemu_args) + ")")
+PY
+)"
+fi
 
 OUTPUT_DIR="$PROJECT_DIR/artifacts/output/$MODULE_NAME"
 ROOTFS_DIR="$PROJECT_DIR/platform/rootfs/runtime"
@@ -134,9 +171,13 @@ rm -f "$OUT"
 QEMU_ARGS=(
     -kernel "$KERNEL_BZIMAGE"
     -initrd "$INITRAMFS"
+    -M "$MACHINE"
     -append "console=ttyS0 nokaslr panic=1 ignore_loglevel earlyprintk=serial,ttyS0,115200"
     -nographic -m 256M -smp 2 -no-reboot -monitor none
 )
+if [ "${#QEMU_EXTRA_ARGS[@]}" -gt 0 ]; then
+    QEMU_ARGS+=("${QEMU_EXTRA_ARGS[@]}")
+fi
 if [ "$BUS" = "pci" ] && [ -n "$QEMU_DEVICE" ]; then
     QEMU_ARGS+=(-device "$QEMU_DEVICE")
 fi

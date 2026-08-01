@@ -33,7 +33,7 @@ _PCI_FIELDS = {"vendor", "device", "subsystem_vendor", "subsystem_device", "clas
 _SAFETY_FIELDS = {"forbidden_tokens", "action", "failure_class", "rewrite_rules"}
 _QEMU_FIELDS = {"machine", "device", "bus", "module", "timeout_seconds", "probe_pattern", "registrar", "qemu_args"}
 _TEST_FIELDS = {"executable", "args", "actions", "success_pattern"}
-_TRACE_FIELDS = {"fields", "value_mask", "address_mask", "normalize_function", "instrument"}
+_TRACE_FIELDS = {"fields", "value_mask", "address_mask", "normalize_function", "instrument", "exercised_calls"}
 _LIMIT_FIELDS = {"compile", "runtime", "trace", "total"}
 _TRACE_EVENT_FIELDS = {
     "phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id",
@@ -249,6 +249,7 @@ class TraceSpec:
     address_mask: int | None = None
     normalize_function: bool = True
     instrument: bool = False
+    exercised_calls: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {"fields": list(self.fields)}
@@ -260,6 +261,8 @@ class TraceSpec:
             result["normalize_function"] = False
         if self.instrument:
             result["instrument"] = True
+        if self.exercised_calls:
+            result["exercised_calls"] = list(self.exercised_calls)
         return result
 
 
@@ -512,8 +515,11 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
     instrument = trace_doc.get("instrument", False)
     if not isinstance(instrument, bool):
         raise ManifestError("trace.instrument must be boolean")
+    exercised_calls = trace_doc.get("exercised_calls", [])
+    if not isinstance(exercised_calls, list) or any(not isinstance(item, str) or not item.strip() for item in exercised_calls):
+        raise ManifestError("trace.exercised_calls must be a list of non-empty strings")
     trace = TraceSpec(trace.fields, trace.value_mask, trace.address_mask,
-                      trace.normalize_function, instrument)
+                      trace.normalize_function, instrument, tuple(exercised_calls))
 
     limits_doc = document["limits"]
     if not isinstance(limits_doc, Mapping):
