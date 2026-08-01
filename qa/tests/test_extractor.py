@@ -182,10 +182,11 @@ def test_callback_binding_baseline_oracle_catches_boundary_mutations():
 
     root = Path(REHARNESS)
     baseline = json.loads((
-        root / "experiments" / "results" / "zero-shot-v2-matrix.json"
+        root / "research" / "experiments" / "results" /
+        "zero-shot-v2-matrix.json"
     ).read_text(encoding="utf-8"))
     candidate_path = (
-        root / "experiments" / "results" /
+        root / "research" / "experiments" / "results" /
         "zero-shot-v2-callback-binding.json")
     candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
     assert compare_callback_binding_reports(baseline, candidate) == []
@@ -564,7 +565,9 @@ def test_frozen_first_holdout_uses_kbuild_context_without_core_special_case():
     import json
     from pathlib import Path
 
-    manifest_path = Path(REHARNESS) / "drivers" / "holdout" / "zero-shot-v1.json"
+    manifest_path = (
+        Path(REHARNESS) / "benchmarks" / "drivers" / "holdout" /
+        "zero-shot-v1.json")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     case = next(case for case in manifest["cases"]
                 if case["id"] == manifest["first_run"])

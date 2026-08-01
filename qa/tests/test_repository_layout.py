@@ -197,6 +197,112 @@ def _legacy_python_join_references(text: str) -> tuple[tuple[int, str], ...]:
             continue
         source = ast.get_source_segment(text, node) or "os.path.join(...)"
         references.append((node.lineno, re.sub(r"\s+", " ", source)))
+
+    parents = {
+        child: node
+        for node in ast.walk(tree)
+        for child in ast.iter_child_nodes(node)
+    }
+
+    def lexical_scope(node: ast.AST) -> ast.AST:
+        current = node
+        while current in parents:
+            current = parents[current]
+            if isinstance(current, (
+                    ast.FunctionDef, ast.AsyncFunctionDef,
+                    ast.Lambda, ast.ClassDef)):
+                return current
+        return tree
+
+    assigned_names = {
+        (lexical_scope(node), target.id)
+        for node in ast.walk(tree)
+        if isinstance(node, (ast.Assign, ast.AnnAssign))
+        for target in (
+            node.targets if isinstance(node, ast.Assign) else (node.target,)
+        )
+        if isinstance(target, ast.Name)
+    }
+    repository_aliases: set[tuple[ast.AST, str]] = set()
+
+    def is_repository_root(node: ast.AST, scope: ast.AST) -> bool:
+        if isinstance(node, ast.Name):
+            key = (scope, node.id)
+            if key in repository_aliases:
+                return True
+            return (
+                node.id.casefold() in PYTHON_ROOT_VARIABLE_NAMES
+                and (node.id.isupper() or key not in assigned_names)
+            )
+        return (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "Path"
+            and len(node.args) == 1
+            and is_repository_root(node.args[0], scope)
+        )
+
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+                continue
+            scope = lexical_scope(node)
+            value = node.value
+            targets = (node.targets if isinstance(node, ast.Assign)
+                       else (node.target,))
+            if not is_repository_root(value, scope):
+                continue
+            for target in targets:
+                key = (scope, target.id) if isinstance(target, ast.Name) else None
+                if key is not None and key not in repository_aliases:
+                    repository_aliases.add(key)
+                    changed = True
+
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.BinOp)
+                and isinstance(node.op, ast.Div)):
+            continue
+        parent = parents.get(node)
+        if (isinstance(parent, ast.BinOp)
+                and isinstance(parent.op, ast.Div)
+                and parent.left is node):
+            continue
+
+        components = []
+        root = node
+        while isinstance(root, ast.BinOp) and isinstance(root.op, ast.Div):
+            value = root.right
+            if not (isinstance(value, ast.Constant)
+                    and isinstance(value.value, str)
+                    and not value.value.startswith("/")):
+                components = []
+                break
+            components[:0] = value.value.replace("\\", "/").split("/")
+            root = root.left
+        if not components or not is_repository_root(root, lexical_scope(node)):
+            continue
+
+        repository_components = []
+        for component in components:
+            if not component or component == ".":
+                continue
+            if component == "..":
+                if repository_components and repository_components[-1] != "..":
+                    repository_components.pop()
+                else:
+                    repository_components.append(component)
+            else:
+                repository_components.append(component)
+        while (repository_components
+               and repository_components[0] == ".."):
+            repository_components.pop(0)
+        if (not repository_components
+                or repository_components[0] not in LEGACY_ROOT_ENTRIES):
+            continue
+        source = ast.get_source_segment(text, node) or "Path(...) / ..."
+        references.append((node.lineno, re.sub(r"\s+", " ", source)))
     return tuple(sorted(references))
 
 
@@ -326,6 +432,19 @@ tests = os.path.join(repository_root, "work", "..", "..", "tests")
         (2, 'os.path.join(here, "..", "kernel", "build")'),
         (3, 'os.path.join(project_root, ".", "..", "verification")'),
         (4, 'os.path.join(repository_root, "work", "..", "..", "tests")'),
+    )
+
+
+def test_python_join_scanner_covers_pathlib_repository_root_aliases():
+    source = '''\
+root = Path(REHARNESS)
+baseline = root / "experiments" / "results" / "matrix.json"
+manifest = Path(REHARNESS) / "drivers" / "holdout" / "zero-shot-v1.json"
+'''
+    references = _legacy_python_join_references(source)
+    assert references == (
+        (2, 'root / "experiments" / "results" / "matrix.json"'),
+        (3, 'Path(REHARNESS) / "drivers" / "holdout" / "zero-shot-v1.json"'),
     )
 
 
