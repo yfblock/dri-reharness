@@ -179,6 +179,8 @@ class ExperimentRunner:
                                  "manifest": manifest.to_dict(), "status": "running"}
         self._persist(out, state, records)
 
+        evidence_digest: str | None = None
+
         def record(stage: str, iteration: int, status: str, payload: Any = None,
                    feedback: Feedback | None = None) -> None:
             merged: dict[str, Any] = {}
@@ -186,7 +188,8 @@ class ExperimentRunner:
                 merged["result"] = _jsonable(payload)
             if feedback is not None:
                 merged["feedback"] = feedback.to_dict()
-            item = StageRecord(stage, iteration, status, manifest.digest, payload=merged or None)
+            item = StageRecord(stage, iteration, status, manifest.digest,
+                               evidence_digest=evidence_digest, payload=merged or None)
             records.append(item)
             path = iterations / f"{len(records):02d}-{stage}.json"
             path.write_text(json.dumps(item.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -203,6 +206,10 @@ class ExperimentRunner:
             record("extract", 1, "failed", feedback=extraction.feedback)
             return stop(extraction.feedback or _feedback("extraction failed", FailureClass.EXTRACTION, "extract", 1))
         evidence = extraction.value
+        if extraction.payload and isinstance(extraction.payload.get("digest"), str):
+            evidence_digest = extraction.payload["digest"]
+        elif isinstance(evidence, Mapping) and isinstance(evidence.get("digest"), str):
+            evidence_digest = evidence["digest"]
         record("extract", 1, "passed", extraction.payload or evidence)
 
         synthesis = _invoke(self.pi.synthesize, manifest, evidence, failure_class=FailureClass.CONTRACT, stage="synthesize", iteration=1)
