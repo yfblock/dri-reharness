@@ -11,13 +11,20 @@
   },
   "runtime": {
     "adapter": "qemu-platform",
-    "machine": "q35",
-    "device": "ftgpio010-gpio",
-    "bus": "platform",
-    "module": "ftgpio010_gpio",
-    "timeout_seconds": 90,
-    "probe_pattern": "probed|registered|gpiochip",
-    "registrar": "ftgpio010-gpio"
+    "safety_policy": {
+      "forbidden_tokens": [],
+      "action": "allow",
+      "failure_class": "safety"
+    },
+    "qemu": {
+      "machine": "q35",
+      "device": "ftgpio010-gpio",
+      "bus": "platform",
+      "module": "ftgpio010_gpio",
+      "timeout_seconds": 90,
+      "probe_pattern": "probed|registered|gpiochip",
+      "registrar": "ftgpio010-gpio"
+    }
   },
   "test": {
     "executable": "qa/native-tests/gpio_trace_test",

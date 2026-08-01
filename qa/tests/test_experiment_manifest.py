@@ -14,6 +14,8 @@ else:
 from experiment_manifest import (  # noqa: E402
     ManifestError,
     ExperimentManifest,
+    PciIdentity,
+    SafetyPolicy,
     canonical_json,
     load_manifest,
     manifest_digest,
@@ -97,3 +99,34 @@ def test_repository_manifests_are_valid():
         manifest = load_manifest(path, repo_root=root)
         assert manifest.name
         assert manifest_digest(document) == manifest.digest
+
+
+def test_runtime_policy_sections_round_trip():
+    root = _paths.REPO_ROOT
+    manifest = load_manifest(root / "benchmarks" / "experiments" / "edu.json", repo_root=root)
+    assert isinstance(manifest.runtime.pci_identity, PciIdentity)
+    assert manifest.runtime.pci_identity.vendor == 0x1234
+    assert isinstance(manifest.runtime.safety_policy, SafetyPolicy)
+    assert "IO_DMA_CMD" in manifest.runtime.safety_policy.forbidden_tokens
+    assert manifest.runtime.qemu.bus == "pci"
+
+
+def test_nested_pci_policy_requires_identity(tmp_path: Path):
+    document = _document(tmp_path)
+    document["runtime"] = {
+        "adapter": "qemu",
+        "qemu": {"machine": "q35", "device": "x", "bus": "pci",
+                 "module": "x", "timeout_seconds": 10},
+    }
+    with pytest.raises(ManifestError, match="pci_identity"):
+        validate_manifest(document, repo_root=tmp_path)
+
+
+def test_invalid_safety_rewrite_pattern_rejected(tmp_path: Path):
+    document = _document(tmp_path)
+    document["runtime"]["safety_policy"] = {
+        "forbidden_tokens": ["TOKEN"], "action": "rewrite",
+        "rewrite_rules": [{"pattern": "[", "replacement": ""}],
+    }
+    with pytest.raises(ManifestError, match="pattern"):
+        validate_manifest(document, repo_root=tmp_path)

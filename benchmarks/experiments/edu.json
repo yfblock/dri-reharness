@@ -11,12 +11,29 @@
   },
   "runtime": {
     "adapter": "qemu",
-    "machine": "q35",
-    "device": "edu",
-    "bus": "pci",
-    "module": "edu_drv",
-    "timeout_seconds": 90,
-    "probe_pattern": "probed|edu device id|edu probed"
+    "pci_identity": {
+      "vendor": "0x1234",
+      "device": "0x11e8"
+    },
+    "safety_policy": {
+      "forbidden_tokens": ["IO_DMA_CMD", "DMA_CMD | DMA_IRQ"],
+      "action": "rewrite",
+      "failure_class": "safety",
+      "rewrite_rules": [
+        {
+          "pattern": "^[ \\t]*writel\\([^;]*(?:IO_DMA_CMD|DMA_CMD\\s*\\|\\s*DMA_IRQ)[^;]*\\);[ \\t]*\\n",
+          "replacement": ""
+        }
+      ]
+    },
+    "qemu": {
+      "machine": "q35",
+      "device": "edu",
+      "bus": "pci",
+      "module": "edu_drv",
+      "timeout_seconds": 90,
+      "probe_pattern": "probed|edu device id|edu probed"
+    }
   },
   "test": {
     "executable": "qa/native-tests/edu_trace_test",
