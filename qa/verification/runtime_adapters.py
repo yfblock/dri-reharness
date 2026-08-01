@@ -95,6 +95,25 @@ class ManifestRuntime:
 
     def run(self, manifest: ExperimentManifest, candidate: Any, scenario: Any, role: str) -> dict[str, Any]:
         module = manifest.runtime.module
+        if role == "baseline" and candidate is None:
+            baseline_dir = self.root / "artifacts" / "output" / module
+            baseline_dir.mkdir(parents=True, exist_ok=True)
+            source = baseline_dir / f"{module}.c"
+            generated = subprocess.run(
+                ["python3", "-m", "extractor", "gen", "-s", str(manifest.source.path),
+                 "-b", manifest.compile.backend, "-o", str(source)],
+                cwd=self.root, text=True, capture_output=True, check=False)
+            if generated.returncode:
+                return _failure(FailureClass.RUNTIME, "baseline source generation failed",
+                                {"return_code": generated.returncode, "stderr": generated.stderr[-4000:]}, role)
+            (baseline_dir / "Makefile").write_text(f"obj-m += {module}.o\n", encoding="utf-8")
+            built = subprocess.run(
+                ["make", "-C", str(self.root / "platform" / "kernel" / "build"),
+                 "M=" + str(baseline_dir), "modules"],
+                cwd=self.root, text=True, capture_output=True, check=False)
+            if built.returncode:
+                return _failure(FailureClass.RUNTIME, "baseline compilation failed",
+                                {"return_code": built.returncode, "stderr": built.stderr[-4000:]}, role)
         if isinstance(candidate, Mapping):
             module = str(candidate.get("module", module))
             artifact = candidate.get("path")
