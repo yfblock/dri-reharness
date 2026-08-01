@@ -40,13 +40,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path.cwd() / "src"))
 from experiment_manifest import load_manifest
 m = load_manifest(sys.argv[1], repo_root=Path.cwd())
+q = m.runtime.qemu
 def emit(name, value):
     print(f"{name}={shlex.quote(str(value))}")
 emit("MANIFEST_NAME", m.name)
 emit("SOURCE", str(m.source.path.relative_to(Path.cwd())))
 emit("BACKEND", m.compile.backend)
-emit("MODULE", m.runtime.module)
-emit("BUS", m.runtime.bus)
+emit("MODULE", q.module)
+emit("BUS", q.bus)
 emit("TEST", str(m.test.executable.relative_to(Path.cwd())))
 emit("CALLS", "|".join(m.trace.exercised_calls))
 PY
