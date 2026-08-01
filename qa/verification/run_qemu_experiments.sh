@@ -30,7 +30,8 @@ build_exerciser() {
 INFO_FILE="$(mktemp)"
 ROWS_FILE="$(mktemp)"
 overall_rc=0
-trap 'rm -f "$INFO_FILE" "$ROWS_FILE"' EXIT
+SUITE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/reharness-qemu-suite.XXXXXX")"
+trap 'rm -f "$INFO_FILE" "$ROWS_FILE"; rm -rf -- "$SUITE_TMP"' EXIT
 
 for manifest in benchmarks/experiments/*.json; do
     eval "$(python3 - "$manifest" <<'PY'
@@ -79,7 +80,7 @@ PY
 
     serial="$RESULTS/${MANIFEST_NAME}-serial.log"
     judge="$RESULTS/${MANIFEST_NAME}-judge.txt"
-    qemu_out="/tmp/reharness_qemu_${MANIFEST_NAME}.txt"
+    qemu_out="$SUITE_TMP/${MANIFEST_NAME}.serial.log"
     set +e
     RH_QEMU_OUT="$qemu_out" bash scripts/qemu/qemu_run.sh --manifest "$manifest" \
         | tr -d '\r' | sed 's/[[:blank:]]*$//' | tee "$judge"
