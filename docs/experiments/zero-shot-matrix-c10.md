@@ -4,7 +4,7 @@
 
 ## 1. 目标与约束
 
-C10 的目标是让冻结的 12-driver holdout 全部获得可审计 compile context，并从统一矩阵中机器识别第一个覆盖至少三个驱动的公共语义 blocker。冻结集合、source SHA、Linux commit 和 specialization guard 均未改变；extractor/ 和 generator/ 没有增加任何 holdout driver-name、basename 或私有前缀特例。
+C10 的目标是让冻结的 12-driver holdout 全部获得可审计 compile context，并从统一矩阵中机器识别第一个覆盖至少三个驱动的公共语义 blocker。冻结集合、source SHA、Linux commit 和 specialization guard 均未改变；src/extractor/ 和 src/generator/ 没有增加任何 holdout driver-name、basename 或私有前缀特例。
 
 这一步区分三个概念：
 
@@ -16,7 +16,7 @@ C10 的目标是让冻结的 12-driver holdout 全部获得可审计 compile con
 
 ## 2. Compile-context materialization
 
-`drivers/holdout/zero-shot-v1-contexts.json` 固定 7 个 profile：
+`benchmarks/drivers/holdout/zero-shot-v1-contexts.json` 固定 7 个 profile：
 
 | Profile | Arch/defconfig | Holdout 数 | 说明 |
 |---|---|---:|---|
@@ -28,7 +28,7 @@ C10 的目标是让冻结的 12-driver holdout 全部获得可审计 compile con
 | powerpc-wii | PowerPC `wii_defconfig` | 1 | native；需要 `ld.lld` |
 | x86-pinned | 固定实验 build | 3 | pinned object context |
 
-`verification/materialize_holdout_contexts.py` 对每个 profile 配置 build、构建显式 object target、读取对应 `.cmd`，然后生成合并的 `output/zero-shot-contexts/compile_commands.json`。版本化报告记录 profile、`.config` SHA、`.cmd` SHA、raw command SHA、编译器版本和解析后的参数 SHA。
+`qa/verification/materialize_holdout_contexts.py` 对每个 profile 配置 build、构建显式 object target、读取对应 `.cmd`，然后生成合并的 `artifacts/output/zero-shot-contexts/compile_commands.json`。版本化报告记录 profile、`.config` SHA、`.cmd` SHA、raw command SHA、编译器版本和解析后的参数 SHA。
 
 `gpio-ge` 是明确的限制：原生 85xx profile 会给 clang-18 传入不支持的 `-mcpu=8540`，因此 recipe 使用显式 x86 object context，并记录 non-native note。它仍是 exact Kbuild command，但不是 native-architecture context，报告不得混淆这两个维度。
 
@@ -36,7 +36,7 @@ C10 的目标是让冻结的 12-driver holdout 全部获得可审计 compile con
 
 ## 3. Matrix 与 blocker 聚类
 
-`verification/run_zero_shot_matrix.py` 对 12 个案例统一使用合并 compile database 和 `--compile-context required`。每一行记录：
+`qa/verification/run_zero_shot_matrix.py` 对 12 个案例统一使用合并 compile database 和 `--compile-context required`。每一行记录：
 
 - context origin、profile、architecture、provenance 和参数/raw-command SHA；
 - function、RIS operation、source-access accounting 和 clang diagnostics；

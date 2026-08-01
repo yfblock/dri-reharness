@@ -18,8 +18,8 @@ file.  The merged compile database SHA-256 is:
 ```
 
 The versioned context report is
-`experiments/results/zero-shot-v2-contexts.json`; the baseline matrix is
-`experiments/results/zero-shot-v2-matrix.json`.
+`research/experiments/results/zero-shot-v2-contexts.json`; the baseline matrix is
+`research/experiments/results/zero-shot-v2-matrix.json`.
 
 ```text
 context report SHA-256: e8282b6d6e31f35e28abc1fab81a936f73478c95d152d2ba20899be21dbd591a

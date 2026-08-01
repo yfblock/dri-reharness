@@ -159,16 +159,16 @@ generated-C AST, 5 Linux registration AST, 20 lowering-plan, 1 C20 readiness,
 The focused C20 runners are:
 
 ```bash
-python3 tests/test_linux_registration_ast_oracle.py
-python3 tests/test_backend_lowering_plan.py
-python3 tests/test_metrics_c20_readiness.py
+python3 qa/tests/test_linux_registration_ast_oracle.py
+python3 qa/tests/test_backend_lowering_plan.py
+python3 qa/tests/test_metrics_c20_readiness.py
 ```
 
 The effective v3 plan can be independently reconstructed with the generated
 artifact and Kbuild context as authorities:
 
 ```bash
-python3 verification/backend_lowering_plan.py \
+python3 qa/verification/backend_lowering_plan.py \
   --formal <output>/<driver>.formal.json \
   --contract <output>/generation-contract.json \
   --backend linux \
@@ -194,7 +194,7 @@ The registration oracle can also be reproduced directly with the exact saved
 Kbuild command:
 
 ```bash
-python3 verification/linux_registration_ast_oracle.py \
+python3 qa/verification/linux_registration_ast_oracle.py \
   --contract <output>/generation-contract.json \
   --device-spec-json <output>/<driver>.device-spec.json \
   --lowering-plan <output>/verify/linux-lowering-plan.json \

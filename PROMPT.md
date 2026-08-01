@@ -4,8 +4,8 @@ reharness 是一个面向 Linux C 驱动的 AST/RIS 提取、语义推断和多�
 
 ## 已完成基线
 
-- `benchmarks/drivers/`：19 个版本化 baseline、冻结 holdout 和多源 manifest；根 `drivers/` 仅是兼容树。
-- `vendor/linux/`：固定 commit 的 Git submodule；根 `linux/` 是兼容链接。
+- `benchmarks/drivers/`：19 个版本化 baseline、冻结 holdout 和多源 manifest。
+- `vendor/linux/`：固定 commit 的 Git submodule。
 - `src/extractor/`：libclang、流敏感数据流、单/多 Translation Unit 过程间内联、路径条件 RMW/Ite 变换、callback enclosing-struct 推断、access/control accounting 与 SMT path validation。
 - alias：off、auto、required，默认 off；多源 manifest 使用 linked bitcode + 单次 WPA，required 模式禁止静默 fallback，并记录 SHA、工具版本和 source provenance。
 - specs：.ris、.dspec、.bind、.facts。
@@ -13,12 +13,12 @@ reharness 是一个面向 Linux C 驱动的 AST/RIS 提取、语义推断和多�
 - Linux：确定性 platform、PCI、GPIO/IRQ、clock provider 和 QEMU edu lifecycle；unsupported state 显式标记。
 - multi-source：真实 Kbuild 模块 C67X00（4 C）、ASPEED vHub（5 C）和 DWC2（10 C）；跨 TU MMIO 传播通过，harness/bare-metal/Linux 3/3/3 编译。
 - tests：205 passed；`./run.sh test` 首先执行 zero-shot specialization guard 与 repository-path 回归守卫。
-- generalization：`drivers/holdout/zero-shot-v1.json` 冻结 12 个 holdout。不得在 extractor/generator 中加入其 driver name、basename、私有前缀或 wrapper 特例。
+- generalization：`benchmarks/drivers/holdout/zero-shot-v1.json` 冻结 12 个 holdout。不得在 `src/extractor/` 或 `src/generator/` 中加入其 driver name、basename、私有前缀或 wrapper 特例。
 - compile context：默认 `auto`，优先使用显式/环境指定的 `compile_commands.json`，否则读取 kernel build `.cmd`；`required` 找不到上下文必须失败，`off` 仅用于对照实验。
 - zero-shot matrix：12/12 exact context、pipeline 与三后端编译；原 7 个 `no_register_access` 已全部获得 subsystem summary。GPIO callback runner 通过后 strict-ready 为 H=7/12、B=7/12、Linux=5/12、all=5/12；首个公共根因仍为 `call_context`（5 个案例），Linux 在此之上叠加未完成的 registration/callsite 证明。
 - clock boundary：Highbank 22 个算术基线用例通过且 3/3 mutation 类别被检出；Visconti PLL 被保守拒绝并记录 private-state 原因。
 - QEMU：edu 值级 oracle 和 gpio-ftgpio010 函数边界+offset/order oracle 均通过；GPIO exerciser 覆盖 6/6 精确模块、7/7 调用、16/16 ops 和 7/7 寄存器偏移。
-- paper：统计由 tools/generate_paper_results.py 从实验 JSON 自动生成。
+- paper：统计由 `tools/reporting/generate_paper_results.py` 从实验 JSON 自动生成。
 
 冻结矩阵：
 
@@ -43,30 +43,30 @@ multi-source: 3 modules, 19 TUs, 27447 LoC, 4446 ops, H/B/L compile=3/3/3
 - readiness gate 不是语义证明；新增 ready 驱动必须额外审计真实 ID、资源规模、框架 helper 隐含 callback 和 IRQ/GPIO lifecycle，不能只检查 blocker 列表为空。
 - `strict_reliable` 只针对报告声明的已识别访问/控制范围。`whole_program_complete` 只在 manifest-internal linked SVF、CFG、路径、switch、访问、computed address、value、loop、op ID/evidence 等 gate 全部通过时为真；不得把它写成整个 Linux/外部 kernel 语义证明。
 - 确定性论文实验不得调用 LLM。
-- paper/generated_results.tex 是生成文件，不能手改。
+- research/paper/generated_results.tex 是生成文件，不能手改。
 - holdout selection、source SHA 和 first-run case 已冻结；不能在看到结果后替换案例或缩小验收标准。
 
 ## 标准验证顺序
 
 ~~~bash
 git submodule update --init
-./tools/prepare_kernel.sh build
+./tools/build/prepare_kernel.sh build
 ./run.sh test
-python3 verification/check_generalization_guard.py
-python3 verification/run_zero_shot_holdout.py
-python3 verification/materialize_holdout_contexts.py
-python3 verification/run_zero_shot_matrix.py
-python3 verification/run_matrix.py
-python3 verification/run_multisource_matrix.py
-python3 verification/run_clock_model_boundary.py
-python3 verification/c67x00_hpi_trace_oracle.py --output experiments/results/c67x00-hpi-oracle.json
-verification/run_qemu_experiments.sh
-python3 verification/reliability_report.py --output experiments/results/reliability.json
-python3 verification/ris_mutation_oracle.py
-python3 verification/ris_trace_oracle.py
-python3 verification/ftgpio_trace_oracle.py
-python3 tools/generate_paper_results.py
-(cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
+python3 qa/verification/check_generalization_guard.py
+python3 qa/verification/run_zero_shot_holdout.py
+python3 qa/verification/materialize_holdout_contexts.py
+python3 qa/verification/run_zero_shot_matrix.py
+python3 qa/verification/run_matrix.py
+python3 qa/verification/run_multisource_matrix.py
+python3 qa/verification/run_clock_model_boundary.py
+python3 qa/verification/c67x00_hpi_trace_oracle.py --output research/experiments/results/c67x00-hpi-oracle.json
+./run.sh qemu-experiments
+python3 qa/verification/reliability_report.py --output research/experiments/results/reliability.json
+python3 qa/verification/ris_mutation_oracle.py
+python3 qa/verification/ris_trace_oracle.py
+python3 qa/verification/ftgpio_trace_oracle.py
+python3 tools/reporting/generate_paper_results.py
+(cd research/paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
 git diff --check
 ~~~
 
@@ -84,7 +84,7 @@ git diff --check
 - GPIO generic summary 只能由 `gpio_generic_chip_init`、typed config fields 和参数流触发；SDHCI 只能由公开 accessor/`sdhci_ops` 触发；virtio config 与 virtqueue 必须保持独立 unsupported domain。不得按 driver 名添加摘要。
 - SVF 外部工具链成本较高，默认关闭；required 模式的多源结果必须来自 linked manifest，不能降级为逐 TU 或空 alias。
 - Kbuild `.cmd` 只存在于实际构建过的 object；其余源文件需要 compile database 或先由对应 arch/Kconfig 构建产生命令。不得把 fallback include guess 写成 exact context。
-- `drivers/holdout/zero-shot-v1-contexts.json` 固定 7 个 context profile。9 个案例使用对应架构 defconfig；3 个使用 pinned x86 build，其中 `gpio-ge` 明确标记为 non-native，因为 clang-18 拒绝原生 85xx `-mcpu=8540`。不得删掉该标记或把它写成 native context。
+- `benchmarks/drivers/holdout/zero-shot-v1-contexts.json` 固定 7 个 context profile。9 个案例使用对应架构 defconfig；3 个使用 pinned x86 build，其中 `gpio-ge` 明确标记为 non-native，因为 clang-18 拒绝原生 85xx `-mcpu=8540`。不得删掉该标记或把它写成 native context。
 - LLM synthesis 非确定性，只作为可选补全路径。
 
 继续工作时应优先增加可验证语义覆盖，而不是通过宽松 readiness 或中性 stub 美化数字。

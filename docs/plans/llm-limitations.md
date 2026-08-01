@@ -10,7 +10,7 @@
 - **现象**：合成 prompt 里"probe 禁止 DMA/request_irq"写了 5 遍，glm-5.2 的"修复"反而把 `dma_alloc + writel(DMA_CMD|DMA_IRQ)` 加了回去。
 - **后果**：`writel(DMA_CMD|DMA_IRQ, IO_DMA_CMD)` 启动 DMA 并 raise 中断 → QEMU edu 中断风暴 → guest 硬挂 → QEMU 被 timeout 杀 → stdout 缓冲全丢 = **0 字节输出** → 喂回 LLM 的错误为空 → LLM 瞎猜 → 反复加 DMA → 迭代用尽。
 - **根因**：LLM 学到的"edu 驱动"模式里天然含 DMA/IRQ，它按模式补全，而非理解"为什么这里不能做"。
-- **缓解**：`tools/sanitize.py` 确定性后处理，每次 LLM 写回后删 `writel(...IO_DMA_CMD...)`。**不信任 LLM 守这条约束。**
+- **缓解**：`tools/source/sanitize.py` 确定性后处理，每次 LLM 写回后删 `writel(...IO_DMA_CMD...)`。**不信任 LLM 守这条约束。**
 
 ### P2. 训练数据混入过时 API 模式（版本漂移）
 内核 API 跨版本变化，LLM 训练数据混杂多版本写法，常给出**当前内核已失效**的模式：
@@ -34,7 +34,7 @@
 ### P5. 输出格式不稳定
 - **现象**：有时代码包在 ```` ```c ```` 围栏里，有时直接输出纯 C（glm-5.2 常这样）。
 - **后果**：提取逻辑找围栏失败 → 误判"未返回代码"。
-- **缓解**：提取加"无围栏则用全文"回退（`_extract_code` 已有，`run_edu_e2e.sh` 补齐）。
+- **缓解**：提取加"无围栏则用全文"回退（`_extract_code` 已有，`./run.sh edu-e2e` 补齐）。
 
 ### P6. 漏样板
 - **现象**：偶发漏 `MODULE_LICENSE` → modpost 报错；漏 `MODULE_DESCRIPTION`（warning）。
@@ -47,7 +47,7 @@
 
 ### P8. 非确定性
 - **现象**：同一 prompt 多次合成，产物从"一次过编译+QEMU"到"带 DMA 挂死"不等。
-- **影响**：复现性差；`success/` 快照 + tag 是唯一稳定基线。
+- **影响**：复现性差；`research/reference-success/` 快照 + tag 是唯一稳定基线。
 - **缓解**：迭代循环 + 确定性 sanitizer 把"非确定性"收敛到"不致命"范围内。
 
 ## 二、能力边界（LLM 擅长 vs 不擅长）
@@ -74,7 +74,7 @@
 | `CONSTRAINTS_BLOCK` 固化已知教训 | 已落地 | P2/P3 |
 | 编译迭代循环（真编译错误回喂） | 已落地 | P2/P6 |
 | QEMU 迭代循环（真运行错误回喂） | 已落地 | P1/P4 |
-| 确定性 sanitizer（删致命操作） | 已落地 (`tools/sanitize.py`) | P1（致命且不可自修） |
+| 确定性 sanitizer（删致命操作） | 已落地 (`tools/source/sanitize.py`) | P1（致命且不可自修） |
 | 逐轮日志（prompt/回复/错误/QEMU日志） | 已落地 (`iter_log/`) | 诊断 P1/P4 |
 | 输出提取回退（无围栏用全文） | 已落地 | P5 |
 | **API Chronicle**（版本化 API 迁移库 → prompt + 确定性 fixer） | 设想 | P2 系统化 |

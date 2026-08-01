@@ -1,1 +1,0 @@
-scripts/qemu/qemu_run.sh

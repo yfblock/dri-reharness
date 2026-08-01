@@ -10,21 +10,21 @@
 4. 用冻结后的首个新驱动做 importer 前后对照；
 5. 保留语义 blocker，不以 neutral fallback 或放宽 readiness 美化结果。
 
-冻结文件是 `drivers/holdout/zero-shot-v1.json`，包含 12 个驱动、三档难度、Linux commit、source SHA-256、首个运行案例和禁止出现在核心实现中的标识符。选取阶段检查了文件存在性、subsystem、规模和 Kbuild context 可用性，但没有在冻结前运行 extractor。
+冻结文件是 `benchmarks/drivers/holdout/zero-shot-v1.json`，包含 12 个驱动、三档难度、Linux commit、source SHA-256、首个运行案例和禁止出现在核心实现中的标识符。选取阶段检查了文件存在性、subsystem、规模和 Kbuild context 可用性，但没有在冻结前运行 extractor。
 
-`verification/check_generalization_guard.py` 校验：
+`qa/verification/check_generalization_guard.py` 校验：
 
 - Linux submodule commit 未漂移；
 - 每个 holdout source SHA 未变化；
 - first-run case 仍在冻结集合中；
-- extractor/ 和 generator/ 中不存在 holdout 专用标识符。
+- src/extractor/ 和 src/generator/ 中不存在 holdout 专用标识符。
 - source basename/device-name 条件和 private-MMIO wrapper 表没有超出冻结 specialization allowlist。
 
 `./run.sh test` 在回归测试之前执行该 guard。
 
 ## 2. Kbuild compile-context importer
 
-新增 `extractor/compile_context.py`，context 查找顺序为：
+新增 `src/extractor/compile_context.py`，context 查找顺序为：
 
 1. CLI `--compile-commands`；
 2. `REHARNESS_COMPILE_COMMANDS`；
@@ -55,7 +55,7 @@ importer-off 与 required 对照结果：
 - DeviceSpec SHA-256：一致；
 - harness、bare-metal、Linux：两侧均编译；
 - target-source clang errors：0 / 0；
-- required provenance：`kernel/build/drivers/gpio/.gpio-altera.o.cmd`。
+- required provenance：`platform/kernel/build/drivers/gpio/.gpio-altera.o.cmd`。
 
 真实 Kbuild context 包含 33 个 sanitized parser arguments，其中包括 `-nostdinc`、真实 generated include、`MODULE`、`KBUILD_BASENAME` 和 `KBUILD_MODNAME`。它没有改变已经正确提取的 RIS，证明 importer 对该案例没有造成语义回退。
 

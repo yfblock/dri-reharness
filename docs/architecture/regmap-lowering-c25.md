@@ -17,7 +17,7 @@ regmap state model; Linux delegates to the real `regmap_*` APIs. All three
 backends emit the same transaction receipt fields (`id`, `kind`, `transport`,
 `status`, `digest`).
 
-`verification/regmap_transaction_ast_oracle.py` independently checks helper
+`qa/verification/regmap_transaction_ast_oracle.py` independently checks helper
 shape, anchor cardinality, and transaction order. Harness/bare-metal traces
 use `[txn N]` records; Linux wrappers use the equivalent `pr_debug` record.
 The mutation suite covers helper substitution and trace-order/count changes.

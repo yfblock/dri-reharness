@@ -6,7 +6,7 @@
 `paper-artifact-v9` generalize to a second, untouched corpus.  Its purpose is
 not to maximize the readiness numerator.  The corpus must be frozen before the
 first extractor run, and the baseline commit must contain no changes under
-`extractor/` or `generator/` relative to the frozen implementation commit.
+`src/extractor/` or `src/generator/` relative to the frozen implementation commit.
 
 The frozen implementation point is:
 
@@ -23,7 +23,7 @@ No candidate was run through extractor, generator, readiness scoring, or a
 generated-backend compiler before the manifest was written.
 
 The candidate pools and quotas are fixed in
-`drivers/holdout/zero-shot-v2.json`.  Candidates are excluded if their source
+`benchmarks/drivers/holdout/zero-shot-v2.json`.  Candidates are excluded if their source
 basename appears in zero-shot-v1, the 19-driver main corpus, or a versioned
 multi-source corpus.  Eligible files contain 80 through 800 nonblank lines and
 at least one pool-specific access/subsystem token.  Within each pool they are
@@ -48,7 +48,7 @@ cannot recover their hardware interactions.
 3. Materialize every compile command from a real Kbuild `.cmd` file and freeze
    the merged database SHA-256 and per-command SHA-256 values.
 4. Run the full matrix with `--compile-context required`, without editing
-   `extractor/` or `generator/`.
+   `src/extractor/` or `src/generator/`.
 5. Preserve failures, zero-operation cases, diagnostics, fallback evidence,
    backend compilation, and strict readiness as observed.  Compilation is not
    equivalent to strict readiness.

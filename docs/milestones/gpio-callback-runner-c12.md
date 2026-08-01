@@ -8,7 +8,7 @@ C11 从 typed `gpio_generic_chip_config` 合成了 7 类 GPIO callback，但 har
 
 runner 只选择满足以下条件的 module：
 
-- callback table 为 `gpio_chip.get/get_multiple/set/set_multiple/direction_input/direction_output/get_direction`；
+- callback table 为 `gpio_chip.get/get_multiple/set/set_multiple/direction_input/direction_artifacts/output/get_direction`；
 - 每个 leaf op 的 evidence 都来自 `linux.gpio_generic_chip_config` summary；
 - access domain 为受支持的 MMIO，地址为 Symbolic 或 Fixed；
 - 不含未证明循环。
@@ -23,7 +23,7 @@ Bare-metal 正常产物仍使用 freestanding volatile MMIO。仅在定义 `REHA
 
 ## 4. 独立 oracle
 
-`verification/subsystem_callback_oracle.py` 不执行生成代码中的断言，而是独立解释 Formal RIS：
+`qa/verification/subsystem_callback_oracle.py` 不执行生成代码中的断言，而是独立解释 Formal RIS：
 
 - 初始化与生成 runner 相同的确定性 byte memory；
 - 解释 Const、Var、BinOp、Ite、Bits、Cond、Read、Write 和 RMW；

@@ -112,11 +112,11 @@ still returns nonzero for `all_cases_have_hardware_interactions`.
 
 Artifacts:
 
-- `experiments/results/zero-shot-v2-callback-binding.json`
-- `experiments/results/zero-shot-v2-callback-binding-oracle.json`
-- `experiments/results/zero-shot-v1-callback-binding.json`
-- `experiments/results/matrix-callback-binding.json`
-- `experiments/results/multisource-callback-binding.json`
+- `research/experiments/results/zero-shot-v2-callback-binding.json`
+- `research/experiments/results/zero-shot-v2-callback-binding-oracle.json`
+- `research/experiments/results/zero-shot-v1-callback-binding.json`
+- `research/experiments/results/matrix-callback-binding.json`
+- `research/experiments/results/multisource-callback-binding.json`
 
 The oracle includes mutations that reintroduce a callback blocker, change a
 backend compile result, or remove preserved missing-role evidence.  All three

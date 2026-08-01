@@ -26,7 +26,7 @@ suite rejects helper substitution, trace reordering, and count changes.  The
 `clk-twl6040` holdout now exercises two updates (`set_bits` followed by
 `clear_bits`) across all three lowering paths.
 
-With the repository's `kernel/build` tree available, the generated Linux
+With the repository's `platform/kernel/build` tree available, the generated Linux
 module also passes an out-of-tree Kbuild compile.  This verifies that the
 proven public MFD prototypes and generated `mfd` state field are accepted by
 the kernel compiler, not merely by text matching.

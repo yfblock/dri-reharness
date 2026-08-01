@@ -27,7 +27,7 @@ The Linux emitter consumes the same public contracts.  It now emits
 `clk_ops.is_prepared` and the supported SDHCI voltage/clock/bus-width/
 signaling/power/reset fields with canonical kernel signatures.  Required
 headers are selected from referenced public APIs; for example,
-`read_poll_timeout*` adds `<linux/iopoll.h>`.  Poll accessor identifiers are
+`read_poll_timeout*` adds `<vendor/linux/iopoll.h>`.  Poll accessor identifiers are
 also excluded from scalar-local inference, preventing generated declarations
 from shadowing functions passed to polling macros.
 
@@ -70,7 +70,7 @@ clock extraction while retaining explicit ambiguity and search-bound errors.
 
 - generalization guards pass for zero-shot-v1 and zero-shot-v2;
 - all 136 pre-change core tests pass in bounded chunks; the 3 new core tests
-  and affected generator/DWC2 regressions pass in focused reruns;
+  and affected src/generator/DWC2 regressions pass in focused reruns;
 - 8 generated-C AST, 10 Linux registration AST, 21 lowering-plan, 1 readiness,
   2 read-provenance, and 5 DeviceSpec JSON tests pass;
 - focused exact-context extraction confirms the three positive holdout role

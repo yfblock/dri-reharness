@@ -1,6 +1,6 @@
-# Generated RIS output (canonical path plus compatibility entry)
+# Generated RIS output
 /artifacts/output/
-/output
+/artifacts/initramfs/
 
 # Python bytecode & caches
 __pycache__/
@@ -18,20 +18,11 @@ __pycache__/
 .*.un~
 .DS_Store
 
-# Scratch planning doc (design captured in README)
-plan.md
-
 # QEMU/build artifacts (regenerable)
-/initramfs_*.cpio.gz
-# Canonical rootfs trees plus compatibility entries
 /platform/rootfs/
-/test_rootfs
-/test_rootfs_run
-/test_rootfs_plat
-/test/edu_trace_test
-/test/gpio_trace_test
+/qa/native-tests/edu_trace_test
+/qa/native-tests/gpio_trace_test
 /platform/kernel/build/
-/kernel/build/
 *.ko
 *.o
 *.mod
@@ -47,13 +38,6 @@ modules.order
 /research/paper/*.fls
 /research/paper/*.fdb_latexmk
 /research/paper/comment.cut
-/paper/*.aux
-/paper/*.log
-/paper/*.out
-/paper/*.fls
-/paper/*.fdb_latexmk
-/paper/comment.cut
-
 # Pi SDK dependencies live with the Pi tool
 /tools/pi/node_modules/
 /tools/pi/package-lock.json

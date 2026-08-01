@@ -1,1 +1,0 @@
-scripts/maintenance/log_event.sh

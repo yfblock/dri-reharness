@@ -1,1 +1,0 @@
-scripts/qemu/qemu_edu.sh

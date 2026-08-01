@@ -1,1 +1,0 @@
-scripts/e2e/run_edu_e2e.sh

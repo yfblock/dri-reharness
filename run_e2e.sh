@@ -1,1 +1,0 @@
-scripts/e2e/run_e2e.sh

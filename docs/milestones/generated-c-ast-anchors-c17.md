@@ -50,7 +50,7 @@ oracle from requiring the duplicated read.
 
 ## AST leaf oracle
 
-`verification/generated_c_ast_oracle.py` parses generated C with libclang and
+`qa/verification/generated_c_ast_oracle.py` parses generated C with libclang and
 checks:
 
 - missing, duplicate, unknown or malformed anchors;

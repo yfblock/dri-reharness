@@ -18,7 +18,7 @@ two previously blocked holdout drivers without driver-name or basename rules:
 Formal RIS now has `StateRead`, `StateWrite`, `OutputWrite`, and `Return`.
 The GPIO lowering snapshots and updates `sdata/sdir`, preserves set/clear and
 direction ordering, handles `set_multiple`, `dirin` inversion, return values,
-and output parameters.  `verification/gpio_mmio_source_oracle.py` implements
+and output parameters.  `qa/verification/gpio_mmio_source_oracle.py` implements
 the corresponding `gpio-mmio.c` behavior independently of generated code.
 
 Six source configurations pass: TS4800, GE, FTGPIO, Cadence, IDT3243x, and

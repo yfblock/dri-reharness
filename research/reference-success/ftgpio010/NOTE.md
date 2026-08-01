@@ -5,5 +5,5 @@ reharness 提取 .ris → opencode 合成 ftgpio010_gpio.c → ~/Code/linux(7.1.
 qemu-system-x86_64 + device-registrar(platform 设备 ftgpio010-gpio, MMIO@0xF0000000) 运行。
 
 QEMU 结果: gpiochip0 注册成功 (probe 返回 0, RIS init 写入执行), rmmod 干净, 无 oops。
-复现: bash qemu_platform.sh ftgpio010_gpio ftgpio010-gpio 90
-证据: history/qemu_ftgpio010_success_log.txt
+复现: ./run.sh qemu-platform ftgpio010_gpio ftgpio010-gpio 90
+证据: research/history/qemu_ftgpio010_success_log.txt

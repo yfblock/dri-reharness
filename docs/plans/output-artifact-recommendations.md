@@ -22,7 +22,7 @@ artifacts, not as source inputs for reconstruction.
 Use a small core output set and move derived files into subdirectories:
 
 ```text
-output/<driver>/
+artifacts/output/<driver>/
   <driver>.ris
   <driver>.dspec
   <driver>.bind

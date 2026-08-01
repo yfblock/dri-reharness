@@ -26,7 +26,7 @@ normalization.  It includes operation kind, width, address and value/transform
 structure, but excludes absolute source paths.  Unsupported operations receive
 `status=rejected` rather than disappearing.
 
-`verification/backend_lowering_oracle.py` independently compares the
+`qa/verification/backend_lowering_oracle.py` independently compares the
 generated receipts with `generation-contract.json` and rejects:
 
 - missing or duplicate operation IDs;

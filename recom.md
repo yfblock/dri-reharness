@@ -1,1 +1,0 @@
-docs/plans/output-artifact-recommendations.md

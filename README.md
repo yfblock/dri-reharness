@@ -19,7 +19,7 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - QEMU：edu 通过值级 oracle；gpio-ftgpio010 通过结构化 Formal RIS、精确函数边界和真实 gpiolib exerciser 的 probe/callback MMIO oracle（6/6 模块、7/7 调用、13/13 ops、8/8 寄存器偏移）。
 - C67X00 HPI：32/32 computed address 可安全 lowering；`hpi.base`、`hpi.regstep` 和 `sie_num` 显式建模。5 个 primitive、4 个原始 C↔RIS differential case 通过，4 类 mutation 全被检出。
 - SVF 别名分析：off、auto、required，默认 off；多源 manifest 会先链接所有 TU bitcode，再执行一次 WPA，并记录 linked-bitcode SHA、工具版本和 source provenance。C67X00 required run 成功链接 4 TU。
-- 零样本泛化基础：`drivers/holdout/zero-shot-v1.json` 冻结 12 个未用于实现的驱动；extractor/generator 出现这些驱动的专用标识会使 CI 失败。Kbuild importer 优先读取 `compile_commands.json`，否则自动读取对象对应的 `.cmd`，并把来源、参数与 SHA 写入 analysis metadata。
+- 零样本泛化基础：`benchmarks/drivers/holdout/zero-shot-v1.json` 冻结 12 个未用于实现的驱动；`src/extractor/` 或 `src/generator/` 出现这些驱动的专用标识会使 CI 失败。Kbuild importer 优先读取 `compile_commands.json`，否则自动读取对象对应的 `.cmd`，并把来源、参数与 SHA 写入 analysis metadata。
 - Subsystem summaries：冻结矩阵中原先 7 个 `no_register_access` 已降为 0。GPIO 从 typed `gpio_generic_chip_config` 合成 callback；SDHCI accessor/ops table 与 virtio config/virtqueue 分域记录。zero-shot v1 仍为三后端编译 12/12；当前 gate 下 harness/bare-metal strict 为 7/12，Linux 为 5/12，三后端共同 strict 为 5/12。首个跨驱动 RIS blocker 仍是 5 个案例共有的 `call_context`，Linux 还叠加了未完成的 registration/callsite 证明。virtio config/virtqueue 被建模为 subsystem state，因此 12 个案例中 11 个含寄存器硬件交互，virtio-input 不伪装成 MMIO。
 
 下表来自 C19 当前 19-driver 矩阵；AHCI direct evidence frontier 会增加真实未覆盖操作，因此计数与 C14 冻结结果不同：
@@ -41,7 +41,8 @@ reharness 从 Linux C 设备驱动中提取形式化寄存器交互序列（RIS�
 - `vendor/`：固定版本的第三方源码树。
 - `artifacts/`：可重新生成的输出。
 
-迁移期间保留根目录旧路径作为兼容链接，因此现有命令、Python 导入和冻结 manifest 路径仍然有效；新代码和文档应优先使用上面的规范目录。
+根目录只保留项目元数据、主要文档、规范功能目录和公开调度器
+`run.sh`。内部脚本和 Python 模块不依赖根目录兼容链接。
 
 ## RIS 与语义输出
 
@@ -69,7 +70,7 @@ C18 将 backend lowering recipe 绑定到 canonical Formal，禁止 probe succes
 
 C19 将 lowering plan 扩展到 Linux，并与真实 receipt report 做授权集对账。DWC2 精确分为 2023 个 definition candidate、77 个 evidence-only ops、426 个 loop blocker、898 个 root blocker与 184 个 lifecycle blocker；C67X00/ASPEED 也分别闭合为 26/6 和 133/21 authorized/blocked。新的 versioned DeviceSpec JSON 为 verifier 和 LLM bundle 提供严格、可重载的函数/root 证据。定义已发射与 runtime 已注册仍明确分离。
 
-C20 对 Linux 生成代码增加独立 required-subset leaf AST 与 registration AST oracle，并由 `backend-lowering-plan-v3` 依据实际 generated-C artifact SHA、精确 Kbuild `.o.cmd` context、操作集合、callback/function USR、typed field、精确对象路径、registration call 和 module-init root 重建有效身份链。FTGPIO 的 35 个 strict candidate 全部通过；DWC2 的 2023 个 candidate 虽全部通过 leaf AST，只有 62 个落入 v1 支持的 registration route，因此 Linux strict 仍为 false。DWC2 的 H/B 仍是 3182 lowered + 426 loop-blocked，Linux 仍是 2100 authorized + 1508 blocked。该证明尚不覆盖 kernel callback invocation、callback 内路径语义或 USB endpoint/gadget/HCD lifecycle；机器冻结摘要见 [`experiments/results/c20-linux-registration-attestation.json`](experiments/results/c20-linux-registration-attestation.json)。
+C20 对 Linux 生成代码增加独立 required-subset leaf AST 与 registration AST oracle，并由 `backend-lowering-plan-v3` 依据实际 generated-C artifact SHA、精确 Kbuild `.o.cmd` context、操作集合、callback/function USR、typed field、精确对象路径、registration call 和 module-init root 重建有效身份链。FTGPIO 的 35 个 strict candidate 全部通过；DWC2 的 2023 个 candidate 虽全部通过 leaf AST，只有 62 个落入 v1 支持的 registration route，因此 Linux strict 仍为 false。DWC2 的 H/B 仍是 3182 lowered + 426 loop-blocked，Linux 仍是 2100 authorized + 1508 blocked。该证明尚不覆盖 kernel callback invocation、callback 内路径语义或 USB endpoint/gadget/HCD lifecycle；机器冻结摘要见 [`research/experiments/results/c20-linux-registration-attestation.json`](research/experiments/results/c20-linux-registration-attestation.json)。
 
 Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_chip.init_hw` 绑定会按字段语义归类；clock provider 会保留多套 `clk_ops`、纯标量 rate 算术、源码内 helper、父时钟/provider 注册以及对应 OF 变体。Sodaville 的 PCI ID、12-line GPIO generic dat/set/dirout 行为和 mask/unmask/EOI IRQ lifecycle 由版本化源码保守恢复。只有经过显式 source-private 重绑定且真实 Kbuild 通过的 callback 才可消除 unsupported marker。
 
@@ -89,14 +90,14 @@ Linux lowering 会区分 callback table 的具体实例。GPIO 动态 `gpio_irq_
 
 ~~~bash
 git submodule update --init
-./tools/prepare_kernel.sh build
+./tools/build/prepare_kernel.sh build
 
 ./run.sh test
-./run.sh extract drivers/test/gpio-ftgpio010.c output/ftgpio.ris
-./run.sh spec drivers/test/gpio-ftgpio010.c output/ftgpio.dspec
-./run.sh gen drivers/test/edu.c linux output/edu_drv.c
-./run.sh driver drivers/test/edu.c output/edu
-./run.sh reliability drivers/test/gpio-ftgpio010.c
+./run.sh extract benchmarks/drivers/baseline/gpio-ftgpio010.c artifacts/output/ftgpio.ris
+./run.sh spec benchmarks/drivers/baseline/gpio-ftgpio010.c artifacts/output/ftgpio.dspec
+./run.sh gen benchmarks/drivers/baseline/edu.c linux artifacts/output/edu_drv.c
+./run.sh driver benchmarks/drivers/baseline/edu.c artifacts/output/edu
+./run.sh reliability benchmarks/drivers/baseline/gpio-ftgpio010.c
 ~~~
 
 直接调用 python3 -m extractor 时，分析类子命令支持 --alias-mode off|auto|required。
@@ -105,43 +106,43 @@ git submodule update --init
 
 ~~~bash
 ./run.sh test
-python3 verification/check_generalization_guard.py
-python3 verification/run_zero_shot_holdout.py
-python3 verification/materialize_holdout_contexts.py
-python3 verification/run_zero_shot_matrix.py
-python3 verification/run_matrix.py
-python3 verification/run_multisource_matrix.py
-python3 verification/run_clock_model_boundary.py
-python3 verification/c67x00_hpi_trace_oracle.py \
-  --output experiments/results/c67x00-hpi-oracle.json
-python3 verification/dwapb_banked_oracle.py \
-  --output experiments/results/dwapb-banked-oracle.json
-verification/run_qemu_experiments.sh
-python3 verification/reliability_report.py \
-  --output experiments/results/reliability.json
-python3 verification/ris_mutation_oracle.py
-python3 verification/ris_trace_oracle.py
-python3 verification/ftgpio_trace_oracle.py
-python3 tools/generate_paper_results.py
-(cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
+python3 qa/verification/check_generalization_guard.py
+python3 qa/verification/run_zero_shot_holdout.py
+python3 qa/verification/materialize_holdout_contexts.py
+python3 qa/verification/run_zero_shot_matrix.py
+python3 qa/verification/run_matrix.py
+python3 qa/verification/run_multisource_matrix.py
+python3 qa/verification/run_clock_model_boundary.py
+python3 qa/verification/c67x00_hpi_trace_oracle.py \
+  --output research/experiments/results/c67x00-hpi-oracle.json
+python3 qa/verification/dwapb_banked_oracle.py \
+  --output research/experiments/results/dwapb-banked-oracle.json
+./run.sh qemu-experiments
+python3 qa/verification/reliability_report.py \
+  --output research/experiments/results/reliability.json
+python3 qa/verification/ris_mutation_oracle.py
+python3 qa/verification/ris_trace_oracle.py
+python3 qa/verification/ftgpio_trace_oracle.py
+python3 tools/reporting/generate_paper_results.py
+(cd research/paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)
 ~~~
 
 权威结果：
 
-- experiments/results/matrix.json
-- experiments/results/reliability.json
-- experiments/results/multisource-matrix.json
-- experiments/results/clock-model-boundary.json
-- experiments/results/c67x00-hpi-oracle.json
-- experiments/results/dwapb-banked-oracle.json
-- experiments/results/sdhci-accessor-oracle.json
-- experiments/results/virtio-state-oracle.json
-- experiments/results/zero-shot-v1.json
-- experiments/results/zero-shot-contexts.json
-- experiments/results/zero-shot-matrix.json
-- experiments/results/qemu.json
-- paper/generated_results.tex（自动生成，不手改）
-- paper/paper.pdf
+- research/experiments/results/matrix.json
+- research/experiments/results/reliability.json
+- research/experiments/results/multisource-matrix.json
+- research/experiments/results/clock-model-boundary.json
+- research/experiments/results/c67x00-hpi-oracle.json
+- research/experiments/results/dwapb-banked-oracle.json
+- research/experiments/results/sdhci-accessor-oracle.json
+- research/experiments/results/virtio-state-oracle.json
+- research/experiments/results/zero-shot-v1.json
+- research/experiments/results/zero-shot-contexts.json
+- research/experiments/results/zero-shot-matrix.json
+- research/experiments/results/qemu.json
+- research/paper/generated_results.tex（自动生成，不手改）
+- research/paper/paper.pdf
 
 详细环境和判定标准见 [REPRO.md](REPRO.md)。
 
@@ -173,18 +174,11 @@ python3 tools/generate_paper_results.py
 
 LLM 不是确定性测试、矩阵或 QEMU 结果的依赖。可选 synthesis loop 通过 REHARNESS_LLM_CMD 接入外部模型。
 
-## 目录兼容入口
+## 根目录契约
 
 ~~~text
-drivers/                 -> benchmarks/drivers/ 下的分类链接
-linux/                   -> vendor/linux/
-kernel/                  -> platform/kernel/
-output/                  -> artifacts/output/
-extractor/               -> src/extractor/
-generator/               -> src/generator/
-verification/            -> qa/verification/
-tests/                   -> qa/tests/
-test/                    -> qa/native-tests/
-experiments/             -> research/experiments/
-paper/                   -> research/paper/
+run.sh
+artifacts/  benchmarks/  docs/      examples/
+platform/   qa/          research/  scripts/
+src/        tools/       vendor/
 ~~~

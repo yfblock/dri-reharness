@@ -66,10 +66,13 @@ ACTIVE_SUFFIXES = {
 }
 ACTIVE_FILENAMES = {".gitignore", ".gitmodules", "Makefile"}
 REFERENCE_EXCLUDED_DIRS = (
-    ".git", "artifacts", "docs/superpowers", "platform/kernel/build",
-    "research/history", "research/experiments/results",
-    "tools/pi/node_modules", "vendor/linux",
+    ".git", "artifacts", "docs/retrospectives", "docs/superpowers",
+    "platform/kernel/build", "research/history",
+    "research/experiments/results", "tools/pi/node_modules", "vendor/linux",
 )
+REFERENCE_EXCLUDED_FILES = {
+    "docs/plans/original-implementation-plan.md",
+}
 _ROOT_VARIABLE_PATTERN = "|".join(ROOT_VARIABLE_NAMES)
 _LEGACY_ROOT_ENTRY_PATTERN = "|".join(
     sorted((re.escape(entry) for entry in LEGACY_ROOT_ENTRIES),
@@ -99,6 +102,7 @@ LEGACY_REFERENCE = re.compile(
     r")"
 )
 LINUX_INTERNAL_INCLUDE = re.compile(r"#\s*include\s*[<\"]linux/")
+LINUX_HEADER_REFERENCE = re.compile(r"<linux/")
 C_FAMILY_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp"}
 
 
@@ -118,7 +122,8 @@ def _legacy_reference_match(
         relative is None or Path(relative).suffix.lower() in C_FAMILY_SUFFIXES
     )
     if match.lastgroup == "linux_path":
-        if LINUX_INTERNAL_INCLUDE.search(line):
+        if (LINUX_INTERNAL_INCLUDE.search(line)
+                or LINUX_HEADER_REFERENCE.search(line)):
             return None
         if suppress_source_comment and stripped.startswith(("//", "*")):
             return None
@@ -210,8 +215,12 @@ def _active_repository_files():
         ]
         for filename in filenames:
             path = Path(directory) / filename
+            if path.is_symlink():
+                continue
             relative = path.relative_to(ROOT).as_posix()
             if relative == "qa/tests/test_repository_layout.py":
+                continue
+            if relative in REFERENCE_EXCLUDED_FILES:
                 continue
             if path.is_file() and _is_active_file(path):
                 yield path
@@ -360,6 +369,7 @@ def test_legacy_reference_pattern_ignores_canonical_and_linux_internal_paths():
         "vendor/linux/drivers/usb/core/driver.c",
         "#include <linux/module.h>",
         '        "#include <linux/module.h>",',
+        "Documentation references <linux/gpio/driver.h>",
         "obj-y += linux/built-in.o",
         "include/linux/compiler.h",
         " * linux/drivers/video/wmt_ge_rops.c",

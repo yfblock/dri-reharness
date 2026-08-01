@@ -49,7 +49,7 @@ transaction-validation and callback-registration gates.
 
 ## Independent oracle
 
-`verification/transaction_ir_oracle.py` reconstructs public regmap and scalar
+`qa/verification/transaction_ir_oracle.py` reconstructs public regmap and scalar
 SMBus contracts directly from source text.  The transaction AST oracle also
 checks MFD helper shape against the frozen declaration-provenance contract;
 the mutation suite rejects helper substitution, transport/selector/kind

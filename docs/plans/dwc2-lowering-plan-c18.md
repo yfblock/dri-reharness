@@ -23,7 +23,7 @@ to the C15 rescued frontier; callee rescue is not their general cause.
 
 ## Independent backend lowering plan
 
-`verification/backend_lowering_plan.py` walks canonical Formal RIS without
+`qa/verification/backend_lowering_plan.py` walks canonical Formal RIS without
 importing a generator or reading generated receipts.  For harness and
 bare-metal it records exactly one entry per register op with:
 
