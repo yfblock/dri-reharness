@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "name": "edu",
+  "source": {
+    "path": "benchmarks/drivers/baseline/edu.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu",
+    "machine": "q35",
+    "device": "edu",
+    "bus": "pci",
+    "module": "edu_drv",
+    "timeout_seconds": 90,
+    "probe_pattern": "probed|edu device id|edu probed"
+  },
+  "test": {
+    "executable": "qa/native-tests/edu_trace_test",
+    "args": ["/dev/edu_drv"],
+    "actions": [
+      {"name": "open"},
+      {"name": "read"},
+      {"name": "write"}
+    ]
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"],
+    "value_mask": "0xffffffff"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

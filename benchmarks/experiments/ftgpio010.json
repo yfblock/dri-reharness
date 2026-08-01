@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "name": "ftgpio010",
+  "source": {
+    "path": "benchmarks/drivers/baseline/gpio-ftgpio010.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-platform",
+    "machine": "q35",
+    "device": "ftgpio010-gpio",
+    "bus": "platform",
+    "module": "ftgpio010_gpio",
+    "timeout_seconds": 90,
+    "probe_pattern": "probed|registered|gpiochip",
+    "registrar": "ftgpio010-gpio"
+  },
+  "test": {
+    "executable": "qa/native-tests/gpio_trace_test",
+    "args": ["/dev/gpiochip0"],
+    "actions": [
+      {"name": "get_direction"},
+      {"name": "direction_input"},
+      {"name": "direction_output"},
+      {"name": "get_value"},
+      {"name": "set_value"}
+    ]
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id"],
+    "value_mask": "0xffffffff",
+    "normalize_function": true
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}
