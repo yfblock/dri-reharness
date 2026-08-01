@@ -21,6 +21,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from generator.common import lowering_recipes  # noqa: E402
+from trace_protocol import (  # noqa: E402
+    TraceComparison,
+    TraceRun,
+    compare_runs,
+    load_trace,
+)
 
 
 TraceOp = tuple[str, int]
@@ -31,6 +37,20 @@ FormalVariants = list[list[TraceOp]]
 class RuntimeSegment:
     function: str
     ops: list[TraceOp]
+
+
+def compare_runtime_traces(original_path: str, candidate_path: str,
+                           *, config: dict | None = None,
+                           context: int = 3) -> TraceComparison:
+    """Compare original and candidate runtime artifacts.
+
+    This is the primary runtime invariant for the data-driven experiment
+    runner.  The RIS matcher below remains available as a secondary static
+    contract check for existing experiments.
+    """
+    original: TraceRun = load_trace(original_path, config=config)
+    candidate: TraceRun = load_trace(candidate_path, config=config)
+    return compare_runs(original, candidate, context=context)
 
 
 def _offset(addr: dict, registers: dict[str, int]) -> int | None:
@@ -328,7 +348,7 @@ def legacy_report(modules: dict[str, list[TraceOp]], traced: list[TraceOp],
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("serial_log")
+    parser.add_argument("serial_log", nargs="?")
     parser.add_argument("ris_file", nargs="?")
     parser.add_argument("dspec_file", nargs="?")
     parser.add_argument("--formal-json")
@@ -336,7 +356,43 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--exercised-calls",
         help="ordered formal_module=runtime_function calls; duplicates are allowed")
+    parser.add_argument(
+        "--original-trace",
+        help="primary runtime comparison: original-driver trace artifact")
+    parser.add_argument(
+        "--candidate-trace",
+        help="primary runtime comparison: candidate-driver trace artifact")
+    parser.add_argument(
+        "--trace-config",
+        help="JSON manifest or trace section used by primary runtime comparison")
     args = parser.parse_args(argv)
+
+    if args.original_trace or args.candidate_trace:
+        if not args.original_trace or not args.candidate_trace:
+            print("TRACE_MATCH_FAIL: --original-trace and --candidate-trace are both required")
+            return 1
+        config = None
+        if args.trace_config:
+            try:
+                with open(args.trace_config, encoding="utf-8") as handle:
+                    document = json.load(handle)
+                config = document.get("trace", document)
+                if not isinstance(config, dict):
+                    raise ValueError("trace config must be an object")
+            except (OSError, ValueError, json.JSONDecodeError) as error:
+                print(f"TRACE_MATCH_FAIL: 无法读取 trace config: {error}")
+                return 1
+        try:
+            report = compare_runtime_traces(
+                args.original_trace, args.candidate_trace, config=config)
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            print(f"TRACE_MATCH_FAIL: 无法读取 runtime trace: {error}")
+            return 1
+        print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+        return 0 if report.equal else 1
+
+    if not args.serial_log:
+        parser.error("serial_log is required unless --original-trace/--candidate-trace are used")
 
     try:
         with open(args.serial_log, encoding="utf-8") as handle:

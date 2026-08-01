@@ -210,6 +210,7 @@ class ExperimentManifest:
     trace: TraceSpec
     limits: IterationLimits
     repo_root: Path | None = None
+    raw_document: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         root = self.repo_root
@@ -226,7 +227,7 @@ class ExperimentManifest:
 
     @property
     def digest(self) -> str:
-        return manifest_digest(self)
+        return manifest_digest(self.raw_document if self.raw_document is not None else self)
 
 
 def _parse_mask(value: Any, field: str) -> int:
@@ -351,7 +352,7 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
     if "total" in limits_doc:
         values["total"] = _integer(limits_doc["total"], "limits.total", minimum=1)
     limits = IterationLimits(**values)
-    return ExperimentManifest(schema, name, source, compile_spec, runtime, test, trace, limits, root)
+    return ExperimentManifest(schema, name, source, compile_spec, runtime, test, trace, limits, root, dict(document))
 
 
 def _json_value(value: Any) -> Any:
@@ -372,7 +373,10 @@ def canonical_json(value: Any) -> str:
 
 
 def manifest_digest(value: Any) -> str:
-    document = value.to_dict() if isinstance(value, ExperimentManifest) else value
+    if isinstance(value, ExperimentManifest):
+        document = value.raw_document if value.raw_document is not None else value.to_dict()
+    else:
+        document = value
     return hashlib.sha256(canonical_json(document).encode("utf-8")).hexdigest()
 
 

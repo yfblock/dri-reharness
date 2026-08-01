@@ -4,7 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
-export PYTHONPATH="$ROOT/src:$ROOT/qa${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$ROOT/src:$ROOT/qa:$ROOT/qa/verification${PYTHONPATH:+:$PYTHONPATH}"
 PY="${PYTHON:-python3}"
 OUTPUT_ROOT="$ROOT/artifacts/output"
 
@@ -30,6 +30,7 @@ Commands:
   compare [-j N]              per-driver extraction stats (N=parallel jobs, 0=auto)
   test                      run the test suite
   e2e <src> [target] [skip_synth]   full synthesis and runtime workflow
+  experiment <manifest> [options]   manifest-driven closed-loop experiment
   edu-e2e [skip_synth]      run the educational driver workflow
   gpio-e2e [src] [skip_synth]   run the GPIO driver workflow
   qemu <module> [options]   run a synthesized module under QEMU
@@ -71,6 +72,9 @@ cmd_score()   { "$PY" -m extractor score   -s "${1:?need src}"; }
 cmd_reliability() { "$PY" qa/verification/reliability_report.py "$@"; }
 cmd_driver()  { "$PY" -m extractor driver  -s "${1:?need src}" ${2:+-o "$2"}; }
 cmd_e2e() { bash scripts/e2e/run_e2e.sh "$@"; }
+cmd_experiment() {
+  "$PY" qa/verification/run_experiment.py "$@" --adapter-module "${REHARNESS_ADAPTER_MODULE:-verification.runtime_adapters}"
+}
 cmd_edu_e2e() { bash scripts/e2e/run_edu_e2e.sh "$@"; }
 cmd_gpio_e2e() { bash scripts/e2e/run_gpio_e2e.sh "$@"; }
 cmd_qemu() { bash scripts/qemu/qemu_run.sh "$@"; }
@@ -99,6 +103,10 @@ cmd_test()    {
   "$PY" qa/tests/test_generated_c_ast_oracle.py
   "$PY" qa/tests/test_linux_registration_ast_oracle.py
   "$PY" qa/tests/test_backend_lowering_plan.py
+  "$PY" -m pytest -q qa/tests/test_experiment_manifest.py qa/tests/test_experiment_protocol.py \
+    qa/tests/test_experiment_runner.py qa/tests/test_pi_bridge_protocol.py \
+    qa/tests/test_trace_protocol.py qa/tests/test_trace_compare.py \
+    qa/tests/test_runtime_adapters.py qa/tests/test_no_hardcoding.py
   "$PY" qa/tests/test_metrics_c20_readiness.py
   "$PY" qa/tests/test_dataflow_read_return.py
   "$PY" qa/tests/test_device_spec_json.py
@@ -121,6 +129,7 @@ case "${1:-help}" in
   compare)   shift; cmd_compare "$@";;
   test)      shift; cmd_test "$@";;
   e2e)       shift; cmd_e2e "$@";;
+  experiment) shift; cmd_experiment "$@";;
   edu-e2e)   shift; cmd_edu_e2e "$@";;
   gpio-e2e)  shift; cmd_gpio_e2e "$@";;
   qemu)      shift; cmd_qemu "$@";;

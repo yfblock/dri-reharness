@@ -8,7 +8,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_COMMANDS = (
     "extract", "spec", "gen", "driver", "facts", "bundle", "metrics",
-    "score", "reliability", "compare", "test", "e2e", "edu-e2e",
+    "score", "reliability", "compare", "test", "e2e", "experiment", "edu-e2e",
     "gpio-e2e", "qemu", "qemu-edu", "qemu-platform",
     "qemu-experiments", "log-event",
 )

@@ -47,11 +47,25 @@ def main(argv: list[str] | None = None) -> int:
     factory = getattr(module, "build_adapters", None)
     if not callable(factory):
         parser.error("adapter module must expose build_adapters")
-    manifest = load_manifest(args.manifest, repo_root=ROOT)
+    try:
+        manifest = load_manifest(args.manifest, repo_root=ROOT)
+    except Exception as error:
+        print(json.dumps({"accepted": False, "status": "manifest_error",
+                          "error": str(error)}, sort_keys=True))
+        return 1
     try:
         adapters = factory(manifest)
     except TypeError:
-        adapters = factory()
+        try:
+            adapters = factory()
+        except Exception as error:
+            print(json.dumps({"accepted": False, "status": "infrastructure_error",
+                              "error": str(error)}, sort_keys=True))
+            return 1
+    except Exception as error:
+        print(json.dumps({"accepted": False, "status": "manifest_error",
+                          "error": str(error)}, sort_keys=True))
+        return 1
     result = run_experiment(args.manifest, adapters, output_dir=args.output)
     print(json.dumps({"accepted": result.accepted, "status": result.status,
                       "output_dir": str(result.output_dir),

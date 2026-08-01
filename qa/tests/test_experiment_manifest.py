@@ -92,6 +92,8 @@ def test_manifest_rejects_unknown_nested_fields(tmp_path: Path):
 def test_repository_manifests_are_valid():
     root = _paths.REPO_ROOT
     for name in ("edu.json", "ftgpio010.json"):
-        manifest = load_manifest(root / "benchmarks" / "experiments" / name, repo_root=root)
+        path = root / "benchmarks" / "experiments" / name
+        document = json.loads(path.read_text(encoding="utf-8"))
+        manifest = load_manifest(path, repo_root=root)
         assert manifest.name
-        assert manifest_digest(manifest) == manifest.digest
+        assert manifest_digest(document) == manifest.digest
