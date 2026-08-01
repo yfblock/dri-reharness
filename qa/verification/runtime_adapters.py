@@ -24,6 +24,22 @@ from tools.source.sanitize import SafetyPolicyError, sanitize_source
 ROOT = Path(__file__).resolve().parents[2]
 
 
+class RuntimeAdapterError(ValueError):
+    """Raised when a manifest names an unavailable runtime adapter."""
+
+
+class RuntimeAdapter:
+    """Execution boundary implemented by manifest-selected runtimes."""
+
+    def __init__(self, root: Path = ROOT, output_root: Path | None = None) -> None:
+        self.root = root
+        self.output_root = output_root or root / "artifacts" / "experiments"
+
+    def run(self, manifest: ExperimentManifest, candidate: Any,
+            scenario: Any, role: str) -> dict[str, Any]:
+        raise NotImplementedError
+
+
 def _failure(kind: FailureClass, message: str, details: Mapping[str, Any], stage: str) -> dict[str, Any]:
     return {"ok": False, "feedback": Feedback.from_failure(kind, message, details, stage=stage).to_dict()}
 
@@ -136,13 +152,10 @@ class ManifestContractVerifier:
         return {"ok": True, "value": report, "payload": report}
 
 
-class ManifestRuntime:
-    def __init__(self, root: Path = ROOT, output_root: Path | None = None) -> None:
-        self.root = root
-        self.output_root = output_root or root / "artifacts" / "experiments"
-
+class QemuRuntimeAdapter(RuntimeAdapter):
     def run(self, manifest: ExperimentManifest, candidate: Any, scenario: Any, role: str) -> dict[str, Any]:
-        module = manifest.runtime.module
+        qemu = manifest.runtime.qemu
+        module = qemu.module
         if role == "baseline" and candidate is None:
             baseline_dir = self.root / "artifacts" / "output" / module
             baseline_dir.mkdir(parents=True, exist_ok=True)
@@ -179,21 +192,21 @@ class ManifestRuntime:
                 destination.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(artifact), destination / f"{module}.ko")
         command = ["bash", "scripts/qemu/qemu_run.sh", module,
-                   "--bus", manifest.runtime.bus,
-                   "--machine", manifest.runtime.machine,
-                   "--timeout", str(manifest.runtime.timeout_seconds)]
-        if manifest.runtime.device:
-            command += ["--device", manifest.runtime.device]
-        if manifest.runtime.registrar:
-            command += ["--registrar-target", manifest.runtime.registrar]
+                   "--bus", qemu.bus,
+                   "--machine", qemu.machine,
+                   "--timeout", str(qemu.timeout_seconds)]
+        if qemu.device:
+            command += ["--device", qemu.device]
+        if qemu.registrar:
+            command += ["--registrar-target", qemu.registrar]
         if manifest.test.executable:
             command += ["--exerciser", str(manifest.test.executable.relative_to(self.root)),
                         "--exerciser-args", " ".join(manifest.test.args)]
         if manifest.test.success_pattern:
             command += ["--success-pattern", manifest.test.success_pattern]
-        if manifest.runtime.probe_pattern:
-            command += ["--probe-pattern", manifest.runtime.probe_pattern]
-        for argument in manifest.runtime.qemu_args:
+        if qemu.probe_pattern:
+            command += ["--probe-pattern", qemu.probe_pattern]
+        for argument in qemu.qemu_args:
             command += ["--qemu-arg", argument]
         completed = subprocess.run(command, cwd=self.root, text=True,
                                    capture_output=True, check=False)
@@ -206,6 +219,60 @@ class ManifestRuntime:
                              "trace": str(trace_path)}, role)
         return {"ok": True, "value": str(trace_path),
                 "payload": {"role": role, "trace": str(trace_path)}}
+
+
+RUNTIME_ADAPTERS: dict[str, type[RuntimeAdapter]] = {
+    "qemu": QemuRuntimeAdapter,
+    "qemu-pci": QemuRuntimeAdapter,
+    "qemu-platform": QemuRuntimeAdapter,
+}
+
+
+def register_runtime_adapter(adapter_id: str, implementation: type[RuntimeAdapter], *, replace: bool = False) -> None:
+    """Register an adapter implementation for manifest dispatch.
+
+    Registration is explicit so adding a new runtime does not require adding
+    device-specific branches to the orchestration path.
+    """
+    if not isinstance(adapter_id, str) or not adapter_id.strip():
+        raise ValueError("runtime adapter id must be a non-empty string")
+    if not isinstance(implementation, type) or not issubclass(implementation, RuntimeAdapter):
+        raise TypeError("runtime adapter implementation must subclass RuntimeAdapter")
+    if adapter_id in RUNTIME_ADAPTERS and not replace:
+        raise ValueError(f"runtime adapter already registered: {adapter_id}")
+    RUNTIME_ADAPTERS[adapter_id] = implementation
+
+
+def resolve_runtime_adapter(adapter_id: str, root: Path = ROOT,
+                            output_root: Path | None = None,
+                            registry: Mapping[str, type[RuntimeAdapter]] | None = None) -> RuntimeAdapter:
+    """Instantiate the implementation selected by ``runtime.adapter``."""
+    adapters = RUNTIME_ADAPTERS if registry is None else registry
+    try:
+        implementation = adapters[adapter_id]
+    except (KeyError, TypeError) as exc:
+        available = ", ".join(sorted(adapters))
+        raise RuntimeAdapterError(
+            f"unknown runtime adapter {adapter_id!r}; available adapters: {available}"
+        ) from exc
+    if not isinstance(implementation, type) or not issubclass(implementation, RuntimeAdapter):
+        raise RuntimeAdapterError(f"runtime adapter {adapter_id!r} has an invalid implementation")
+    return implementation(root, output_root)
+
+
+class ManifestRuntime:
+    """Dispatch runtime execution to the implementation named by a manifest."""
+
+    def __init__(self, root: Path = ROOT, output_root: Path | None = None,
+                 registry: Mapping[str, type[RuntimeAdapter]] | None = None) -> None:
+        self.root = root
+        self.output_root = output_root or root / "artifacts" / "experiments"
+        self.registry = registry
+
+    def run(self, manifest: ExperimentManifest, candidate: Any, scenario: Any, role: str) -> dict[str, Any]:
+        adapter = resolve_runtime_adapter(manifest.runtime.adapter, self.root,
+                                          self.output_root, self.registry)
+        return adapter.run(manifest, candidate, scenario, role)
 
 
 class ManifestComparator:
