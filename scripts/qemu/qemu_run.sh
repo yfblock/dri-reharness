@@ -11,6 +11,10 @@
 #   -m/--machine NAME           QEMU machine model
 #   --manifest PATH             load all runtime/test policy from manifest
 #   -t/--timeout N              默认 90
+# 环境变量:
+#   RH_QEMU_MODULE_OUTPUT_ROOT  module artifact root; expects <root>/<module>/<module>.ko
+#   RH_QEMU_TMPDIR              parent directory for per-invocation runtime files
+#   RH_QEMU_OUT                 serial log path (default: invocation-local)
 set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
@@ -113,7 +117,11 @@ else
 fi
 mkdir -p "$(dirname "$OUT")"
 
-OUTPUT_DIR="$PROJECT_DIR/artifacts/output/$MODULE_NAME"
+# The default keeps the standalone command usable, while callers that run a
+# suite should pass an invocation-specific root through this environment
+# variable.  No module build artifacts are created by this script.
+MODULE_OUTPUT_ROOT="${RH_QEMU_MODULE_OUTPUT_ROOT:-$PROJECT_DIR/artifacts/output}"
+OUTPUT_DIR="$MODULE_OUTPUT_ROOT/$MODULE_NAME"
 ROOTFS_DIR="$RUN_DIR/rootfs"
 INITRAMFS="$RUN_DIR/initramfs.cpio.gz"
 

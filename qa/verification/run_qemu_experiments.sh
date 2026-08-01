@@ -30,7 +30,15 @@ build_exerciser() {
 INFO_FILE="$(mktemp)"
 ROWS_FILE="$(mktemp)"
 overall_rc=0
-SUITE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/reharness-qemu-suite.XXXXXX")"
+SUITE_TMP_BASE="${RH_QEMU_SUITE_TMPDIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$SUITE_TMP_BASE"
+SUITE_TMP="$(mktemp -d "$SUITE_TMP_BASE/reharness-qemu-suite.XXXXXX")"
+# Generated C, Kbuild output, and formal specs are invocation-local.  A
+# caller can retain or inspect them by explicitly supplying RH_QEMU_ARTIFACT_ROOT.
+ARTIFACT_ROOT="${RH_QEMU_ARTIFACT_ROOT:-$SUITE_TMP/artifacts}"
+MODULE_OUTPUT_ROOT="${RH_QEMU_MODULE_OUTPUT_ROOT:-$ARTIFACT_ROOT/output}"
+SPEC_ROOT="${RH_QEMU_SPEC_ROOT:-$ARTIFACT_ROOT/spec}"
+mkdir -p "$MODULE_OUTPUT_ROOT" "$SPEC_ROOT"
 trap 'rm -f "$INFO_FILE" "$ROWS_FILE"; rm -rf -- "$SUITE_TMP"' EXIT
 
 for manifest in benchmarks/experiments/*.json; do
@@ -53,8 +61,8 @@ emit("CALLS", "|".join(m.trace.exercised_calls))
 PY
 )"
 
-    out_dir="$ROOT/artifacts/output/$MODULE"
-    spec_dir="$ROOT/artifacts/output/manifest-$MANIFEST_NAME"
+    out_dir="$MODULE_OUTPUT_ROOT/$MODULE"
+    spec_dir="$SPEC_ROOT/$MANIFEST_NAME"
     mkdir -p "$out_dir" "$spec_dir"
     python3 -m extractor gen -s "$SOURCE" -b "$BACKEND" -o "$out_dir/$MODULE.c" \
         --manifest "$manifest"
@@ -83,7 +91,10 @@ PY
     judge="$RESULTS/${MANIFEST_NAME}-judge.txt"
     qemu_out="$SUITE_TMP/${MANIFEST_NAME}.serial.log"
     set +e
-    RH_QEMU_OUT="$qemu_out" bash scripts/qemu/qemu_run.sh --manifest "$manifest" \
+    RH_QEMU_MODULE_OUTPUT_ROOT="$MODULE_OUTPUT_ROOT" \
+    RH_QEMU_OUT="$qemu_out" \
+    RH_QEMU_RUN_ID="$MANIFEST_NAME" \
+        bash scripts/qemu/qemu_run.sh --manifest "$manifest" \
         | tr -d '\r' | sed 's/[[:blank:]]*$//' | tee "$judge"
     qemu_rc=${PIPESTATUS[0]}
     set -e

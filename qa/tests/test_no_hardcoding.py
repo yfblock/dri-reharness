@@ -48,6 +48,24 @@ def test_generic_qemu_runner_does_not_infer_success_from_exerciser_name():
     assert "--success-pattern" in text
 
 
+def test_qemu_runner_accepts_invocation_local_module_artifact_root():
+    qemu_runner = ROOT / "scripts" / "qemu" / "qemu_run.sh"
+    text = qemu_runner.read_text(encoding="utf-8")
+    assert "RH_QEMU_MODULE_OUTPUT_ROOT" in text
+    assert 'MODULE_OUTPUT_ROOT="${RH_QEMU_MODULE_OUTPUT_ROOT:-' in text
+    assert 'OUTPUT_DIR="$MODULE_OUTPUT_ROOT/$MODULE_NAME"' in text
+
+
+def test_qemu_suite_builds_into_isolated_artifact_root():
+    suite = ROOT / "qa" / "verification" / "run_qemu_experiments.sh"
+    text = suite.read_text(encoding="utf-8")
+    assert "RH_QEMU_ARTIFACT_ROOT" in text
+    assert "RH_QEMU_MODULE_OUTPUT_ROOT" in text
+    assert 'out_dir="$ROOT/artifacts/output/$MODULE"' not in text
+    assert 'spec_dir="$ROOT/artifacts/output/manifest-$MANIFEST_NAME"' not in text
+    assert 'RH_QEMU_MODULE_OUTPUT_ROOT="$MODULE_OUTPUT_ROOT"' in text
+
+
 def test_e2e_source_form_resolves_manifest_before_delegating():
     entrypoint = next(path for path in (ROOT / "scripts" / "e2e").glob("run_*.sh")
                       if "manifest_for_source" in path.read_text(encoding="utf-8"))
