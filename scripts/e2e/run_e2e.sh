@@ -1,6 +1,6 @@
 #!/bin/bash
-# run_e2e.sh — 统一端到端: 提取 → Pi 合成 → 编译(迭代) → QEMU(迭代) → trace(迭代)
-# 用法: ./run_e2e.sh <src.c> [subsystem|skip_synth] [skip_synth]
+# scripts/e2e/run_e2e.sh - unified extraction and runtime workflow
+# Usage: ./run.sh e2e <src.c> [subsystem|skip_synth] [skip_synth]
 #   subsystem: gpio|clk|edu|generic|auto (从源码自动推断)
 #   skip_synth=1: 跳过 Pi 合成, 用已有驱动
 set -u
@@ -9,7 +9,7 @@ ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 HERE="$ROOT"
 cd "$ROOT"
 
-KERNELDIR="${KERNELDIR:-$HERE/kernel/build}"
+KERNELDIR="${KERNELDIR:-$HERE/platform/kernel/build}"
 KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-$KERNELDIR/arch/x86/boot/bzImage}"
 KERNEL_RELEASE="${KERNEL_RELEASE:-$(make -s -C "$KERNELDIR" kernelrelease 2>/dev/null || echo unknown)}"
 SRC="${1:?用法: $0 <src.c> [subsystem|skip_synth] [skip_synth]}"
@@ -22,8 +22,8 @@ case "$SUBSYSTEM" in
 esac
 BASE=$(basename "$SRC" .c)
 MODULE=$(echo "$BASE" | tr - _)           # gpio-pl061 -> gpio_pl061
-BUNDLE="output/$BASE"
-DRVDIR="output/${MODULE}"
+BUNDLE="$HERE/artifacts/output/$BASE"
+DRVDIR="$HERE/artifacts/output/${MODULE}"
 
 # ── 自动推断子系统 ──
 detect_subsystem() {
@@ -51,7 +51,7 @@ case "$SUBSYSTEM" in
   gpio)
     BUS="platform"
     REGISTRAR_TARGET="$MODULE"
-    EXERCISER="test/gpio_trace_test"
+    EXERCISER="qa/native-tests/gpio_trace_test"
     EXERCISER_ARGS="/dev/gpiochip0"
     PROBE_PATTERN="probed|registered|gpiochip"
     TRACE_TYPE="offset"
@@ -61,8 +61,8 @@ case "$SUBSYSTEM" in
     BUS="pci"
     QEMU_DEVICE="edu"
     MODULE="${MODULE}_drv"
-    DRVDIR="output/${MODULE}"
-    EXERCISER="test/edu_trace_test"
+    DRVDIR="$HERE/artifacts/output/${MODULE}"
+    EXERCISER="qa/native-tests/edu_trace_test"
     EXERCISER_ARGS="/dev/${MODULE}"
     PROBE_PATTERN="probed|edu device id|edu probed"
     TRACE_TYPE="value"
@@ -72,7 +72,7 @@ case "$SUBSYSTEM" in
     BUS="pci"
     QEMU_DEVICE="ahci"
     MODULE="${MODULE}_drv"
-    DRVDIR="output/${MODULE}"
+    DRVDIR="$HERE/artifacts/output/${MODULE}"
     PROBE_PATTERN="probed|registered|ahci|HOST_CTL"
     TRACE_TYPE="offset"
     INSTRUMENT=1
@@ -111,11 +111,11 @@ fi
 
 # 0b. 基线 (非致命: flaky 测试不阻断 e2e)
 echo ""; echo "[0b] reharness 自测"
-./run.sh test >/dev/null 2>&1 && echo "  ✓ test passed" || echo "  ⚠ test 有失败 (继续, 不阻断 e2e)"
+"$HERE/run.sh" test >/dev/null 2>&1 && echo "  ✓ test passed" || echo "  ⚠ test 有失败 (继续, 不阻断 e2e)"
 
 # 1. 提取 bundle
 echo ""; echo "[1] 提取 bundle → $BUNDLE"
-./run.sh bundle "$SRC" linux "$BUNDLE" 2>&1 | tail -1
+"$HERE/run.sh" bundle "$SRC" linux "$BUNDLE" 2>&1 | tail -1
 
 # 清空 iter_log (e2e_common.sh 已 source, RH_TMP 已建)
 rm -rf "$DRVDIR/iter_log"; mkdir -p "$DRVDIR/iter_log"
@@ -163,7 +163,7 @@ esac
 verify_lowering_candidate() {
   local candidate="$1" report="$2"
   rm -f "$report"
-  python3 "$HERE/verification/backend_lowering_oracle.py" \
+  python3 "$HERE/qa/verification/backend_lowering_oracle.py" \
     --formal "$BUNDLE/$BASE.formal.json" \
     --contract "$BUNDLE/generation-contract.json" \
     --generated "$candidate" \
@@ -259,14 +259,14 @@ fi
 MAX_QEMU_ITER="${MAX_QEMU_ITER:-3}"
 echo ""; echo "[4] QEMU (最多 $MAX_QEMU_ITER 轮)"
 QEMU_OK=0
-# 构建 qemu_run.sh 参数
+# Build arguments for the canonical QEMU runner.
 QEMU_ARGS=("$MODULE" -b "$BUS" -t 90 -p "$PROBE_PATTERN")
 [ -n "$QEMU_DEVICE" ] && QEMU_ARGS+=(-d "$QEMU_DEVICE")
 [ -n "$REGISTRAR_TARGET" ] && QEMU_ARGS+=(-r "$REGISTRAR_TARGET")
 [ -n "$EXERCISER" ] && QEMU_ARGS+=(-e "$EXERCISER" -a "$EXERCISER_ARGS")
 for iter in $(seq 1 $MAX_QEMU_ITER); do
   echo "  --- QEMU $iter/$MAX_QEMU_ITER ---"
-  bash qemu_run.sh "${QEMU_ARGS[@]}" > $RH_TMP/qemu_run.txt 2>&1
+  bash "$HERE/scripts/qemu/qemu_run.sh" "${QEMU_ARGS[@]}" > $RH_TMP/qemu_run.txt 2>&1
   QRC=$?
   tail -3 $RH_TMP/qemu_run.txt | sed 's/^/    /'
   QDIR="$ITER_LOG/qemu_iter${iter}"; mkdir -p "$QDIR"
@@ -314,7 +314,7 @@ echo ""; echo "[5] trace 一致性 (最多 $MAX_TRACE_ITER 轮迭代)"
 TRACE_OK=0
 for titer in $(seq 1 $MAX_TRACE_ITER); do
   if [ "$TRACE_TYPE" = "value" ]; then
-    # 值级 trace (edu): 已在 qemu_run.sh 里由 exerciser 校验 (EDU_TRACE_OK)
+    # The educational exerciser already validates the value-level trace.
     # QEMU 步骤成功 = trace 通过
     if ! verify_current_lowering "$RH_TMP/final_value_trace_lowering.json"; then
       echo "  ✗ 最终 generation contract 复核失败"; exit 1
@@ -329,7 +329,7 @@ for titer in $(seq 1 $MAX_TRACE_ITER); do
   fi
   TRACE_MATCH_ARGS=("$QEMU_LOG" "$BUNDLE/$BASE.ris" "$BUNDLE/$BASE.dspec")
   [ -n "$TRACE_EXERCISED" ] && TRACE_MATCH_ARGS+=(--exercised "$TRACE_EXERCISED")
-  python3 "$HERE/tools/trace_match.py" "${TRACE_MATCH_ARGS[@]}" > $RH_TMP/trace_match.out 2>$RH_TMP/trace_match.err
+  python3 "$HERE/tools/reporting/trace_match.py" "${TRACE_MATCH_ARGS[@]}" > $RH_TMP/trace_match.out 2>$RH_TMP/trace_match.err
   TRC=$?
   cat $RH_TMP/trace_match.err | sed 's/^/    /'
   cat $RH_TMP/trace_match.out
@@ -367,7 +367,7 @@ TFIX
   save_iter trace "$titer" $RH_TMP/trace_fix.txt $RH_TMP/trace_match.out
   echo "  → 重编 + 重跑 QEMU..."
   if compile_loop "$MAX_COMPILE_ITER" "$CONSTRAINTS"; then
-    bash qemu_run.sh "${QEMU_ARGS[@]}" > $RH_TMP/qemu_run.txt 2>&1
+    bash "$HERE/scripts/qemu/qemu_run.sh" "${QEMU_ARGS[@]}" > $RH_TMP/qemu_run.txt 2>&1
     QRC=$?
     QDIR2="$ITER_LOG/trace_qemu${titer}"; mkdir -p "$QDIR2"
     [ -f "$QEMU_LOG" ] && cp "$QEMU_LOG" "$QDIR2/qemu_serial.log"

@@ -1,4 +1,5 @@
 #!/bin/bash
-src="${1:-drivers/test/gpio-ftgpio010.c}"
+ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+src="${1:-$ROOT/benchmarks/drivers/baseline/gpio-ftgpio010.c}"
 shift 2>/dev/null || true
-exec "$(cd "$(dirname "$0")" && pwd)/run_e2e.sh" "$src" platform "$@"
+exec "$ROOT/scripts/e2e/run_e2e.sh" "$src" gpio "$@"

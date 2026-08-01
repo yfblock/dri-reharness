@@ -1,9 +1,9 @@
 #!/bin/bash
-# tools/e2e_common.sh — 公共 shell 逻辑 (被 run_e2e.sh source)
+# tools/e2e_common.sh - shared logic for scripts/e2e/run_e2e.sh
 # 依赖调用方设置: HERE, DRVDIR, MODULE, KERNELDIR, INSTRUMENT(0|1)
 set -u
 
-# ── 临时文件隔离 (每个 run_e2e.sh 进程独立, 避免并行冲突) ──
+# Temporary files are isolated per E2E process to support parallel runs.
 RH_TMP="/tmp/rh_${$}"
 mkdir -p "$RH_TMP"
 trap 'rm -rf "$RH_TMP"' EXIT
@@ -39,7 +39,7 @@ preflight() {
   fi
   # device-registrar (platform bus 需要)
   if [ "${BUS:-}" = "platform" ]; then
-    local rdir="$HERE/verification/device-registrar"
+    local rdir="$HERE/qa/verification/device-registrar"
     local rko="${REGISTRAR_KO:-$rdir/device-registrar.ko}"
     if [ ! -f "$rko" ] && [ -f "$rdir/Makefile" ]; then
       echo "  构建 device-registrar.ko ..."
@@ -55,9 +55,9 @@ preflight() {
 # ── 候选后处理与原子接纳 ──
 postprocess_candidate() {
   local candidate="$1"
-  python3 "$HERE/tools/sanitize.py" "$candidate" || return 1
+  python3 "$HERE/tools/source/sanitize.py" "$candidate" || return 1
   if [ "${INSTRUMENT:-0}" = "1" ]; then
-    python3 "$HERE/tools/instrument_mmio.py" "$candidate" || return 1
+    python3 "$HERE/tools/source/instrument_mmio.py" "$candidate" || return 1
   fi
 }
 
@@ -92,7 +92,7 @@ llm_write_c() {
   active_prompt="$prompt_file"
   for semantic in $(seq 1 "$semantic_max"); do
     for transport in $(seq 1 "$transport_max"); do
-      timeout 600 bash "$HERE/tools/pi_synth.sh" < "$active_prompt" \
+      timeout 600 bash "$HERE/tools/pi/pi_synth.sh" < "$active_prompt" \
         > "$RH_TMP/fix_out.txt" 2>&1
       rc=$?
       if [ $rc -eq 0 ] && [ -s "$RH_TMP/fix_out.txt" ]; then

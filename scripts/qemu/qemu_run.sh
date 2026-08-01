@@ -13,10 +13,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 cd "$PROJECT_DIR"
 
-KERNELDIR="${KERNELDIR:-$PROJECT_DIR/kernel/build}"
+KERNELDIR="${KERNELDIR:-$PROJECT_DIR/platform/kernel/build}"
 KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-$KERNELDIR/arch/x86/boot/bzImage}"
 KERNEL_VERSION="${KERNEL_VERSION:-$(make -s -C "$KERNELDIR" kernelrelease 2>/dev/null || true)}"
-REGISTRAR_KO="${REGISTRAR_KO:-$PROJECT_DIR/verification/device-registrar/device-registrar.ko}"
+REGISTRAR_KO="${REGISTRAR_KO:-$PROJECT_DIR/qa/verification/device-registrar/device-registrar.ko}"
 OUT="${RH_QEMU_OUT:-/tmp/reharness_qemu_run.txt}"
 
 # 默认值
@@ -45,11 +45,12 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-OUTPUT_DIR="$PROJECT_DIR/output/$MODULE_NAME"
-ROOTFS_DIR="$PROJECT_DIR/test_rootfs_run"
-INITRAMFS="$PROJECT_DIR/initramfs_run.cpio.gz"
+OUTPUT_DIR="$PROJECT_DIR/artifacts/output/$MODULE_NAME"
+ROOTFS_DIR="$PROJECT_DIR/platform/rootfs/runtime"
+INITRAMFS="$PROJECT_DIR/artifacts/initramfs/initramfs_run.cpio.gz"
 
 [ -f "$OUTPUT_DIR/$MODULE_NAME.ko" ] || { echo "先编译 $MODULE_NAME"; exit 1; }
+mkdir -p "$(dirname "$INITRAMFS")"
 
 echo "=== QEMU run: module=$MODULE_NAME bus=$BUS timeout=${TIMEOUT}s ==="
 
