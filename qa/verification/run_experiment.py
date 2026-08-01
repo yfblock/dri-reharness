@@ -55,7 +55,10 @@ def main(argv: list[str] | None = None) -> int:
                           "error": str(error)}, sort_keys=True))
         return 1
     try:
-        adapters = factory(manifest)
+        try:
+            adapters = factory(manifest, args.output)
+        except TypeError:
+            adapters = factory(manifest)
     except TypeError:
         try:
             adapters = factory()

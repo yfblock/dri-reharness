@@ -28,11 +28,12 @@ def _failure(kind: FailureClass, message: str, details: Mapping[str, Any], stage
 
 
 class ManifestExtractor:
-    def __init__(self, root: Path = ROOT) -> None:
+    def __init__(self, root: Path = ROOT, output_root: Path | None = None) -> None:
         self.root = root
+        self.output_root = output_root or root / "artifacts" / "experiments"
 
     def extract(self, manifest: ExperimentManifest) -> dict[str, Any]:
-        out = self.root / "artifacts" / "experiments" / manifest.name / "evidence"
+        out = self.output_root / "evidence"
         out.mkdir(parents=True, exist_ok=True)
         command = ["python3", "-m", "extractor", "bundle", "-s",
                    str(manifest.source.path), "-b", manifest.compile.backend, "-o", str(out)]
@@ -42,7 +43,7 @@ class ManifestExtractor:
             return _failure(FailureClass.EXTRACTION, "evidence extraction failed",
                             {"return_code": completed.returncode, "stderr": completed.stderr[-4000:]}, "extract")
         file_paths = sorted(path for path in out.iterdir() if path.is_file())
-        files = [str(path.relative_to(self.root)) for path in file_paths]
+        files = [str(path) for path in file_paths]
         digest_builder = hashlib.sha256()
         for path in file_paths:
             digest_builder.update(str(path.relative_to(out)).encode("utf-8"))
@@ -60,13 +61,14 @@ class ManifestCompiler:
     ``{output}`` are substituted from manifest data; no target facts are
     inferred here.  The default context is intentionally fail-closed.
     """
-    def __init__(self, root: Path = ROOT) -> None:
+    def __init__(self, root: Path = ROOT, output_root: Path | None = None) -> None:
         self.root = root
+        self.output_root = output_root or root / "artifacts" / "experiments"
 
     def compile(self, manifest: ExperimentManifest, candidate: Any) -> dict[str, Any]:
         if not isinstance(candidate, Mapping) or not isinstance(candidate.get("code"), str):
             return _failure(FailureClass.CONTRACT, "candidate does not contain generated code", {}, "compile")
-        out_dir = self.root / "artifacts" / "experiments" / manifest.name / "candidate"
+        out_dir = self.output_root / "candidate"
         out = out_dir / f"{manifest.runtime.module}.c"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(candidate["code"], encoding="utf-8")
@@ -129,8 +131,9 @@ class ManifestContractVerifier:
 
 
 class ManifestRuntime:
-    def __init__(self, root: Path = ROOT) -> None:
+    def __init__(self, root: Path = ROOT, output_root: Path | None = None) -> None:
         self.root = root
+        self.output_root = output_root or root / "artifacts" / "experiments"
 
     def run(self, manifest: ExperimentManifest, candidate: Any, scenario: Any, role: str) -> dict[str, Any]:
         module = manifest.runtime.module
@@ -182,7 +185,7 @@ class ManifestRuntime:
             command += ["--probe-pattern", manifest.runtime.probe_pattern]
         completed = subprocess.run(command, cwd=self.root, text=True,
                                    capture_output=True, check=False)
-        trace_path = self.root / "artifacts" / "experiments" / manifest.name / f"{role}.trace"
+        trace_path = self.output_root / f"{role}.trace"
         trace_path.parent.mkdir(parents=True, exist_ok=True)
         trace_path.write_text(completed.stdout + completed.stderr, encoding="utf-8")
         if completed.returncode:
@@ -207,14 +210,18 @@ class ManifestComparator:
 
 
 class Adapters:
-    def __init__(self, root: Path = ROOT) -> None:
-        self.extractor = ManifestExtractor(root)
+    def __init__(self, root: Path = ROOT, output_root: Path | None = None) -> None:
+        self.extractor = ManifestExtractor(root, output_root)
         self.pi = SubprocessPiBridge(str(root / "tools" / "pi" / "pi_synth.sh"))
-        self.compiler = ManifestCompiler(root)
+        self.compiler = ManifestCompiler(root, output_root)
         self.contract = ManifestContractVerifier()
-        self.runtime = ManifestRuntime(root)
+        self.runtime = ManifestRuntime(root, output_root)
         self.comparator = ManifestComparator()
 
 
-def build_adapters(manifest: ExperimentManifest | None = None) -> Adapters:
-    return Adapters()
+def build_adapters(manifest: ExperimentManifest | None = None,
+                   output_dir: str | Path | None = None) -> Adapters:
+    output_root = Path(output_dir) if output_dir is not None else None
+    if output_root is None and manifest is not None:
+        output_root = ROOT / "artifacts" / "experiments" / manifest.name
+    return Adapters(output_root=output_root)
