@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Run the reproducible extraction/generation/compile matrix.
 
-The detailed generated artifacts stay under ignored `output/experiment-matrix/`.
-The compact JSON result is versioned under `experiments/results/` and is the
-authoritative input for paper tables.
+The detailed generated artifacts stay under ignored
+`artifacts/output/experiment-matrix/`. The compact JSON result is versioned
+under `research/experiments/results/` and is the authoritative paper input.
 """
 from __future__ import annotations
 
@@ -96,11 +96,14 @@ def _parse_metrics(text: str) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--alias-mode", choices=("off", "auto", "required"), default="off")
-    ap.add_argument("--workdir", default=os.path.join(ROOT, "output", "experiment-matrix"))
-    ap.add_argument("--output", default=os.path.join(ROOT, "experiments", "results", "matrix.json"))
+    ap.add_argument("--workdir", default=os.path.join(
+        ROOT, "artifacts", "output", "experiment-matrix"))
+    ap.add_argument("--output", default=os.path.join(
+        ROOT, "research", "experiments", "results", "matrix.json"))
     ns = ap.parse_args()
 
-    drivers_dir = os.path.join(ROOT, "drivers", "test")
+    drivers_dir = os.path.join(
+        ROOT, "benchmarks", "drivers", "baseline")
     drivers = sorted(os.path.join(drivers_dir, f) for f in os.listdir(drivers_dir)
                      if f.endswith(".c"))
     os.makedirs(ns.workdir, exist_ok=True)
@@ -161,8 +164,9 @@ def main() -> int:
             "python": platform.python_version(),
             "platform": platform.platform(),
             "reharness_commit": _git_rev(ROOT),
-            "linux_commit": _git_rev(os.path.join(ROOT, "linux")),
-            "kernel_release": _run(["make", "-s", "-C", os.path.join(ROOT, "kernel", "build"),
+            "linux_commit": _git_rev(os.path.join(ROOT, "vendor", "linux")),
+            "kernel_release": _run(["make", "-s", "-C", os.path.join(
+                ROOT, "platform", "kernel", "build"),
                                     "kernelrelease"]).stdout.strip(),
         },
         "aggregate": aggregate,

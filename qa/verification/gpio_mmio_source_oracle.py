@@ -384,19 +384,18 @@ def verify_gpio_mmio_source_differential(formal: dict, device_spec) -> dict:
 def verify_gpio_mmio_source_suite() -> dict:
     from extractor.extractor import ExtractorConfig, extract_ris
 
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sources = {
-        "ts4800": "linux/drivers/gpio/gpio-ts4800.c",
-        "ge": "linux/drivers/gpio/gpio-ge.c",
-        "ftgpio": "drivers/test/gpio-ftgpio010.c",
-        "cadence": "linux/drivers/gpio/gpio-cadence.c",
-        "idt3243x": "linux/drivers/gpio/gpio-idt3243x.c",
-        "sodaville": "linux/drivers/gpio/gpio-sodaville.c",
-        "clps711x": "linux/drivers/gpio/gpio-clps711x.c",
-        "dwapb": "linux/drivers/gpio/gpio-dwapb.c",
+        "ts4800": "vendor/linux/drivers/gpio/gpio-ts4800.c",
+        "ge": "vendor/linux/drivers/gpio/gpio-ge.c",
+        "ftgpio": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "cadence": "vendor/linux/drivers/gpio/gpio-cadence.c",
+        "idt3243x": "vendor/linux/drivers/gpio/gpio-idt3243x.c",
+        "sodaville": "vendor/linux/drivers/gpio/gpio-sodaville.c",
+        "clps711x": "vendor/linux/drivers/gpio/gpio-clps711x.c",
+        "dwapb": "vendor/linux/drivers/gpio/gpio-dwapb.c",
     }
     extracted = {
-        name: extract_ris(ExtractorConfig(source=os.path.join(root, source)))
+        name: extract_ris(ExtractorConfig(source=os.path.join(ROOT, source)))
         for name, source in sources.items()
     }
     cases = {
@@ -520,7 +519,7 @@ def verify_gpio_mmio_source_suite() -> dict:
 
     return {
         "schema": 1,
-        "source": "linux/drivers/gpio/gpio-mmio.c",
+        "source": "vendor/linux/drivers/gpio/gpio-mmio.c",
         "cases": {name: {
             "source": sources[name],
             "calls": result["gpio_mmio_source_oracle_calls"],

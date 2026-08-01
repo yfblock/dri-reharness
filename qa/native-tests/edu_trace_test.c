@@ -1,4 +1,4 @@
-// test/edu_trace_test.c — edu 驱动 trace 一致性测试
+// qa/native-tests/edu_trace_test.c - edu driver trace consistency test
 // 通过 /dev/edu_drv 行使 .ris 的 read/write 模块, 校验真实 edu 寄存器值:
 //   0x00 (RO) id        → 0x010000ed (0xRRrr00edu)
 //   0x04 (RW) live check → 写 X, 读 ~X

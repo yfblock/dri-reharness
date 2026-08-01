@@ -43,7 +43,7 @@ from verification.run_zero_shot_matrix import (  # noqa: E402
 BASELINE_ROOT = os.fspath(REPO_ROOT / "benchmarks/drivers/baseline")
 HOLDOUT_ROOT = os.fspath(REPO_ROOT / "benchmarks/drivers/holdout")
 MULTISOURCE_ROOT = os.fspath(REPO_ROOT / "benchmarks/drivers/multisource")
-FIXTURES_ROOT = os.fspath(QA_ROOT / "tests/fixtures")
+FIXTURES_ROOT = os.fspath(QA_ROOT / "tests" / "fixtures")
 VERIFICATION_ROOT = os.fspath(QA_ROOT / "verification")
 LINUX_SOURCE_ROOT = os.fspath(LINUX_ROOT)
 REPORTING_TOOLS_ROOT = os.fspath(REPO_ROOT / "tools/reporting")
@@ -1930,7 +1930,7 @@ def test_real_linux_c67x00_multisource_driver():
     assert result.stats["translation_units"] == 4
     assert result.stats["source_lines"] == 2239
     assert result.stats["functions_analyzed"] == 89
-    assert all("/linux/drivers/usb/c67x00/" in source
+    assert all("/vendor/linux/drivers/usb/c67x00/" in source
                for source in result.stats["source_files"])
     assert count_clang_errors(result.warnings) == 0
 
@@ -2577,7 +2577,8 @@ def test_dwapb_banked_addresses_and_runtime_loops_are_source_backed():
         verify_gpio_mmio_source_differential)
 
     database = os.path.join(
-        REHARNESS, "output", "zero-shot-contexts", "compile_commands.json")
+        REHARNESS, "artifacts", "output", "zero-shot-contexts",
+        "compile_commands.json")
     config = ExtractorConfig(
         source=GPIO_DWAPB,
         compile_commands=database if os.path.isfile(database) else None,
@@ -2672,7 +2673,7 @@ def test_facts_extraction():
 
 
 def test_facts_trimmed_no_kernel_noise():
-    """recom.md: .facts must not dump kernel-wide CONFIG_*/KASAN_*/TASK_* noise."""
+    """Artifact plan: .facts must omit kernel-wide configuration noise."""
     from extractor.extractor import extract_ris
     f = extract_ris(ExtractorConfig(source=FTGPIO)).facts
     for k in f.constants:
@@ -2685,7 +2686,7 @@ def test_facts_trimmed_no_kernel_noise():
 
 
 def test_merged_bind_roundtrip():
-    """recom.md: per-backend .bind files merge into one multi-block file."""
+    """Per-backend .bind files merge into one multi-block file."""
     from extractor.extractor import extract_ris
     from extractor.spec import default_bind, display_bind_set, parse_bind_set
     ds = extract_ris(ExtractorConfig(source=FTGPIO)).device_spec
@@ -3298,14 +3299,16 @@ def test_e2e_llm_candidate_gate_is_atomic_and_fail_closed():
             capture_output=True, text=True)
         assert run.returncode == 0, run.stdout + run.stderr
         syntax = subprocess.run(
-            ["bash", "-n", os.path.join(REHARNESS, "run_e2e.sh"),
+            ["bash", "-n", os.path.join(
+                REHARNESS, "scripts/e2e/run_e2e.sh"),
              os.path.join(REHARNESS, "tools", "e2e_common.sh")],
             capture_output=True, text=True)
         assert syntax.returncode == 0, syntax.stderr
 
 
 def test_e2e_all_llm_repair_stages_use_the_lowering_gate():
-    run_e2e = open(os.path.join(REHARNESS, "run_e2e.sh"),
+    run_e2e = open(os.path.join(
+        REHARNESS, "scripts/e2e/run_e2e.sh"),
                    encoding="utf-8").read()
     common = open(os.path.join(REHARNESS, "tools", "e2e_common.sh"),
                   encoding="utf-8").read()
@@ -4072,7 +4075,7 @@ def _linux_generate_and_compile(source: str, module_name: str):
     bind = default_bind(res.device_spec, "linux")
     code = linux_gen.generate(res.formal, res.device_spec, bind, res.facts)
     assert "TODO" not in code
-    build = os.path.join(REHARNESS, "kernel", "build")
+    build = os.path.join(REHARNESS, "platform", "kernel", "build")
     if not os.path.isfile(os.path.join(build, "Makefile")):
         return code
     with tempfile.TemporaryDirectory() as d:

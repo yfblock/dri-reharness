@@ -117,8 +117,9 @@ def main() -> int:
     parser.add_argument("--output")
     args = parser.parse_args()
     sources = args.sources or sorted(
-        os.path.join(ROOT, "drivers", "test", name)
-        for name in os.listdir(os.path.join(ROOT, "drivers", "test"))
+        os.path.join(ROOT, "benchmarks", "drivers", "baseline", name)
+        for name in os.listdir(os.path.join(
+            ROOT, "benchmarks", "drivers", "baseline"))
         if name.endswith(".c"))
     reports = [build_driver_report(source, args.alias_mode) for source in sources]
     document = {

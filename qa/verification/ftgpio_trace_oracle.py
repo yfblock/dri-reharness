@@ -88,7 +88,8 @@ def _original_trace(binary: str, hwirq: int) -> list[tuple[str, int, int]]:
 def verify_ftgpio_ack_trace() -> dict:
     from extractor.extractor import ExtractorConfig, extract_ris
 
-    source = os.path.join(ROOT, "drivers", "test", "gpio-ftgpio010.c")
+    source = os.path.join(
+        ROOT, "benchmarks", "drivers", "baseline", "gpio-ftgpio010.c")
     result = extract_ris(ExtractorConfig(source=source))
     function_source = _original_function_source(source)
     cases = {}

@@ -1,4 +1,4 @@
-// test/gpio_trace_test.c — 行使 gpio_chip 回调, 触发 .ris callback 模块的 MMIO 访问
+// qa/native-tests/gpio_trace_test.c - exercise gpio_chip callbacks and MMIO
 // 用 v2 chardev ioctl (CONFIG_GPIO_CDEV_V1 not set):
 //   GET_LINEINFO     → get_direction
 //   GET_LINE(OUTPUT) → direction_output

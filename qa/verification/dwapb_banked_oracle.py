@@ -310,9 +310,11 @@ def _linux_mutations(code: str, model: dict) -> dict[str, dict]:
 
 
 def verify_dwapb_banked() -> dict:
-    source = os.path.join(ROOT, "linux", "drivers", "gpio", "gpio-dwapb.c")
+    source = os.path.join(
+        ROOT, "vendor", "linux", "drivers", "gpio", "gpio-dwapb.c")
     database = os.path.join(
-        ROOT, "output", "zero-shot-contexts", "compile_commands.json")
+        ROOT, "artifacts", "output", "zero-shot-contexts",
+        "compile_commands.json")
     result = extract_ris(ExtractorConfig(
         source=source,
         compile_commands=database if os.path.isfile(database) else None,
@@ -333,7 +335,7 @@ def verify_dwapb_banked() -> dict:
     linux_mutations = _linux_mutations(code, model)
     return {
         "schema": 1,
-        "source": "linux/drivers/gpio/gpio-dwapb.c",
+        "source": "vendor/linux/drivers/gpio/gpio-dwapb.c",
         "cases": 2,
         "ports": [2, 0, 3, 1],
         "passed": True,

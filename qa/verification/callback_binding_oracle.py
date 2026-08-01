@@ -10,9 +10,12 @@ from pathlib import Path
 
 
 from repo_paths import REPO_ROOT as ROOT
-DEFAULT_BASELINE = ROOT / "experiments" / "results" / "zero-shot-v2-matrix.json"
+DEFAULT_BASELINE = (
+    ROOT / "research" / "experiments" / "results" /
+    "zero-shot-v2-matrix.json")
 DEFAULT_CANDIDATE = (
-    ROOT / "experiments" / "results" / "zero-shot-v2-callback-binding.json")
+    ROOT / "research" / "experiments" / "results" /
+    "zero-shot-v2-callback-binding.json")
 
 
 def compare_reports(baseline: dict, candidate: dict) -> list[str]:

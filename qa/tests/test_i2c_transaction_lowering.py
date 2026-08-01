@@ -14,7 +14,7 @@ from verification.regmap_transaction_ast_oracle import (
 from verification.regmap_transaction_mutation_oracle import verify_regmap_mutations
 
 
-SOURCE = "linux/drivers/gpio/gpio-tpic2810.c"
+SOURCE = "vendor/linux/drivers/gpio/gpio-tpic2810.c"
 
 
 def test_tpic2810_i2c_smbus_runner_all_backends(tmp_path):
@@ -50,7 +50,7 @@ def test_tpic2810_i2c_smbus_runner_all_backends(tmp_path):
 
 def test_i2c_contract_covers_all_public_api_shapes_in_harness_and_baremetal(tmp_path):
     result = extract_ris(ExtractorConfig(
-        source="tests/fixtures/i2c_transaction_access.c"))
+        source="qa/tests/fixtures/i2c_transaction_access.c"))
     contract = build_generation_contract(result.formal)
     rows = contract["transaction_operations"]
     assert len(rows) == 14

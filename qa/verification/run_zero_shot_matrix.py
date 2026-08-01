@@ -34,8 +34,12 @@ from verification.run_matrix import (  # noqa: E402
 )
 
 
-DEFAULT_DATABASE = ROOT / "output" / "zero-shot-contexts" / "compile_commands.json"
-DEFAULT_CONTEXT_REPORT = ROOT / "experiments" / "results" / "zero-shot-contexts.json"
+DEFAULT_DATABASE = (
+    ROOT / "artifacts" / "output" / "zero-shot-contexts" /
+    "compile_commands.json")
+DEFAULT_CONTEXT_REPORT = (
+    ROOT / "research" / "experiments" / "results" /
+    "zero-shot-contexts.json")
 
 # The order only controls matching when wording could overlap. Selection of the
 # first common blocker uses driver count and then the category name, so it is
@@ -311,10 +315,12 @@ def main() -> int:
     parser.add_argument("--compile-commands", default=str(DEFAULT_DATABASE))
     parser.add_argument("--context-report", default=str(DEFAULT_CONTEXT_REPORT))
     parser.add_argument(
-        "--workdir", default=str(ROOT / "output" / "zero-shot-matrix"))
+        "--workdir", default=str(
+            ROOT / "artifacts" / "output" / "zero-shot-matrix"))
     parser.add_argument(
         "--output", default=str(
-            ROOT / "experiments" / "results" / "zero-shot-matrix.json"))
+            ROOT / "research" / "experiments" / "results" /
+            "zero-shot-matrix.json"))
     args = parser.parse_args()
 
     holdout_path = Path(args.holdout).absolute()
@@ -405,7 +411,7 @@ def main() -> int:
             "python": platform.python_version(),
             "platform": platform.platform(),
             "reharness_commit": _git_rev(str(ROOT)),
-            "linux_commit": _git_rev(str(ROOT / "linux")),
+            "linux_commit": _git_rev(str(ROOT / "vendor" / "linux")),
         },
         "compile_context_evidence": {
             "database": _relative(str(database)),

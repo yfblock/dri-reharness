@@ -32,7 +32,9 @@ from verification.check_generalization_guard import (  # noqa: E402
 )
 
 
-DEFAULT_RECIPES = ROOT / "drivers" / "holdout" / "zero-shot-v1-contexts.json"
+DEFAULT_RECIPES = (
+    ROOT / "benchmarks" / "drivers" / "holdout" /
+    "zero-shot-v1-contexts.json")
 
 
 def validate_recipes(holdout: dict, recipes: dict) -> list[str]:
@@ -53,7 +55,7 @@ def validate_recipes(holdout: dict, recipes: dict) -> list[str]:
         if not case:
             continue
         source = resolve_logical(
-            ROOT / "drivers" / "holdout", case["source"])
+            ROOT / "benchmarks" / "drivers" / "holdout", case["source"])
         try:
             source_relative = source.relative_to(LINUX_ROOT)
         except ValueError:

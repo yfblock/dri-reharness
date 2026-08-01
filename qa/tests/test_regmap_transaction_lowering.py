@@ -15,7 +15,8 @@ from verification.regmap_transaction_mutation_oracle import verify_regmap_mutati
 
 
 def _fixture():
-    return extract_ris(ExtractorConfig(source="tests/fixtures/regmap_access.c"))
+    return extract_ris(ExtractorConfig(
+        source="qa/tests/fixtures/regmap_access.c"))
 
 
 def test_regmap_contract_lowers_scalar_update_bulk_in_harness_and_baremetal(tmp_path):

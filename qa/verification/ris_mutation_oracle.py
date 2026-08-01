@@ -67,7 +67,8 @@ MUTATIONS = {
 def verify_ris_mutations() -> dict:
     from extractor import ExtractorConfig, extract_ris
 
-    source = os.path.join(ROOT, "drivers", "test", "gpio-ftgpio010.c")
+    source = os.path.join(
+        ROOT, "benchmarks", "drivers", "baseline", "gpio-ftgpio010.c")
     text = open(source, "r", encoding="utf-8").read()
     baseline = extract_ris(ExtractorConfig(source=source))
     baseline_fingerprint = semantic_fingerprint(baseline.formal)

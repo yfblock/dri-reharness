@@ -15,7 +15,7 @@ from verification.regmap_transaction_ast_oracle import (
 from verification.regmap_transaction_mutation_oracle import verify_regmap_mutations
 
 
-SOURCE = "linux/drivers/clk/clk-twl6040.c"
+SOURCE = "vendor/linux/drivers/clk/clk-twl6040.c"
 
 
 def test_twl6040_mfd_runner_all_backends(tmp_path):
@@ -54,7 +54,7 @@ def test_twl6040_mfd_runner_all_backends(tmp_path):
     assert verify_regmap_transaction_ast(
         contract, source, backend="linux")["complete"]
 
-    kernel_build = Path("kernel/build").resolve()
+    kernel_build = Path("platform/kernel/build").resolve()
     if (kernel_build / "Makefile").is_file():
         module_dir = tmp_path / "linux-mfd-module"
         module_dir.mkdir()

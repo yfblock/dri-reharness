@@ -32,11 +32,9 @@ def find_repo_root(start: str | Path = __file__) -> Path:
 def resolve_logical(base: str | Path, relative: str | Path) -> Path:
     """Resolve ``relative`` against ``base`` following compatibility symlinks.
 
-    The base is resolved to its real filesystem location first, so a manifest
-    reached through a nested compatibility symlink (e.g. ``drivers/holdout``
-    -> ``benchmarks/drivers/holdout``) cannot have its ``..`` segments escape
-    the repository under lexical normalization.  Only after the base is real
-    are ``..`` segments in ``relative`` collapsed.
+    The base is resolved to its real filesystem location before ``..``
+    segments in ``relative`` are collapsed. This keeps manifest resolution
+    stable when callers provide a path containing symbolic links.
     """
     base_resolved = Path(os.fspath(base)).resolve()
     joined = os.path.join(os.fspath(base_resolved), os.fspath(relative))

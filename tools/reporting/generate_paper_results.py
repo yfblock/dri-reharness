@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import json
-import os
+from pathlib import Path
 import statistics
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MATRIX = os.path.join(ROOT, "experiments", "results", "matrix.json")
-QEMU = os.path.join(ROOT, "experiments", "results", "qemu.json")
-MULTISOURCE = os.path.join(
-    ROOT, "experiments", "results", "multisource-matrix.json")
-OUT = os.path.join(ROOT, "paper", "generated_results.tex")
+ROOT = Path(__file__).resolve().parents[2]
+RESULTS = ROOT / "research" / "experiments" / "results"
+MATRIX = RESULTS / "matrix.json"
+QEMU = RESULTS / "qemu.json"
+MULTISOURCE = RESULTS / "multisource-matrix.json"
+OUT = ROOT / "research" / "paper" / "generated_results.tex"
 
 
 def esc(name: str) -> str:
@@ -26,7 +26,7 @@ def main() -> None:
     matrix = json.load(open(MATRIX, encoding="utf-8"))
     qemu = json.load(open(QEMU, encoding="utf-8"))
     multisource = (json.load(open(MULTISOURCE, encoding="utf-8"))
-                   if os.path.isfile(MULTISOURCE) else
+                   if MULTISOURCE.is_file() else
                    {"aggregate": {}, "drivers": []})
     rows = matrix["drivers"]
     agg = matrix["aggregate"]

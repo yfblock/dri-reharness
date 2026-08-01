@@ -33,7 +33,8 @@ def _sha256(path: str) -> str:
 
 
 def _analysis(name: str) -> dict:
-    source = os.path.join(ROOT, "drivers", "test", f"{name}.c")
+    source = os.path.join(
+        ROOT, "benchmarks", "drivers", "baseline", f"{name}.c")
     result = extract_ris(ExtractorConfig(source=source))
     analysis = analyze_clock_source_model(
         result.facts, name.replace("-", "_") + "_priv")
@@ -45,7 +46,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--output",
-        default=os.path.join(ROOT, "experiments", "results",
+        default=os.path.join(ROOT, "research", "experiments", "results",
                              "clock-model-boundary.json"))
     args = parser.parse_args()
 
@@ -67,7 +68,7 @@ def main() -> int:
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "environment": {
             "reharness_commit": _git_rev(ROOT),
-            "linux_commit": _git_rev(os.path.join(ROOT, "linux")),
+            "linux_commit": _git_rev(os.path.join(ROOT, "vendor", "linux")),
         },
         "highbank": {
             "source_model": highbank,

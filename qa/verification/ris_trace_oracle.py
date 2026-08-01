@@ -82,7 +82,7 @@ def _ris_trace(formal: dict, module_name: str, env: dict[str, int]
 
 
 def _compile_original(directory: str) -> str:
-    source = os.path.join(ROOT, "tests", "fixtures", "path_state.c")
+    source = os.path.join(ROOT, "qa", "tests", "fixtures", "path_state.c")
     include = os.path.join(directory, "include", "linux")
     os.makedirs(include, exist_ok=True)
     with open(os.path.join(include, "io.h"), "w", encoding="utf-8") as handle:
@@ -139,7 +139,7 @@ def _original_trace(binary: str, select: int) -> list[tuple[str, int, int]]:
 def verify_path_state_trace() -> dict:
     from extractor import ExtractorConfig, extract_ris
 
-    source = os.path.join(ROOT, "tests", "fixtures", "path_state.c")
+    source = os.path.join(ROOT, "qa", "tests", "fixtures", "path_state.c")
     result = extract_ris(ExtractorConfig(source=source))
     cases = {}
     with tempfile.TemporaryDirectory(prefix="rh_ris_trace_") as directory:

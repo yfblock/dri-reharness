@@ -110,7 +110,7 @@ def verify_virtio_state_contract(formal: dict) -> dict:
 def verify_virtio_state_suite() -> dict:
     from extractor.extractor import ExtractorConfig, extract_ris
 
-    source = "linux/drivers/virtio/virtio_input.c"
+    source = "vendor/linux/drivers/virtio/virtio_input.c"
     result = extract_ris(ExtractorConfig(source=os.path.join(ROOT, source)))
     baseline = verify_virtio_state_contract(result.formal)
     if not baseline["virtio_state_oracle_passed"]:

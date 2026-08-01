@@ -158,7 +158,7 @@ def verify_w1c_drain_suite() -> dict:
     from extractor.spec import default_bind
     from generator import harness
 
-    source = "linux/drivers/gpio/gpio-altera.c"
+    source = "vendor/linux/drivers/gpio/gpio-altera.c"
     result = extract_ris(ExtractorConfig(source=os.path.join(ROOT, source)))
     contract = verify_w1c_drain_contract(result.formal, result.device_spec)
     if not contract["w1c_drain_contract_passed"]:

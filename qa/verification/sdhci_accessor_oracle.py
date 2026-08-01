@@ -308,9 +308,9 @@ def verify_sdhci_accessor_suite() -> dict:
     from generator.subsystem_runner import portable_sdhci_accessor_only
 
     sources = {
-        "npcm": "linux/drivers/mmc/host/sdhci-npcm.c",
-        "dove": "linux/drivers/mmc/host/sdhci-dove.c",
-        "hlwd": "linux/drivers/mmc/host/sdhci-of-hlwd.c",
+        "npcm": "vendor/linux/drivers/mmc/host/sdhci-npcm.c",
+        "dove": "vendor/linux/drivers/mmc/host/sdhci-dove.c",
+        "hlwd": "vendor/linux/drivers/mmc/host/sdhci-of-hlwd.c",
     }
     extracted = {
         name: extract_ris(ExtractorConfig(source=os.path.join(ROOT, source)))

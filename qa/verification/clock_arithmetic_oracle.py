@@ -41,7 +41,8 @@ def generated_highbank_code() -> str:
     from extractor.spec import default_bind
     from generator import linux as linux_gen
 
-    source = os.path.join(ROOT, "drivers", "test", "clk-highbank.c")
+    source = os.path.join(
+        ROOT, "benchmarks", "drivers", "baseline", "clk-highbank.c")
     result = extract_ris(ExtractorConfig(source=source))
     return linux_gen.generate(
         result.formal, result.device_spec,

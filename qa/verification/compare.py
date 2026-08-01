@@ -1,7 +1,7 @@
 """Per-driver extraction stats for reharness (no JSON, reharness-only).
 
 Walks the formal RIS tree (including nested Cond/Seq/Loop) for every driver in
-drivers/test/*.c and reports: total ops, distinct register offsets resolved,
+benchmarks/drivers/baseline/*.c and reports: total ops, distinct register offsets resolved,
 RMW ops detected, branch conditions recorded, and register_map size.
 
 Multi-driver parallel extraction via multiprocessing (--jobs / -j).
@@ -97,7 +97,8 @@ def main():
                         help="SVF alias analysis mode (default: off)")
     args = parser.parse_args()
 
-    drivers_dir = os.path.join(REHARNESS, "drivers", "test")
+    drivers_dir = os.path.join(
+        REHARNESS, "benchmarks", "drivers", "baseline")
     drivers = sorted(f for f in os.listdir(drivers_dir) if f.endswith(".c"))
     driver_paths = [os.path.join(drivers_dir, d) for d in drivers]
 

@@ -12,7 +12,7 @@ else:
     from _bootstrap import QA_ROOT, REPO_ROOT, SOURCE_ROOT, resolve_logical
 
 
-_CANONICAL_REPO_PATHS = QA_ROOT / "verification" / "repo_paths.py"
+_CANONICAL_REPO_PATHS = Path(resolve_logical.__code__.co_filename).resolve()
 
 
 def _run_import_probe(

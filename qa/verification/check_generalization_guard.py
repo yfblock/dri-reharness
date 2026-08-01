@@ -13,7 +13,12 @@ from pathlib import Path
 
 
 from repo_paths import LINUX_ROOT, REPO_ROOT as ROOT, resolve_logical
-DEFAULT_HOLDOUT = ROOT / "drivers" / "holdout" / "zero-shot-v1.json"
+DEFAULT_HOLDOUT = (
+    ROOT / "benchmarks" / "drivers" / "holdout" / "zero-shot-v1.json")
+PROTECTED_ROOT_PATHS = {
+    "extractor": "src/extractor",
+    "generator": "src/generator",
+}
 TEXT_SUFFIXES = {".py", ".c", ".h", ".json", ".md", ".toml", ".yaml", ".yml"}
 
 
@@ -40,11 +45,12 @@ def _git_object(path: Path, revision: str, relative: str) -> str:
 
 
 def _protected_root_changed(commit: str, relative: str) -> bool:
+    path = PROTECTED_ROOT_PATHS.get(relative, relative)
     tracked = subprocess.run(
-        ["git", "-C", str(ROOT), "diff", "--quiet", commit, "--", relative])
+        ["git", "-C", str(ROOT), "diff", "--quiet", commit, "--", path])
     untracked = subprocess.run(
         ["git", "-C", str(ROOT), "ls-files", "--others",
-         "--exclude-standard", "--", relative],
+         "--exclude-standard", "--", path],
         capture_output=True, text=True)
     return tracked.returncode != 0 or bool(untracked.stdout.strip())
 
@@ -67,8 +73,10 @@ def _selection_issues(data: dict, manifest_dir: Path) -> list[str]:
     if v1_path.is_file():
         v1 = json.loads(v1_path.read_text(encoding="utf-8"))
         excluded.update(Path(case["source"]).name for case in v1["cases"])
-    excluded.update(path.name for path in (ROOT / "drivers" / "test").glob("*.c"))
-    for path in (ROOT / "drivers" / "multisource").glob("*.json"):
+    baseline = ROOT / "benchmarks" / "drivers" / "baseline"
+    multisource = ROOT / "benchmarks" / "drivers" / "multisource"
+    excluded.update(path.name for path in baseline.glob("*.c"))
+    for path in multisource.glob("*.json"):
         corpus = json.loads(path.read_text(encoding="utf-8"))
         excluded.update(Path(source).name for source in corpus.get("sources", []))
 
@@ -143,13 +151,13 @@ def _specialization_inventory() -> dict[str, list[str]]:
     device_re = re.compile(
         r"(?:device_spec\.name|\bdev)\s*==\s*['\"]([^'\"]+)['\"]")
     for relative in ("extractor", "generator"):
-        for path in (ROOT / relative).rglob("*.py"):
+        for path in (ROOT / PROTECTED_ROOT_PATHS[relative]).rglob("*.py"):
             text = path.read_text(encoding="utf-8", errors="replace")
             basename_values.update(basename_re.findall(text))
             device_values.update(device_re.findall(text))
 
     layouts: set[str] = set()
-    mmio_path = ROOT / "extractor" / "mmio.py"
+    mmio_path = ROOT / "src" / "extractor" / "mmio.py"
     tree = ast.parse(mmio_path.read_text(encoding="utf-8"), filename=str(mmio_path))
     for node in tree.body:
         if not isinstance(node, (ast.Assign, ast.AnnAssign)):
@@ -172,8 +180,6 @@ def _specialization_inventory() -> dict[str, list[str]]:
 
 def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT,
                 *, enforce_frozen_implementation: bool = False) -> dict:
-    # Preserve the logical compatibility path: frozen manifests contain
-    # repository-relative sources whose base is ``drivers/holdout``.
     manifest_path = Path(holdout_path).absolute()
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     issues: list[str] = []
@@ -227,7 +233,8 @@ def check_guard(holdout_path: str | os.PathLike[str] = DEFAULT_HOLDOUT,
 
     protected = data.get("policy", {}).get("protected_roots", [])
     for relative_root in protected:
-        root = (ROOT / relative_root).resolve()
+        root = (ROOT / PROTECTED_ROOT_PATHS.get(
+            relative_root, relative_root)).resolve()
         if not root.is_dir():
             issues.append(f"missing protected root: {relative_root}")
             continue

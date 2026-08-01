@@ -116,10 +116,7 @@ def _resolve_sources(config: ExtractorConfig) -> tuple[list[str], str, str]:
     """
     raw = config.source
     if isinstance(raw, str) and raw.endswith(".json"):
-        # Resolve the manifest through compatibility symlinks before taking its
-        # directory: manifests store sources as ``../../../vendor/linux/...``
-        # relative to their real (benchmarks/) location, and lexical ``..``
-        # against a symlinked ``drivers/`` path would escape the repository.
+        # Resolve the manifest before joining its repository-relative sources.
         manifest = os.path.realpath(raw)
         with open(manifest, "r", encoding="utf-8") as fh:
             data = json.load(fh)
@@ -540,7 +537,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
 
     # SVF is intentionally opt-in: it is useful for difficult aliases but can
     # take minutes on a single real driver.  Core extraction and the standard
-    # test/experiment suite stay deterministic and fast with alias_mode=off.
+    # QA and experiment suites stay deterministic and fast with alias_mode=off.
     svf_aliases: set[str] = set()
     svf_facts: dict[str, dict] = {}
     alias_analysis = {

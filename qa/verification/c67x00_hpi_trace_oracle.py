@@ -26,7 +26,8 @@ def _helper_source() -> str:
     from generator.linux import _source_function
 
     path = os.path.join(
-        ROOT, "linux", "drivers", "usb", "c67x00", "c67x00-ll-hpi.c")
+        ROOT, "vendor", "linux", "drivers", "usb", "c67x00",
+        "c67x00-ll-hpi.c")
     source = open(path, "r", encoding="utf-8", errors="replace").read()
     names = (
         "hpi_read_reg", "hpi_write_reg", "hpi_read_word_nolock",
@@ -222,7 +223,8 @@ def _mutations(ops: list[dict]) -> dict[str, list[dict]]:
 def verify_c67x00_hpi() -> dict:
     from extractor import ExtractorConfig, extract_ris
 
-    manifest = os.path.join(ROOT, "drivers", "multisource", "c67x00.json")
+    manifest = os.path.join(
+        ROOT, "benchmarks", "drivers", "multisource", "c67x00.json")
     result = extract_ris(ExtractorConfig(source=manifest))
     ops = _set_bits_ops(result.formal)
     cases = []
@@ -278,7 +280,7 @@ def verify_c67x00_hpi() -> dict:
 
     return {
         "schema": 1,
-        "source": "linux/drivers/usb/c67x00/c67x00-ll-hpi.c",
+        "source": "vendor/linux/drivers/usb/c67x00/c67x00-ll-hpi.c",
         "primitive_cases": cases,
         "differential_cases": differential,
         "baseline_passed": True,

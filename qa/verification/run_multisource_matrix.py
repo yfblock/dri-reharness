@@ -35,10 +35,6 @@ def _load_manifest(path: str) -> tuple[dict, list[str], str]:
         manifest = json.load(fh)
     if manifest.get("schema") != 1 or not manifest.get("name"):
         raise ValueError(f"invalid multi-source manifest: {path}")
-    # Resolve the manifest through compatibility symlinks before deriving the
-    # base: sources are stored as ``../../../vendor/linux/...`` relative to the
-    # real (benchmarks/) location, and lexical ``..`` against a symlinked
-    # ``drivers/multisource`` path would escape the repository.
     base = os.path.dirname(os.path.realpath(path))
     sources = [os.path.realpath(os.path.join(base, source))
                for source in manifest.get("sources", [])]
@@ -94,7 +90,7 @@ def _source_mmio_counts(sources: list[str]) -> dict[str, int]:
 
 
 def _compile_original_kbuild(manifest: dict, kbuild: str, outdir: str) -> dict:
-    kernel_build = os.path.join(ROOT, "kernel", "build")
+    kernel_build = os.path.join(ROOT, "platform", "kernel", "build")
     source_dir = os.path.dirname(kbuild)
     copy_dir = os.path.join(outdir, "original-kbuild-src")
     log_path = os.path.join(outdir, "verify", "original-kbuild.log")
@@ -156,12 +152,15 @@ def _compile_original_kbuild(manifest: dict, kbuild: str, outdir: str) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--manifests", default=os.path.join(ROOT, "drivers", "multisource"))
+        "--manifests", default=os.path.join(
+            ROOT, "benchmarks", "drivers", "multisource"))
     parser.add_argument(
-        "--workdir", default=os.path.join(ROOT, "output", "experiment-multisource"))
+        "--workdir", default=os.path.join(
+            ROOT, "artifacts", "output", "experiment-multisource"))
     parser.add_argument(
         "--output", default=os.path.join(
-            ROOT, "experiments", "results", "multisource-matrix.json"))
+            ROOT, "research", "experiments", "results",
+            "multisource-matrix.json"))
     args = parser.parse_args()
 
     manifests = sorted(
@@ -263,9 +262,10 @@ def main() -> int:
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "environment": {
             "reharness_commit": _git_rev(ROOT),
-            "linux_commit": _git_rev(os.path.join(ROOT, "linux")),
+            "linux_commit": _git_rev(os.path.join(ROOT, "vendor", "linux")),
             "kernel_release": _run([
-                "make", "-s", "-C", os.path.join(ROOT, "kernel", "build"),
+                "make", "-s", "-C", os.path.join(
+                    ROOT, "platform", "kernel", "build"),
                 "kernelrelease"]).stdout.strip(),
         },
         "aggregate": {

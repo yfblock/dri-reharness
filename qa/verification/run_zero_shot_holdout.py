@@ -114,10 +114,12 @@ def main() -> int:
     parser.add_argument("--holdout", default=str(DEFAULT_HOLDOUT))
     parser.add_argument("--case", default=None)
     parser.add_argument(
-        "--workdir", default=str(ROOT / "output" / "zero-shot-v1"))
+        "--workdir", default=str(
+            ROOT / "artifacts" / "output" / "zero-shot-v1"))
     parser.add_argument(
         "--output", default=str(
-            ROOT / "experiments" / "results" / "zero-shot-v1.json"))
+            ROOT / "research" / "experiments" / "results" /
+            "zero-shot-v1.json"))
     args = parser.parse_args()
 
     manifest_path = Path(args.holdout).absolute()
@@ -146,7 +148,7 @@ def main() -> int:
         "source_sha256": case["source_sha256"],
         "environment": {
             "reharness_commit": _git_rev(ROOT),
-            "linux_commit": _git_rev(ROOT / "linux"),
+            "linux_commit": _git_rev(ROOT / "vendor" / "linux"),
         },
         "guard": guard,
         "baseline_without_importer": baseline,
