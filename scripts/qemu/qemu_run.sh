@@ -20,7 +20,6 @@ KERNELDIR="${KERNELDIR:-$PROJECT_DIR/platform/kernel/build}"
 KERNEL_BZIMAGE="${KERNEL_BZIMAGE:-$KERNELDIR/arch/x86/boot/bzImage}"
 KERNEL_VERSION="${KERNEL_VERSION:-$(make -s -C "$KERNELDIR" kernelrelease 2>/dev/null || true)}"
 REGISTRAR_KO="${REGISTRAR_KO:-$PROJECT_DIR/qa/verification/device-registrar/device-registrar.ko}"
-OUT="${RH_QEMU_OUT:-/tmp/reharness_qemu_run.txt}"
 
 # 默认值
 MODULE_NAME=""
@@ -85,9 +84,38 @@ PY
 )"
 fi
 
+# Every invocation gets an isolated rootfs, initramfs, and default log. This
+# keeps concurrent experiments from deleting or replacing each other's state.
+TMP_BASE="${RH_QEMU_TMPDIR:-${TMPDIR:-/tmp}}"
+mkdir -p "$TMP_BASE"
+RUN_LABEL="${RH_QEMU_RUN_ID:-${MODULE_NAME:-manifest}}"
+RUN_LABEL="$(printf '%s' "$RUN_LABEL" | tr -c '[:alnum:]_.-' '_')"
+RUN_DIR="$(mktemp -d "$TMP_BASE/reharness-qemu-${RUN_LABEL}.XXXXXX")" || {
+    echo "无法创建 QEMU 临时运行目录: $TMP_BASE" >&2
+    exit 1
+}
+KEEP_RUNTIME="${RH_QEMU_KEEP_RUNTIME:-0}"
+cleanup_runtime() {
+    rc=$?
+    if [ "$KEEP_RUNTIME" != "1" ]; then
+        rm -rf -- "$RUN_DIR"
+    else
+        echo "QEMU runtime artifacts: $RUN_DIR"
+    fi
+    exit "$rc"
+}
+trap cleanup_runtime EXIT
+
+if [ -n "${RH_QEMU_OUT:-}" ]; then
+    OUT="$RH_QEMU_OUT"
+else
+    OUT="$RUN_DIR/qemu.log"
+fi
+mkdir -p "$(dirname "$OUT")"
+
 OUTPUT_DIR="$PROJECT_DIR/artifacts/output/$MODULE_NAME"
-ROOTFS_DIR="$PROJECT_DIR/platform/rootfs/runtime"
-INITRAMFS="$PROJECT_DIR/artifacts/initramfs/initramfs_run.cpio.gz"
+ROOTFS_DIR="$RUN_DIR/rootfs"
+INITRAMFS="$RUN_DIR/initramfs.cpio.gz"
 
 [ -f "$OUTPUT_DIR/$MODULE_NAME.ko" ] || { echo "先编译 $MODULE_NAME"; exit 1; }
 mkdir -p "$(dirname "$INITRAMFS")"
