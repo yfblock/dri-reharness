@@ -8,8 +8,8 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_COMMANDS = (
     "extract", "spec", "gen", "driver", "facts", "bundle", "metrics",
-    "score", "reliability", "compare", "test", "e2e", "experiment", "edu-e2e",
-    "gpio-e2e", "qemu", "qemu-edu", "qemu-platform",
+    "score", "reliability", "compare", "test", "e2e", "experiment",
+    "qemu",
     "qemu-experiments", "log-event",
 )
 HELP_COMMAND_LINE = re.compile(
@@ -75,6 +75,23 @@ def test_unknown_command_fails():
         capture_output=True, text=True, check=False)
     assert result.returncode != 0
     assert "unknown command" in result.stdout + result.stderr
+
+
+def test_legacy_device_commands_are_not_public():
+    result = subprocess.run([str(ROOT / "run.sh"), "help"], cwd=ROOT,
+                            capture_output=True, text=True, check=False)
+    commands = set(_help_command_tokens(result.stdout))
+    assert not commands.intersection({"demo", "edu-e2e", "gpio-e2e",
+                                      "qemu-edu", "qemu-platform"})
+    legacy_paths = (
+        ("qemu_" + "edu.sh", "qemu"),
+        ("qemu_" + "platform.sh", "qemu"),
+        ("run_" + "edu_e2e.sh", "e2e"),
+        ("run_" + "gpio_e2e.sh", "e2e"),
+    )
+    for filename, directory in legacy_paths:
+        path = ROOT / "scripts" / directory / filename
+        assert not path.exists()
 
 
 def _run_standalone() -> int:

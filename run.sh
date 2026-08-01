@@ -26,16 +26,11 @@ Commands:
   score <src>               generation readiness scoring
   reliability [src ...]     machine-readable scoped RIS reliability report
   pipeline <src> [out.ris]  extract (alias of extract)
-  demo                      extract the baseline gpio-ftgpio010 driver
   compare [-j N]              per-driver extraction stats (N=parallel jobs, 0=auto)
   test                      run the test suite
   e2e <src> [target] [skip_synth]   full synthesis and runtime workflow
   experiment <manifest> [options]   manifest-driven closed-loop experiment
-  edu-e2e [skip_synth]      run the educational driver workflow
-  gpio-e2e [src] [skip_synth]   run the GPIO driver workflow
   qemu <module> [options]   run a synthesized module under QEMU
-  qemu-edu <module> [timeout]   run the educational QEMU target
-  qemu-platform <module> <target> [timeout]   run platform QEMU target
   qemu-experiments          run the reproducible QEMU experiment suite
   log-event <message ...>   append an engineering timeline event
 
@@ -75,22 +70,13 @@ cmd_e2e() { bash scripts/e2e/run_e2e.sh "$@"; }
 cmd_experiment() {
   "$PY" qa/verification/run_experiment.py "$@" --adapter-module "${REHARNESS_ADAPTER_MODULE:-verification.runtime_adapters}"
 }
-cmd_edu_e2e() { bash scripts/e2e/run_edu_e2e.sh "$@"; }
-cmd_gpio_e2e() { bash scripts/e2e/run_gpio_e2e.sh "$@"; }
 cmd_qemu() { bash scripts/qemu/qemu_run.sh "$@"; }
-cmd_qemu_edu() { bash scripts/qemu/qemu_edu.sh "$@"; }
-cmd_qemu_platform() { bash scripts/qemu/qemu_platform.sh "$@"; }
 cmd_qemu_experiments() { bash qa/verification/run_qemu_experiments.sh "$@"; }
 cmd_log_event() { bash scripts/maintenance/log_event.sh "$@"; }
 
 cmd_pipeline() {
   local src="${1:?need src}" out="${2:-$OUTPUT_ROOT/ris.ris}"
   cmd_extract "$src" "$out"
-}
-
-cmd_demo() {
-  cmd_extract benchmarks/drivers/baseline/gpio-ftgpio010.c \
-    "$OUTPUT_ROOT/demo/gpio-ftgpio010.ris"
 }
 
 cmd_compare() { "$PY" qa/verification/compare.py "$@"; }
@@ -125,16 +111,11 @@ case "${1:-help}" in
   score)     shift; cmd_score "$@";;
   reliability) shift; cmd_reliability "$@";;
   pipeline)  shift; cmd_pipeline "$@";;
-  demo)      shift; cmd_demo "$@";;
   compare)   shift; cmd_compare "$@";;
   test)      shift; cmd_test "$@";;
   e2e)       shift; cmd_e2e "$@";;
   experiment) shift; cmd_experiment "$@";;
-  edu-e2e)   shift; cmd_edu_e2e "$@";;
-  gpio-e2e)  shift; cmd_gpio_e2e "$@";;
   qemu)      shift; cmd_qemu "$@";;
-  qemu-edu)  shift; cmd_qemu_edu "$@";;
-  qemu-platform) shift; cmd_qemu_platform "$@";;
   qemu-experiments) shift; cmd_qemu_experiments "$@";;
   log-event) shift; cmd_log_event "$@";;
   help|-h|--help) usage;;
