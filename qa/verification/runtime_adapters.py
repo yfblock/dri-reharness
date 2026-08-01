@@ -17,6 +17,7 @@ from experiment_manifest import ExperimentManifest
 from experiment_protocol import FailureClass, Feedback
 from synthesis import SubprocessPiBridge
 from trace_protocol import compare_runs, load_trace
+from verification.backend_lowering_oracle import verify_backend_lowering
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -87,6 +88,31 @@ class ManifestCompiler:
                                         "module": manifest.runtime.module},
                 "payload": {"path": str(artifact), "source": str(out),
                             "module": manifest.runtime.module}}
+
+
+class ManifestContractVerifier:
+    """Check Pi receipts against the immutable formal evidence package."""
+
+    def verify(self, manifest: ExperimentManifest, evidence: Any, candidate: Any) -> dict[str, Any]:
+        if not isinstance(candidate, Mapping) or not isinstance(candidate.get("code"), str):
+            return _failure(FailureClass.CONTRACT, "candidate code is missing", {}, "contract")
+        if not isinstance(evidence, Mapping) or not isinstance(evidence.get("directory"), str):
+            return _failure(FailureClass.INFRASTRUCTURE, "evidence directory is missing", {}, "contract")
+        evidence_dir = Path(evidence["directory"])
+        formal_paths = sorted(evidence_dir.glob("*.formal.json"))
+        if len(formal_paths) != 1:
+            return _failure(FailureClass.INFRASTRUCTURE, "formal evidence is ambiguous",
+                            {"matches": [str(path) for path in formal_paths]}, "contract")
+        try:
+            formal = json.loads(formal_paths[0].read_text(encoding="utf-8"))
+            report = verify_backend_lowering(formal, candidate["code"])
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            return _failure(FailureClass.INFRASTRUCTURE, "contract verification failed",
+                            {"error": str(exc)}, "contract")
+        if not report.get("complete", False):
+            return _failure(FailureClass.CONTRACT, "candidate does not satisfy generation contract",
+                            report, "contract")
+        return {"ok": True, "value": report, "payload": report}
 
 
 class ManifestRuntime:
@@ -165,6 +191,7 @@ class Adapters:
         self.extractor = ManifestExtractor(root)
         self.pi = SubprocessPiBridge(str(root / "tools" / "pi" / "pi_synth.sh"))
         self.compiler = ManifestCompiler(root)
+        self.contract = ManifestContractVerifier()
         self.runtime = ManifestRuntime(root)
         self.comparator = ManifestComparator()
 

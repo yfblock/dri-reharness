@@ -69,6 +69,12 @@ class Fake:
         return {"equal": True}
 
 
+class RejectingContract:
+    def verify(self, m, evidence, candidate):
+        return AdapterResult.failure(Feedback.from_failure(
+            FailureClass.CONTRACT, "missing receipt", {"candidate": candidate}))
+
+
 def run(tmp_path, fake, **limits):
     runner = ExperimentRunner(extractor=fake, pi=fake, compiler=fake,
                               runtime=fake, comparator=fake)
@@ -136,3 +142,14 @@ def test_unexpected_adapter_exception_is_infrastructure_failure(tmp_path):
     assert not result.accepted
     assert result.failure.failure_class is FailureClass.INFRASTRUCTURE
     assert result.failure.stage == "compile"
+
+
+def test_contract_verifier_runs_before_compile_and_fails_closed(tmp_path):
+    fake = Fake()
+    runner = ExperimentRunner(extractor=fake, pi=fake, compiler=fake,
+                              runtime=fake, comparator=fake,
+                              contract=RejectingContract())
+    result = runner.run(manifest(), output_dir=tmp_path)
+    assert not result.accepted
+    assert result.failure.failure_class is FailureClass.CONTRACT
+    assert fake.events == ["extract", "synthesize"]

@@ -32,6 +32,10 @@ class Compiler(Adapter, Protocol):
     def compile(self, manifest: ExperimentManifest, candidate: Any) -> Any: ...
 
 
+class ContractVerifier(Adapter, Protocol):
+    def verify(self, manifest: ExperimentManifest, evidence: Any, candidate: Any) -> Any: ...
+
+
 class RuntimeRunner(Adapter, Protocol):
     def run(self, manifest: ExperimentManifest, candidate: Any, scenario: Any,
             role: str) -> Any: ...
@@ -158,10 +162,12 @@ class ExperimentRunner:
 
     def __init__(self, *, extractor: Extractor, pi: PiBridge, compiler: Compiler,
                  runtime: RuntimeRunner, comparator: TraceComparator,
+                 contract: ContractVerifier | None = None,
                  output_root: str | Path = "artifacts/experiments") -> None:
         self.extractor = extractor
         self.pi = pi
         self.compiler = compiler
+        self.contract = contract
         self.runtime = runtime
         self.comparator = comparator
         self.output_root = Path(output_root)
@@ -222,6 +228,15 @@ class ExperimentRunner:
             scenario = candidate.get("scenario")
         record("synthesize", 1, "passed", synthesis.payload or candidate)
 
+        checked = self._verify_contract(manifest, evidence, candidate, 1)
+        if not checked.ok:
+            record("contract", 1, "failed", feedback=checked.feedback)
+            return stop(checked.feedback or _feedback("candidate contract rejected",
+                                                       FailureClass.CONTRACT, "contract", 1),
+                        candidate=candidate)
+        if checked.value is not None:
+            record("contract", 1, "passed", checked.payload or checked.value)
+
         total = manifest.limits.total
         used = 0
         compile_attempts = runtime_attempts = trace_attempts = 0
@@ -247,6 +262,14 @@ class ExperimentRunner:
                 candidate = repair.value
                 scenario = repair.payload.get("scenario", scenario) if repair.payload else scenario
                 record("repair", used, "passed", repair.payload or candidate)
+                checked = self._verify_contract(manifest, evidence, candidate, used)
+                if not checked.ok:
+                    record("contract", used, "failed", feedback=checked.feedback)
+                    return stop(checked.feedback or _feedback("candidate contract rejected",
+                                                               FailureClass.CONTRACT, "contract", used),
+                                candidate=candidate)
+                if checked.value is not None:
+                    record("contract", used, "passed", checked.payload or checked.value)
                 continue
             compile_attempts = 0
             record("compile", used, "passed", compiled.payload or compiled.value)
@@ -265,6 +288,14 @@ class ExperimentRunner:
                     return stop(repair.feedback or _feedback("repair failed", FailureClass.CONTRACT, "repair", used), candidate=candidate)
                 candidate, scenario = repair.value, (repair.payload.get("scenario", scenario) if repair.payload else scenario)
                 record("repair", used, "passed", repair.payload or candidate)
+                checked = self._verify_contract(manifest, evidence, candidate, used)
+                if not checked.ok:
+                    record("contract", used, "failed", feedback=checked.feedback)
+                    return stop(checked.feedback or _feedback("candidate contract rejected",
+                                                               FailureClass.CONTRACT, "contract", used),
+                                candidate=candidate)
+                if checked.value is not None:
+                    record("contract", used, "passed", checked.payload or checked.value)
                 continue
             record("baseline", used, "passed", baseline.payload or baseline.value)
             candidate_artifact = compiled.value
@@ -282,6 +313,14 @@ class ExperimentRunner:
                     return stop(repair.feedback or _feedback("repair failed", FailureClass.CONTRACT, "repair", used), candidate=candidate)
                 candidate, scenario = repair.value, (repair.payload.get("scenario", scenario) if repair.payload else scenario)
                 record("repair", used, "passed", repair.payload or candidate)
+                checked = self._verify_contract(manifest, evidence, candidate, used)
+                if not checked.ok:
+                    record("contract", used, "failed", feedback=checked.feedback)
+                    return stop(checked.feedback or _feedback("candidate contract rejected",
+                                                               FailureClass.CONTRACT, "contract", used),
+                                candidate=candidate)
+                if checked.value is not None:
+                    record("contract", used, "passed", checked.payload or checked.value)
                 continue
             record("candidate", used, "passed", candidate_run.payload or candidate_run.value)
             runtime_attempts = 0
@@ -306,6 +345,14 @@ class ExperimentRunner:
                 return stop(repair.feedback or _feedback("repair failed", FailureClass.CONTRACT, "repair", used), candidate=candidate, comparison=comparison.value)
             candidate, scenario = repair.value, (repair.payload.get("scenario", scenario) if repair.payload else scenario)
             record("repair", used, "passed", repair.payload or candidate)
+            checked = self._verify_contract(manifest, evidence, candidate, used)
+            if not checked.ok:
+                record("contract", used, "failed", feedback=checked.feedback)
+                return stop(checked.feedback or _feedback("candidate contract rejected",
+                                                           FailureClass.CONTRACT, "contract", used),
+                            candidate=candidate, comparison=comparison.value)
+            if checked.value is not None:
+                record("contract", used, "passed", checked.payload or checked.value)
 
     def _repair(self, manifest: ExperimentManifest, evidence: Any, candidate: Any,
                 feedback: Feedback | None, iteration: int) -> AdapterResult:
@@ -316,6 +363,14 @@ class ExperimentRunner:
         return _invoke(self.pi.synthesize, manifest, evidence,
                        feedback=feedback, candidate=candidate,
                        failure_class=FailureClass.CONTRACT, stage="repair", iteration=iteration)
+
+    def _verify_contract(self, manifest: ExperimentManifest, evidence: Any,
+                         candidate: Any, iteration: int) -> AdapterResult:
+        if self.contract is None:
+            return AdapterResult.success()
+        return _invoke(self.contract.verify, manifest, evidence, candidate,
+                       failure_class=FailureClass.CONTRACT, stage="contract",
+                       iteration=iteration)
 
     @staticmethod
     def _comparison_equal(value: Any) -> bool:
@@ -332,4 +387,4 @@ class ExperimentRunner:
         (out / "experiment.json").write_text(json.dumps(_jsonable(document), indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-__all__ = ["AdapterResult", "ExperimentResult", "ExperimentRunner", "Extractor", "PiBridge", "Compiler", "RuntimeRunner", "TraceComparator"]
+__all__ = ["AdapterResult", "ExperimentResult", "ExperimentRunner", "Extractor", "PiBridge", "Compiler", "ContractVerifier", "RuntimeRunner", "TraceComparator"]

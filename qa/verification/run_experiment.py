@@ -31,6 +31,7 @@ def run_experiment(manifest_path: str | Path, adapters: Any,
             extractor=adapters.extractor, pi=adapters.pi,
             compiler=adapters.compiler, runtime=adapters.runtime,
             comparator=adapters.comparator,
+            contract=getattr(adapters, "contract", None),
             output_root=output_dir or ROOT / "artifacts/experiments",
         )
     return runner.run(load_manifest(manifest_path, repo_root=ROOT), output_dir=output_dir)

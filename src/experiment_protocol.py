@@ -15,7 +15,7 @@ class FailureClass(str, Enum):
     INFRASTRUCTURE = "infrastructure"
 
 
-_STAGES = {"extract", "synthesize", "compile", "baseline", "candidate", "compare", "repair", "runtime", "trace"}
+_STAGES = {"extract", "synthesize", "contract", "compile", "baseline", "candidate", "compare", "repair", "runtime", "trace"}
 _STATUSES = {"pending", "running", "passed", "failed", "skipped"}
 
 
