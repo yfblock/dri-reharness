@@ -26,8 +26,7 @@ _TOP_FIELDS = {"schema", "name", "source", "compile", "runtime", "test", "trace"
 _SOURCE_FIELDS = {"path", "sha256"}
 _COMPILE_FIELDS = {"backend", "language", "context"}
 _RUNTIME_FIELDS = {
-    "adapter", "machine", "device", "bus", "module", "timeout_seconds",
-    "probe_pattern", "registrar", "qemu_args", "pci_identity", "safety_policy", "qemu",
+    "adapter", "pci_identity", "safety_policy", "qemu",
 }
 _PCI_FIELDS = {"vendor", "device", "subsystem_vendor", "subsystem_device", "class_code"}
 _SAFETY_FIELDS = {"forbidden_tokens", "action", "failure_class", "rewrite_rules"}
@@ -193,25 +192,6 @@ class RuntimeSpec:
     pci_identity: PciIdentity | None = None
     safety_policy: SafetyPolicy = SafetyPolicy()
 
-    # These read-only aliases keep existing adapters source-compatible while
-    # making the nested policy the canonical representation.
-    @property
-    def machine(self) -> str: return self.qemu.machine
-    @property
-    def device(self) -> str: return self.qemu.device
-    @property
-    def bus(self) -> str: return self.qemu.bus
-    @property
-    def module(self) -> str: return self.qemu.module
-    @property
-    def timeout_seconds(self) -> int: return self.qemu.timeout_seconds
-    @property
-    def probe_pattern(self) -> str | None: return self.qemu.probe_pattern
-    @property
-    def registrar(self) -> str | None: return self.qemu.registrar
-    @property
-    def qemu_args(self) -> tuple[str, ...]: return self.qemu.qemu_args
-
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {"adapter": self.adapter, "qemu": self.qemu.to_dict(),
                                   "safety_policy": self.safety_policy.to_dict()}
@@ -375,7 +355,7 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
     _unknown(document, _TOP_FIELDS, "manifest")
     _required(document, _TOP_FIELDS, "manifest")
     schema = _integer(document["schema"], "schema", minimum=1)
-    if schema != 1:
+    if schema != 2:
         raise ManifestError(f"unsupported manifest schema: {schema}")
     name = _string(document["name"], "name")
     root = Path(repo_root).resolve() if repo_root is not None else _repo_root(Path.cwd())
@@ -412,18 +392,8 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
     if not isinstance(runtime_doc, Mapping):
         raise ManifestError("runtime must be an object")
     _unknown(runtime_doc, _RUNTIME_FIELDS, "runtime")
-    _required(runtime_doc, {"adapter"}, "runtime")
+    _required(runtime_doc, {"adapter", "qemu"}, "runtime")
     qemu_doc = runtime_doc.get("qemu")
-    nested_policy = qemu_doc is not None
-    if qemu_doc is None:
-        # Accept old in-memory fixtures while repository manifests migrate to
-        # the nested policy shape.  No orchestration code relies on this form.
-        qemu_doc = {field: runtime_doc[field] for field in
-                    ("machine", "device", "bus", "module", "timeout_seconds")
-                    if field in runtime_doc}
-        for field in ("probe_pattern", "registrar", "qemu_args"):
-            if field in runtime_doc:
-                qemu_doc[field] = runtime_doc[field]
     if not isinstance(qemu_doc, Mapping):
         raise ManifestError("runtime.qemu must be an object")
     _unknown(qemu_doc, _QEMU_FIELDS, "runtime.qemu")
@@ -466,7 +436,7 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
         )
     else:
         pci = None
-    if nested_policy and qemu.bus == "pci" and pci is None:
+    if qemu.bus == "pci" and pci is None:
         raise ManifestError("runtime.pci_identity is required for PCI QEMU policy")
     runtime = RuntimeSpec(
         adapter=_string(runtime_doc["adapter"], "runtime.adapter"),

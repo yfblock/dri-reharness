@@ -27,17 +27,20 @@ def _document(tmp_path: Path) -> dict:
     source = tmp_path / "driver.c"
     source.write_text("int driver;\n", encoding="utf-8")
     return {
-        "schema": 1,
+        "schema": 2,
         "name": "fixture",
         "source": {"path": str(source.relative_to(tmp_path))},
         "compile": {"backend": "linux", "language": "c", "context": "kbuild"},
         "runtime": {
             "adapter": "qemu",
-            "machine": "q35",
-            "device": "fixture",
-            "bus": "pci",
-            "module": "fixture_drv",
-            "timeout_seconds": 90,
+            "qemu": {
+                "machine": "q35",
+                "device": "fixture",
+                "bus": "pci",
+                "module": "fixture_drv",
+                "timeout_seconds": 90,
+            },
+            "pci_identity": {"vendor": "0x1234", "device": "0x5678"},
         },
         "test": {"executable": "qa/native-tests/edu_trace_test", "args": ["/dev/fixture_drv"]},
         "trace": {
@@ -121,6 +124,39 @@ def test_nested_pci_policy_requires_identity(tmp_path: Path):
     }
     with pytest.raises(ManifestError, match="pci_identity"):
         validate_manifest(document, repo_root=tmp_path)
+
+
+def test_schema_one_is_rejected_instead_of_being_compatibility_parsed(tmp_path: Path):
+    document = _document(tmp_path)
+    document["schema"] = 1
+    with pytest.raises(ManifestError, match="unsupported manifest schema"):
+        validate_manifest(document, repo_root=tmp_path)
+
+
+def test_flat_runtime_policy_is_rejected(tmp_path: Path):
+    document = _document(tmp_path)
+    document["runtime"] = {
+        "adapter": "qemu",
+        "machine": "q35",
+        "device": "fixture",
+        "bus": "pci",
+        "module": "fixture_drv",
+        "timeout_seconds": 90,
+    }
+    with pytest.raises(ManifestError, match="unknown field|runtime.qemu"):
+        validate_manifest(document, repo_root=tmp_path)
+
+
+def test_runtime_spec_exposes_only_nested_policy_sections(tmp_path: Path):
+    manifest = validate_manifest(_document(tmp_path), repo_root=tmp_path)
+    assert not hasattr(manifest.runtime, "machine")
+    assert not hasattr(manifest.runtime, "device")
+    assert not hasattr(manifest.runtime, "bus")
+    assert not hasattr(manifest.runtime, "module")
+    assert not hasattr(manifest.runtime, "timeout_seconds")
+    assert not hasattr(manifest.runtime, "probe_pattern")
+    assert not hasattr(manifest.runtime, "registrar")
+    assert not hasattr(manifest.runtime, "qemu_args")
 
 
 def test_invalid_safety_rewrite_pattern_rejected(tmp_path: Path):

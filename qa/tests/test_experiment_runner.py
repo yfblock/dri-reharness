@@ -18,10 +18,11 @@ from experiment_runner import AdapterResult, ExperimentRunner  # noqa: E402
 def manifest(**limits):
     root = Path(__file__).resolve().parents[2]
     document = {
-        "schema": 1, "name": "fake", "source": {"path": "README.md"},
+        "schema": 2, "name": "fake", "source": {"path": "README.md"},
         "compile": {"backend": "fake", "language": "c", "context": "test"},
-        "runtime": {"adapter": "fake", "machine": "test", "device": "test",
-                     "bus": "none", "module": "test", "timeout_seconds": 1},
+        "runtime": {"adapter": "fake", "qemu": {
+            "machine": "test", "device": "test", "bus": "none",
+            "module": "test", "timeout_seconds": 1}},
         "test": {"executable": "README.md"},
         "trace": {"fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]},
         "limits": {"compile": 3, "runtime": 3, "trace": 3, **limits},
