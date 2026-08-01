@@ -167,13 +167,10 @@ def test_canonical_relative_paths_resolve_without_symlinks():
     assert resolved == (REPO_ROOT / "vendor/linux/README").resolve()
 
 
-def test_compat_symlinked_holdout_base_resolves_into_repo():
-    # The compatibility entry point ``drivers/holdout`` is a symlink to
-    # ``../benchmarks/drivers/holdout``.  Manifest sources use three ``..``
-    # segments relative to the *real* location; lexical normalization against
-    # the symlinked literal path must not escape the repository.
-    base = REPO_ROOT / "drivers" / "holdout"
-    assert base.is_symlink(), "drivers/holdout compat symlink missing"
+def test_canonical_holdout_base_resolves_into_repo():
+    base = REPO_ROOT / "benchmarks" / "drivers" / "holdout"
+    assert base.is_dir()
+    assert not base.is_symlink()
     resolved = resolve_logical(base, "../../../vendor/linux/README")
     expected = (REPO_ROOT / "vendor/linux/README").resolve()
     assert resolved == expected
@@ -181,9 +178,10 @@ def test_compat_symlinked_holdout_base_resolves_into_repo():
     assert resolved.is_file()
 
 
-def test_compat_symlinked_multisource_base_resolves_into_repo():
-    base = REPO_ROOT / "drivers" / "multisource"
-    assert base.is_symlink(), "drivers/multisource compat symlink missing"
+def test_canonical_multisource_base_resolves_into_repo():
+    base = REPO_ROOT / "benchmarks" / "drivers" / "multisource"
+    assert base.is_dir()
+    assert not base.is_symlink()
     resolved = resolve_logical(
         base, "../../../vendor/linux/drivers/usb/dwc2/core.c")
     expected = (REPO_ROOT / "vendor/linux/drivers/usb/dwc2/core.c").resolve()
@@ -192,27 +190,29 @@ def test_compat_symlinked_multisource_base_resolves_into_repo():
     assert resolved.is_file()
 
 
-def test_all_holdout_sources_resolve_inside_repo_via_compat_link():
+def test_all_holdout_sources_resolve_inside_repo_from_canonical_manifest():
     import json
 
     manifest = json.loads((
-        REPO_ROOT / "drivers" / "holdout" / "zero-shot-v1.json"
+        REPO_ROOT / "benchmarks" / "drivers" / "holdout" /
+        "zero-shot-v1.json"
     ).read_text(encoding="utf-8"))
     root = REPO_ROOT.resolve()
     assert manifest["cases"], "holdout manifest has no cases"
     for case in manifest["cases"]:
         source = resolve_logical(
-            REPO_ROOT / "drivers" / "holdout", case["source"])
+            REPO_ROOT / "benchmarks" / "drivers" / "holdout",
+            case["source"])
         assert source.is_relative_to(root), (
             f"{case['id']} source escapes repository: {source}")
         assert source.is_file(), f"{case['id']} source missing: {source}"
 
 
-def test_all_multisource_sources_resolve_inside_repo_via_compat_link():
+def test_all_multisource_sources_resolve_inside_repo_from_canonical_manifests():
     import json
 
     root = REPO_ROOT.resolve()
-    manifest_dir = REPO_ROOT / "drivers" / "multisource"
+    manifest_dir = REPO_ROOT / "benchmarks" / "drivers" / "multisource"
     manifests = sorted(manifest_dir.glob("*.json"))
     assert manifests, "no multisource manifests found"
     for manifest_path in manifests:
@@ -225,24 +225,20 @@ def test_all_multisource_sources_resolve_inside_repo_via_compat_link():
                 f"{manifest_path} source missing: {source}")
 
 
-def test_extractor_resolves_symlinked_multisource_manifest():
-    # _resolve_sources must follow the compatibility symlink so manifest
-    # sources land inside the repository, regardless of whether the caller
-    # passes the symlinked ``drivers/multisource/...`` or canonical path.
+def test_extractor_resolves_canonical_multisource_manifest():
     from extractor.extractor import _resolve_sources, ExtractorConfig
 
-    for manifest_rel in ("drivers/multisource/c67x00.json",
-                         "benchmarks/drivers/multisource/c67x00.json"):
-        sources, name, descriptor = _resolve_sources(
-            ExtractorConfig(source=manifest_rel))
-        assert name == "c67x00"
-        root = REPO_ROOT.resolve()
-        assert len(sources) >= 4
-        for source in sources:
-            resolved = Path(source).resolve()
-            assert resolved.is_relative_to(root), (
-                f"{manifest_rel} source escapes repository: {source}")
-            assert resolved.is_file(), f"{manifest_rel} source missing: {source}"
+    manifest_rel = "benchmarks/drivers/multisource/c67x00.json"
+    sources, name, descriptor = _resolve_sources(
+        ExtractorConfig(source=manifest_rel))
+    assert name == "c67x00"
+    root = REPO_ROOT.resolve()
+    assert len(sources) >= 4
+    for source in sources:
+        resolved = Path(source).resolve()
+        assert resolved.is_relative_to(root), (
+            f"{manifest_rel} source escapes repository: {source}")
+        assert resolved.is_file(), f"{manifest_rel} source missing: {source}"
 
 
 def test_holdout_manifest_uses_canonical_linux_relative_path():
