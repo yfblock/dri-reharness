@@ -3313,20 +3313,15 @@ def test_e2e_all_llm_repair_stages_use_the_lowering_gate():
     run_e2e = open(os.path.join(
         REHARNESS, "scripts/e2e/run_e2e.sh"),
                    encoding="utf-8").read()
-    common = open(os.path.join(REHARNESS, "tools", "e2e_common.sh"),
-                  encoding="utf-8").read()
-    for stage in ("synth", "qemu_${iter}", "trace_${titer}"):
-        assert f'"{stage}"' in run_e2e
-    assert 'accept_existing_c "skip_synth"' in run_e2e
-    assert 'verify_current_lowering "$QDIR/lowering.json"' in run_e2e
-    assert 'verify_current_lowering "$TDIR/lowering.json"' in run_e2e
-    assert 'verify_current_lowering "$ITER_LOG/final-lowering.json"' in run_e2e
-    assert "ensure_lowering" not in run_e2e
-    assert "|| true" not in "\n".join(
-        line for line in run_e2e.splitlines() if "llm_write_c" in line)
-    assert 'verify_current_lowering "$RH_TMP/compile_pre' in common
-    assert 'verify_current_lowering "$RH_TMP/compile_post' in common
-    assert 'mv -f "$candidate" "$DRVDIR/$MODULE.c"' in common
+    # The compatibility entry point no longer owns synthesis, compile, QEMU,
+    # or trace policy. Those stages are implemented by the generic runner and
+    # manifest adapters; this shell layer only resolves a source to a manifest
+    # and delegates.
+    assert "manifest_for_source" in run_e2e
+    assert 'exec "$ROOT/run.sh" experiment "$manifest" "$@"' in run_e2e
+    assert "detect_subsystem" not in run_e2e
+    assert "llm_write_c" not in run_e2e
+    assert "QEMU_DEVICE" not in run_e2e
 
 
 def test_backend_lowering_gate_distinguishes_specialization_from_omission():
