@@ -100,6 +100,21 @@ git submodule update --init
 ./run.sh reliability benchmarks/drivers/baseline/gpio-ftgpio010.c
 ~~~
 
+### Manifest-driven closed loop
+
+实验编排只接受 manifest 中声明的设备、编译、测试和 trace 事实；通用
+runner 不按驱动名或源码内容推断子系统。每次运行会在指定输出目录保存
+evidence、候选代码、阶段记录和原驱动/候选驱动 trace：
+
+~~~bash
+./run.sh experiment benchmarks/experiments/edu.json
+./run.sh experiment benchmarks/experiments/ftgpio010.json
+~~~
+
+`compile`、`runtime` 或 `trace` 失败会以结构化反馈回送 Pi；generation
+contract、运行结果和 trace 比较全部通过后才接受候选。旧的 `e2e` 命令仅
+作为兼容入口，将源码路径解析到唯一 manifest 后委托给同一 runner。
+
 直接调用 python3 -m extractor 时，分析类子命令支持 --alias-mode off|auto|required。
 
 ## 复现实验和论文
