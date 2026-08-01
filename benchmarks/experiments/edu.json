@@ -25,7 +25,8 @@
       {"name": "open"},
       {"name": "read"},
       {"name": "write"}
-    ]
+    ],
+    "success_pattern": "EDU_TRACE_OK"
   },
   "trace": {
     "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"],

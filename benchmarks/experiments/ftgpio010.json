@@ -28,7 +28,8 @@
       {"name": "direction_output"},
       {"name": "get_value"},
       {"name": "set_value"}
-    ]
+    ],
+    "success_pattern": "GPIO_TRACE_DONE"
   },
   "trace": {
     "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id"],

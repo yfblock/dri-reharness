@@ -130,6 +130,8 @@ class ManifestRuntime:
         if manifest.test.executable:
             command += ["--exerciser", str(manifest.test.executable.relative_to(self.root)),
                         "--exerciser-args", " ".join(manifest.test.args)]
+        if manifest.test.success_pattern:
+            command += ["--success-pattern", manifest.test.success_pattern]
         if manifest.runtime.probe_pattern:
             command += ["--probe-pattern", manifest.runtime.probe_pattern]
         completed = subprocess.run(command, cwd=self.root, text=True,

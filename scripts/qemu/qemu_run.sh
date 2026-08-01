@@ -6,6 +6,7 @@
 #   -r/--registrar-target NAME  platform 时 device-registrar 注册的设备名
 #   -e/--exerciser PATH         测试程序路径 (空=probe-only, 只 insmod/rmmod)
 #   -a/--exerciser-args ARGS    测试程序参数 (如 /dev/gpiochip0)
+#   -s/--success-pattern REGEX   exerciser success marker supplied by manifest
 #   -p/--probe-pattern PAT      probe 成功 grep 模式 (如 "probed|registered|gpiochip")
 #   -t/--timeout N              默认 90
 set -u
@@ -27,6 +28,7 @@ REGISTRAR_TARGET=""
 EXERCISER=""
 EXERCISER_ARGS=""
 PROBE_PATTERN="probed|registered"
+SUCCESS_PATTERN=""
 TIMEOUT=90
 
 # 参数解析
@@ -39,6 +41,7 @@ while [ $# -gt 0 ]; do
     -r|--registrar-target) REGISTRAR_TARGET="$2"; shift 2 ;;
     -e|--exerciser) EXERCISER="$2"; shift 2 ;;
     -a|--exerciser-args) EXERCISER_ARGS="$2"; shift 2 ;;
+    -s|--success-pattern) SUCCESS_PATTERN="$2"; shift 2 ;;
     -p|--probe-pattern) PROBE_PATTERN="$2"; shift 2 ;;
     -t|--timeout) TIMEOUT="$2"; shift 2 ;;
     *) echo "未知参数: $1"; exit 1 ;;
@@ -151,8 +154,8 @@ EX_RC_OK=1
 if [ -n "$EXERCISER" ]; then
     grep -aq 'EXERCISER_RC=0' "$OUT" || EX_RC_OK=0
 fi
-if [[ "$EXERCISER" == *edu_trace_test* ]]; then
-    grep -aq 'EDU_TRACE_OK' "$OUT" || EX_RC_OK=0
+if [ -n "$SUCCESS_PATTERN" ]; then
+    grep -aqE "$SUCCESS_PATTERN" "$OUT" || EX_RC_OK=0
 fi
 echo "  done=$DONE probe=$PROBE real_oops=$REAL_OOPS"
 if [ "$REAL_OOPS" -gt 0 ]; then echo "  => 失败: 崩溃/oops"; exit 2; fi

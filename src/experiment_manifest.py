@@ -28,7 +28,7 @@ _RUNTIME_FIELDS = {
     "adapter", "machine", "device", "bus", "module", "timeout_seconds",
     "probe_pattern", "registrar", "qemu_args",
 }
-_TEST_FIELDS = {"executable", "args", "actions"}
+_TEST_FIELDS = {"executable", "args", "actions", "success_pattern"}
 _TRACE_FIELDS = {"fields", "value_mask", "address_mask", "normalize_function"}
 _LIMIT_FIELDS = {"compile", "runtime", "trace", "total"}
 _TRACE_EVENT_FIELDS = {
@@ -153,6 +153,7 @@ class TestSpec:
     executable: Path
     args: tuple[str, ...] = ()
     actions: tuple[Mapping[str, Any], ...] = ()
+    success_pattern: str | None = None
 
     def to_dict(self, *, root: Path | None = None) -> dict[str, Any]:
         executable: Path | str = self.executable
@@ -164,6 +165,8 @@ class TestSpec:
         result: dict[str, Any] = {"executable": str(executable), "args": list(self.args)}
         if self.actions:
             result["actions"] = [dict(action) for action in self.actions]
+        if self.success_pattern is not None:
+            result["success_pattern"] = self.success_pattern
         return result
 
 
@@ -319,7 +322,10 @@ def validate_manifest(document: Mapping[str, Any], *, repo_root: str | os.PathLi
     if not isinstance(actions, list) or any(not isinstance(item, Mapping) for item in actions):
         raise ManifestError("test.actions must be a list of objects")
     executable = _inside_repo(test_doc["executable"], root, "test.executable")
-    test = TestSpec(executable, tuple(args), tuple(dict(item) for item in actions))
+    success_pattern = test_doc.get("success_pattern")
+    if success_pattern is not None:
+        success_pattern = _string(success_pattern, "test.success_pattern")
+    test = TestSpec(executable, tuple(args), tuple(dict(item) for item in actions), success_pattern)
 
     trace_doc = document["trace"]
     if not isinstance(trace_doc, Mapping):
