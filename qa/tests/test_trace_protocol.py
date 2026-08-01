@@ -14,6 +14,7 @@ from trace_protocol import (  # noqa: E402
     compare_traces,
     first_divergence,
     normalize_event,
+    normalize_function_name,
     normalize_trace,
     parse_trace_text,
 )
@@ -46,6 +47,31 @@ def test_unmasked_values_are_not_silently_changed():
     assert normalize_event(event(0, 0x100000001)).value == 0x100000001
 
 
+def test_function_normalization_is_manifest_controlled_and_generic():
+    raw = event(0, function="  static inline gpio_probe.constprop.0  ")
+    normalized = normalize_event(raw, config={"normalize_function": True})
+    assert normalized.function == "gpio_probe"
+    assert normalize_event(raw, config={"normalize_function": False}).function == raw.function
+
+
+def test_function_normalization_preserves_real_name_differences():
+    assert normalize_function_name("gpio_probe.constprop.0") == "gpio_probe"
+    assert normalize_function_name("gpio_probe_helper") == "gpio_probe_helper"
+    assert normalize_function_name("ns::gpio_probe") == "ns::gpio_probe"
+    assert normalize_function_name("gpio_probe  helper") == "gpio_probe  helper"
+
+
+def test_function_normalization_defaults_only_for_a_supplied_policy():
+    raw = event(0, function="  gpio_probe.constprop.0  ")
+    assert normalize_event(raw).function == raw.function
+    assert normalize_event(raw, config={}).function == "gpio_probe"
+
+
+def test_function_normalization_rejects_non_boolean_policy():
+    with pytest.raises(TraceProtocolError, match="normalize_function must be boolean"):
+        normalize_event(event(0), config={"normalize_function": "yes"})
+
+
 def test_parse_existing_serial_lines_into_one_schema():
     events = parse_trace_text("""
 [rhfn] runtime_probe
@@ -60,6 +86,14 @@ def test_parse_existing_serial_lines_into_one_schema():
                 ("read", 0x18, 3, 2),
             ]
     assert all(item.function == "runtime_probe" for item in events)
+
+
+def test_parse_preserves_generated_function_suffix_for_manifest_normalization():
+    events = parse_trace_text(
+        "[rhfn] runtime_probe.constprop.0\n[rh] R 0x10 0x1",
+        config={"normalize_function": True},
+    )
+    assert events[0].function == "runtime_probe"
 
 
 def test_sequence_order_is_an_invariant():

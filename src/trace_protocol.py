@@ -2,7 +2,8 @@
 
 The protocol deliberately contains no knowledge of a particular driver or
 device.  A trace is an ordered sequence of :class:`TraceEvent` records.  The
-manifest may declare a value mask, but values are never masked implicitly.
+manifest may declare value/address masks and function-name normalization
+rules, but values and names are never changed implicitly for direct API calls.
 Legacy serial output (``[rh]`` and ``[trace]`` lines) is accepted as an input
 adapter and is converted to the same normalized representation.
 """
@@ -226,12 +227,66 @@ def _config_address_mask(config: Mapping[str, Any] | None) -> int | None:
     return None if value is None else _mask(value)
 
 
+_FUNCTION_QUALIFIERS = frozenset({
+    "extern", "inline", "static", "weak", "__inline", "__inline__",
+})
+_FUNCTION_GENERATED_SUFFIX_RE = re.compile(
+    r"\.(?:constprop|isra|part|cold|clone|llvm|lto_priv)(?:\.\d+)?$"
+)
+
+
+def normalize_function_name(name: str) -> str:
+    """Canonicalize compiler-decorated function names without aliases.
+
+    Only presentation/compiler decorations are removed: surrounding
+    whitespace, leading C linkage qualifiers, and recognized GCC/LLVM clone
+    suffixes (for example ``.constprop.0``).  Arbitrary suffixes, namespace
+    qualifiers, and internal whitespace remain part of the name so distinct
+    functions cannot silently compare equal.
+    """
+    if not isinstance(name, str):
+        raise TraceProtocolError("function must be a string")
+    normalized = name.strip()
+    if not normalized:
+        raise TraceProtocolError("function must be a non-empty string")
+    while True:
+        parts = normalized.split(None, 1)
+        if len(parts) != 2 or parts[0] not in _FUNCTION_QUALIFIERS:
+            break
+        normalized = parts[1].lstrip()
+    # A compiler can append more than one clone marker while optimizing an
+    # already-cloned function.  Strip only the documented marker forms.
+    while True:
+        candidate = _FUNCTION_GENERATED_SUFFIX_RE.sub("", normalized)
+        if candidate == normalized:
+            break
+        normalized = candidate
+    if not normalized:
+        raise TraceProtocolError("function must be a non-empty string")
+    return normalized
+
+
+def _config_normalize_function(config: Mapping[str, Any] | None):
+    """Return the configured function-name normalizer, if any.
+
+    A supplied policy follows the manifest default (``true``); omitting the
+    config entirely preserves the historical direct-API behavior.
+    """
+    if config is None:
+        return None
+    enabled = config.get("normalize_function", True)
+    if not isinstance(enabled, bool):
+        raise TraceProtocolError("normalize_function must be boolean")
+    return normalize_function_name if enabled else None
+
+
 def normalize_event(event: TraceEvent | Mapping[str, Any], *, value_mask: Any = None,
                     config: Mapping[str, Any] | None = None) -> TraceEvent:
     """Convert one event to the canonical schema, applying only declared masks."""
     if not isinstance(event, TraceEvent):
         event = TraceEvent.from_dict(event)
     mask = _mask(value_mask) if value_mask is not None else _config_mask(config)
+    function_normalizer = _config_normalize_function(config)
     address_mask = _config_address_mask(config)
     address = event.address
     if address_mask is not None and isinstance(address, int):
@@ -239,7 +294,8 @@ def normalize_event(event: TraceEvent | Mapping[str, Any], *, value_mask: Any = 
     value = event.value if mask is None or event.value is None else event.value & mask
     return TraceEvent(
         phase=event.phase,
-        function=event.function,
+        function=(function_normalizer(event.function)
+                  if function_normalizer else event.function),
         kind=event.kind,
         width_bits=event.width_bits,
         address=address,
@@ -327,7 +383,9 @@ def compare_traces(original: Iterable[TraceEvent | Mapping[str, Any]],
     return compare_runs(TraceRun(tuple(left)), TraceRun(tuple(right)), context=context)
 
 
-_FUNCTION_RE = re.compile(r"\[rhfn\]\s+([A-Za-z_]\w*)")
+# Keep compiler/linker decorations intact for the manifest normalizer.  The
+# token remains bounded to symbol punctuation rather than consuming log text.
+_FUNCTION_RE = re.compile(r"\[rhfn\]\s+([A-Za-z_][A-Za-z0-9_.$:@]*)")
 _RH_RE = re.compile(r"\[rh\]\s+(R|W|U|RMW)\s+([^\s]+)(?:\s+([^\s]+))?")
 _TRACE_RE = re.compile(
     r"\[trace\s+(\d+)\]\s+(R|W|U|RMW)\s+([^\s]+)(?:\s*=\s*([^\s]+))?")
@@ -395,7 +453,8 @@ def load_trace(path: str | Path, *, config: Mapping[str, Any] | None = None) -> 
 
 __all__ = [
     "TRACE_FIELDS", "TraceProtocolError", "TraceEvent", "TraceRun",
-    "TraceDivergence", "TraceComparison", "normalize_event", "normalize_trace",
+    "TraceDivergence", "TraceComparison", "normalize_function_name",
+    "normalize_event", "normalize_trace",
     "parse_trace_text", "load_trace", "first_divergence", "compare_runs",
     "compare_traces",
 ]
