@@ -41,8 +41,14 @@ class ManifestExtractor:
         if completed.returncode:
             return _failure(FailureClass.EXTRACTION, "evidence extraction failed",
                             {"return_code": completed.returncode, "stderr": completed.stderr[-4000:]}, "extract")
-        files = sorted(str(path.relative_to(self.root)) for path in out.iterdir() if path.is_file())
-        digest = hashlib.sha256("\n".join(files).encode()).hexdigest()
+        file_paths = sorted(path for path in out.iterdir() if path.is_file())
+        files = [str(path.relative_to(self.root)) for path in file_paths]
+        digest_builder = hashlib.sha256()
+        for path in file_paths:
+            digest_builder.update(str(path.relative_to(out)).encode("utf-8"))
+            digest_builder.update(b"\0")
+            digest_builder.update(path.read_bytes())
+        digest = digest_builder.hexdigest()
         return {"ok": True, "value": {"directory": str(out), "files": files, "digest": digest},
                 "payload": {"directory": str(out), "files": files, "digest": digest}}
 
