@@ -53,7 +53,7 @@ _C_KEYWORDS = {
 }
 
 
-def _called_names_in_text(text: str) -> set[str]:
+def called_names_in_text(text: str) -> set[str]:
     names = set(re.findall(r"\b([A-Za-z_]\w*)\s*\(", text or ""))
     # Linux polling macros take the read accessor as their first argument and
     # invoke it internally.  That identifier is a function, not a scalar
@@ -65,7 +65,7 @@ def _called_names_in_text(text: str) -> set[str]:
     return names
 
 
-def _vars_in_expr(e) -> set[str]:
+def vars_in_expr(e) -> set[str]:
     if e is None:
         return set()
     out: set[str] = set()
@@ -81,16 +81,16 @@ def _vars_in_expr(e) -> set[str]:
                         or before.endswith(("->", "."))):
                     continue
                 out.add(m.group(0))
-        out -= _called_names_in_text(v)
+        out -= called_names_in_text(v)
     if "BinOp" in e:
-        out |= _vars_in_expr(e["BinOp"]["left"])
-        out |= _vars_in_expr(e["BinOp"]["right"])
+        out |= vars_in_expr(e["BinOp"]["left"])
+        out |= vars_in_expr(e["BinOp"]["right"])
     if "Ite" in e:
-        out |= _vars_in_expr(e["Ite"]["guard"])
-        out |= _vars_in_expr(e["Ite"]["then"])
-        out |= _vars_in_expr(e["Ite"]["else"])
+        out |= vars_in_expr(e["Ite"]["guard"])
+        out |= vars_in_expr(e["Ite"]["then"])
+        out |= vars_in_expr(e["Ite"]["else"])
     if "Bits" in e:
-        out |= _vars_in_expr(e["Bits"]["expr"])
+        out |= vars_in_expr(e["Bits"]["expr"])
     return out
 
 
@@ -99,29 +99,29 @@ def value_var_names(ops) -> set[str]:
     names: set[str] = set()
     for op in walk_all_ops(ops):
         if "Cond" in op:
-            names |= _vars_in_expr(op["Cond"]["guard"])
+            names |= vars_in_expr(op["Cond"]["guard"])
         elif "Loop" in op:
-            names |= _vars_in_expr(op["Loop"].get("guard"))
+            names |= vars_in_expr(op["Loop"].get("guard"))
             for loop_text in (op["Loop"].get("init", ""),
                               op["Loop"].get("step", "")):
                 loop_names = {
                     name for name in re.findall(r"\b[A-Za-z_]\w*\b", loop_text)
                     if name not in _C_KEYWORDS
                 }
-                names |= loop_names - _called_names_in_text(loop_text)
+                names |= loop_names - called_names_in_text(loop_text)
         body = op.get("Read") or op.get("Write") or op.get("ReadModifyWrite")
         if body and "Computed" in body.get("addr", {}):
-            names |= _vars_in_expr(body["addr"]["Computed"])
+            names |= vars_in_expr(body["addr"]["Computed"])
         if "Write" in op:
-            names |= _vars_in_expr(op["Write"].get("value"))
+            names |= vars_in_expr(op["Write"].get("value"))
         elif "ReadModifyWrite" in op:
-            names |= _vars_in_expr(op["ReadModifyWrite"].get("transform"))
+            names |= vars_in_expr(op["ReadModifyWrite"].get("transform"))
         elif "StateWrite" in op:
-            names |= _vars_in_expr(op["StateWrite"].get("value"))
+            names |= vars_in_expr(op["StateWrite"].get("value"))
         elif "OutputWrite" in op:
-            names |= _vars_in_expr(op["OutputWrite"].get("value"))
+            names |= vars_in_expr(op["OutputWrite"].get("value"))
         elif "Return" in op:
-            names |= _vars_in_expr(op["Return"].get("value"))
+            names |= vars_in_expr(op["Return"].get("value"))
     return names
 
 
@@ -138,7 +138,7 @@ def transaction_local_decls(ops, already_declared: set[str], indent: int = 1) ->
     values: set[str] = set()
 
     def expr_ids(expr):
-        return _vars_in_expr(expr)
+        return vars_in_expr(expr)
 
     def visit(items):
         for op in items or []:
@@ -187,20 +187,20 @@ def transaction_local_decls(ops, already_declared: set[str], indent: int = 1) ->
     pad = "    " * indent
     lines: list[str] = []
     for name in sorted(reads):
-        if _is_simple_id(name) and name not in declared:
+        if is_simple_id(name) and name not in declared:
             lines.append(f"{pad}uint32_t {name} = 0;")
             declared.add(name)
     for name in sorted(values - declared):
-        if _is_simple_id(name) and name not in _C_KEYWORDS \
+        if is_simple_id(name) and name not in _C_KEYWORDS \
                 and not re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name):
             lines.append(f"{pad}uint32_t {name} = 0;")
             declared.add(name)
     for name in sorted(buffers):
-        if _is_simple_id(name) and name not in declared:
+        if is_simple_id(name) and name not in declared:
             lines.append(f"{pad}uint32_t {name}[64] = {{0}};")
             declared.add(name)
     for name in sorted(ids - declared):
-        if (not _is_simple_id(name) or name in _C_KEYWORDS
+        if (not is_simple_id(name) or name in _C_KEYWORDS
                 or re.fullmatch(r"[A-Z][A-Za-z0-9_]*", name)):
             continue
         lines.append(f"{pad}void *{name} = 0;")
@@ -271,7 +271,7 @@ def lowering_recipes(ops: list) -> dict[str, dict]:
     return recipes
 
 
-def _is_simple_id(name: str) -> bool:
+def is_simple_id(name: str) -> bool:
     return bool(_VAR_ID.match(name))
 
 
@@ -285,17 +285,17 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
     lines: list[str] = []
     declared = set(already_declared)
     read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(ops)
-                        if "Read" in o and _is_simple_id(o["Read"]["var"])
+                        if "Read" in o and is_simple_id(o["Read"]["var"])
                         and o["Read"]["var"] not in declared})
     read_vars += sorted({o["StateRead"]["var"] for o in walk_leaf_ops(ops)
                          if "StateRead" in o
-                         and _is_simple_id(o["StateRead"]["var"])
+                         and is_simple_id(o["StateRead"]["var"])
                          and o["StateRead"]["var"] not in declared
                          and o["StateRead"]["var"] not in read_vars})
     read_vars += sorted({
         o["TransactionRead"].get("payload", {}).get("Scalar", {}).get("var")
         for o in walk_leaf_ops(ops) if "TransactionRead" in o
-        and _is_simple_id(
+        and is_simple_id(
             o["TransactionRead"].get("payload", {}).get(
                 "Scalar", {}).get("var", ""))
         and o["TransactionRead"]["payload"]["Scalar"]["var"] not in declared
@@ -322,11 +322,11 @@ def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
     return "\n".join(lines)
 
 
-def _width_suffix(width: str) -> str:
+def width_suffix(width: str) -> str:
     return {"B1": "8", "B2": "16", "B4": "32", "B8": "64"}.get(width, "32")
 
 
-def _mmio_primitive(bind, operation: str, body: dict) -> str:
+def mmio_primitive(bind, operation: str, body: dict) -> str:
     byte_order = body.get("evidence", {}).get("byte_order", "native")
     write_semantics = body.get("evidence", {}).get("write_semantics")
     semantic = operation + ("W1C" if write_semantics == "w1c" else "")
@@ -419,7 +419,7 @@ def transaction_receipt(op: dict, disposition: str = "lowered") -> str:
             f"status={disposition} digest={digest} */")
 
 
-def _transaction_anchor(op: dict, seen: set[str]) -> str:
+def transaction_anchor(op: dict, seen: set[str]) -> str:
     kind = transaction_kind(op)
     body = op.get(kind, {}) if kind else {}
     op_id = body.get("op_id")
@@ -431,19 +431,19 @@ def _transaction_anchor(op: dict, seen: set[str]) -> str:
     return f"__rh_txn_{op_id}"
 
 
-def _transaction_expr(value: dict | None, default: str = "0") -> str:
+def transaction_expr(value: dict | None, default: str = "0") -> str:
     if value is None:
         return default
     return expr_to_c(value)
 
 
-def _transaction_scalar_width(payload: dict) -> str:
+def transaction_scalar_width(payload: dict) -> str:
     width = payload.get("width") or payload.get("element_width")
     return {"B1": "uint8_t", "B2": "uint16_t", "B4": "uint32_t",
             "B8": "uint64_t"}.get(width, "uint32_t")
 
 
-def _i2c_helper(kind: str, body: dict, buffered: bool = False) -> str:
+def i2c_helper(kind: str, body: dict, buffered: bool = False) -> str:
     protocol = body.get("protocol") or "smbus_byte_data"
     prefix = "reharness_i2c_master" if protocol == "raw" else "reharness_i2c_smbus"
     action = "read" if kind == "TransactionRead" else "write"
@@ -454,29 +454,29 @@ def _i2c_helper(kind: str, body: dict, buffered: bool = False) -> str:
     return f"{prefix}_{action}_{protocol.removeprefix('smbus_')}"
 
 
-def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bind=None) -> None:
+def transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bind=None) -> None:
     """Emit the shared transaction ABI used by all three generated backends."""
     kind = transaction_kind(op)
     if kind is None:
         return
     body = op[kind]
-    target = _transaction_expr(body.get("target"), "0")
-    selector = _transaction_expr(body.get("selector"), "0")
+    target = transaction_expr(body.get("target"), "0")
+    selector = transaction_expr(body.get("selector"), "0")
     transport = body.get("transport", "unknown")
     if transport not in {"regmap", "i2c_smbus", "i2c", "mfd"}:
         out.append(f"{pad}{transaction_receipt(op, 'rejected')}")
-        out.append(f"{pad}{_transaction_anchor(op, seen)}: {{")
+        out.append(f"{pad}{transaction_anchor(op, seen)}: {{")
         out.append(f"{pad}    /* REHARNESS_UNSUPPORTED_TRANSACTION: {transport} */")
         out.append(f"{pad}}}")
         return
     out.append(f"{pad}{transaction_receipt(op)}")
-    out.append(f"{pad}{_transaction_anchor(op, seen)}: {{")
+    out.append(f"{pad}{transaction_anchor(op, seen)}: {{")
     out.append(f'{pad}    reharness_transaction_mark("{body.get("op_id", "?")}");')
     if transport == "mfd":
-        target = _transaction_expr(body.get("target"), "0")
-        selector = _transaction_expr(body.get("selector"), "0")
-        mask = _transaction_expr(body.get("mask"), "0")
-        value = _transaction_expr(body.get("value"), "0")
+        target = transaction_expr(body.get("target"), "0")
+        selector = transaction_expr(body.get("selector"), "0")
+        mask = transaction_expr(body.get("mask"), "0")
+        value = transaction_expr(body.get("value"), "0")
         if getattr(bind, "backend", None) == "linux":
             helper = body.get("helper_symbol")
             if not isinstance(helper, str) or not re.fullmatch(r"[A-Za-z_]\w*", helper):
@@ -496,7 +496,7 @@ def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bi
             out.append(f"{pad}    (void)reharness_mfd_read((void *)({target}), {selector}, (unsigned int *)&{var});")
         elif kind == "TransactionWrite":
             payload = body.get("payload") or {}
-            value = _transaction_expr((payload.get("Scalar") or {}).get("value"), value)
+            value = transaction_expr((payload.get("Scalar") or {}).get("value"), value)
             out.append(f"{pad}    (void)reharness_mfd_write((void *)({target}), {selector}, (unsigned int)({value}));")
         else:
             out.append(f"{pad}    (void)reharness_mfd_update((void *)({target}), {selector}, (unsigned int)({mask}), (unsigned int)({value}));")
@@ -505,18 +505,18 @@ def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bi
     if transport in {"i2c_smbus", "i2c"}:
         payload = body.get("payload") or {}
         buffered = "Buffer" in payload
-        helper = _i2c_helper(kind, body, buffered)
+        helper = i2c_helper(kind, body, buffered)
         if buffered:
             p = payload["Buffer"]
-            buf = _transaction_expr(p.get("buffer"), "0")
-            count = _transaction_expr(p.get("count"), "1")
+            buf = transaction_expr(p.get("buffer"), "0")
+            count = transaction_expr(p.get("count"), "1")
             if body.get("protocol") == "raw":
                 args = f"(void *)({target}), (void *)({buf}), {count}"
             else:
                 args = f"(void *)({target}), {selector}, (void *)({buf}), {count}"
             call = f"{helper}({args})"
             result = body.get("result") if kind == "TransactionRead" else None
-            if isinstance(result, str) and _is_simple_id(result):
+            if isinstance(result, str) and is_simple_id(result):
                 out.append(f"{pad}    {result} = {call};")
             else:
                 out.append(f"{pad}    (void){call};")
@@ -531,7 +531,7 @@ def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bi
             out.append(f"{pad}    (void){var};")
         else:
             p = payload.get("Scalar", {})
-            value = _transaction_expr(p.get("value"), "0")
+            value = transaction_expr(p.get("value"), "0")
             args = (f"(void *)({target}), (unsigned int)({value})"
                     if body.get("protocol") == "smbus_byte"
                     else f"(void *)({target}), {selector}, (unsigned int)({value})")
@@ -542,13 +542,13 @@ def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bi
         payload = body.get("payload") or {}
         if "Buffer" in payload:
             p = payload["Buffer"]
-            buf = _transaction_expr(p.get("buffer"), "0")
-            count = _transaction_expr(p.get("count"), "1")
+            buf = transaction_expr(p.get("buffer"), "0")
+            count = transaction_expr(p.get("count"), "1")
             out.append(f"{pad}    (void)reharness_regmap_bulk_read((void *)({target}), {selector}, {buf}, {count});")
         else:
             p = payload.get("Scalar", {})
             var = p.get("var") or "transaction_result"
-            ctype = _transaction_scalar_width(p)
+            ctype = transaction_scalar_width(p)
             out.append(f"{pad}    {var} = 0;")
             out.append(f"{pad}    (void)reharness_regmap_read((void *)({target}), {selector}, (unsigned int *)&{var});")
             out.append(f"{pad}    (void){var};")
@@ -556,20 +556,20 @@ def _transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bi
         payload = body.get("payload") or {}
         if "Buffer" in payload:
             p = payload["Buffer"]
-            buf = _transaction_expr(p.get("buffer"), "0")
-            count = _transaction_expr(p.get("count"), "1")
+            buf = transaction_expr(p.get("buffer"), "0")
+            count = transaction_expr(p.get("count"), "1")
             out.append(f"{pad}    (void)reharness_regmap_bulk_write((void *)({target}), {selector}, {buf}, {count});")
         else:
             p = payload.get("Scalar", {})
-            value = _transaction_expr(p.get("value"), "0")
+            value = transaction_expr(p.get("value"), "0")
             out.append(f"{pad}    (void)reharness_regmap_write((void *)({target}), {selector}, (unsigned int)({value}));")
     else:
-        mask = _transaction_expr(body.get("mask"), "0")
-        value = _transaction_expr(body.get("value"), "0")
+        mask = transaction_expr(body.get("mask"), "0")
+        value = transaction_expr(body.get("value"), "0")
         changed = body.get("changed_result")
         call = (f"reharness_regmap_update((void *)({target}), {selector}, "
                 f"(unsigned int)({mask}), (unsigned int)({value}))")
-        if changed and _is_simple_id(changed):
+        if changed and is_simple_id(changed):
             out.append(f"{pad}    {changed} = ({call} != 0);")
         else:
             out.append(f"{pad}    (void){call};")
@@ -711,7 +711,7 @@ def transaction_runtime_prelude_filtered(
     return lines
 
 
-def _operation_anchor(op: dict, seen: set[str]) -> str:
+def operation_anchor(op: dict, seen: set[str]) -> str:
     """Return the source-level label that owns one register lowering.
 
     Formal RIS assigns C-identifier-safe, globally unique ``op_<n>`` IDs.  Do
@@ -731,14 +731,14 @@ def _operation_anchor(op: dict, seen: set[str]) -> str:
     return f"__rh_op_{op_id}"
 
 
-def _begin_operation(out: list[str], pad: str, op: dict,
+def begin_operation(out: list[str], pad: str, op: dict,
                      disposition: str, seen: set[str]) -> None:
     """Start a receipt-bound compound statement owned by a unique label."""
     out.append(f"{pad}{lowering_receipt(op, disposition)}")
-    out.append(f"{pad}{_operation_anchor(op, seen)}: {{")
+    out.append(f"{pad}{operation_anchor(op, seen)}: {{")
 
 
-def _replace_expr_var(expr, name: str | None, replacement: str):
+def replace_expr_var(expr, name: str | None, replacement: str):
     if not isinstance(expr, dict) or not name:
         return expr
     if expr.get("Var") == name:
@@ -746,18 +746,18 @@ def _replace_expr_var(expr, name: str | None, replacement: str):
     out = dict(expr)
     if "BinOp" in expr:
         b = dict(expr["BinOp"])
-        b["left"] = _replace_expr_var(b.get("left"), name, replacement)
-        b["right"] = _replace_expr_var(b.get("right"), name, replacement)
+        b["left"] = replace_expr_var(b.get("left"), name, replacement)
+        b["right"] = replace_expr_var(b.get("right"), name, replacement)
         out["BinOp"] = b
     elif "Ite" in expr:
         i = dict(expr["Ite"])
-        i["guard"] = _replace_expr_var(i.get("guard"), name, replacement)
-        i["then"] = _replace_expr_var(i.get("then"), name, replacement)
-        i["else"] = _replace_expr_var(i.get("else"), name, replacement)
+        i["guard"] = replace_expr_var(i.get("guard"), name, replacement)
+        i["then"] = replace_expr_var(i.get("then"), name, replacement)
+        i["else"] = replace_expr_var(i.get("else"), name, replacement)
         out["Ite"] = i
     elif "Bits" in expr:
         b = dict(expr["Bits"])
-        b["expr"] = _replace_expr_var(b.get("expr"), name, replacement)
+        b["expr"] = replace_expr_var(b.get("expr"), name, replacement)
         out["Bits"] = b
     return out
 
@@ -800,12 +800,12 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
     out: list[str] = []
     for op in ops:
         if transaction_kind(op) is not None:
-            _transaction_lowering(op, pad, out, _anchor_ids, bind)
+            transaction_lowering(op, pad, out, _anchor_ids, bind)
             continue
         leaf = (op.get("Read") or op.get("Write")
                 or op.get("ReadModifyWrite"))
         if leaf is not None and leaf.get("reliability") == "Unsupported":
-            _begin_operation(out, pad, op, "rejected", _anchor_ids)
+            begin_operation(out, pad, op, "rejected", _anchor_ids)
             out.append(
                 f"{pad}    /* REHARNESS_UNSUPPORTED_ACCESS_DOMAIN: "
                 f"{leaf.get('access_domain', 'unknown')} {leaf.get('op_id', '?')} */")
@@ -880,14 +880,14 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
                                 _anchor_ids, _lowering_recipes))
         elif "Read" in op:
             o = op["Read"]
-            r = _mmio_primitive(bind, "MmioRead", o)
+            r = mmio_primitive(bind, "MmioRead", o)
             a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             var = o["var"]
-            _begin_operation(out, pad, op, "lowered", _anchor_ids)
-            if (_is_simple_id(var)
+            begin_operation(out, pad, op, "lowered", _anchor_ids)
+            if (is_simple_id(var)
                     or re.fullmatch(r"(?:g|dev)->[A-Za-z_]\w*", var)):
                 out.append(f"{pad}    {var} = {r}({a});")
-                if _is_simple_id(var):
+                if is_simple_id(var):
                     out.append(f"{pad}    (void){var};")
             else:
                 # member-access target (e.g. edu->revision) — discard the read
@@ -896,25 +896,25 @@ def ops_to_c(ops: list, bind, base_expr: str, register_macros: dict[str, int],
             out.append(f"{pad}}}")
         elif "Write" in op:
             o = op["Write"]
-            w = _mmio_primitive(bind, "MmioWrite", o)
+            w = mmio_primitive(bind, "MmioWrite", o)
             a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             v = expr_to_c(o["value"])
-            _begin_operation(out, pad, op, "lowered", _anchor_ids)
+            begin_operation(out, pad, op, "lowered", _anchor_ids)
             out.append(f"{pad}    {w}({v}, {a});")
             out.append(f"{pad}}}")
         elif "ReadModifyWrite" in op:
             o = op["ReadModifyWrite"]
-            r = _mmio_primitive(bind, "MmioRead", o)
-            w = _mmio_primitive(bind, "MmioWrite", o)
+            r = mmio_primitive(bind, "MmioRead", o)
+            w = mmio_primitive(bind, "MmioWrite", o)
             a = addr_to_c(o["addr"], base_expr, register_macros, state_expr)
             recipe = (o.get("_backend_lowering_recipe")
                       or _lowering_recipes.get(o.get("op_id"), {}))
-            _begin_operation(out, pad, op, "lowered", _anchor_ids)
+            begin_operation(out, pad, op, "lowered", _anchor_ids)
             if recipe.get("kind") == "write_from_read":
                 out.append(
                     f"{pad}    {w}({expr_to_c(o.get('transform'))}, {a});")
             else:
-                t = _replace_expr_var(
+                t = replace_expr_var(
                     o.get("transform"), o.get("read_var"), "v")
                 t_c = ("v" if isinstance(t, dict) and "Top" in t
                        else expr_to_c(t))

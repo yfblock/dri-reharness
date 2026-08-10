@@ -35,7 +35,7 @@ VIRTIO_CALLBACK_TABLES = {
 }
 
 
-def _portable_gpio_module(module: dict) -> bool:
+def portable_gpio_module(module: dict) -> bool:
     leaves = list(walk_leaf_ops(module.get("ops", [])))
     if not leaves:
         return False
@@ -60,7 +60,7 @@ def _portable_gpio_module(module: dict) -> bool:
     return not any("Loop" in op for op in walk_all_ops(module.get("ops", [])))
 
 
-def _arguments(function, *, value: int = 1) -> dict[str, int]:
+def extract_arguments(function, *, value: int = 1) -> dict[str, int]:
     defaults = {"offset": 1, "value": value, "mask": 3, "bits": 1}
     return {
         param.name: defaults.get(param.name, 1)
@@ -76,7 +76,7 @@ def gpio_callback_plan(formal: dict, device_spec) -> list[dict]:
         for function in device_spec.functions
         if function.callback_table in GPIO_CALLBACK_ORDER
         and function.ris_ref in modules
-        and _portable_gpio_module(modules[function.ris_ref])
+        and portable_gpio_module(modules[function.ris_ref])
     }
     plan: list[dict] = []
     for table in GPIO_CALLBACK_ORDER:
@@ -90,12 +90,12 @@ def gpio_callback_plan(formal: dict, device_spec) -> list[dict]:
                 "table": table,
                 "module": function.ris_ref,
                 "function": function,
-                "args": _arguments(function, value=value),
+                "args": extract_arguments(function, value=value),
             })
     return plan
 
 
-def _portable_sdhci_module(module: dict) -> bool:
+def portable_sdhci_module(module: dict) -> bool:
     leaves = list(walk_leaf_ops(module.get("ops", [])))
     if not leaves:
         return False
@@ -131,7 +131,7 @@ def sdhci_callback_plan(formal: dict, device_spec) -> list[dict]:
         for function in device_spec.functions
         if function.callback_table in SDHCI_CALLBACK_ORDER
         and function.ris_ref in modules
-        and _portable_sdhci_module(modules[function.ris_ref])
+        and portable_sdhci_module(modules[function.ris_ref])
     }
     cases = {
         "sdhci_ops.read_l": [
@@ -226,7 +226,7 @@ def virtio_state_plan(formal: dict, device_spec) -> list[dict]:
         order.get(function.role, 2), function.ris_ref))
     plan = []
     for function in selected:
-        args = _arguments(function)
+        args = extract_arguments(function)
         plan.append({
             "kind": "virtio", "table": function.callback_table or function.role,
             "module": function.ris_ref, "function": function, "args": args,
@@ -242,7 +242,7 @@ def subsystem_callback_plan(formal: dict, device_spec) -> list[dict]:
             + virtio_state_plan(formal, device_spec))
 
 
-def _initializer_bodies(text: str, struct_name: str):
+def initializer_bodies(text: str, struct_name: str):
     pattern = re.compile(
         rf"\bstruct\s+{re.escape(struct_name)}\s+[A-Za-z_]\w*\s*=\s*\{{")
     for match in pattern.finditer(text):
@@ -258,14 +258,14 @@ def _initializer_bodies(text: str, struct_name: str):
                     break
 
 
-def _sdhci_direct_dispatch_proven(formal: dict) -> bool:
+def sdhci_direct_dispatch_proven(formal: dict) -> bool:
     source = formal.get("metadata", {}).get("source")
     if not source or not os.path.isfile(source):
         return False
     text = open(source, encoding="utf-8", errors="replace").read()
     if not re.search(r"\bsdhci_pltfm_init\s*\(", text):
         return False
-    pdata = list(_initializer_bodies(text, "sdhci_pltfm_data"))
+    pdata = list(initializer_bodies(text, "sdhci_pltfm_data"))
     if not pdata or any(re.search(r"\.\s*ops\s*=", body) for body in pdata):
         return False
     marker = f"{os.sep}linux{os.sep}"
@@ -278,7 +278,7 @@ def _sdhci_direct_dispatch_proven(formal: dict) -> bool:
         helper = open(helper_path, encoding="utf-8", errors="replace").read()
     except OSError:
         return False
-    default_ops = list(_initializer_bodies(helper, "sdhci_ops"))
+    default_ops = list(initializer_bodies(helper, "sdhci_ops"))
     return bool(default_ops) and not any(re.search(
         r"\.\s*(?:read_[lwb]|write_[lwb])\s*=", body)
         for body in default_ops)
@@ -329,7 +329,7 @@ def portable_sdhci_accessor_only(formal: dict, device_spec) -> bool:
                 formal, device_spec)}
         if callback_modules != planned_modules:
             return False
-    elif not _sdhci_direct_dispatch_proven(formal):
+    elif not sdhci_direct_dispatch_proven(formal):
         return False
     return True
 
@@ -372,7 +372,7 @@ def emit_w1c_drain_runner(formal: dict, device_spec, priv: str,
     return lines
 
 
-def _call_arguments(entry: dict, device_expr: str) -> str:
+def call_arguments(entry: dict, device_expr: str) -> str:
     function = entry["function"]
     values = []
     for param in function.signature.params:
@@ -410,12 +410,12 @@ def emit_gpio_callback_runner(formal: dict, device_spec, priv: str,
         if returns:
             lines.append(
                 f"        uint32_t result = {entry['function'].name}("
-                f"{_call_arguments(entry, 'dev')});")
+                f"{call_arguments(entry, 'dev')});")
             lines.append("        REHARNESS_CALLBACK_RESULT(result);")
         else:
             lines.append(
                 f"        {entry['function'].name}("
-                f"{_call_arguments(entry, 'dev')});")
+                f"{call_arguments(entry, 'dev')});")
         for param in pointer_params:
             lines.append(
                 f'        REHARNESS_CALLBACK_OUTPUT("{param.name}", '

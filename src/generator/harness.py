@@ -22,20 +22,20 @@ _KEYWORDS = {"if", "else", "for", "while", "return", "uint32_t", "uint16_t",
              "uint8_t", "void", "int", "unsigned", "uintptr_t", "sizeof"}
 
 
-def _value_var_names(ops) -> set[str]:
+def value_var_names_local(ops) -> set[str]:
     """Identifiers referenced in value/guard expressions (for local decls)."""
     names: set[str] = set()
     for op in walk_all_ops(ops):
         if "Cond" in op:
-            names |= _vars_in_expr(op["Cond"]["guard"])
+            names |= vars_in_expr(op["Cond"]["guard"])
         elif "Write" in op:
-            names |= _vars_in_expr(op["Write"].get("value"))
+            names |= vars_in_expr(op["Write"].get("value"))
         elif "ReadModifyWrite" in op:
-            names |= _vars_in_expr(op["ReadModifyWrite"].get("transform"))
+            names |= vars_in_expr(op["ReadModifyWrite"].get("transform"))
     return names
 
 
-def _vars_in_expr(e) -> set[str]:
+def vars_in_expr(e) -> set[str]:
     if e is None:
         return set()
     out: set[str] = set()
@@ -45,14 +45,14 @@ def _vars_in_expr(e) -> set[str]:
         if re.fullmatch(r"[A-Za-z_]\w*", v):
             out.add(v)
     if "BinOp" in e:
-        out |= _vars_in_expr(e["BinOp"]["left"])
-        out |= _vars_in_expr(e["BinOp"]["right"])
+        out |= vars_in_expr(e["BinOp"]["left"])
+        out |= vars_in_expr(e["BinOp"]["right"])
     if "Ite" in e:
-        out |= _vars_in_expr(e["Ite"]["guard"])
-        out |= _vars_in_expr(e["Ite"]["then"])
-        out |= _vars_in_expr(e["Ite"]["else"])
+        out |= vars_in_expr(e["Ite"]["guard"])
+        out |= vars_in_expr(e["Ite"]["then"])
+        out |= vars_in_expr(e["Ite"]["else"])
     if "Bits" in e:
-        out |= _vars_in_expr(e["Bits"]["expr"])
+        out |= vars_in_expr(e["Bits"]["expr"])
     return out
 
 
@@ -261,7 +261,7 @@ def generate(formal: dict, device_spec, bind) -> str:
             safe_ops = []
         # drop DeviceState params (the device is passed as `dev`); keep the rest
         keep = [p for p in fn.signature.params if p.type != "DeviceState"]
-        params = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
+        params = ", ".join(f"{c_type(p.type, bind)} {p.name}" for p in keep)
         params = (params + ", ") if params else ""
         params += f"{priv} *dev"
         # The subsystem callback runner invokes accessors based on their
@@ -273,7 +273,7 @@ def generate(formal: dict, device_spec, bind) -> str:
             has_return = fn.signature.return_type != "Void"
         else:
             has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
-        return_type = _c_type(fn.signature.return_type, bind) if has_return else "void"
+        return_type = c_type(fn.signature.return_type, bind) if has_return else "void"
         L.append(f"static {return_type} {fn.name}({params}) {{")
         # declare read vars + value/guard locals (common.local_decls skips
         # member-access read targets, which ops_to_c discards)
@@ -357,7 +357,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     return "\n".join(L) + "\n"
 
 
-def _c_type(abstract: str, bind) -> str:
+def c_type(abstract: str, bind) -> str:
     return bind.type_of(abstract) or "uint32_t"
 
 

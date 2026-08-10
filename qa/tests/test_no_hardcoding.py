@@ -18,8 +18,9 @@ def test_generic_runner_and_pi_bridge_have_no_target_literals_or_branches():
 
 
 def test_generator_and_sanitizer_consume_policy_without_private_constants():
-    paths = [ROOT / "src" / "generator" / "linux.py",
-             ROOT / "tools" / "source" / "sanitize.py"]
+    linux_dir = ROOT / "src" / "generator" / "linux"
+    linux_paths = sorted(linux_dir.glob("*.py")) if linux_dir.is_dir() else [ROOT / "src" / "generator" / "linux.py"]
+    paths = linux_paths + [ROOT / "tools" / "source" / "sanitize.py"]
     text = "\n".join(path.read_text(encoding="utf-8") for path in paths)
     assert "device_spec.name == \"edu\"" not in text
     assert "IO_DMA_CMD" not in text

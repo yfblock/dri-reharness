@@ -255,7 +255,7 @@ def generate(formal: dict, device_spec, bind) -> str:
         if portable_skip:
             safe_ops = []
         keep = [p for p in fn.signature.params if p.type != "DeviceState"]
-        params_c = ", ".join(f"{_c_type(p.type, bind)} {p.name}" for p in keep)
+        params_c = ", ".join(f"{c_type(p.type, bind)} {p.name}" for p in keep)
         params_c = (params_c + ", ") if params_c else ""
         params_c += f"{priv} *dev"
         # See harness.py: a portable-skipped body must still honor the declared
@@ -265,7 +265,7 @@ def generate(formal: dict, device_spec, bind) -> str:
             has_return = fn.signature.return_type != "Void"
         else:
             has_return = any("Return" in op for op in walk_leaf_ops(safe_ops))
-        return_type = _c_type(fn.signature.return_type, bind) if has_return else "void"
+        return_type = c_type(fn.signature.return_type, bind) if has_return else "void"
         L.append(f"{return_type} {fn.name}({params_c}) {{")
         declared = {p.name for p in keep} | {"base"}
         L.append(local_decls(safe_ops, declared, regs, indent=1))
@@ -350,7 +350,7 @@ def generate(formal: dict, device_spec, bind) -> str:
     return "\n".join(L) + "\n"
 
 
-def _c_type(abstract: str, bind) -> str:
+def c_type(abstract: str, bind) -> str:
     return bind.type_of(abstract) or "uint32_t"
 
 
