@@ -14,6 +14,7 @@ from .ast_model import (
 )
 from .dataflow import extract_function, FuncExtraction
 from .wrappers import infer_wrapper_summaries
+from .wrappers import _candidate_functions
 from .indirect import infer_indirect_targets, resolve_indirect_call
 
 
@@ -675,7 +676,7 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
     # summaries cannot accidentally inline registered callbacks.
     callback_entries = callback_entry_symbols(tu, symbols)
     base = build_inline_cache(
-        funcs, macros, tu, source_lines, mmio_globals, mmio_alias_facts,
+        _candidate_functions(funcs), macros, tu, source_lines, mmio_globals, mmio_alias_facts,
         wrapper_summaries,
         indirect_targets,
         callback_entries,
@@ -738,6 +739,8 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
     linker symbol.
     """
     funcs = [f for unit in units for f in unit["funcs"]]
+    # Expand to include header-defined inline functions called by targets
+    funcs = _candidate_functions(funcs)
     wrapper_summaries, _wrapper_funcs = infer_wrapper_summaries(funcs)
     indirect_targets = {}
     for unit in units:
@@ -751,6 +754,17 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
     symbols = {_func_id(f) for f in funcs}
     names = {f.name for f in funcs}
     owner = {_func_id(f): unit for unit in units for f in unit["funcs"]}
+    # Header-defined inline functions belong to the unit of the caller.
+    # Assign them to the first unit that references them.
+    for f in funcs:
+        fid = _func_id(f)
+        if fid not in owner:
+            for unit in units:
+                if any(_func_id(f) == fid for f in unit["funcs"]):
+                    owner[fid] = unit
+                    break
+            else:
+                owner[fid] = units[0]
     func_by_id = {_func_id(f): f for f in funcs}
 
     callback_entries: set[str] = set()

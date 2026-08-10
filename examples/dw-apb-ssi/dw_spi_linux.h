@@ -11,15 +11,7 @@
 #include <linux/err.h>
 #include <linux/platform_device.h>
 
-static void __iomem *__rh_mmio_base;
-#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
-#define RH_TRACE_FN(name) pr_info("[rhfn] %s\n", (name))
-#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))
-#undef readl
-#define readl(p) ({ u32 __v = __raw_readl(p); pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
-#undef writel
-#define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
-
+/* Constants */
 #define DW_HSSI_102A 825242154
 #define DW_HSSI_CTRLR0_MST 2147483648
 #define DW_HSSI_CTRLR0_SCPHA 256
@@ -51,9 +43,7 @@ static void __iomem *__rh_mmio_base;
 #define DW_SPI_DMARDLR 84
 #define DW_SPI_DMATDLR 80
 #define DW_SPI_DR 96
-#define DW_SPI_ICR 72
 #define DW_SPI_IDR 88
-#define DW_SPI_IMR 44
 #define DW_SPI_INT_MSTI 32
 #define DW_SPI_INT_RXFI 16
 #define DW_SPI_INT_RXOI 8
@@ -87,7 +77,10 @@ static void __iomem *__rh_mmio_base;
 #define SPARX5_FORCE_ENA 164
 #define SPARX5_FORCE_VAL 168
 
+/* Registers */
 #define DW_SPI_CTRLR0 0
+#define DW_SPI_ICR 72
+#define DW_SPI_IMR 44
 #define DW_SPI_ISR 48
 #define DW_SPI_RISR 52
 #define DW_SPI_RXFLR 36
@@ -98,6 +91,16 @@ static void __iomem *__rh_mmio_base;
 #define DW_SPI_TXFTLR 24
 #define DW_SPI_VERSION 92
 #define MSCC_SPI_MST_SW_MODE 20
+
+/* MMIO trace instrumentation */
+static void __iomem *__rh_mmio_base;
+#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
+#define RH_TRACE_FN(name) pr_info("[rhfn] %s\n", (name))
+#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))
+#undef readl
+#define readl(p) ({ u32 __v = __raw_readl(p); pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
+#undef writel
+#define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
 
 struct dw_apb_ssi_priv {
 	void __iomem *base;

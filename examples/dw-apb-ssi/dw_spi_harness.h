@@ -6,116 +6,122 @@
 #include <stdio.h>
 
 /* Kernel macro stubs */
-#define BIT(nr) (1UL << (nr))
-#define GENMASK(h, l) (((~0UL) << (l)) & (~0UL >> (63 - (h))))
-#define EPROBE_DEFER (-517)
-#define ENOTCONN (-107)
-#define IRQ_NOTCONNECTED (-1)
+#define BIT(x) (1UL << (x))
+#define GENMASK(h, l) (((1UL << ((h) - (l) + 1)) - 1) << (l))
+#define U32_MAX ((uint32_t)~0U)
 
 /* Register Offsets */
-#define DW_SPI_CTRLR0          0x00
-#define DW_SPI_CTRLR1          0x04
-#define DW_SPI_SSIENR          0x08
-#define DW_SPI_SER             0x10
-#define DW_SPI_BAUDR           0x14
-#define DW_SPI_TXFTLR          0x18
-#define DW_SPI_RXFTLR          0x1C
-#define DW_SPI_TXFLR           0x20
-#define DW_SPI_RXFLR           0x24
-#define DW_SPI_SR              0x28
-#define DW_SPI_ISR             0x30
-#define DW_SPI_RISR            0x34
-#define DW_SPI_VERSION         0x5C
-#define DW_SPI_RX_SAMPLE_DLY   0xF0
-#define DW_SPI_CS_OVERRIDE     0xF4
-#define MSCC_SPI_MST_SW_MODE   0x14
+#define DW_SPI_CTRLR0           0x00
+#define DW_SPI_CTRLR1           0x04
+#define DW_SPI_SSIENR           0x08
+#define DW_SPI_SER              0x10
+#define DW_SPI_BAUDR            0x14
+#define DW_SPI_TXFTLR           0x18
+#define DW_SPI_RXFTLR           0x1C
+#define DW_SPI_TXFLR            0x20
+#define DW_SPI_RXFLR            0x24
+#define DW_SPI_SR               0x28
+#define DW_SPI_IMR              0x2C
+#define DW_SPI_ISR              0x30
+#define DW_SPI_RISR             0x34
+#define DW_SPI_ICR              0x48
+#define DW_SPI_VERSION          0x5C
+#define DW_SPI_RX_SAMPLE_DLY    0xF0
+#define DW_SPI_CS_OVERRIDE      0x2C
 
-/* Driver specific macros */
-#define DW_SPI_INT_TXEI        BIT(0)
-#define DW_SPI_CAP_CS_OVERRIDE BIT(8)
-#define DW_SPI_CTRLR0_TMOD_EPROMREAD (1 << 10)
-#define DW_SPI_CTRLR0_TMOD_RO        (2 << 10)
+#define MSCC_SPI_MST_SW_MODE    0x14
+
+/* Constants */
+#define DW_SPI_INT_TXEI         BIT(0)
+#define DW_SPI_CTRLR0_TMOD_EPROMREAD 0x2
+#define DW_SPI_CTRLR0_TMOD_RO        0x2
+#define DW_SPI_CAP_CS_OVERRIDE  BIT(1)
+#define IRQ_NOTCONNECTED        0xFFFFFFFF
+#define EPROBE_DEFER            -517
+#define ENOTCONN                -107
 
 /* Globals for tracing */
 static unsigned long trace_count = 0;
 
 /* Primitive stubs */
 uint8_t harness_read8(uintptr_t addr) {
-    uint8_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
-    return value;
+    uint8_t val = 0;
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
+    return val;
 }
 
 uint16_t harness_read16(uintptr_t addr) {
-    uint16_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
-    return value;
+    uint16_t val = 0;
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
+    return val;
 }
 
 uint32_t harness_read32(uintptr_t addr) {
-    uint32_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
-    return value;
+    uint32_t val = 0;
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
+    return val;
 }
 
 uint16_t harness_read16be(uintptr_t addr) {
-    uint16_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
-    return value;
+    uint16_t val = 0;
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
+    return val;
 }
 
 uint32_t harness_read32be(uintptr_t addr) {
-    uint32_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
-    return value;
+    uint32_t val = 0;
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
+    return val;
 }
 
-void harness_write8(uint8_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write8(uint8_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write16(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write16(uint16_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write32(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write32(uint32_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write16be(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write16be(uint16_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write32be(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write32be(uint32_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write_w1c8(uint8_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write_w1c8(uint8_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write_w1c16(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write_w1c16(uint16_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-void harness_write_w1c32(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write_w1c32(uint32_t val, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, val);
 }
 
-/* Device State Struct */
+/* Device private struct */
 struct dw_apb_ssi_priv {
     uintptr_t base;
+    uint32_t reg_io_width;
+    uint32_t rx_len;
+    uint32_t tx_len;
+    uint32_t current_freq;
+    uint32_t cur_rx_sample_dly;
+    uint32_t dma_mapped;
+    uint32_t irq;
     uint32_t ver;
     uint32_t num_cs;
     uint32_t fifo_len;
     uint32_t caps;
-    uint32_t current_freq;
-    uint32_t cur_rx_sample_dly;
-    uint32_t rx_len;
-    uint32_t irq;
-    uint32_t dma_mapped;
-    void *ctlr;
-    void *dma_ops;
+    uint32_t chip_select[4];
+    uint32_t cur_msg;
 };
 
 #endif /* REHARNESS_DW-APB-SSI_HARNESS_H */
