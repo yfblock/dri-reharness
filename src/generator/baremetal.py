@@ -8,7 +8,8 @@ from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops
 from .common import (ops_to_c, local_decls, value_var_names,
-                     lowering_recipes, transaction_runtime_prelude)
+                     lowering_recipes, detect_transaction_transports,
+                     transaction_runtime_prelude_filtered)
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
 from .subsystem_runner import (emit_gpio_callback_runner, subsystem_callback_plan,
@@ -153,7 +154,9 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("#define REHARNESS_W1C_MARKER(name) ((void)(name))")
     L.append("#define REHARNESS_W1C_END() ((void)0)")
     L.append("#endif")
-    L.extend(transaction_runtime_prelude("baremetal"))
+    tx_transports = detect_transaction_transports(formal)
+    L.extend(transaction_runtime_prelude_filtered(
+        "baremetal", **tx_transports))
     L.append("static inline void reharness_delay_ns(uint32_t ns) {")
     L.append("    for (volatile uint32_t i = 0; i < ns / 100U + 1U; ++i) { }")
     L.append("}")

@@ -21,7 +21,9 @@ from .subsystem_runner import (portable_sdhci_accessor_only,
 from .common import (ops_to_c, local_decls, value_var_names,
                      _replace_expr_var, addr_to_c, lowering_receipt,
                      ris_op_digest, lowering_recipes,
-                     transaction_runtime_prelude, transaction_digest)
+                     transaction_runtime_prelude, transaction_digest,
+                     detect_transaction_transports,
+                     transaction_runtime_prelude_filtered)
 
 _MODELED_STATE_FIELDS = {
     "bypass_orig", "mask_cache", "skip_init", "ngpio",
@@ -2795,7 +2797,9 @@ def generate(formal: dict, device_spec, bind, facts=None, pci_identity=None) -> 
 
     L = [f"// Auto-generated deterministic Linux driver for {dev} (reharness)",
          "// SPDX-License-Identifier: GPL-2.0", *includes, ""]
-    L.extend(transaction_runtime_prelude("linux"))
+    tx_transports = detect_transaction_transports(formal)
+    L.extend(transaction_runtime_prelude_filtered(
+        "linux", **tx_transports))
     L.append("")
     for name, off in constants.items():
         L.append(f"#ifndef {name}\n#define {name}\t0x{off:x}\n#endif")

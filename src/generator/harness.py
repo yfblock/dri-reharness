@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops, walk_all_ops
 from .common import (ops_to_c, local_decls, value_var_names,
-                     lowering_recipes, transaction_runtime_prelude)
+                     lowering_recipes, transaction_runtime_prelude_filtered)
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
                     _portable_function_macros)
 from .subsystem_runner import (emit_gpio_callback_runner, subsystem_callback_plan,
@@ -169,7 +169,9 @@ def generate(formal: dict, device_spec, bind) -> str:
     L.append("static inline void harness_write16be(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 1); }")
     L.append("static inline void harness_write32be(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 1); }")
     L.append("static inline void reharness_delay_ns(uint32_t ns) { (void)ns; }")
-    L.extend(transaction_runtime_prelude("harness"))
+    L.extend(transaction_runtime_prelude_filtered(
+        "harness", has_regmap=has_regmap_transactions,
+        has_i2c=has_i2c_transactions, has_mfd=has_mfd_transactions))
     L.append('#define REHARNESS_CALLBACK_BEGIN(n) printf("[reharness-callback-begin] %u\\n", (unsigned)(n))')
     L.append('#define REHARNESS_CALLBACK_MARKER(name) printf("[reharness-callback] %s\\n", (name))')
     L.append('#define REHARNESS_CALLBACK_RESULT(v) printf("[reharness-result] 0x%llx\\n", (unsigned long long)(v))')
