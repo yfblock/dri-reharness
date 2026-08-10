@@ -7,120 +7,107 @@
 
 /* Kernel macro stubs */
 #define BIT(x) (1UL << (x))
-#define GENMASK(h, l) (((1UL << ((h) - (l) + 1)) - 1) << (l))
+#define GENMASK(h, l) (((1UL << ((h) + 1)) - 1) & ~((1UL << (l)) - 1))
+#define EPROBE_DEFER (-517)
+#define ENOTCONN (-107)
+#define IRQ_NOTCONNECTED 0xffffffff
 
-#define DW_SPI_CTRLR0               0x00
-#define DW_SPI_CTRLR1               0x04
-#define DW_SPI_SSIENR               0x08
-#define DW_SPI_SER                  0x10
-#define DW_SPI_BAUDR                0x14
-#define DW_SPI_TXFTLR               0x18
-#define DW_SPI_RXFTLR               0x1c
-#define DW_SPI_TXFLR                0x20
-#define DW_SPI_RXFLR                0x24
-#define DW_SPI_SR                   0x28
-#define DW_SPI_IMR                  0x2c
-#define DW_SPI_ISR                  0x30
-#define DW_SPI_RISR                 0x34
-#define DW_SPI_ICR                  0x48
-#define DW_SPI_DR                   0x60
-#define DW_SPI_VERSION              0x5c
-#define DW_SPI_RX_SAMPLE_DLY        0xf0
-#define DW_SPI_CS_OVERRIDE          0xf4
-#define MSCC_SPI_MST_SW_MODE        0x14
+/* Register Offsets */
+#define DW_SPI_CTRLR0           0x00
+#define DW_SPI_CTRLR1           0x04
+#define DW_SPI_SSIENR           0x08
+#define DW_SPI_SER              0x10
+#define DW_SPI_BAUDR            0x14
+#define MSCC_SPI_MST_SW_MODE    0x14
+#define DW_SPI_TXFTLR           0x18
+#define DW_SPI_RXFTLR           0x1c
+#define DW_SPI_TXFLR            0x20
+#define DW_SPI_RXFLR            0x24
+#define DW_SPI_SR               0x28
+#define DW_SPI_IMR              0x2c
+#define DW_SPI_ISR              0x30
+#define DW_SPI_RISR             0x34
+#define DW_SPI_ICR              0x48
+#define DW_SPI_DR               0x60
+#define DW_SPI_VERSION          0x5c
+#define DW_SPI_RX_SAMPLE_DLY    0xf0
+#define DW_SPI_CS_OVERRIDE      0xf4
 
-#define DW_SPI_INT_TXEI             BIT(0)
-#define DW_SPI_CTRLR0_TMOD_EPROMREAD BIT(2)
-#define DW_SPI_CTRLR0_TMOD_RO       BIT(3)
+#define DW_SPI_INT_TXEI         BIT(0)
+#define DW_SPI_CTRLR0_TMOD_EPROMREAD GENMASK(3, 2)
+#define DW_SPI_CTRLR0_TMOD_RO       BIT(2)
 #define DW_SPI_CAP_CS_OVERRIDE      BIT(0)
-#define IRQ_NOTCONNECTED            0xffffffff
-#define EPROBE_DEFER                517
-#define ENOTCONN                    107
 
+/* Trace counter */
 static unsigned long trace_count = 0;
 
 /* Primitive stubs */
 uint8_t harness_read8(uintptr_t addr) {
     uint8_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
     return value;
 }
 
 uint16_t harness_read16(uintptr_t addr) {
     uint16_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
     return value;
 }
 
 uint32_t harness_read32(uintptr_t addr) {
     uint32_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
     return value;
 }
 
 uint16_t harness_read16be(uintptr_t addr) {
     uint16_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
     return value;
 }
 
 uint32_t harness_read32be(uintptr_t addr) {
     uint32_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
     return value;
 }
 
 void harness_write8(uint8_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write16(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write32(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write16be(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write32be(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write_w1c8(uint8_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write_w1c16(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
 void harness_write_w1c32(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xfff, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, addr & 0xFFF, value);
 }
 
-/* Device private struct */
-struct dw_apb_ssi_priv {
-    uintptr_t base;
-    uint32_t chip_select[4];
-    uint32_t rx_len;
-    uint32_t tx_len;
-    uint32_t n_bytes;
-    void *tx;
-    void *rx;
-    uint32_t current_freq;
-    uint32_t cur_rx_sample_dly;
-    uint32_t dma_mapped;
-    uint32_t irq;
-    uint32_t ver;
-    uint32_t num_cs;
-    uint32_t fifo_len;
-    uint32_t caps;
-    void *ctlr;
-    void *cur_msg;
+/* Device structs */
+struct dw_spi_chip {
+    uint32_t cr0;
+    uint32_t rx_sample_dly;
 };
 
 #endif /* REHARNESS_DW_APB_SSI_HARNESS_H */

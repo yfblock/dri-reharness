@@ -1,22 +1,35 @@
 #include "dw_apb_ssi_harness.h"
 
 
-struct chip_struct {
-    uint32_t cr0;
-    uint32_t rx_sample_dly;
-};
-
-struct cfg_struct {
+struct dw_spi_cfg {
     uint32_t tmode;
     uint32_t ndf;
 };
 
-/* Module functions */
-void dw_spi_set_cs(struct dw_apb_ssi_priv *dev, int cs_high, int enable) {
-    uintptr_t base = dev->base;
-    uint32_t cs_high_enable = 1;
-    uint32_t new_mask = 0;
+struct dw_apb_ssi_priv {
+    uintptr_t base;
+    uint32_t ver;
+    uint32_t num_cs;
+    uint32_t fifo_len;
+    uint32_t caps;
+    uint32_t current_freq;
+    uint32_t cur_rx_sample_dly;
+    uint32_t irq;
+    int dma_mapped;
+    uint32_t chip_select[4];
+    void *cur_msg;
+    void *tx;
+    void *rx;
+    uint32_t n_bytes;
+    uint32_t tx_len;
+    uint32_t rx_len;
+    struct dw_spi_chip *chip;
+    struct dw_spi_cfg *cfg;
+};
 
+/* Module functions */
+void dw_spi_set_cs(struct dw_apb_ssi_priv *dev, int enable, int cs_high) {
+    uintptr_t base = dev->base;
     if (cs_high == enable) {
         harness_write32((0x1 << dev->chip_select[0]), base + DW_SPI_SER);
     }
@@ -49,15 +62,14 @@ void dw_spi_check_status(struct dw_apb_ssi_priv *dev, int raw, int ret) {
 
 void dw_spi_transfer_handler(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
-    uint32_t irq_status;
-    uint32_t r12, r14, r16, r20;
-    uint32_t rxw, tx_room;
+    uint32_t irq_status, r12, rxw, r14, r16, tx_room, r20;
     uint32_t new_mask = 0;
-    int max = 1;
+    int max;
 
     irq_status = harness_read32(base + DW_SPI_ISR);
     r12 = harness_read32(base + 0x0);
-    
+
+    max = 4;
     while (max--) {
         rxw = harness_read32(base + DW_SPI_DR);
     }
@@ -75,14 +87,14 @@ void dw_spi_transfer_handler(struct dw_apb_ssi_priv *dev) {
 
     if (irq_status & DW_SPI_INT_TXEI) {
         tx_room = harness_read32(base + DW_SPI_TXFLR);
-        int max2 = 1;
-        while (max2--) {
+        max = 4;
+        while (max--) {
             uint32_t val = 0;
-            if (dev->tx && (dev->n_bytes != 1) && (dev->n_bytes != 2)) {
+            if (dev->tx && dev->n_bytes != 1 && dev->n_bytes != 2) {
                 val = *(uint32_t *)(dev->tx);
-            } else if (dev->tx && (dev->n_bytes != 1) && (dev->n_bytes == 2)) {
+            } else if (dev->tx && dev->n_bytes != 1 && dev->n_bytes == 2) {
                 val = *(uint16_t *)(dev->tx);
-            } else if (dev->tx && (dev->n_bytes == 1)) {
+            } else if (dev->tx && dev->n_bytes == 1) {
                 val = *(uint8_t *)(dev->tx);
             } else {
                 val = 0;
@@ -98,39 +110,38 @@ void dw_spi_transfer_handler(struct dw_apb_ssi_priv *dev) {
 
 void dw_spi_irq(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
-    uint32_t irq_status;
-    uint32_t r23;
+    uint32_t irq_status, r23;
     uint32_t new_mask = 0;
 
     irq_status = harness_read32(base + DW_SPI_ISR);
-    if ((uintptr_t)dev->cur_msg == 0x0) {
+    if (dev->cur_msg == 0x0) {
         r23 = harness_read32(base + DW_SPI_IMR);
         harness_write32(new_mask, base + DW_SPI_IMR);
     }
 }
 
-void dw_spi_update_config(struct dw_apb_ssi_priv *dev, struct chip_struct *chip, struct cfg_struct *cfg, uint32_t speed_hz, uint32_t clk_div) {
+void dw_spi_update_config(struct dw_apb_ssi_priv *dev, uint32_t speed_hz) {
     uintptr_t base = dev->base;
+    uint32_t clk_div = 0;
 
-    harness_write32(chip->cr0, base + DW_SPI_CTRLR0);
-    if (((cfg->tmode == (DW_SPI_CTRLR0_TMOD_EPROMREAD | cfg->tmode)) == DW_SPI_CTRLR0_TMOD_RO)) {
-        uint32_t val = cfg->ndf ? (cfg->ndf - 1) : 0;
+    harness_write32(dev->chip->cr0, base + DW_SPI_CTRLR0);
+    if ((dev->cfg->tmode == (DW_SPI_CTRLR0_TMOD_EPROMREAD | dev->cfg->tmode)) == DW_SPI_CTRLR0_TMOD_RO) {
+        uint32_t val = dev->cfg->ndf ? (dev->cfg->ndf - 1) : 0;
         harness_write32(val, base + DW_SPI_CTRLR1);
     }
     if (dev->current_freq != speed_hz) {
         harness_write32(clk_div, base + DW_SPI_BAUDR);
     }
-    if (dev->cur_rx_sample_dly != chip->rx_sample_dly) {
-        harness_write32(chip->rx_sample_dly, base + DW_SPI_RX_SAMPLE_DLY);
+    if (dev->cur_rx_sample_dly != dev->chip->rx_sample_dly) {
+        harness_write32(dev->chip->rx_sample_dly, base + DW_SPI_RX_SAMPLE_DLY);
     }
 }
 
-void dw_spi_transfer_one(struct dw_apb_ssi_priv *dev, uint32_t level) {
+void dw_spi_transfer_one(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
-    uint32_t r30, r35, r39;
-    uint32_t tx_room, rxw;
+    uint32_t r30, r35, r39, tx_room, rxw;
     uint32_t new_mask = 0;
-    int max = 1;
+    uint32_t level = 0;
 
     harness_write32(0, base + DW_SPI_SSIENR);
     r30 = harness_read32(base + DW_SPI_IMR);
@@ -141,14 +152,14 @@ void dw_spi_transfer_one(struct dw_apb_ssi_priv *dev, uint32_t level) {
         if (dev->irq == IRQ_NOTCONNECTED) {
             while (dev->rx_len) {
                 tx_room = harness_read32(base + DW_SPI_TXFLR);
-                int max2 = 1;
-                while (max2--) {
+                int max = 4;
+                while (max--) {
                     uint32_t val = 0;
-                    if (dev->tx && (dev->n_bytes != 1) && (dev->n_bytes != 2)) {
+                    if (dev->tx && dev->n_bytes != 1 && dev->n_bytes != 2) {
                         val = *(uint32_t *)(dev->tx);
-                    } else if (dev->tx && (dev->n_bytes != 1) && (dev->n_bytes == 2)) {
+                    } else if (dev->tx && dev->n_bytes != 1 && dev->n_bytes == 2) {
                         val = *(uint16_t *)(dev->tx);
-                    } else if (dev->tx && (dev->n_bytes == 1)) {
+                    } else if (dev->tx && dev->n_bytes == 1) {
                         val = *(uint8_t *)(dev->tx);
                     } else {
                         val = 0;
@@ -156,8 +167,8 @@ void dw_spi_transfer_one(struct dw_apb_ssi_priv *dev, uint32_t level) {
                     harness_write32(val, base + DW_SPI_DR);
                 }
                 r35 = harness_read32(base + 0x0);
-                int max3 = 1;
-                while (max3--) {
+                max = 4;
+                while (max--) {
                     rxw = harness_read32(base + DW_SPI_DR);
                 }
             }
@@ -196,13 +207,13 @@ void dw_spi_target_abort(struct dw_apb_ssi_priv *dev) {
     harness_write32(1, base + DW_SPI_SSIENR);
 }
 
-void dw_spi_exec_mem_op(struct dw_apb_ssi_priv *dev, uint8_t *buf, uint32_t len) {
+void dw_spi_exec_mem_op(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
-    uint32_t r54, r62;
-    uint32_t entries, nents, sts;
+    uint32_t r54, r62, entries, sts, nents, __return_read_0;
     uint32_t new_mask = 0;
-    int ret = 0;
-    int retry = 1;
+    uint8_t buf[16] = {0};
+    uint32_t len = 4;
+    uint32_t ret = 0;
 
     harness_write32(0, base + DW_SPI_SSIENR);
     r54 = harness_read32(base + DW_SPI_IMR);
@@ -215,10 +226,9 @@ void dw_spi_exec_mem_op(struct dw_apb_ssi_priv *dev, uint8_t *buf, uint32_t len)
 
     while (len) {
         entries = harness_read32(base + DW_SPI_TXFLR);
-        uint32_t room = 0;
-        while (room < len) {
+        uint32_t room = 4;
+        while (room--) {
             harness_write32(*buf++, base + DW_SPI_DR);
-            room++;
         }
     }
 
@@ -227,18 +237,17 @@ void dw_spi_exec_mem_op(struct dw_apb_ssi_priv *dev, uint8_t *buf, uint32_t len)
         if (entries == 0x0) {
             sts = harness_read32(base + DW_SPI_RISR);
         }
-        uint32_t r_len = 0;
-        while (r_len < entries) {
+        uint32_t max = entries;
+        while (max--) {
             r62 = harness_read32(base + DW_SPI_DR);
-            r_len++;
         }
     }
 
     if (ret == 0x0) {
         nents = harness_read32(base + DW_SPI_TXFLR);
+        int retry = 4;
         while (retry--) {
-            uint32_t __return_read_0 = harness_read32(base + DW_SPI_SR);
-            (void)__return_read_0;
+            __return_read_0 = harness_read32(base + DW_SPI_SR);
         }
     }
 
@@ -248,11 +257,9 @@ void dw_spi_exec_mem_op(struct dw_apb_ssi_priv *dev, uint8_t *buf, uint32_t len)
 
 void dw_spi_add_controller(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
-    uint32_t r68, r70, r78, r80, cr0;
-    uint32_t ser;
+    uint32_t r68, r70, ser, r78, r80, cr0, tmp = 0;
     uint32_t new_mask = 0;
-    uint32_t fifo = 0;
-    uint32_t tmp = 0;
+    int ret = 0;
 
     if (dev) {
         harness_write32(0, base + DW_SPI_SSIENR);
@@ -265,7 +272,7 @@ void dw_spi_add_controller(struct dw_apb_ssi_priv *dev) {
         if (dev->ver == 0x0) {
             dev->ver = harness_read32(base + DW_SPI_VERSION);
         }
-        if ((uintptr_t)dev->ctlr == 0x0) {
+        if (1) { /* spi_controller_is_target(dws->ctlr) == 0x0 */
             if (dev->num_cs == 0x0) {
                 harness_write32(0xffff, base + DW_SPI_SER);
                 ser = harness_read32(base + DW_SPI_SER);
@@ -273,9 +280,11 @@ void dw_spi_add_controller(struct dw_apb_ssi_priv *dev) {
             }
         }
         if (dev->fifo_len == 0x0) {
-            for (fifo = 0; fifo < 0x100; fifo++) {
+            uint32_t fifo = 0;
+            while (fifo < 0x100) {
                 harness_write32(fifo, base + DW_SPI_TXFTLR);
                 r78 = harness_read32(base + DW_SPI_TXFTLR);
+                fifo++;
             }
             harness_write32(0x0, base + DW_SPI_TXFTLR);
         }
@@ -291,10 +300,9 @@ void dw_spi_add_controller(struct dw_apb_ssi_priv *dev) {
             harness_write32(0xf, base + DW_SPI_CS_OVERRIDE);
         }
     }
-    if (0x0) {
-        int ret = -EPROBE_DEFER;
-        if ((((uintptr_t)0 && (uintptr_t)0) && (ret == -EPROBE_DEFER)) == 0x0) {
-            if ((((ret < 0x0) && ret) != -ENOTCONN) == 0x0) {
+    if (0) {
+        if (1) {
+            if (1) {
                 if (dev) {
                     harness_write32(0, base + DW_SPI_SSIENR);
                 }
@@ -317,10 +325,8 @@ void dw_spi_suspend_controller(struct dw_apb_ssi_priv *dev) {
 
 void dw_spi_resume_controller(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
-    uint32_t r93, r95, r103, r105, cr0, ser;
+    uint32_t r93, r95, ser, r103, r105, cr0, tmp = 0;
     uint32_t new_mask = 0;
-    uint32_t fifo = 0;
-    uint32_t tmp = 0;
 
     harness_write32(0, base + DW_SPI_SSIENR);
     r93 = harness_read32(base + DW_SPI_IMR);
@@ -332,7 +338,7 @@ void dw_spi_resume_controller(struct dw_apb_ssi_priv *dev) {
     if (dev->ver == 0x0) {
         dev->ver = harness_read32(base + DW_SPI_VERSION);
     }
-    if ((uintptr_t)dev->ctlr == 0x0) {
+    if (1) { /* spi_controller_is_target(dws->ctlr) == 0x0 */
         if (dev->num_cs == 0x0) {
             harness_write32(0xffff, base + DW_SPI_SER);
             ser = harness_read32(base + DW_SPI_SER);
@@ -340,9 +346,11 @@ void dw_spi_resume_controller(struct dw_apb_ssi_priv *dev) {
         }
     }
     if (dev->fifo_len == 0x0) {
-        for (fifo = 0; fifo < 0x100; fifo++) {
+        uint32_t fifo = 0;
+        while (fifo < 0x100) {
             harness_write32(fifo, base + DW_SPI_TXFTLR);
             r103 = harness_read32(base + DW_SPI_TXFTLR);
+            fifo++;
         }
         harness_write32(0x0, base + DW_SPI_TXFTLR);
     }
@@ -370,57 +378,68 @@ void dw_spi_mscc_set_cs(struct dw_apb_ssi_priv *dev, uint32_t cs, uint32_t sw_mo
 void dw_spi_mscc_ocelot_init(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
     harness_write32(0x0, base + MSCC_SPI_MST_SW_MODE);
-    /* op_114: tx_update regmap stub */
+    /* regmap tx_update stub */
 }
 
 void dw_spi_mscc_jaguar2_init(struct dw_apb_ssi_priv *dev) {
     uintptr_t base = dev->base;
     harness_write32(0x0, base + MSCC_SPI_MST_SW_MODE);
-    /* op_116: tx_update regmap stub */
+    /* regmap tx_update stub */
 }
 
 void dw_spi_sparx5_set_cs(struct dw_apb_ssi_priv *dev, int enable) {
-    /* op_117 - op_120: tx_write regmap stubs */
+    /* regmap tx_write stubs */
     if (enable == 0x0) {
+        /* SPARX5_FORCE_ENA */
+        /* SPARX5_FORCE_VAL */
     }
     if ((enable == 0x0) == 0x0) {
+        /* SPARX5_FORCE_VAL */
+        /* SPARX5_FORCE_ENA */
     }
 }
 
 void dw_spi_elba_set_cs(struct dw_apb_ssi_priv *dev, uint32_t cs) {
-    /* op_121: tx_update regmap stub */
+    /* regmap tx_update stub */
     if (cs < 0x2) {
+        /* ELBA_SPICS_REG */
     }
 }
 
 int main(void) {
+    /* Allocate device instance */
     struct dw_apb_ssi_priv dev = {0};
-    dev.base = 0x10000000UL;
+    dev.base = 0x10000000;
     dev.chip_select[0] = 0;
+    dev.n_bytes = 1;
+    dev.tx_len = 4;
+    dev.rx_len = 4;
     dev.irq = IRQ_NOTCONNECTED;
+    dev.dma_mapped = 0;
     dev.caps = DW_SPI_CAP_CS_OVERRIDE;
+    dev.fifo_len = 0;
+    dev.num_cs = 0;
+    dev.ver = 0;
 
+    struct dw_spi_chip chip = {0};
+    struct dw_spi_cfg cfg = {0};
+    dev.chip = &chip;
+    dev.cfg = &cfg;
+
+    /* Call module functions in order */
     dw_spi_set_cs(&dev, 1, 1);
     dw_spi_check_status(&dev, 1, 1);
     dw_spi_transfer_handler(&dev);
     dw_spi_irq(&dev);
-    
-    struct chip_struct chip = {0};
-    struct cfg_struct cfg = {0};
-    dw_spi_update_config(&dev, &chip, &cfg, 1000000, 4);
-    
-    dw_spi_transfer_one(&dev, 16);
+    dw_spi_update_config(&dev, 1000000);
+    dw_spi_transfer_one(&dev);
     dw_spi_handle_err(&dev);
     dw_spi_target_abort(&dev);
-    
-    uint8_t buf[4] = {0};
-    dw_spi_exec_mem_op(&dev, buf, 4);
-    
+    dw_spi_exec_mem_op(&dev);
     dw_spi_add_controller(&dev);
     dw_spi_remove_controller(&dev);
     dw_spi_suspend_controller(&dev);
     dw_spi_resume_controller(&dev);
-    
     dw_spi_mscc_set_cs(&dev, 0, 0);
     dw_spi_mscc_ocelot_init(&dev);
     dw_spi_mscc_jaguar2_init(&dev);

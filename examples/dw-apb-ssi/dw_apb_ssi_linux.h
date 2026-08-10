@@ -108,6 +108,19 @@ struct driver_priv {
     void __iomem *base;
     struct miscdevice misc;
     struct device *dev;
+    u32 ver;
+    u32 num_cs;
+    u32 fifo_len;
+    u32 caps;
+    u32 irq;
+    u32 current_freq;
+    u32 cur_rx_sample_dly;
+    u32 rx_len;
+    u32 tx_len;
+    u32 n_bytes;
+    const void *tx;
+    void *rx;
+    u32 dma_mapped;
 };
 
 #endif /* REHARNESS_DW_APB_SSI_LINUX_H */

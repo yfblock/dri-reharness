@@ -6,6 +6,7 @@
 #define DW_APB_SSI_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 /* Register Offsets */
 #define DW_SPI_CTRLR0           0x00
@@ -42,8 +43,8 @@ static inline uint32_t mmio_read32(uintptr_t addr) {
     return *(volatile uint32_t *)addr;
 }
 
-static inline void mmio_write32(uint32_t val, uintptr_t addr) {
-    *(volatile uint32_t *)addr = val;
+static inline void mmio_write32(uint32_t value, uintptr_t addr) {
+    *(volatile uint32_t *)addr = value;
 }
 
 /* Device Structures */
