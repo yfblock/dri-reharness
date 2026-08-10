@@ -157,9 +157,22 @@ def _call_pi_synth(prompt, script, timeout):
     return r.stdout
 
 
-def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, **kwargs):
+def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type=None, pci_identity=None, **kwargs):
     template = load_prompt_template(backend)
     evidence = build_evidence_json(formal, device_spec, bind, facts)
+    # Inject bus type info into evidence JSON
+    if bus_type or pci_identity:
+        ev = json.loads(evidence)
+        if bus_type:
+            ev["bus_type"] = bus_type
+        if pci_identity:
+            if hasattr(pci_identity, "to_dict"):
+                ev["pci_identity"] = pci_identity.to_dict()
+            elif isinstance(pci_identity, dict):
+                ev["pci_identity"] = pci_identity
+            else:
+                ev["pci_identity"] = {"vendor": str(pci_identity)}
+        evidence = json.dumps(ev, indent=2, sort_keys=True)
     prompt = template.replace("__EVIDENCE__", evidence)
     prompt = prompt.replace("__DRIVER_NAME__", formal.get("driver", device_spec.name))
     raw = call_llm(prompt)

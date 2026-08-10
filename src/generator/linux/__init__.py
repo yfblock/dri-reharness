@@ -9,8 +9,16 @@ GEN_KWARGS = ["facts", "pci_identity"]
 
 def generate(formal: dict, device_spec, bind, **kwargs) -> str:
     from generator.llm_bridge import generate_via_llm
+    pci_identity = kwargs.get("pci_identity")
+    facts = kwargs.get("facts")
+    extra = {}
+    if pci_identity:
+        extra["pci_identity"] = pci_identity
+        extra["bus_type"] = "pci"
+    else:
+        extra["bus_type"] = "platform"
     return generate_via_llm(formal, device_spec, bind,
-                             backend="linux")
+                             backend="linux", facts=facts, **extra)
 
 
 def make_bind(device_spec, bind, priv: str, base_expr: str) -> None:
