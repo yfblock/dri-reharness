@@ -1,21 +1,21 @@
 {
   "experiments": {
     "edu": {
+      "manifest_digest": "a8398d1eff4ef681e13a92d6f8a402fd570e810399b5587123247ff1d075a0f6",
       "probe": true,
-      "value_oracle": "EDU_TRACE_OK"
+      "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e",
+      "trace_oracle": true
     },
-    "gpio-ftgpio010": {
-      "call_coverage": "7/7",
-      "module_coverage": "6/6",
-      "op_coverage": "13/13",
+    "ftgpio010": {
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
       "probe": true,
-      "register_coverage": "8/8",
-      "trace_oracle": "TRACE_MATCH_OK"
+      "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33",
+      "trace_oracle": true
     }
   },
-  "generated_at": "2026-07-17T07:33:53.748901+00:00",
+  "generated_at": "2026-08-01T17:54:51.809116+00:00",
+  "kernel_bzimage_sha256": "b2957c8b292c7bdcb6c4966291ad0c88cb0e61300449b322bfd879d172c3ab77",
   "kernel_release": "7.1.0-rc7-gacb7500801e9",
-  "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-  "reharness_commit": "24182ac7a6b8be43b743e8a8ac9ae7b251b0e897",
+  "reharness_commit": "891ebe81a8277704a11a8015e6f666192c7964df",
   "schema": 1
 }

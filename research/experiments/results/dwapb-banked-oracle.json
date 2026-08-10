@@ -105,5 +105,5 @@
     1
   ],
   "schema": 1,
-  "source": "linux/drivers/gpio/gpio-dwapb.c"
+  "source": "vendor/linux/drivers/gpio/gpio-dwapb.c"
 }

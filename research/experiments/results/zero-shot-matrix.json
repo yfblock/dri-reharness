@@ -260,9 +260,9 @@
   },
   "compile_context_evidence": {
     "database": "artifacts/output/zero-shot-contexts/compile_commands.json",
-    "database_sha256": "345c1b0fcb3d63390da73fcc734784eeec274e8d8e24a67c2e2b745c90ad0908",
+    "database_sha256": "542b878ddc13653d98f1e91fd3b16e806ef14b79a78b8c702edb1d5118c03b7e",
     "report": "research/experiments/results/zero-shot-contexts.json",
-    "report_sha256": "a22b8c203a85cb9593949d4f46a43d94ce0ad1d65b81750293279e226386f234"
+    "report_sha256": "e0fa49ec59feb6f7e13182d1f646145a40872d4692a9fefafbfef5c29cbc3971"
   },
   "drivers": [
     {
@@ -277,7 +277,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "de31edf6f11bb8fad727d6627670398f265c2d5b9350254160ecbc50ef89a87c",
+        "analysis_sha256": "de1fecc158ec43163378aa4c946cdc6f11bf31ae7a973692a8cd1a7dbfee4e21",
         "device_spec_sha256": "33f5ce507abe7d88d44cbe2db7f66879953c72caa28ec1ead91f1a58c18fe5ae",
         "ris_sha256": "002feb42eeab435cf0d4fa537f435bf2e45154e5a54a1e78a4b52e020c208efa"
       },
@@ -302,14 +302,14 @@
       },
       "compile_context": {
         "arch": "x86",
-        "argument_count": 35,
-        "arguments_sha256": "eb545bb2fc56b7a5b7c48dc1646eb6ef803f200c131e2cf405be91277063b913",
+        "argument_count": 33,
+        "arguments_sha256": "389bfe1c95388d278a14ced2b5e52120e206714280121f902e560ec50dfb5785",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "x86-pinned",
         "profile_kind": "pinned-experiment-build",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "9e516b6ddeffd9d23b62217ba40e3f1a248c7108f58cc5cfaa59926d69479e0d"
+        "raw_command_sha256": "e0cf4ac566594789581e8a0ad64a70be8f440320d5f1a07886edc5ff744a29a6"
       },
       "difficulty": "near",
       "driver": "gpio-altera",
@@ -12665,7 +12665,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 9.53,
+      "seconds": 9.298,
       "source": "vendor/linux/drivers/gpio/gpio-altera.c",
       "source_sha256": "23f36f26c9c10ffcbeb11f2c06d142ab4876a3d38cd09ddd37bbabdc5bfc670a",
       "stderr_tail": "",
@@ -12709,7 +12709,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "1efd0e93e1d1a2a720a69f4896215335657420b9c2da38af124599e3d5f6ee86",
+        "analysis_sha256": "c310ccda35e12f02339b59b362eec98932ae1dfb349ea9bf74db0423b9db0332",
         "device_spec_sha256": "99af6d7d9935dd76d6294b7e82f89f21e33324929119b54c4e276974e7b7f406",
         "ris_sha256": "a67cb7674c3d4b837543e6c0a26b3c3458e0f5d2e485e394e64e3fe1114ba4f7"
       },
@@ -12726,14 +12726,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "5a28e3df790691281de24a73b07e24bc95d1ae803f08770de77985c9b23a540f",
+        "argument_count": 34,
+        "arguments_sha256": "e4c5e8213284c8f4000504eafa86158fdf6a24487a9e8636821262d791f6c082",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-v7",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "dbbeb1e2cb823d902c2e25e1ef1271355c442e172e3d16a761587e92d07c7305"
+        "raw_command_sha256": "0dd91361feb5d2440f7502eb5ce825ef1f5a47c07839fdf5e99cbc12756e553c"
       },
       "difficulty": "near",
       "driver": "gpio-ts4800",
@@ -22283,7 +22283,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 14.934,
+      "seconds": 14.687,
       "source": "vendor/linux/drivers/gpio/gpio-ts4800.c",
       "source_sha256": "790ca27597cabc7fce8a4a77064ceef1ab42c583d49c0c91cf6a950a5bccdfe9",
       "stderr_tail": "",
@@ -22400,7 +22400,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "36ecf2e470805b97773b853b4e612017ddfa1e15cdcb3754ff4e09387d0bba58",
+        "analysis_sha256": "dd443091f2fb789cbc85d2c18fd8ab06c478cab6d4fb080429309571fc3cf654",
         "device_spec_sha256": "886fb4041667a771895ef76135e0ddb38f7e46ee6ffe8457c52772824b9d1263",
         "ris_sha256": "6716ff94b9187410a96a79dbe956e76f1087f701797fc575617183062451cfb0"
       },
@@ -22417,14 +22417,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "7a29af08a4114eb9897c74d8f91c6cfd58ec64919800ce2ff4b6777f2116a38c",
+        "argument_count": 34,
+        "arguments_sha256": "9811cf831d8f5c0b15689915e482cd3dfb95444fcedecaac683cb61211493d0e",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-v4t",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "52e6b0287d45705060589ab25002e88bc4016ba9ca900087f3b6ada5ad720e0a"
+        "raw_command_sha256": "78bb317c16f762392afcd299088b144a9842cc73e18359076dcfcc260ec4e11c"
       },
       "difficulty": "near",
       "driver": "gpio-clps711x",
@@ -31866,7 +31866,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 12.49,
+      "seconds": 12.36,
       "source": "vendor/linux/drivers/gpio/gpio-clps711x.c",
       "source_sha256": "1ff3cd5ad47d9d72d5d4c8c74aa23458ee3e5d53d92a2e49ee87f8ccd15ed731",
       "stderr_tail": "",
@@ -31990,7 +31990,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "b3143aa78eb72c57eeebe324efab4a1c05c3c5bc3b3a2fd3849b5298e6c5e310",
+        "analysis_sha256": "4696ed8a85dbbd4c9852e35f2251cf7f8c16e805db6729b3d0296dd5db84c0f6",
         "device_spec_sha256": "725f8d39750c25fcf095991b23d1a32b8bfd7bd484343d58235bf24276b11041",
         "ris_sha256": "b107a5219b471c558b4d8ebcae4d7b7b05a333dc3c31716c31315d0c0a867d11"
       },
@@ -32012,14 +32012,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "61c15f29668ca7f541b92450ef2a1611d44bf308dfce8052940106bace9fa099",
+        "argument_count": 34,
+        "arguments_sha256": "909caea5ba39f559a5505b42b70214e248722c36e94468e07f03123fe134490f",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-v7",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "b79f0c34f98d47e6af3dd69bc28aa6fcb94a2b65b84c949a0d18d654fa22022d"
+        "raw_command_sha256": "d12f709c00c2b8c8fccdda15e16000aec05062633a72213c0a502222ecf8d8b4"
       },
       "difficulty": "near",
       "driver": "clk-fixed-mmio",
@@ -36974,7 +36974,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 5.632,
+      "seconds": 5.528,
       "source": "vendor/linux/drivers/clk/clk-fixed-mmio.c",
       "source_sha256": "31817c354ab7ff566159177eb15461ffdb160b72c2e2fe5d9e328a8339669785",
       "stderr_tail": "",
@@ -37018,7 +37018,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "6263443148aa3ffec82462b5587e10d040bbbd38e2a2c94342ff278a26c222a7",
+        "analysis_sha256": "465a78f50446df0ac0b1d0c741ff290563f105074ac2267172719b9544732ad6",
         "device_spec_sha256": "7d62261ef744ebb200d60a6376e7c6d90213b98eab21d81bbeca8fd28073a30c",
         "ris_sha256": "f1740da0e57aeb13461581b63c61b18b1f2808bb2ea8dc3f0822d66673c45bba"
       },
@@ -37039,14 +37039,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "b08a8897d477bc23cdcaf524eefb5ca31a2d0482af77e8d29903cd2bdd51bf81",
+        "argument_count": 34,
+        "arguments_sha256": "777b48839c3baf1b037db7058c1f92e78931ffa70ce063970ad694a3bd5c3a2e",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-moxart",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "37785e82334dd08948f005a5469da3943bb7e21e5d0d6c9d38e4702cbb8cdc7b"
+        "raw_command_sha256": "4130be80a3fc7fcdc5b660276f531faf6a2d327ce3ea769478abff864a25d300"
       },
       "difficulty": "near",
       "driver": "clk-moxart",
@@ -42013,7 +42013,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 5.647,
+      "seconds": 5.508,
       "source": "vendor/linux/drivers/clk/clk-moxart.c",
       "source_sha256": "5fd9cee20d655e277c7a4f8f0c5f99a6d68f924d3d1312dc1d3c9da45810f6fe",
       "stderr_tail": "",
@@ -42057,7 +42057,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "a33313183525d6d506ed44717e9f55da25331add1248ea687c2c1c326ba11950",
+        "analysis_sha256": "aa1e0b6cd3873eff5a3f86e01a46bd092891dbbb0d6d10e4e2af2a89e4b0b4bf",
         "device_spec_sha256": "019c76ab61a2649b4024cfb1c147a5f4c9facec45b91b271f07ea39f8286eb4d",
         "ris_sha256": "22b6d2fc66d0b8c511edefbe529d7c88f28a6923260c89b2aa78bfae11f43a70"
       },
@@ -42081,14 +42081,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "817ac08b5b18b8a585231010f91994cd4cded687069dcd70a45fd96cbf972c60",
+        "argument_count": 34,
+        "arguments_sha256": "4c265985b37bc3a274823d21a73096fc7e19f1e9a13c4098bb25a2583ab606e3",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-v7",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "1f388796f77f36dca559117a46d342c243ea19d1479d708dc11e5a966e44f190"
+        "raw_command_sha256": "91736137e8601a7bc7a0e73a0f05df2468d34e17ab3a7f00aa1de38aa04c1cb5"
       },
       "difficulty": "medium",
       "driver": "gpio-dwapb",
@@ -66922,7 +66922,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.75
       },
-      "seconds": 15.101,
+      "seconds": 14.949,
       "source": "vendor/linux/drivers/gpio/gpio-dwapb.c",
       "source_sha256": "9179790f3067c4245f12896d6c0e38ee4790d99b08562a02e51f93771904c8ee",
       "stderr_tail": "",
@@ -67062,7 +67062,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "222fba96f9011259d39bf855bc824a219ec4a3fef363b920310ad8122ca6c941",
+        "analysis_sha256": "682069ca92b4ddf2fcbcc85d63eff6532941daf2f5a67eadc32cc21393c5efb7",
         "device_spec_sha256": "6f51967de3555cecd575c71d31e0227fed76b549c592f403eeb1d6de2a36f92c",
         "ris_sha256": "36431edd5a9daee2815faba6681defda17a3ca115bfc871519d2d5175f55b510"
       },
@@ -67079,14 +67079,14 @@
       },
       "compile_context": {
         "arch": "x86",
-        "argument_count": 35,
-        "arguments_sha256": "ec29e626f92feced3679574e6db4a546a5bab254b3ea64b9edc5bebc5469b15a",
+        "argument_count": 33,
+        "arguments_sha256": "f797c45e298bcae0c09ae12540bb94eed5ce7740f44b4ebc288760446700f540",
         "context_note": "Explicit x86 object context; clang-18 rejects the native 85xx -mcpu=8540 profile.",
         "origin": "compile-commands",
         "profile": "x86-pinned",
         "profile_kind": "pinned-experiment-build",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "bc90e1767413cc5ec23b674f55700a7d7035a5e7701ed7da0e492bfdbce19a85"
+        "raw_command_sha256": "96cd09a0c6cfae1f74a9fb25164fd34b9c4af7f2317e47339be9a3f34617d65a"
       },
       "difficulty": "medium",
       "driver": "gpio-ge",
@@ -76636,7 +76636,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 9.276,
+      "seconds": 9.144,
       "source": "vendor/linux/drivers/gpio/gpio-ge.c",
       "source_sha256": "8c940be2699e07b48aaa952c65c7261184819beefcbbc6c99da4f3bb2ed289b2",
       "stderr_tail": "",
@@ -76756,7 +76756,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "eb22c396f703e03ece9cad7a03198bac0b77755e64554a4de7f649aa42785a68",
+        "analysis_sha256": "342b0a9bbd0908f759c55f6bc7f55fa167ffd4309fc0107b43b846defdce51ec",
         "device_spec_sha256": "b14d0105833f1555dd3ad3e64733ca10c7030e8dbef7d154843454936ce8eec5",
         "ris_sha256": "3b9bbdf39e9ea2b18db516bbd2694d5e9acc499faa317884af2e7ff49b8a0d45"
       },
@@ -76777,14 +76777,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "58f3e50cee339de846491e8c422d29ea98ea5ac2ca9fea0eea43309225428f3e",
+        "argument_count": 34,
+        "arguments_sha256": "f5ad9ce3345524683e329206034fcc6e37ef468ad5de1bb3bea043f6a17123f0",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-v4t",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "074d0c54db45ba023667ac838fd3ed0f476922fe4d9bb15433c713e931e396ed"
+        "raw_command_sha256": "e7e51f6749d9d07340fedbd597f009615548c9033994df66eff09ed46c74dc5c"
       },
       "difficulty": "medium",
       "driver": "clk-nspire",
@@ -81890,7 +81890,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 5.253,
+      "seconds": 5.117,
       "source": "vendor/linux/drivers/clk/clk-nspire.c",
       "source_sha256": "74b521bfd437fc4432501873fe462241c248253a19a77a87e2ef6a97cc608ab9",
       "stderr_tail": "",
@@ -81934,7 +81934,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "9c06576ff4eb92b2b9ecb5656d1ac7b887faa461a49b1ba41a6d93829257b299",
+        "analysis_sha256": "108a2168abad340853cc986260977ad8b3ea33fa523e8090b1d172cd0c7012b8",
         "device_spec_sha256": "ece3bd397a4706ff8a82e2690258893be33e0d0a2153f9751e2744c3950dc60d",
         "ris_sha256": "76f640806621520bb89c9294217de9bfdca79d3129f6604bcc78a71a9a191f22"
       },
@@ -81957,14 +81957,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "e84105b71e5ed6a86def9c903dc528d517e35dc6850f47ffc92a38f97d74b680",
+        "argument_count": 34,
+        "arguments_sha256": "e6118dce6f37fe8e562d8018d86ea08c6a58a064a960cf3f01adcca88df7fa7e",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-v5",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "cfc5990331ccde7b5e7359b6461602bd4f400e38fd14308d5e24b5bab9619127"
+        "raw_command_sha256": "e1a72addf4c5de03cf1d4c4ba6127c9d7f0575b6d408a6949a0e1c526f53f722"
       },
       "difficulty": "medium",
       "driver": "sdhci-npcm",
@@ -87039,7 +87039,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 1.0
       },
-      "seconds": 16.585,
+      "seconds": 16.297,
       "source": "vendor/linux/drivers/mmc/host/sdhci-npcm.c",
       "source_sha256": "a76af224a9de3c800dc243eee7d2af21b8ad2c1b4f1510eaecb3564bfebea3d1",
       "stderr_tail": "",
@@ -87085,7 +87085,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "57cf82b7b3d488e8d85961b0e0d36f8bb3f95374a51ea1e6599de369c6724cae",
+        "analysis_sha256": "48c3d52474546ab766de794ff64b7bfb2faaa6a94e079ea9910339e1df6cdbb6",
         "device_spec_sha256": "f7a0c7266065b8e6d446e3d2a9dbf22203af1e00041959f3670bddad9aebfab6",
         "ris_sha256": "e37ce73da2253e8ee600b50643720759e477516988762a8cdd25809b34962151"
       },
@@ -87102,14 +87102,14 @@
       },
       "compile_context": {
         "arch": "powerpc",
-        "argument_count": 38,
-        "arguments_sha256": "209888f635e1ce814843b20eb913e2049e9a91ceb2ab6af9161413d0c8255d76",
+        "argument_count": 36,
+        "arguments_sha256": "5ef52d91415de2d84a2d8a055472722e3fe13dd3d09d6bea53f44ed45ec434f5",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "powerpc-wii",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "5f6624dc90288a494bf1795f92b16371fb0c28cd466b07fc6d184101cb19619a"
+        "raw_command_sha256": "9f9e0e83d7972c22344e7ac16730bf26e2f9971097e1dfd363eeed512cdf5075"
       },
       "difficulty": "medium",
       "driver": "sdhci-of-hlwd",
@@ -96857,7 +96857,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.779
       },
-      "seconds": 10.061,
+      "seconds": 9.921,
       "source": "vendor/linux/drivers/mmc/host/sdhci-of-hlwd.c",
       "source_sha256": "7d784f1fa53c7377a42000710f27e79a9abb67c42fa467c4b9282c0d86bd8b7c",
       "stderr_tail": "",
@@ -96978,7 +96978,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "8a8b79b22f3125ac8f79e5b221c1d1407e23672f93c8317528b0f4fb51ca7fe8",
+        "analysis_sha256": "c5619927b1b98e96897ec8ca058322a35a153d621ec9970b952706150fdfb339",
         "device_spec_sha256": "97b56799bf0faa7bd024c5b14cf6cb0642b633c5f6bd40a1993c511bb83b8aa4",
         "ris_sha256": "3e0626d287445f2935fa833cd698d25885cd2c4f4675963cca40b392e9c12932"
       },
@@ -96995,14 +96995,14 @@
       },
       "compile_context": {
         "arch": "arm",
-        "argument_count": 36,
-        "arguments_sha256": "6d9a6d89309c097909d056d6aa5760c1ad07b3798751b8b914381d6996ef99bb",
+        "argument_count": 34,
+        "arguments_sha256": "5c841e4d4ffac886b15f2a76322691af8a2bf9676cc59a29597101e02869f024",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "arm-dove",
         "profile_kind": "native-architecture-defconfig",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "ef6180b11c9f25375af02ae507ced50c5607bb2dbd7f2a1ef2c840c19dd1439b"
+        "raw_command_sha256": "13bf445784196e5f408215e9ef49a825893d18a0e85958745cac8a56c46841b6"
       },
       "difficulty": "far",
       "driver": "sdhci-dove",
@@ -103745,7 +103745,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.75
       },
-      "seconds": 13.875,
+      "seconds": 13.661,
       "source": "vendor/linux/drivers/mmc/host/sdhci-dove.c",
       "source_sha256": "6321f42a6ebbb5c2ab211745774949aad0ccf943d2d164abdef33416f8fb72c4",
       "stderr_tail": "",
@@ -103835,7 +103835,7 @@
       },
       "all_backends_compile": true,
       "artifacts": {
-        "analysis_sha256": "50f96a07804ffff1f733d105a07f82463e5ffb0a9a268653cc815cd81792c42b",
+        "analysis_sha256": "f9b9cf04ba7b5b180b3b074db07dee6adca545030064705a4d5a1a8e4fd754e0",
         "device_spec_sha256": "3e4f8385c23dff41a6574aec838cce258e362867c186ba85afc8d2b312e9d692",
         "ris_sha256": "0dd6e025d73dcb6772772c5f539f5ca97e38344421579a7d788473443df62a34"
       },
@@ -103858,14 +103858,14 @@
       },
       "compile_context": {
         "arch": "x86",
-        "argument_count": 35,
-        "arguments_sha256": "200140df9ea0b169123bd8ad3b7390d6440701ae35261b7498d8e68f11b8f58a",
+        "argument_count": 33,
+        "arguments_sha256": "7d3b890165922f52acad0ff9099a8214ef928f0a0ac7d0f2dd5a8af9e3c503fd",
         "context_note": null,
         "origin": "compile-commands",
         "profile": "x86-pinned",
         "profile_kind": "pinned-experiment-build",
         "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
-        "raw_command_sha256": "a8f07aaf3550ad98632f2dd9b2316a4dcb11b6e3d933b8b1d9f869b10fc9d8ab"
+        "raw_command_sha256": "6836d73177014bb78409475f734402aabc8d8fc6b76ac268aef71b4f17970975"
       },
       "difficulty": "far",
       "driver": "virtio-input",
@@ -103906,7 +103906,7 @@
             "duplicate_anchors": [],
             "duplicate_expected_ids": [],
             "generated": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/output/zero-shot-matrix/virtio-input/generated/baremetal.c",
-            "generated_sha256": "f2367e1ad18f95c600e25cb2a3c53222ffc2562d16ffc0b2217ec3d93efcdbfa",
+            "generated_sha256": "ee3645922439c0128b3fcbcf77de4cb9b562996eaee7bcad1b06b30304744ab5",
             "known_primitive_calls": 3,
             "malformed_anchors": [],
             "missing_anchors": [],
@@ -104201,7 +104201,7 @@
             "duplicate_anchors": [],
             "duplicate_expected_ids": [],
             "generated": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/output/zero-shot-matrix/virtio-input/generated/harness.c",
-            "generated_sha256": "a9cd4e53bfbb2824dc44be4074a2920bd71e7f7034609cbd2b3184ea2ea02f5c",
+            "generated_sha256": "bbc770dcee5afaacf5f254ec5f1f931982887de1f12680c0bc029630f9e9936e",
             "known_primitive_calls": 0,
             "malformed_anchors": [],
             "missing_anchors": [],
@@ -108414,7 +108414,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 9.016,
+      "seconds": 8.916,
       "source": "vendor/linux/drivers/virtio/virtio_input.c",
       "source_sha256": "302e4f073e16dfd902ee06224c72872b5d7f888ed3bedb59dd54de7965353b96",
       "stderr_tail": "",
@@ -108524,9 +108524,9 @@
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
     "platform": "Linux-6.17.0-40-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "reharness_commit": "491ca60911d4731dbe3d16af51ff6ff0d46185f3"
+    "reharness_commit": "f37abb61cb104bccd32dac688856beff27cd4319"
   },
-  "generated_at": "2026-07-25T19:01:56.994293+00:00",
+  "generated_at": "2026-08-01T02:14:54.540699+00:00",
   "guard": {
     "cases": 12,
     "first_run": "gpio-altera",

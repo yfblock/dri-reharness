@@ -32,7 +32,7 @@
       "functions_analyzed": 92,
       "kbuild": "vendor/linux/drivers/usb/gadget/udc/aspeed-vhub/Makefile",
       "kbuild_verified": true,
-      "manifest": "drivers/multisource/aspeed-vhub.json",
+      "manifest": "benchmarks/drivers/multisource/aspeed-vhub.json",
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 0,
@@ -51,7 +51,7 @@
       "original_kbuild": {
         "attempted": true,
         "exit": 0,
-        "log": "output/experiment-multisource/aspeed-vhub/verify/original-kbuild.log",
+        "log": "artifacts/output/experiment-multisource/aspeed-vhub/verify/original-kbuild.log",
         "modpost_warning_retry": true,
         "strict_success": false,
         "success": true,
@@ -112,7 +112,7 @@
           "linux backend has 3 register operation(s) explicitly blocked by a synthesized lifecycle stub",
           "linux backend has 8 register operation(s) explicitly blocked by a missing Linux definition root",
           "linux backend has 10 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 133 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 116 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
@@ -123,7 +123,7 @@
       },
       "resolved_cross_tu_call_edges": 53,
       "ris_mmio_ops": 154,
-      "seconds": 41.4,
+      "seconds": 40.893,
       "source_count": 5,
       "source_lines": 3540,
       "source_mmio_primitives": {
@@ -157,7 +157,7 @@
       "functions_analyzed": 89,
       "kbuild": "vendor/linux/drivers/usb/c67x00/Makefile",
       "kbuild_verified": true,
-      "manifest": "drivers/multisource/c67x00.json",
+      "manifest": "benchmarks/drivers/multisource/c67x00.json",
       "metrics": {
         "clang_diagnostics": 0,
         "computed": 32,
@@ -176,7 +176,7 @@
       "original_kbuild": {
         "attempted": true,
         "exit": 0,
-        "log": "output/experiment-multisource/c67x00/verify/original-kbuild.log",
+        "log": "artifacts/output/experiment-multisource/c67x00/verify/original-kbuild.log",
         "modpost_warning_retry": true,
         "strict_success": false,
         "success": true,
@@ -233,7 +233,7 @@
           "linux backend registration attestation failed",
           "linux backend effective lowering plan v3 strict proof failed",
           "linux backend has 6 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 24 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 15 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 0.5,
@@ -244,7 +244,7 @@
       },
       "resolved_cross_tu_call_edges": 30,
       "ris_mmio_ops": 32,
-      "seconds": 29.636,
+      "seconds": 28.547,
       "source_count": 4,
       "source_lines": 2239,
       "source_mmio_primitives": {
@@ -277,7 +277,7 @@
       "functions_analyzed": 445,
       "kbuild": "vendor/linux/drivers/usb/dwc2/Makefile",
       "kbuild_verified": true,
-      "manifest": "drivers/multisource/dwc2.json",
+      "manifest": "benchmarks/drivers/multisource/dwc2.json",
       "metrics": {
         "clang_diagnostics": 85,
         "computed": 414,
@@ -296,7 +296,7 @@
       "original_kbuild": {
         "attempted": true,
         "exit": 0,
-        "log": "output/experiment-multisource/dwc2/verify/original-kbuild.log",
+        "log": "artifacts/output/experiment-multisource/dwc2/verify/original-kbuild.log",
         "modpost_warning_retry": true,
         "strict_success": false,
         "success": true,
@@ -361,7 +361,7 @@
           "linux backend has 2 register operation(s) explicitly blocked by an unimplemented lifecycle route",
           "linux backend has 929 register operation(s) explicitly blocked by a missing Linux definition root",
           "linux backend has 362 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 2056 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 1826 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
@@ -372,7 +372,7 @@
       },
       "resolved_cross_tu_call_edges": 140,
       "ris_mmio_ops": 3608,
-      "seconds": 179.624,
+      "seconds": 176.452,
       "source_count": 10,
       "source_lines": 21668,
       "source_mmio_primitives": {
@@ -398,8 +398,8 @@
   "environment": {
     "kernel_release": "7.1.0-rc7-gacb7500801e9",
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "491ca60911d4731dbe3d16af51ff6ff0d46185f3"
+    "reharness_commit": "f37abb61cb104bccd32dac688856beff27cd4319"
   },
-  "generated_at": "2026-07-25T18:37:25.340254+00:00",
+  "generated_at": "2026-08-01T07:28:22.131634+00:00",
   "schema": 1
 }

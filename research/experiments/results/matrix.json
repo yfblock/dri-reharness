@@ -67,7 +67,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.93
       },
-      "seconds": 11.427,
+      "seconds": 11.305,
       "source_sha256": "ea6533b6e12e49982d0b11195a3ed7b94746cb302bc212eb9067e9cf4b6a65a2"
     },
     {
@@ -118,7 +118,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.985
       },
-      "seconds": 12.02,
+      "seconds": 11.82,
       "source_sha256": "f1877cae1d91cacb85ad83973d17e20f48b9e7d73cbe61aef04b459725d77987"
     },
     {
@@ -174,7 +174,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 1.0
       },
-      "seconds": 11.927,
+      "seconds": 11.807,
       "source_sha256": "b539d16daf929ae15e69040553f52708898ae7dc8f17391e1e65f1e5482970ae"
     },
     {
@@ -226,7 +226,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.92
       },
-      "seconds": 11.715,
+      "seconds": 11.512,
       "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf"
     },
     {
@@ -280,7 +280,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.873
       },
-      "seconds": 10.281,
+      "seconds": 10.136,
       "source_sha256": "464349c5dcf3fe20ddad4b73535a0da345c9c78ea0aedcd30d1135c32c866683"
     },
     {
@@ -327,7 +327,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.8
       },
-      "seconds": 6.098,
+      "seconds": 6.045,
       "source_sha256": "77a6ff180b7f16aabc7380cb583e6b1fc87c8eb09cadd6aa41be1c39d03d5c09"
     },
     {
@@ -379,7 +379,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.92
       },
-      "seconds": 7.888,
+      "seconds": 7.767,
       "source_sha256": "57ee47118f6dadbde5f35d6f0be21d0be5f1473c7391b7900c6d45240901758f"
     },
     {
@@ -422,7 +422,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.92
       },
-      "seconds": 8.672,
+      "seconds": 8.511,
       "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
     },
     {
@@ -458,7 +458,7 @@
           "linux backend has 1 register operation(s) explicitly blocked by a synthesized lifecycle stub",
           "harness backend generated-C AST primitive proof failed outside planned loop blockers",
           "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
-          "linux backend has 31 strict candidate operation(s) without independent runtime registration/callsite attestation"
+          "linux backend has 2 strict candidate operation(s) without independent runtime registration/callsite attestation"
         ],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
@@ -466,7 +466,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 8.318,
+      "seconds": 8.271,
       "source_sha256": "8bd222fffd641e7d0f13b2fe46c9b795d1da11351a797eaaa44ee25c76b64f2f"
     },
     {
@@ -495,18 +495,15 @@
       "readiness": {
         "backend_bare_metal_ready": true,
         "backend_harness_ready": true,
-        "backend_linux_ready": false,
-        "blockers": [
-          "linux backend effective lowering plan v3 strict proof failed",
-          "linux backend has 35 strict candidate operation(s) without independent runtime registration/callsite attestation"
-        ],
+        "backend_linux_ready": true,
+        "blockers": [],
         "device_spec_quality": 1.0,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 9.716,
+      "seconds": 9.647,
       "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
     },
     {
@@ -535,18 +532,15 @@
       "readiness": {
         "backend_bare_metal_ready": true,
         "backend_harness_ready": true,
-        "backend_linux_ready": false,
-        "blockers": [
-          "linux backend effective lowering plan v3 strict proof failed",
-          "linux backend has 17 strict candidate operation(s) without independent runtime registration/callsite attestation"
-        ],
+        "backend_linux_ready": true,
+        "blockers": [],
         "device_spec_quality": 0.875,
         "facts_quality": 1.0,
         "function_spec_quality": 1.0,
         "llm_synthesis_ready": true,
         "ris_quality": 1.0
       },
-      "seconds": 9.504,
+      "seconds": 9.355,
       "source_sha256": "a693a4f7e2993a805d75ceb89b1ead93119e8792e0e3071d1b13954042045952"
     },
     {
@@ -577,9 +571,7 @@
         "backend_harness_ready": false,
         "backend_linux_ready": false,
         "blockers": [
-          "13 unsafe dynamic register address(es) (13 computed total)",
-          "linux backend effective lowering plan v3 strict proof failed",
-          "linux backend has 13 strict candidate operation(s) without independent runtime registration/callsite attestation"
+          "13 unsafe dynamic register address(es) (13 computed total)"
         ],
         "device_spec_quality": 0.5,
         "facts_quality": 1.0,
@@ -587,7 +579,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.25
       },
-      "seconds": 9.926,
+      "seconds": 9.778,
       "source_sha256": "de532c264a6b7e15f70b332e3b2339f43c522d9ac867b2a21d0192b3c029ada5"
     },
     {
@@ -620,7 +612,7 @@
         "blockers": [
           "linux backend registration attestation failed",
           "linux backend effective lowering plan v3 strict proof failed",
-          "linux backend has 31 strict candidate operation(s) without independent runtime registration/callsite attestation"
+          "linux backend has 1 strict candidate operation(s) without independent runtime registration/callsite attestation"
         ],
         "device_spec_quality": 0.938,
         "facts_quality": 1.0,
@@ -628,7 +620,7 @@
         "llm_synthesis_ready": true,
         "ris_quality": 0.924
       },
-      "seconds": 10.726,
+      "seconds": 10.563,
       "source_sha256": "85ae65ac39b37f7b665e805155c6b8ef7d67c7be10b6d81a1a3efa6b282222a0"
     },
     {
@@ -671,7 +663,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.928
       },
-      "seconds": 10.623,
+      "seconds": 10.494,
       "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109"
     },
     {
@@ -703,8 +695,6 @@
         "backend_linux_ready": false,
         "blockers": [
           "4 inlined helper definition(s) lack call-context proof",
-          "linux backend effective lowering plan v3 strict proof failed",
-          "linux backend has 30 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 0.938,
@@ -713,7 +703,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 1.0
       },
-      "seconds": 7.808,
+      "seconds": 7.659,
       "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492"
     },
     {
@@ -768,7 +758,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.802
       },
-      "seconds": 7.42,
+      "seconds": 7.351,
       "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396"
     },
     {
@@ -826,7 +816,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.989
       },
-      "seconds": 9.806,
+      "seconds": 9.759,
       "source_sha256": "22906899fc5fbd31e698b4bf958ea41e9ffe52b5866fbe6b3099874d7c6861f8"
     },
     {
@@ -886,7 +876,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 0.897
       },
-      "seconds": 9.536,
+      "seconds": 9.376,
       "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5"
     },
     {
@@ -925,7 +915,7 @@
           "linux backend effective lowering plan v3 strict proof failed",
           "linux backend has 31 register operation(s) explicitly blocked by a missing Linux definition root",
           "linux backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
-          "linux backend has 1 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has 0 strict candidate operation(s) without independent runtime registration/callsite attestation",
           "linux backend has unsupported semantic bindings"
         ],
         "device_spec_quality": 1.0,
@@ -934,7 +924,7 @@
         "llm_synthesis_ready": false,
         "ris_quality": 1.0
       },
-      "seconds": 9.319,
+      "seconds": 9.192,
       "source_sha256": "376941bfb110e59631b1f12b2e934a3e8b0ca21ed8aff573d6a38fcee363ac89"
     }
   ],
@@ -943,8 +933,8 @@
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
     "platform": "Linux-6.17.0-40-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "reharness_commit": "491ca60911d4731dbe3d16af51ff6ff0d46185f3"
+    "reharness_commit": "f37abb61cb104bccd32dac688856beff27cd4319"
   },
-  "generated_at": "2026-07-25T19:57:41.452640+00:00",
+  "generated_at": "2026-08-01T02:18:08.823417+00:00",
   "schema": 1
 }

@@ -153,5 +153,5 @@
     }
   ],
   "schema": 1,
-  "source": "linux/drivers/usb/c67x00/c67x00-ll-hpi.c"
+  "source": "vendor/linux/drivers/usb/c67x00/c67x00-ll-hpi.c"
 }

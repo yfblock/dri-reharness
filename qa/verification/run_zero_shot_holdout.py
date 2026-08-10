@@ -73,7 +73,15 @@ def _run_case(case: dict, manifest_dir: Path, mode: str,
         "-s", str(source), "-o", str(outdir),
         "--compile-context", context_mode,
     ]
-    run = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    child_env = os.environ.copy()
+    python_paths = [ROOT / "src", ROOT / "qa", ROOT / "qa" / "verification"]
+    inherited = child_env.get("PYTHONPATH")
+    child_env["PYTHONPATH"] = os.pathsep.join(
+        [*(str(path) for path in python_paths),
+         *((inherited,) if inherited else ())]
+    )
+    run = subprocess.run(
+        command, cwd=ROOT, env=child_env, capture_output=True, text=True)
     analysis_path = outdir / "verify" / "analysis.json"
     if not analysis_path.is_file():
         return {
