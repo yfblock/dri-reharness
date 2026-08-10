@@ -41,3 +41,6 @@ modules.order
 # Pi SDK dependencies live with the Pi tool
 /tools/pi/node_modules/
 /tools/pi/package-lock.json
+
+# LLM secrets (use .env.example as template)
+.env

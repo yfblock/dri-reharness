@@ -7,6 +7,26 @@ import re
 import subprocess
 from pathlib import Path
 
+
+def load_dotenv():
+    env_path = Path(__file__).resolve().parents[2] / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip(chr(39) + chr(34))
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_dotenv()
+
 _PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
 
 
@@ -18,7 +38,7 @@ def load_prompt_template(backend: str) -> str:
 
 
 def llm_available() -> bool:
-    if os.environ.get("OPENAI_API_KEY"):
+    if os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_BASE_URL"):
         return True
     root = Path(__file__).resolve().parents[2]
     pi_script = root / "tools" / "pi" / "pi_synth.sh"
@@ -124,7 +144,7 @@ def call_llm(prompt, timeout=120):
 def _call_openai(prompt, api_key, timeout):
     model = os.environ.get("REHARNESS_LLM_MODEL", "gpt-4o")
     payload = json.dumps({"model": model, "messages": [{"role": "system", "content": "Generate only code."}, {"role": "user", "content": prompt}], "temperature": 0.2})
-    r = subprocess.run(["curl", "-s", "-X", "POST", "https://api.openai.com/v1/chat/completions", "-H", "Content-Type: application/json", "-H", "Authorization: Bearer " + api_key, "-d", "@-", "--max-time", str(timeout)], input=payload, capture_output=True, text=True, timeout=timeout + 10)
+    r = subprocess.run(["curl", "-s", "-X", "POST", os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/") + "/chat/completions", "-H", "Content-Type: application/json", "-H", "Authorization: Bearer " + api_key, "-d", "@-", "--max-time", str(timeout)], input=payload, capture_output=True, text=True, timeout=timeout + 10)
     resp = json.loads(r.stdout)
     if "error" in resp: raise RuntimeError(str(resp["error"]))
     return resp["choices"][0]["message"]["content"]
