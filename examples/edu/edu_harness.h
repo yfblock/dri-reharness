@@ -6,85 +6,85 @@
 #include <stdio.h>
 
 /* Kernel macro stubs */
-#define BIT(n)  (1UL << (n))
-#define GENMASK(h, l) (((1UL << ((h) - (l) + 1)) - 1) << (l))
+#define BIT(n)                  (1UL << (n))
+#define GENMASK(h, l)           (((1UL << ((h) - (l) + 1)) - 1) << (l))
+#define ARRAY_SIZE(a)           (sizeof(a) / sizeof((a)[0]))
 
 /* Register offsets */
-#define IO_ID        0x00
-#define IO_IRQ_STATUS 0x24
-#define IO_IRQ_ACK   0x64
+#define IO_ID                   0x00
+#define IO_IRQ_STATUS           0x24
+#define IO_IRQ_ACK              0x64
 
 /* Trace counter */
 static unsigned long trace_count = 0;
 
 /* Primitive stubs */
-static uint8_t harness_read8(uintptr_t addr) {
+uint8_t harness_read8(uintptr_t addr) {
     uint8_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
     return value;
 }
 
-static uint16_t harness_read16(uintptr_t addr) {
+uint16_t harness_read16(uintptr_t addr) {
     uint16_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
     return value;
 }
 
-static uint32_t harness_read32(uintptr_t addr) {
+uint32_t harness_read32(uintptr_t addr) {
     uint32_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
     return value;
 }
 
-static uint16_t harness_read16be(uintptr_t addr) {
+uint16_t harness_read16be(uintptr_t addr) {
     uint16_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
     return value;
 }
 
-static uint32_t harness_read32be(uintptr_t addr) {
+uint32_t harness_read32be(uintptr_t addr) {
     uint32_t value = 0;
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
     return value;
 }
 
-static void harness_write8(uint8_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write8(uint8_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write16(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write16(uint16_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write32(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write32(uint32_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write16be(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write16be(uint16_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write32be(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write32be(uint32_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write_w1c8(uint8_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write_w1c8(uint8_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write_w1c16(uint16_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write_w1c16(uint16_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
-static void harness_write_w1c32(uint32_t value, uintptr_t addr) {
-    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)addr, value);
+void harness_write_w1c32(uint32_t value, uintptr_t addr) {
+    printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, (unsigned long)(addr & 0xFFF), value);
 }
 
 /* Device private struct */
 struct edu_priv {
     uintptr_t base;
     uintptr_t mmio;
-    unsigned int irq;
 };
 
 #endif /* REHARNESS_EDU_HARNESS_H */

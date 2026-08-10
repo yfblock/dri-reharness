@@ -2,44 +2,40 @@
 
 
 /* Module: edu_irq_handler */
-static void edu_irq_handler(struct edu_priv *dev)
+void edu_irq_handler(struct edu_priv *dev)
 {
-    uintptr_t base = dev->base;
     uint32_t status;
 
-    status = harness_read32(base + IO_IRQ_STATUS);
-    harness_write32(status, base + IO_IRQ_ACK);
+    status = harness_read32(dev->base + IO_IRQ_STATUS);
+
+    harness_write32(status, dev->base + IO_IRQ_ACK);
 }
 
 /* Module: edu_read */
-static uint32_t edu_read(struct edu_priv *dev)
+uint32_t edu_read(struct edu_priv *dev)
 {
-    uintptr_t base = dev->base;
     uint32_t val;
 
-    val = harness_read32(base + 0x0);
+    val = harness_read32(dev->base + 0x0);
+
     return val;
 }
 
 /* Module: edu_write */
-static void edu_write(struct edu_priv *dev, uint32_t val)
+void edu_write(struct edu_priv *dev, uint32_t val)
 {
-    uintptr_t base = dev->base;
-
-    harness_write32(val, base + 0x0);
+    harness_write32(val, dev->base + 0x0);
 }
 
 /* Module: edu_pci_probe */
-static int edu_pci_probe(struct edu_priv *dev)
+int edu_pci_probe(struct edu_priv *dev)
 {
-    struct edu_priv *priv = dev;
-    uintptr_t base = dev->base;
-    uint32_t dev_id;
     int ret = 0;
+    uint32_t dev_id;
 
-    if ((priv->mmio == 0x0) == 0x0) {
+    if ((dev->mmio == 0x0) == 0x0) {
         if (ret == 0x0) {
-            dev_id = harness_read32(base + IO_ID);
+            dev_id = harness_read32(dev->base + IO_ID);
         }
     }
 
@@ -49,9 +45,8 @@ static int edu_pci_probe(struct edu_priv *dev)
 int main(void)
 {
     struct edu_priv dev;
-    dev.base = 0;
-    dev.mmio = 1;
-    dev.irq = 0;
+    dev.base = 0x1000;
+    dev.mmio = 0;
 
     edu_irq_handler(&dev);
     (void)edu_read(&dev);

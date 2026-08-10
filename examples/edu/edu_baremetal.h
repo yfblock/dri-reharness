@@ -7,14 +7,15 @@
 
 #include <stdint.h>
 
-/* Register offsets */
+/* Register Offsets */
 #define IO_ID          0x00
 #define IO_IRQ_STATUS  0x24
 #define IO_IRQ_ACK     0x64
 
-/* Device private struct */
+/* Device Private Structure */
 struct edu_priv {
     uintptr_t base;
+    uintptr_t mmio;
 };
 
 #endif /* REHARNESS_EDU_BAREMETAL_H */

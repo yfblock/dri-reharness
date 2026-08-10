@@ -22,7 +22,7 @@ register_bitfields![u32,
     IdReg [],
     IrqStatus [],
     IrqAck [],
-    Value [],
+    Data [],
 ]
 
 pub struct Edu {
@@ -50,14 +50,12 @@ impl Edu {
         self.regs.id.set(val);
     }
 
-    pub fn edu_pci_probe(&self, priv_mmio: u32, ret: u32) -> Option<u32> {
+    pub fn edu_pci_probe(&self, priv_mmio: u32, ret: u32) {
         if priv_mmio != 0x0 {
-            return None;
+            if ret == 0x0 {
+                let dev_id = self.regs.id.get();
+                let _ = dev_id;
+            }
         }
-        if ret != 0x0 {
-            return None;
-        }
-        let dev_id = self.regs.id.get();
-        Some(dev_id)
     }
 }

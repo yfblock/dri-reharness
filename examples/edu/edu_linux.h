@@ -11,7 +11,6 @@
 #include <linux/err.h>
 #include <linux/pci.h>
 
-/* Constants */
 #define DMA_BASE 262144
 #define DMA_CMD 1
 #define DMA_IRQ 4
@@ -29,12 +28,10 @@
 #define IO_INTEGRITY_CHK_REFTAG 2
 #define IO_SPACE_LIMIT 65535
 
-/* Registers */
 #define IO_ID 0
-#define IO_IRQ_ACK 100
 #define IO_IRQ_STATUS 36
+#define IO_IRQ_ACK 100
 
-/* MMIO trace instrumentation */
 static void __iomem *__rh_mmio_base;
 #define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
 #define RH_TRACE_FN(name) pr_info("[rhfn] %s\n", (name))
