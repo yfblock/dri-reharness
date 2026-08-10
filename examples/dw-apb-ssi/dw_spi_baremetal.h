@@ -6,7 +6,6 @@
 #define DW_APB_SSI_H
 
 #include <stdint.h>
-#include <stddef.h>
 
 /* Register Offsets */
 #define DW_SPI_CTRLR0           0x00
@@ -24,8 +23,8 @@
 #define DW_SPI_ISR              0x30
 #define DW_SPI_RISR             0x34
 #define DW_SPI_ICR              0x48
-#define DW_SPI_VERSION          0x5C
 #define DW_SPI_DR               0x60
+#define DW_SPI_VERSION          0x5C
 #define DW_SPI_RX_SAMPLE_DLY    0xF0
 #define DW_SPI_CS_OVERRIDE      0xF4
 
@@ -34,9 +33,9 @@
 #define DW_SPI_CTRLR0_TMOD_EPROMREAD 0x0
 #define DW_SPI_CTRLR0_TMOD_RO   0x0
 #define DW_SPI_CAP_CS_OVERRIDE  0x1
-#define IRQ_NOTCONNECTED        (-1)
-#define EPROBE_DEFER            (-517)
-#define ENOTCONN                (-107)
+#define IRQ_NOTCONNECTED        0xFFFFFFFF
+#define EPROBE_DEFER            517
+#define ENOTCONN                107
 
 /* Primitives */
 static inline uint32_t mmio_read32(uintptr_t addr) {
@@ -48,9 +47,25 @@ static inline void mmio_write32(uint32_t value, uintptr_t addr) {
 }
 
 /* Device Structures */
-struct dw_spi_chip {
-    uint32_t cr0;
-    uint32_t rx_sample_dly;
+struct dw_apb_ssi_priv {
+    uintptr_t base;
+    uint32_t chip_select[4];
+    uint32_t ver;
+    uint32_t num_cs;
+    uint32_t fifo_len;
+    uint32_t caps;
+    uint32_t current_freq;
+    uint32_t cur_rx_sample_dly;
+    uint32_t irq;
+    uint32_t dma_mapped;
+    uint32_t n_bytes;
+    uint32_t rx_len;
+    uint32_t tx_len;
+    void *tx;
+    void *rx;
+    void *ctlr;
+    void *cur_msg;
+    void *dma_ops;
 };
 
 #endif /* REHARNESS_DW_APB_SSI_BAREMETAL_H */

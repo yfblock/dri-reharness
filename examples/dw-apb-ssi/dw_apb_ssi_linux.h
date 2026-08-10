@@ -105,22 +105,11 @@ static void __iomem *__rh_mmio_base;
 #define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
 
 struct driver_priv {
-    void __iomem *base;
-    struct miscdevice misc;
-    struct device *dev;
-    u32 ver;
-    u32 num_cs;
-    u32 fifo_len;
-    u32 caps;
-    u32 irq;
-    u32 current_freq;
-    u32 cur_rx_sample_dly;
-    u32 rx_len;
-    u32 tx_len;
-    u32 n_bytes;
-    const void *tx;
-    void *rx;
-    u32 dma_mapped;
+	void __iomem *base;
+	struct miscdevice misc;
+	struct device *dev;
+	u32 irq_status;
+	u32 r6, r8, r12, rxw, r14, r16, r18, r20, r23, r30, r35, r39, r42, r44, r48, r50, r54, r62, r63, r68, r70, r75, r78, r80, cr0, r83, r93, r95, r100, r103, r105, r108;
 };
 
 #endif /* REHARNESS_DW_APB_SSI_LINUX_H */

@@ -130,6 +130,71 @@ def call_arguments(call_cursor) -> list:
     return list(call_cursor.get_arguments())
 
 
+def _parse_call_args_from_source(call_cursor, callee: str) -> list[str]:
+    """Fallback arg parser for calls nested inside macros (e.g. min_t).
+
+    When libclang returns empty argument cursors for a CallExpr embedded
+    in a macro expansion, extract arguments from the source file line.
+    """
+    loc = call_cursor.location
+    if loc is None or loc.file is None:
+        return []
+    try:
+        with open(loc.file.name, "r", errors="replace") as fh:
+            file_lines = fh.readlines()
+    except Exception:
+        return []
+    line_idx = loc.line - 1
+    if line_idx < 0 or line_idx >= len(file_lines):
+        return []
+    line_text = file_lines[line_idx]
+    # Find callee( in the line
+    idx = line_text.find(callee)
+    if idx < 0:
+        return []
+    open_paren = line_text.find("(", idx)
+    if open_paren < 0:
+        return []
+    depth = 0
+    close = -1
+    for i in range(open_paren, len(line_text)):
+        if line_text[i] == "(":
+            depth += 1
+        elif line_text[i] == ")":
+            depth -= 1
+            if depth == 0:
+                close = i
+                break
+    if close < 0:
+        return []
+    args_text = line_text[open_paren + 1:close]
+    parts = []
+    current = []
+    d = 0
+    for ch in args_text:
+        if ch in "([{":
+            d += 1
+        elif ch in ")]}":
+            d -= 1
+        if ch == "," and d == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+    parts.append("".join(current).strip())
+    return parts if parts != [""] else []
+
+
+def _resolve_arg_text(call_cursor, args: list, callee: str) -> list[str]:
+    """Return argument source text, with macro-nested fallback."""
+    raw = [source_text(call_cursor.translation_unit, a) for a in args]
+    if raw and all(not t.strip() for t in raw):
+        parsed = _parse_call_args_from_source(call_cursor, callee)
+        if parsed and len(parsed) == len(raw):
+            return parsed
+    return raw
+
+
 def function_calls(func_cursor) -> list[CallSite]:
     """All CallExpr in a function body, in source order."""
     calls: list[CallSite] = []
@@ -168,7 +233,7 @@ def function_calls(func_cursor) -> list[CallSite]:
                 args=args,
                 line=line,
                 cursor=c,
-                arg_text=[source_text(c.translation_unit, a) for a in args],
+                arg_text=_resolve_arg_text(c, args, callee_name(c)),
                 callee_text=callee_text,
                 callee_decl_path=decl_path,
                 callee_result_type=result_type,

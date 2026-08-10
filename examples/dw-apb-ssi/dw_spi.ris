@@ -25,7 +25,7 @@ driver dw-apb-ssi v0.1.0 {
   }
   module dw_spi_transfer_handler {
     irq_status := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_11 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:215
-    r12 := R(B4, ->regs +[0x0]) -- Status @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:132
+    r12 := R(B4, dws->regs.DW_SPI_RXFLR) -- DataTransfer @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:132
     LOOP while max-- [Conservative] {
       rxw := R(B4, dws->regs.DW_SPI_DR) -- Status @op_13 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:162
     }
@@ -81,7 +81,7 @@ driver dw-apb-ssi v0.1.0 {
           LOOP while max-- [Conservative] {
             W(B4, dws->regs.DW_SPI_DR) = (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && ((dws->n_bytes == 0x2) == 0x0)) ? *(u32 *)(dws->tx) : (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && (dws->n_bytes == 0x2)) ? *(u16 *)(dws->tx) : ((dws->tx && (dws->n_bytes == 0x1)) ? *(u8 *)(dws->tx) : 0x0))) -- Config @op_34 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:151
           }
-          r35 := R(B4, ->regs +[0x0]) -- Status @op_35 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:132
+          r35 := R(B4, dws->regs.DW_SPI_RXFLR) -- DataTransfer @op_35 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:132
           LOOP while max-- [Conservative] {
             rxw := R(B4, dws->regs.DW_SPI_DR) -- Status @op_36 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:162
           }
