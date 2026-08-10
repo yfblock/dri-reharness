@@ -212,8 +212,8 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     linked_svf = None
 
     for source in sources:
-        if not source.endswith(".c"):
-            raise ValueError(f"multi-source entry is not a C file: {source}")
+        if not (source.endswith(".c") or source.endswith(".h")):
+            raise ValueError(f"multi-source entry must be a .c or .h file: {source}")
         with open(source, "r", encoding="utf-8", errors="replace") as fh:
             source_text = fh.read()
         tu, diag, compile_context = tu_mod.parse_translation_unit(

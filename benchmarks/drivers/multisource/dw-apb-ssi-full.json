@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "name": "dw-apb-ssi-full",
+  "sources": [
+    "../../../vendor/linux/drivers/spi/spi-dw.h",
+    "../../../vendor/linux/drivers/spi/spi-dw-core.c",
+    "../../../vendor/linux/drivers/spi/spi-dw-mmio.c"
+  ]
+}

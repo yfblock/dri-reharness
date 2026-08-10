@@ -41,7 +41,7 @@ def default_include_args(linux_root: str, build_root: str | None = None) -> list
     lr = linux_root
     build = build_root or linux_root
     return [
-        "-x", "c",
+        "-x", "c",  # overridden by caller for .h files if needed
         "-D__KERNEL__",
         "-include", f"{build}/include/generated/autoconf.h",
         "-include", f"{lr}/include/linux/compiler-version.h",
@@ -96,13 +96,21 @@ def parse_translation_unit(source: str, linux_root: str | None = None,
             build_root = os.fspath(candidate) if candidate.is_dir() else None
         args += default_include_args(linux_root, build_root)
     elif not context:
-        args += ["-x", "c"]
+        lang = "c-header" if source.endswith(".h") else "c"
+        args += ["-x", lang]
     modname = os.path.splitext(os.path.basename(source))[0].replace("-", "_")
     if not any(arg.startswith("-DKBUILD_MODNAME=") for arg in args):
         args.append(f'-DKBUILD_MODNAME="{modname}"')
     if not any(arg.startswith("-DKBUILD_MODFILE=") for arg in args):
         args.append(f'-DKBUILD_MODFILE="{modname}"')
     args += ['-D_Static_assert(x,y)=', '-Wno-ignored-attributes']
+    # For header files, ensure we use c-header mode (overrides any -x c from defaults)
+    if source.endswith(".h"):
+        for i, a in enumerate(args):
+            if a == "-x" and i + 1 < len(args) and args[i + 1] == "c":
+                args[i + 1] = "c-header"
+        if not any(a == "-x" for a in args):
+            args += ["-x", "c-header"]
     # The artifact is parsed against one pinned x86 kernel build, while a few
     # corpus drivers are for other architectures.  Preserve the target
     # driver's Kconfig-selected API surface and exact SoC constant when those
