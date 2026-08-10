@@ -103,6 +103,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="output .c file (default: artifacts/output/<driver>_<backend>.c)")
     g.add_argument("--manifest", default=None,
                    help="validated experiment manifest supplying runtime policy")
+    g.add_argument("--llm", action="store_true",
+                   help="use LLM for code generation")
     g.add_argument("--pair", action="store_true",
                    help="generate .h + .c pair instead of single .c file")
     _add_analysis_options(g)
@@ -213,6 +215,8 @@ def main(argv: list[str] | None = None) -> int:
                     from experiment_manifest import load_manifest
                     pci_identity = load_manifest(args.manifest).runtime.pci_identity
                 gen_kwargs["pci_identity"] = pci_identity
+        if getattr(args, "llm", False):
+            os.environ["REHARNESS_USE_LLM"] = "1"
         if args.pair:
             header, source = generate_pair(
                 gen_mod, res.formal, res.device_spec, bind,

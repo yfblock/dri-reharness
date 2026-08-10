@@ -255,7 +255,20 @@ def rust_local_decls(ops, already_declared, regs, indent=1):
     return NL.join(lines)
 
 
-def generate(formal, device_spec, bind):
+def generate(formal: dict, device_spec, bind) -> str:
+    """Generate code via LLM if available, otherwise fall back to rules."""
+    import os
+    if os.environ.get("REHARNESS_USE_LLM"):
+        try:
+            from generator.llm_bridge import generate_via_llm, llm_available
+            if llm_available():
+                return generate_via_llm(formal, device_spec, bind, backend="rust_baremetal")
+        except Exception as e:
+            import sys
+            print("LLM failed: " + str(e) + ", using rules", file=sys.stderr)
+    return generate_rules(formal, device_spec, bind)
+
+def generate_rules(formal, device_spec, bind):
     dev = device_spec.name
     priv = "%sPriv" % dev.capitalize()
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}

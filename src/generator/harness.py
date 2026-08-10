@@ -57,6 +57,19 @@ def vars_in_expr(e) -> set[str]:
 
 
 def generate(formal: dict, device_spec, bind) -> str:
+    """Generate code via LLM if available, otherwise fall back to rules."""
+    import os
+    if os.environ.get("REHARNESS_USE_LLM"):
+        try:
+            from generator.llm_bridge import generate_via_llm, llm_available
+            if llm_available():
+                return generate_via_llm(formal, device_spec, bind, backend="harness")
+        except Exception as e:
+            import sys
+            print("LLM failed: " + str(e) + ", using rules", file=sys.stderr)
+    return generate_rules(formal, device_spec, bind)
+
+def generate_rules(formal: dict, device_spec, bind) -> str:
     dev = device_spec.name
     priv = bind.type_of("DeviceState") or f"struct {dev}_priv"
     regs = {r["name"]: r["offset"] for r in formal.get("register_map", [])}

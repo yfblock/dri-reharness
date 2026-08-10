@@ -22,7 +22,20 @@ from .emit import *  # noqa: F401,F403
 NAME = "linux"
 
 
-def generate(formal: dict, device_spec, bind, facts=None, pci_identity=None) -> str:
+def generate(formal: dict, device_spec, bind) -> str:
+    """Generate code via LLM if available, otherwise fall back to rules."""
+    import os
+    if os.environ.get("REHARNESS_USE_LLM"):
+        try:
+            from generator.llm_bridge import generate_via_llm, llm_available
+            if llm_available():
+                return generate_via_llm(formal, device_spec, bind, backend="linux")
+        except Exception as e:
+            import sys
+            print("LLM failed: " + str(e) + ", using rules", file=sys.stderr)
+    return generate_rules(formal, device_spec, bind)
+
+def generate_rules(formal: dict, device_spec, bind, facts=None, pci_identity=None) -> str:
     dev = device_spec.name
     preserved_virtio = source_preserved_virtio(
         formal, device_spec, facts)
