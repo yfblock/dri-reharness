@@ -1,0 +1,186 @@
+{
+  "claim_scope": {
+    "alias_analysis": "off",
+    "call_semantics_proven": true,
+    "callee_rescue_semantics_complete": true,
+    "claim": "recognized hardware-access and structured-control universe",
+    "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
+    "indirect_calls": "simple static initializer/assignment targets",
+    "register_accesses": "typed MMIO, regmap, I2C and public MFD helper transactions plus direct volatile and inline-asm detection",
+    "whole_program_complete": false
+  },
+  "driver": "edu",
+  "policy": {
+    "cardinality": "exactly-once",
+    "required_disposition": "lowered",
+    "semantic_authority": "canonical-formal-ris",
+    "unknown_operations_allowed": false
+  },
+  "register_operations": [
+    {
+      "access_domain": "mmio",
+      "digest": "58c605e506ad0c2b",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 11,
+        "function": "edu_irq_handler",
+        "line": 71,
+        "offset": 2309,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:71:11:2309:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c::edu_irq_handler",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "edu_irq_handler",
+      "op_id": "op_1",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "f479e9c3cf35a289",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "edu_irq_handler",
+        "line": 75,
+        "offset": 2383,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:75:2:2383:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c::edu_irq_handler",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "edu_irq_handler",
+      "op_id": "op_2",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "dbf046aef312a382",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "edu_read",
+        "line": 99,
+        "offset": 2923,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:99:8:2923:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c::edu_read",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "edu_read",
+      "op_id": "op_3",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a145d50fd28e9830",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "edu_write",
+        "line": 120,
+        "offset": 3303,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:120:2:3303:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c::edu_write",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "edu_write",
+      "op_id": "op_4",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "4b8a9ab4cb9122ff",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 11,
+        "function": "edu_pci_probe",
+        "line": 168,
+        "offset": 4296,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:168:11:4296:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c::edu_pci_probe",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "edu_pci_probe",
+      "op_id": "op_5",
+      "reliability": "Conservative",
+      "width": "B4"
+    }
+  ],
+  "schema": 1,
+  "synthesis_readiness": {
+    "backend_bare_metal_ready": false,
+    "backend_harness_ready": false,
+    "backend_linux_ready": false,
+    "blockers": [
+      "generated backend compile/lowering/attestation results unavailable"
+    ],
+    "device_spec_quality": 0.688,
+    "facts_quality": 0.7,
+    "function_spec_quality": 1.0,
+    "llm_synthesis_ready": true,
+    "ris_quality": 0.92
+  },
+  "transaction_operations": []
+}

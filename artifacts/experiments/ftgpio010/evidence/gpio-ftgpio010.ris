@@ -1,0 +1,112 @@
+driver gpio-ftgpio010 v0.1.0 {
+  module ftgpio_gpio_ack_irq {
+    W(B4, g->base.GPIO_INT_CLR) = (0x1 << irqd_to_hwirq(d)) -- Interrupt @op_1 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:61
+  }
+  module ftgpio_gpio_mask_irq {
+    val := R(B4, g->base.GPIO_INT_EN) -- Interrupt @op_2 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:70
+    RMW(B4, g->base.GPIO_INT_EN) = (val & ((0x1 << irqd_to_hwirq(d)) ^ 0xffffffff)) -- Interrupt @op_3 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:72
+  }
+  module ftgpio_gpio_unmask_irq {
+    val := R(B4, g->base.GPIO_INT_EN) -- Interrupt @op_4 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:83
+    RMW(B4, g->base.GPIO_INT_EN) = (val | (0x1 << irqd_to_hwirq(d))) -- Interrupt @op_5 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:85
+  }
+  module ftgpio_gpio_set_irq_type {
+    reg_type := R(B4, g->base.GPIO_INT_TYPE) -- Interrupt @op_6 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:95
+    reg_level := R(B4, g->base.GPIO_INT_LEVEL) -- Interrupt @op_7 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:96
+    reg_both := R(B4, g->base.GPIO_INT_BOTH_EDGE) -- Interrupt @op_8 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:97
+    IF (((((type == IRQ_TYPE_EDGE_BOTH) || (type == IRQ_TYPE_EDGE_RISING)) || (type == IRQ_TYPE_EDGE_FALLING)) || (type == IRQ_TYPE_LEVEL_HIGH)) || (type == IRQ_TYPE_LEVEL_LOW)) {
+      RMW(B4, g->base.GPIO_INT_TYPE) = ((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))) -- Interrupt @op_9 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:132
+      RMW(B4, g->base.GPIO_INT_LEVEL) = ((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))) -- Interrupt @op_10 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:133
+      RMW(B4, g->base.GPIO_INT_BOTH_EDGE) = ((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (mask ^ 0xffffffff)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))) -- Interrupt @op_11 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:134
+    }
+  }
+  module ftgpio_gpio_irq_handler {
+    stat := R(B4, g->base.GPIO_INT_STAT_RAW) -- Interrupt @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:151
+  }
+  module ftgpio_gpio_set_config {
+    val := R(B4, g->base.GPIO_DEBOUNCE_PRESCALE) -- Config @op_13 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:193
+    IF (val == deb_div) {
+      val := R(B4, g->base.GPIO_DEBOUNCE_EN) -- Config @op_14 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:202
+      RMW(B4, g->base.GPIO_DEBOUNCE_EN) = ((val == deb_div) ? (val | (0x1 << offset)) : val) -- Config @op_15 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:204
+    }
+    val := R(B4, g->base.GPIO_DEBOUNCE_EN) -- Config @op_16 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:208
+    W(B4, g->base.GPIO_DEBOUNCE_PRESCALE) = deb_div -- Config @op_17 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:218
+    RMW(B4, g->base.GPIO_DEBOUNCE_EN) = (val | (0x1 << offset)) -- Config @op_18 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:221
+  }
+  module ftgpio_gpio_probe {
+    gpio_initial_data := R(B4, g->base.GPIO_DATA_IN) -- DataTransfer @op_19 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    STATE(gpio_sdata) := gpio_initial_data @op_20 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    gpio_initial_direction := R(B4, g->base.GPIO_DIR) -- Config @op_21 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    STATE(gpio_sdir) := gpio_initial_direction @op_22 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    W(B4, g->base.GPIO_INT_EN) = 0x0 -- Init @op_23 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:304
+    W(B4, g->base.GPIO_INT_MASK) = 0x0 -- Init @op_24 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:305
+    W(B4, g->base.GPIO_INT_CLR) = 0xffffffff -- Interrupt @op_25 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:306
+    W(B4, g->base.GPIO_DEBOUNCE_EN) = 0x0 -- Init @op_26 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:309
+  }
+  module ftgpio_gpio_probe__gpio_generic_get {
+    value := R(B4, g->base.GPIO_DATA_IN) -- DataTransfer @op_27 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    RETURN ((value & (0x1 << offset)) != 0x0) @op_28 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  module ftgpio_gpio_probe__gpio_generic_get_multiple {
+    value := R(B4, g->base.GPIO_DATA_IN) -- DataTransfer @op_29 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    OUT(bits) := ((*bits & (*mask ^ 0xffffffff)) | (value & *mask)) @op_30 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    RETURN 0x0 @op_31 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  module ftgpio_gpio_probe__gpio_generic_set {
+    IF (value != 0x0) {
+      W(B4, g->base.GPIO_DATA_SET) = (0x1 << offset) -- DataTransfer @op_32 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    }
+    IF (value == 0x0) {
+      W(B4, g->base.GPIO_DATA_CLR) = (0x1 << offset) -- DataTransfer @op_33 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    }
+    RETURN 0x0 @op_34 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  module ftgpio_gpio_probe__gpio_generic_set_multiple {
+    IF ((*bits & *mask) != 0x0) {
+      W(B4, g->base.GPIO_DATA_SET) = (*bits & *mask) -- DataTransfer @op_35 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    }
+    IF (((*bits ^ 0xffffffff) & *mask) != 0x0) {
+      W(B4, g->base.GPIO_DATA_CLR) = ((*bits ^ 0xffffffff) & *mask) -- DataTransfer @op_36 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    }
+    RETURN 0x0 @op_37 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  module ftgpio_gpio_probe__gpio_generic_direction_input {
+    __shadow_dir := STATE(gpio_sdir) @op_38 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    STATE(gpio_sdir) := (__shadow_dir & ((0x1 << offset) ^ 0xffffffff)) @op_39 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    W(B4, g->base.GPIO_DIR) = (__shadow_dir & ((0x1 << offset) ^ 0xffffffff)) -- Config @op_40 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    RETURN 0x0 @op_41 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  module ftgpio_gpio_probe__gpio_generic_direction_output {
+    IF (value != 0x0) {
+      W(B4, g->base.GPIO_DATA_SET) = (0x1 << offset) -- DataTransfer @op_42 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    }
+    IF (value == 0x0) {
+      W(B4, g->base.GPIO_DATA_CLR) = (0x1 << offset) -- DataTransfer @op_43 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    }
+    __shadow_dir := STATE(gpio_sdir) @op_44 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    STATE(gpio_sdir) := (__shadow_dir | (0x1 << offset)) @op_45 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    W(B4, g->base.GPIO_DIR) = (__shadow_dir | (0x1 << offset)) -- Config @op_46 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    RETURN 0x0 @op_47 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  module ftgpio_gpio_probe__gpio_generic_get_direction {
+    direction := R(B4, g->base.GPIO_DIR) -- Config @op_48 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+    RETURN (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1) @op_49 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276
+  }
+  accounting {
+    source_accesses 23
+    emitted 23
+    filtered 0
+    unsupported 0
+    unaccounted 0
+    ris_ops_without_evidence 0
+    strict_complete true
+  }
+  path_validation {
+    solver "Z3 4.16.0"
+    satisfiable 8
+    infeasible 0
+    unknown 0
+    intentionally_unreachable 0
+    complete true
+  }
+}

@@ -10,6 +10,17 @@ import sys
 from .extractor import ExtractorConfig, extract_ris
 from .formalize import save_formal_text
 
+def _backend_choices():
+    try:
+        from generator.registry import backend_names
+        names = backend_names()
+        if names:
+            return names
+    except Exception:
+        pass
+    return ['harness', 'baremetal', 'linux', 'rust_baremetal']
+
+
 
 def _is_subsequence(sub, seq) -> bool:
     """True if `sub` appears in `seq` in order (not necessarily contiguous).
@@ -87,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("-s", "--source", required=True,
                    help="C source file or multi-source JSON manifest")
     g.add_argument("-b", "--backend", required=True,
-                   choices=["harness", "baremetal", "linux", "rust_baremetal"])
+                   choices=_backend_choices())
     g.add_argument("-o", "--output", default=None,
                    help="output .c file (default: artifacts/output/<driver>_<backend>.c)")
     g.add_argument("--manifest", default=None,
@@ -119,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
     bu.add_argument("-s", "--source", required=True,
                     help="C source file or multi-source JSON manifest")
     bu.add_argument("-b", "--backend", default="harness",
-                    choices=["harness", "baremetal", "linux", "rust_baremetal"])
+                    choices=_backend_choices())
     bu.add_argument("-o", "--outdir", default=None,
                     help="bundle directory (default: artifacts/output/<driver>.bundle-<backend>/)")
     _add_analysis_options(bu)
@@ -187,26 +198,24 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "gen":
         from .spec import default_bind
-        from generator import harness as G_harness
-        from generator import baremetal as G_baremetal
-        from generator import linux as G_linux
-        from generator import rust_baremetal as G_rust_baremetal
+        from generator.registry import get_backend as _get_backend
         from generator.common import generate_pair
         res = extract_ris(_config_from_args(args))
         bind = default_bind(res.device_spec, args.backend)
-        gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux,
-                "rust_baremetal": G_rust_baremetal}
-        if args.backend == "linux":
-            pci_identity = None
-            if args.manifest:
-                from experiment_manifest import load_manifest
-                pci_identity = load_manifest(args.manifest).runtime.pci_identity
-            gen_kwargs = {"facts": res.facts, "pci_identity": pci_identity}
-        else:
-            gen_kwargs = {}
+        gen_mod = _get_backend(args.backend)
+        gen_kwargs = {}
+        for kw in getattr(gen_mod, "GEN_KWARGS", []):
+            if kw == "facts":
+                gen_kwargs["facts"] = res.facts
+            elif kw == "pci_identity":
+                pci_identity = None
+                if args.manifest:
+                    from experiment_manifest import load_manifest
+                    pci_identity = load_manifest(args.manifest).runtime.pci_identity
+                gen_kwargs["pci_identity"] = pci_identity
         if args.pair:
             header, source = generate_pair(
-                gens[args.backend], res.formal, res.device_spec, bind,
+                gen_mod, res.formal, res.device_spec, bind,
                 **gen_kwargs)
             base = (args.output
                     or f"artifacts/output/{res.formal['driver']}_{args.backend}")
@@ -221,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"✅ {args.backend} header saved to {h_out}")
             print(f"✅ {args.backend} source saved to {c_out}")
         else:
-            code = gens[args.backend].generate(
+            code = gen_mod.generate(
                 res.formal, res.device_spec, bind, **gen_kwargs)
             out = (args.output
                    or f"artifacts/output/{res.formal['driver']}_{args.backend}.c")
@@ -243,9 +252,6 @@ def main(argv: list[str] | None = None) -> int:
         from .metrics import score as score_fn, format_score
         from .spec import (default_bind, display_bind_set,
                            device_spec_to_dict)
-        from generator import harness as G_harness
-        from generator import baremetal as G_baremetal
-        from generator import linux as G_linux
         from generator.subsystem_runner import (subsystem_callback_plan,
                                                 w1c_drain_plan)
         from verification.subsystem_callback_oracle import (
@@ -341,7 +347,9 @@ def main(argv: list[str] | None = None) -> int:
         }, indent=2, sort_keys=True))
 
         # ── generated C + verification (derived) ──
-        gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
+        from generator.registry import list_backends
+        gens = {name: mod for name, mod in list_backends().items()
+                if name in ("harness", "baremetal", "linux")}
         source_oracle = verify_gpio_mmio_source_differential(
             res.formal, res.device_spec)
         sdhci_oracle = verify_sdhci_accessor_source_contract(res.formal)
@@ -363,10 +371,11 @@ def main(argv: list[str] | None = None) -> int:
         for backend, gen in gens.items():
             bind = default_bind(res.device_spec, backend)
             binds.append(bind)
-            if backend == "linux":
-                code = gen.generate(res.formal, res.device_spec, bind, res.facts)
-            else:
-                code = gen.generate(res.formal, res.device_spec, bind)
+            gen_kwargs = {}
+            for kw in getattr(gen, "GEN_KWARGS", []):
+                if kw == "facts":
+                    gen_kwargs["facts"] = res.facts
+            code = gen.generate(res.formal, res.device_spec, bind, **gen_kwargs)
             cpath = os.path.join(gen_dir, f"{backend}.c")
             with open(cpath, "w", encoding="utf-8") as fh:
                 fh.write(code)

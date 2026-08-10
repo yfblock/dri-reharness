@@ -1,0 +1,36 @@
+driver edu v0.1.0 {
+  module edu_irq_handler {
+    status := R(B4, priv->mmio.IO_IRQ_STATUS) -- Interrupt @op_1 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:71
+    W(B4, priv->mmio.IO_IRQ_ACK) = status -- Interrupt @op_2 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:75
+  }
+  module edu_read {
+    val := R(B4, priv->mmio + *off[0x0]) -- Status @op_3 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:99
+  }
+  module edu_write {
+    W(B4, priv->mmio + *off[0x0]) = val -- Config @op_4 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:120
+  }
+  module edu_pci_probe {
+    IF ((priv->mmio == 0x0) == 0x0) {
+      IF (ret == 0x0) {
+        dev_id := R(B4, priv->mmio.IO_ID) -- Status @op_5 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:168
+      }
+    }
+  }
+  accounting {
+    source_accesses 5
+    emitted 5
+    filtered 0
+    unsupported 0
+    unaccounted 0
+    ris_ops_without_evidence 0
+    strict_complete true
+  }
+  path_validation {
+    solver "Z3 4.16.0"
+    satisfiable 2
+    infeasible 0
+    unknown 0
+    intentionally_unreachable 0
+    complete true
+  }
+}

@@ -586,10 +586,10 @@ def _priv_struct_name(device_spec) -> str:
 
 
 def default_bind(device_spec, backend: str) -> BindSpec:
+    """Construct a BindSpec for *backend* via the generator registry."""
     b = BindSpec(backend=backend, device=device_spec.name)
     priv = _priv_struct_name(device_spec)
     base_expr = "g->base"
-    # find the inferred base bind from the first function that has one
     for fn in device_spec.functions:
         for bd in fn.binds:
             if bd.type == "MmioBase" and bd.from_expr:
@@ -598,105 +598,18 @@ def default_bind(device_spec, backend: str) -> BindSpec:
         if base_expr:
             break
 
-    if backend == "linux":
-        b.includes = ["<linux/io.h>", "<linux/platform_device.h>"]
-        b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "void __iomem *"),
-                   TypeMap("LogicalIRQ", "struct irq_data *"), TypeMap("UInt", "u32"),
-                   TypeMap("UIntPtr", "unsigned long *")]
-        b.primitives = [PrimitiveMap("MmioRead", "B4", "readl"),
-                        PrimitiveMap("MmioWrite", "B4", "writel"),
-                        PrimitiveMap("MmioRead", "B2", "readw"),
-                        PrimitiveMap("MmioWrite", "B2", "writew"),
-                        PrimitiveMap("MmioRead", "B1", "readb"),
-                        PrimitiveMap("MmioWrite", "B1", "writeb"),
-                        PrimitiveMap("MmioWriteW1C", "B4", "writel"),
-                        PrimitiveMap("MmioWriteW1C", "B2", "writew"),
-                        PrimitiveMap("MmioWriteW1C", "B1", "writeb"),
-                        PrimitiveMap("MmioReadBE", "B2", "ioread16be"),
-                        PrimitiveMap("MmioWriteBE", "B2", "iowrite16be"),
-                        PrimitiveMap("MmioReadBE", "B4", "ioread32be"),
-                        PrimitiveMap("MmioWriteBE", "B4", "iowrite32be")]
-        b.state = [StateMap("dev.base", base_expr)]
-        for fn in device_spec.functions:
-            # FunctionSpec retains every AST-proven callback owner/field.
-            # BindSpec is executable backend intent, so an unknown role or a
-            # private owner must not be promoted into a generated callback
-            # table merely because ownership is known.
-            if (fn.is_callback_entry and fn.callback_table
-                    and fn.role not in {"unknown", "helper"}
-                    and fn.callback_table.split(".", 1)[0]
-                    in PUBLIC_CALLBACK_TYPES):
-                if "." in fn.callback_table:
-                    b.callbacks.append(CallbackMap(fn.callback_table, fn.name))
-                else:
-                    f = _field_for_role(fn.role)
-                    if f:
-                        b.callbacks.append(CallbackMap(
-                            f"{fn.callback_table}.{f}", fn.name))
-            elif fn.role == "probe":
-                b.callbacks.append(CallbackMap("platform_driver.probe", fn.name))
-            elif fn.role == "remove":
-                b.callbacks.append(CallbackMap("platform_driver.remove", fn.name))
-    elif backend == "baremetal":
-        b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "uintptr_t"),
-                   TypeMap("LogicalIRQ", "unsigned int"), TypeMap("UInt", "uint32_t"),
-                   TypeMap("UIntPtr", "uint32_t *")]
-        b.primitives = [PrimitiveMap("MmioRead", "B4", "mmio_read32"),
-                        PrimitiveMap("MmioWrite", "B4", "mmio_write32"),
-                        PrimitiveMap("MmioRead", "B2", "mmio_read16"),
-                        PrimitiveMap("MmioWrite", "B2", "mmio_write16"),
-                        PrimitiveMap("MmioRead", "B1", "mmio_read8"),
-                        PrimitiveMap("MmioWrite", "B1", "mmio_write8"),
-                        PrimitiveMap("MmioWriteW1C", "B4", "mmio_write_w1c32"),
-                        PrimitiveMap("MmioWriteW1C", "B2", "mmio_write_w1c16"),
-                        PrimitiveMap("MmioWriteW1C", "B1", "mmio_write_w1c8"),
-                        PrimitiveMap("MmioReadBE", "B2", "mmio_read16be"),
-                        PrimitiveMap("MmioWriteBE", "B2", "mmio_write16be"),
-                        PrimitiveMap("MmioReadBE", "B4", "mmio_read32be"),
-                        PrimitiveMap("MmioWriteBE", "B4", "mmio_write32be")]
-        b.state = [StateMap("dev.base", "dev->base")]
-        for fn in device_spec.functions:
-            b.exports.append(ExportMap(fn.role, f"{device_spec.name}_{fn.role}"))
-    elif backend == "harness":
-        pass  # handled below
-    if backend == "rust_baremetal":
-        b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "uintptr_t"),
-                   TypeMap("LogicalIRQ", "unsigned int"), TypeMap("UInt", "uint32_t"),
-                   TypeMap("UIntPtr", "uint32_t *")]
-        b.primitives = [PrimitiveMap("MmioRead", "B4", "mmio_read32"),
-                        PrimitiveMap("MmioWrite", "B4", "mmio_write32"),
-                        PrimitiveMap("MmioRead", "B2", "mmio_read16"),
-                        PrimitiveMap("MmioWrite", "B2", "mmio_write16"),
-                        PrimitiveMap("MmioRead", "B1", "mmio_read8"),
-                        PrimitiveMap("MmioWrite", "B1", "mmio_write8"),
-                        PrimitiveMap("MmioWriteW1C", "B4", "mmio_write_w1c32"),
-                        PrimitiveMap("MmioWriteW1C", "B2", "mmio_write_w1c16"),
-                        PrimitiveMap("MmioWriteW1C", "B1", "mmio_write_w1c8"),
-                        PrimitiveMap("MmioReadBE", "B2", "mmio_read16be"),
-                        PrimitiveMap("MmioWriteBE", "B2", "mmio_write16be"),
-                        PrimitiveMap("MmioReadBE", "B4", "mmio_read32be"),
-                        PrimitiveMap("MmioWriteBE", "B4", "mmio_write32be")]
-        b.state = [StateMap("dev.base", "dev->base")]
-    elif backend == "harness":
-        b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "uintptr_t"),
-                   TypeMap("LogicalIRQ", "unsigned int"), TypeMap("UInt", "uint32_t"),
-                   TypeMap("UIntPtr", "uint32_t *")]
-        b.primitives = [PrimitiveMap("MmioRead", "B4", "harness_read32"),
-                        PrimitiveMap("MmioWrite", "B4", "harness_write32"),
-                        PrimitiveMap("MmioRead", "B2", "harness_read16"),
-                        PrimitiveMap("MmioWrite", "B2", "harness_write16"),
-                        PrimitiveMap("MmioRead", "B1", "harness_read8"),
-                        PrimitiveMap("MmioWrite", "B1", "harness_write8"),
-                        PrimitiveMap("MmioWriteW1C", "B4", "harness_write_w1c32"),
-                        PrimitiveMap("MmioWriteW1C", "B2", "harness_write_w1c16"),
-                        PrimitiveMap("MmioWriteW1C", "B1", "harness_write_w1c8"),
-                        PrimitiveMap("MmioReadBE", "B2", "harness_read16be"),
-                        PrimitiveMap("MmioWriteBE", "B2", "harness_write16be"),
-                        PrimitiveMap("MmioReadBE", "B4", "harness_read32be"),
-                        PrimitiveMap("MmioWriteBE", "B4", "harness_write32be")]
-        b.state = [StateMap("dev.base", "dev->base")]
-    return b
+    try:
+        from generator.registry import get_backend
+        mod = get_backend(backend)
+        if hasattr(mod, "make_bind"):
+            mod.make_bind(device_spec, b, priv, base_expr)
+            return b
+    except (ImportError, KeyError):
+        pass
 
+    raise ValueError(
+        f"Unknown backend {backend!r}. Ensure the backend module is in "
+        f"src/generator/ and defines NAME + make_bind().")
 
 _ROLE_FIELD = {
     "interrupt_ack": "irq_ack", "interrupt_mask": "irq_mask",

@@ -7,6 +7,7 @@ with plain `cc`.
 from __future__ import annotations
 import re
 from extractor.formal import walk_leaf_ops, walk_all_ops
+from extractor.spec import TypeMap, PrimitiveMap, StateMap, ExportMap
 from .common import (ops_to_c, local_decls, value_var_names,
                      lowering_recipes, transaction_runtime_prelude_filtered)
 from .linux import (_bound_resource_probe_ops, _normalize_ops,
@@ -358,3 +359,36 @@ def generate(formal: dict, device_spec, bind) -> str:
 
 def _c_type(abstract: str, bind) -> str:
     return bind.type_of(abstract) or "uint32_t"
+
+
+# ── backend registration ──────────────────────────────────────────────
+NAME = "harness"
+LANG = "C"
+GEN_KWARGS: list[str] = []
+
+
+def make_bind(device_spec, bind, priv: str, base_expr: str) -> None:
+    """Populate bind with harness-specific types, primitives, and state."""
+    bind.types = [
+        TypeMap("DeviceState", priv),
+        TypeMap("MmioBase", "uintptr_t"),
+        TypeMap("LogicalIRQ", "unsigned int"),
+        TypeMap("UInt", "uint32_t"),
+        TypeMap("UIntPtr", "uint32_t *"),
+    ]
+    bind.primitives = [
+        PrimitiveMap("MmioRead", "B4", "harness_read32"),
+        PrimitiveMap("MmioWrite", "B4", "harness_write32"),
+        PrimitiveMap("MmioRead", "B2", "harness_read16"),
+        PrimitiveMap("MmioWrite", "B2", "harness_write16"),
+        PrimitiveMap("MmioRead", "B1", "harness_read8"),
+        PrimitiveMap("MmioWrite", "B1", "harness_write8"),
+        PrimitiveMap("MmioWriteW1C", "B4", "harness_write_w1c32"),
+        PrimitiveMap("MmioWriteW1C", "B2", "harness_write_w1c16"),
+        PrimitiveMap("MmioWriteW1C", "B1", "harness_write_w1c8"),
+        PrimitiveMap("MmioReadBE", "B2", "harness_read16be"),
+        PrimitiveMap("MmioWriteBE", "B2", "harness_write16be"),
+        PrimitiveMap("MmioReadBE", "B4", "harness_read32be"),
+        PrimitiveMap("MmioWriteBE", "B4", "harness_write32be"),
+    ]
+    bind.state = [StateMap("dev.base", "dev->base")]

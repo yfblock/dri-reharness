@@ -15,7 +15,7 @@ import re
 import copy
 
 from extractor.formal import walk_leaf_ops
-from extractor.spec import PUBLIC_CALLBACK_TYPES
+from extractor.spec import TypeMap, PrimitiveMap, StateMap, CallbackMap, PUBLIC_CALLBACK_TYPES
 from .subsystem_runner import (portable_sdhci_accessor_only,
                                portable_virtio_state_only)
 from .common import (ops_to_c, local_decls, value_var_names,
@@ -2927,3 +2927,54 @@ def generate(formal: dict, device_spec, bind, facts=None, pci_identity=None) -> 
     L += [body, "", 'MODULE_LICENSE("GPL");',
           f'MODULE_DESCRIPTION("reharness generated driver for {dev}");']
     return "\n".join(L) + "\n"
+
+
+# ── backend registration ──────────────────────────────────────────────
+NAME = "linux"
+LANG = "C"
+GEN_KWARGS: list[str] = ["facts", "pci_identity"]
+
+
+def make_bind(device_spec, bind, priv: str, base_expr: str) -> None:
+    """Populate bind with linux-specific types, primitives, callbacks, etc."""
+    from extractor.spec import (PUBLIC_CALLBACK_TYPES, _field_for_role)
+    bind.includes = ["<linux/io.h>", "<linux/platform_device.h>"]
+    bind.types = [
+        TypeMap("DeviceState", priv),
+        TypeMap("MmioBase", "void __iomem *"),
+        TypeMap("LogicalIRQ", "struct irq_data *"),
+        TypeMap("UInt", "u32"),
+        TypeMap("UIntPtr", "unsigned long *"),
+    ]
+    bind.primitives = [
+        PrimitiveMap("MmioRead", "B4", "readl"),
+        PrimitiveMap("MmioWrite", "B4", "writel"),
+        PrimitiveMap("MmioRead", "B2", "readw"),
+        PrimitiveMap("MmioWrite", "B2", "writew"),
+        PrimitiveMap("MmioRead", "B1", "readb"),
+        PrimitiveMap("MmioWrite", "B1", "writeb"),
+        PrimitiveMap("MmioWriteW1C", "B4", "writel"),
+        PrimitiveMap("MmioWriteW1C", "B2", "writew"),
+        PrimitiveMap("MmioWriteW1C", "B1", "writeb"),
+        PrimitiveMap("MmioReadBE", "B2", "ioread16be"),
+        PrimitiveMap("MmioWriteBE", "B2", "iowrite16be"),
+        PrimitiveMap("MmioReadBE", "B4", "ioread32be"),
+        PrimitiveMap("MmioWriteBE", "B4", "iowrite32be"),
+    ]
+    bind.state = [StateMap("dev.base", base_expr)]
+    for fn in device_spec.functions:
+        if (fn.is_callback_entry and fn.callback_table
+                and fn.role not in {"unknown", "helper"}
+                and fn.callback_table.split(".", 1)[0]
+                in PUBLIC_CALLBACK_TYPES):
+            if "." in fn.callback_table:
+                bind.callbacks.append(CallbackMap(fn.callback_table, fn.name))
+            else:
+                f = _field_for_role(fn.role)
+                if f:
+                    bind.callbacks.append(CallbackMap(
+                        f"{fn.callback_table}.{f}", fn.name))
+        elif fn.role == "probe":
+            bind.callbacks.append(CallbackMap("platform_driver.probe", fn.name))
+        elif fn.role == "remove":
+            bind.callbacks.append(CallbackMap("platform_driver.remove", fn.name))
