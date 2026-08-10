@@ -109,37 +109,6 @@ static inline void mmio_write32be(uint32_t v, uintptr_t a) {
 #define REHARNESS_W1C_MARKER(name) ((void)(name))
 #define REHARNESS_W1C_END() ((void)0)
 #endif
-static unsigned long reharness_txn_trace_count;
-static const char *reharness_txn_current_id = "?";
-static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }
-static inline void reharness_txn_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-#ifdef REHARNESS_BAREMETAL_ORACLE
-    printf("[txn %lu] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-#else
-    (void)kind; (void)selector; (void)count; (void)value;
-#endif
-}
-static inline void reharness_i2c_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-#ifdef REHARNESS_BAREMETAL_ORACLE
-    printf("[txn %lu] id=%s %s transport=i2c_smbus selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-#else
-    (void)kind; (void)selector; (void)count; (void)value;
-#endif
-}
-static inline void reharness_i2c_raw_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-#ifdef REHARNESS_BAREMETAL_ORACLE
-    printf("[txn %lu] id=%s %s transport=i2c selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-#else
-    (void)kind; (void)selector; (void)count; (void)value;
-#endif
-}
-static inline void reharness_mfd_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-#ifdef REHARNESS_BAREMETAL_ORACLE
-    printf("[txn %lu] id=%s %s transport=mfd selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-#else
-    (void)kind; (void)selector; (void)count; (void)value;
-#endif
-}
 static inline void reharness_delay_ns(uint32_t ns) {
     for (volatile uint32_t i = 0; i < ns / 100U + 1U; ++i) { }
 }

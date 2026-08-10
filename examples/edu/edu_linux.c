@@ -12,12 +12,6 @@
 #include <linux/fs.h>
 #include <linux/uaccess.h>
 
-static const char *reharness_txn_current_id = "?";
-static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }
-#define reharness_txn_trace(k, r, n, v) pr_debug("[reharness-txn] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\n", reharness_txn_current_id, k, r, n, v)
-#define reharness_i2c_trace(k, r, n, v) pr_debug("[reharness-txn] id=%s %s transport=i2c_smbus selector=0x%08x count=%u value=0x%08x\n", reharness_txn_current_id, k, r, n, v)
-#define reharness_i2c_raw_trace(k, r, n, v) pr_debug("[reharness-txn] id=%s %s transport=i2c selector=0x%08x count=%u value=0x%08x\n", reharness_txn_current_id, k, r, n, v)
-#define reharness_mfd_trace(k, r, n, v) pr_debug("[reharness-txn] id=%s %s transport=mfd selector=0x%08x count=%u value=0x%08x\n", reharness_txn_current_id, k, r, n, v)
 
 #ifndef IO_ID
 #define IO_ID	0x0

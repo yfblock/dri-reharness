@@ -85,21 +85,6 @@ static inline void harness_write_w1c32(uint32_t v, uintptr_t a) { harness_write_
 static inline void harness_write16be(uint16_t v, uintptr_t a) { harness_write_width(v, a, 2, 1); }
 static inline void harness_write32be(uint32_t v, uintptr_t a) { harness_write_width(v, a, 4, 1); }
 static inline void reharness_delay_ns(uint32_t ns) { (void)ns; }
-static unsigned long reharness_txn_trace_count;
-static const char *reharness_txn_current_id = "?";
-static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }
-static inline void reharness_txn_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-    printf("[txn %lu] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-}
-static inline void reharness_i2c_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-    printf("[txn %lu] id=%s %s transport=i2c_smbus selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-}
-static inline void reharness_i2c_raw_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-    printf("[txn %lu] id=%s %s transport=i2c selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-}
-static inline void reharness_mfd_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {
-    printf("[txn %lu] id=%s %s transport=mfd selector=0x%08x count=%u value=0x%08x\n", reharness_txn_trace_count++, reharness_txn_current_id, kind, selector, count, value);
-}
 #define REHARNESS_CALLBACK_BEGIN(n) printf("[reharness-callback-begin] %u\n", (unsigned)(n))
 #define REHARNESS_CALLBACK_MARKER(name) printf("[reharness-callback] %s\n", (name))
 #define REHARNESS_CALLBACK_RESULT(v) printf("[reharness-result] 0x%llx\n", (unsigned long long)(v))

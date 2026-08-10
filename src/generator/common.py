@@ -576,39 +576,23 @@ def transaction_runtime_prelude_filtered(
             lines.append("#include <linux/regmap.h>")
         if has_i2c:
             lines.append("#include <linux/i2c.h>")
-        lines.extend([
-            "static const char *reharness_txn_current_id = \"?\";",
-            "static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }",
-            "#define reharness_txn_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
-            "#define reharness_i2c_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=i2c_smbus selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
-            "#define reharness_i2c_raw_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=i2c selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
-            "#define reharness_mfd_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=mfd selector=0x%08x count=%u value=0x%08x\\n\", reharness_txn_current_id, k, r, n, v)",
-        ])
-        if has_regmap:
+        has_any = has_regmap or has_i2c or has_mfd
+        if has_any:
             lines.extend([
-                "static inline int reharness_regmap_read(void *t, unsigned int r, unsigned int *v) { int ret = regmap_read((struct regmap *)t, r, v); if (!ret) reharness_txn_trace(\"R\", r, 1, *v); return ret; }",
-                "static inline int reharness_regmap_write(void *t, unsigned int r, unsigned int v) { int ret = regmap_write((struct regmap *)t, r, v); if (!ret) reharness_txn_trace(\"W\", r, 1, v); return ret; }",
-                "static inline int reharness_regmap_update(void *t, unsigned int r, unsigned int m, unsigned int v) { int ret = regmap_update_bits((struct regmap *)t, r, m, v); if (!ret) reharness_txn_trace(\"U\", r, 1, v & m); return ret; }",
-                "static inline int reharness_regmap_bulk_read(void *t, unsigned int r, unsigned int *b, unsigned int n) { int ret = regmap_bulk_read((struct regmap *)t, r, b, n); if (!ret) reharness_txn_trace(\"BR\", r, n, n ? b[0] : 0); return ret; }",
-                "static inline int reharness_regmap_bulk_write(void *t, unsigned int r, const unsigned int *b, unsigned int n) { int ret = regmap_bulk_write((struct regmap *)t, r, b, n); if (!ret) reharness_txn_trace(\"BW\", r, n, n ? b[0] : 0); return ret; }",
+                "static const char *reharness_txn_current_id = \"?\";"
+                "static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }"
             ])
+        if has_regmap:
+            lines.append(
+                "#define reharness_txn_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\\\n\", reharness_txn_current_id, k, r, n, v)")
         if has_i2c:
             lines.extend([
-                "static inline int reharness_i2c_smbus_read_byte(void *t, unsigned int *v) { int r = i2c_smbus_read_byte((struct i2c_client *)t); if (r >= 0) { *v = (unsigned int)r; reharness_i2c_trace(\"R\", 0, 1, *v); } return r < 0 ? r : 0; }",
-                "static inline int reharness_i2c_smbus_write_byte(void *t, unsigned int v) { int r = i2c_smbus_write_byte((struct i2c_client *)t, v); if (!r) reharness_i2c_trace(\"W\", 0, 1, v); return r; }",
-                "static inline int reharness_i2c_smbus_read_byte_data(void *t, unsigned int r, unsigned int *v) { int x = i2c_smbus_read_byte_data((struct i2c_client *)t, r); if (x >= 0) { *v = (unsigned int)x; reharness_i2c_trace(\"R\", r, 1, *v); } return x < 0 ? x : 0; }",
-                "static inline int reharness_i2c_smbus_write_byte_data(void *t, unsigned int r, unsigned int v) { int x = i2c_smbus_write_byte_data((struct i2c_client *)t, r, v); if (!x) reharness_i2c_trace(\"W\", r, 1, v); return x; }",
-                "static inline int reharness_i2c_smbus_read_word_data(void *t, unsigned int r, unsigned int *v) { int x = i2c_smbus_read_word_data((struct i2c_client *)t, r); if (x >= 0) { *v = (unsigned int)x; reharness_i2c_trace(\"R\", r, 1, *v); } return x < 0 ? x : 0; }",
-                "static inline int reharness_i2c_smbus_write_word_data(void *t, unsigned int r, unsigned int v) { int x = i2c_smbus_write_word_data((struct i2c_client *)t, r, v); if (!x) reharness_i2c_trace(\"W\", r, 1, v); return x; }",
-                "static inline int reharness_i2c_smbus_read_word_data_swapped(void *t, unsigned int r, unsigned int *v) { int x = i2c_smbus_read_word_swapped((struct i2c_client *)t, r); if (x >= 0) { *v = (unsigned int)x; reharness_i2c_trace(\"R\", r, 1, *v); } return x < 0 ? x : 0; }",
-                "static inline int reharness_i2c_smbus_write_word_data_swapped(void *t, unsigned int r, unsigned int v) { int x = i2c_smbus_write_word_swapped((struct i2c_client *)t, r, v); if (!x) reharness_i2c_trace(\"W\", r, 1, v); return x; }",
-                "static inline int reharness_i2c_smbus_read_block_data(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_read_block_data((struct i2c_client *)t, r, b); if (x >= 0) reharness_i2c_trace(\"BR\", r, x, x ? ((u8 *)b)[0] : 0); return x; }",
-                "static inline int reharness_i2c_smbus_write_block_data(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_write_block_data((struct i2c_client *)t, r, n, b); if (!x) reharness_i2c_trace(\"BW\", r, n, n ? ((u8 *)b)[0] : 0); return x; }",
-                "static inline int reharness_i2c_smbus_read_i2c_block(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_read_i2c_block_data((struct i2c_client *)t, r, n, b); if (x >= 0) reharness_i2c_trace(\"BR\", r, x, x ? ((u8 *)b)[0] : 0); return x; }",
-                "static inline int reharness_i2c_smbus_write_i2c_block(void *t, unsigned int r, void *b, unsigned int n) { int x = i2c_smbus_write_i2c_block_data((struct i2c_client *)t, r, n, b); if (!x) reharness_i2c_trace(\"BW\", r, n, n ? ((u8 *)b)[0] : 0); return x; }",
-                "static inline int reharness_i2c_master_recv(void *t, void *b, unsigned int n) { int x = i2c_master_recv((struct i2c_client *)t, b, n); if (x >= 0) reharness_i2c_raw_trace(\"BR\", 0, x, x ? ((u8 *)b)[0] : 0); return x; }",
-                "static inline int reharness_i2c_master_send(void *t, void *b, unsigned int n) { int x = i2c_master_send((struct i2c_client *)t, b, n); if (x >= 0) reharness_i2c_raw_trace(\"BW\", 0, x, x ? ((u8 *)b)[0] : 0); return x; }",
+                "#define reharness_i2c_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=i2c_smbus selector=0x%08x count=%u value=0x%08x\\\n\", reharness_txn_current_id, k, r, n, v)",
+                "#define reharness_i2c_raw_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=i2c selector=0x%08x count=%u value=0x%08x\\\n\", reharness_txn_current_id, k, r, n, v)",
             ])
+        if has_mfd:
+            lines.append(
+                "#define reharness_mfd_trace(k, r, n, v) pr_debug(\"[reharness-txn] id=%s %s transport=mfd selector=0x%08x count=%u value=0x%08x\\\n\", reharness_txn_current_id, k, r, n, v)")
         return lines
     trace = (
         'printf("[txn %lu] id=%s %s transport=regmap selector=0x%08x count=%u value=0x%08x\\n", '
@@ -621,15 +605,23 @@ def transaction_runtime_prelude_filtered(
         lines.append("static uint8_t reharness_i2c_state[256];")
     if has_mfd:
         lines.append("static uint32_t reharness_mfd_state[256];")
-    lines.extend([
+    has_any = has_regmap or has_i2c or has_mfd
+    if has_any:
+        lines.extend([
         "static unsigned long reharness_txn_trace_count;",
         "static const char *reharness_txn_current_id = \"?\";",
         "static inline void reharness_transaction_mark(const char *id) { reharness_txn_current_id = id; }",
+        ])
+    if has_regmap:
+        lines.extend([
         "static inline void reharness_txn_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
         *([f"#ifdef {guard}", "    " + trace, "#else",
             "    (void)kind; (void)selector; (void)count; (void)value;",
             "#endif"] if guard else ["    " + trace]),
         "}",
+        ])
+    if has_i2c:
+        lines.extend([
         "static inline void reharness_i2c_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
         *([f"#ifdef {guard}", "    " + trace.replace("transport=regmap", "transport=i2c_smbus"), "#else",
             "    (void)kind; (void)selector; (void)count; (void)value;", "#endif"] if guard else ["    " + trace.replace("transport=regmap", "transport=i2c_smbus")]),
@@ -638,11 +630,14 @@ def transaction_runtime_prelude_filtered(
         *([f"#ifdef {guard}", "    " + trace.replace("transport=regmap", "transport=i2c"), "#else",
             "    (void)kind; (void)selector; (void)count; (void)value;", "#endif"] if guard else ["    " + trace.replace("transport=regmap", "transport=i2c")]),
         "}",
+        ])
+    if has_mfd:
+        lines.extend([
         "static inline void reharness_mfd_trace(const char *kind, uint32_t selector, uint32_t count, uint32_t value) {",
         *([f"#ifdef {guard}", "    " + trace.replace("transport=regmap", "transport=mfd"), "#else",
             "    (void)kind; (void)selector; (void)count; (void)value;", "#endif"] if guard else ["    " + trace.replace("transport=regmap", "transport=mfd")]),
         "}",
-    ])
+        ])
     if has_regmap:
         lines.extend([
             "static inline int reharness_regmap_read(void *t, uint32_t r, uint32_t *v) { (void)t; *v = reharness_regmap_state[r & 255u]; reharness_txn_trace(\"R\", r, 1, *v); return 0; }",
