@@ -19,6 +19,7 @@ Commands:
   show <ris>                print a .ris file
   spec <src> [out.dspec]    infer & print backend-independent .dspec
   gen <src> <backend> [out.c]   generate C (backend: harness|baremetal|linux)
+  gen-pair <src> <backend> [out_base]   generate .h + .c pair
   driver <src> [outdir]         one-shot full pipeline (RIS+dspec+bind+backends+trace)
   facts <src>                  source facts (.facts) for LLM synthesis
   bundle <src> [backend] [outdir]   build LLM input bundle (RIS+dspec+bind+facts)
@@ -58,6 +59,12 @@ cmd_gen() {
   local src="${1:?need src}" backend="${2:?need backend (harness|baremetal|linux)}" out="${3:-}"
   if [ -n "$out" ]; then "$PY" -m extractor gen -s "$src" -b "$backend" -o "$out"
   else "$PY" -m extractor gen -s "$src" -b "$backend"; fi
+}
+
+cmd_gen_pair() {
+  local src="${1:?need src}" backend="${2:?need backend (harness|baremetal|linux)}" out="${3:-}"
+  if [ -n "$out" ]; then "$PY" -m extractor gen -s "$src" -b "$backend" --pair -o "$out"
+  else "$PY" -m extractor gen -s "$src" -b "$backend" --pair; fi
 }
 
 cmd_metrics() { "$PY" -m extractor metrics -s "${1:?need src}"; }
@@ -104,6 +111,7 @@ case "${1:-help}" in
   show)      shift; cmd_show "$@";;
   spec)      shift; cmd_spec "$@";;
   gen)       shift; cmd_gen "$@";;
+  gen-pair)  shift; cmd_gen_pair "$@";;
   driver)    shift; cmd_driver "$@";;
   facts)     shift; cmd_facts "$@";;
   bundle)    shift; cmd_bundle "$@";;

@@ -92,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="output .c file (default: artifacts/output/<driver>_<backend>.c)")
     g.add_argument("--manifest", default=None,
                    help="validated experiment manifest supplying runtime policy")
+    g.add_argument("--pair", action="store_true",
+                   help="generate .h + .c pair instead of single .c file")
     _add_analysis_options(g)
 
     sc = sub.add_parser("score", help="Generation readiness scoring")
@@ -187,6 +189,7 @@ def main(argv: list[str] | None = None) -> int:
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
+        from generator.common import generate_pair
         res = extract_ris(_config_from_args(args))
         bind = default_bind(res.device_spec, args.backend)
         gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
@@ -195,17 +198,34 @@ def main(argv: list[str] | None = None) -> int:
             if args.manifest:
                 from experiment_manifest import load_manifest
                 pci_identity = load_manifest(args.manifest).runtime.pci_identity
-            code = gens[args.backend].generate(
-                res.formal, res.device_spec, bind, res.facts,
-                pci_identity=pci_identity)
+            gen_kwargs = {"facts": res.facts, "pci_identity": pci_identity}
         else:
-            code = gens[args.backend].generate(res.formal, res.device_spec, bind)
-        out = (args.output
-               or f"artifacts/output/{res.formal['driver']}_{args.backend}.c")
-        os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
-        with open(out, "w", encoding="utf-8") as fh:
-            fh.write(code)
-        print(f"✅ {args.backend} code saved to {out}")
+            gen_kwargs = {}
+        if args.pair:
+            header, source = generate_pair(
+                gens[args.backend], res.formal, res.device_spec, bind,
+                **gen_kwargs)
+            base = (args.output
+                    or f"artifacts/output/{res.formal['driver']}_{args.backend}")
+            base = base[:-2] if base.endswith(".c") else base
+            h_out = f"{base}.h"
+            c_out = f"{base}.c"
+            os.makedirs(os.path.dirname(os.path.abspath(c_out)) or ".", exist_ok=True)
+            with open(h_out, "w", encoding="utf-8") as fh:
+                fh.write(header)
+            with open(c_out, "w", encoding="utf-8") as fh:
+                fh.write(source)
+            print(f"✅ {args.backend} header saved to {h_out}")
+            print(f"✅ {args.backend} source saved to {c_out}")
+        else:
+            code = gens[args.backend].generate(
+                res.formal, res.device_spec, bind, **gen_kwargs)
+            out = (args.output
+                   or f"artifacts/output/{res.formal['driver']}_{args.backend}.c")
+            os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
+            with open(out, "w", encoding="utf-8") as fh:
+                fh.write(code)
+            print(f"✅ {args.backend} code saved to {out}")
         return 0
 
     if args.command == "score":
