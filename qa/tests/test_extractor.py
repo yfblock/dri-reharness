@@ -4071,7 +4071,7 @@ def _linux_generate_and_compile(source: str, module_name: str):
 
     res = extract_ris(ExtractorConfig(source=source))
     bind = default_bind(res.device_spec, "linux")
-    code = linux_gen.generate(res.formal, res.device_spec, bind, res.facts)
+    code = linux_gen.generate(res.formal, res.device_spec, bind, facts=res.facts)
     assert "TODO" not in code
     build = os.path.join(REHARNESS, "platform", "kernel", "build")
     if not os.path.isfile(os.path.join(build, "Makefile")):
