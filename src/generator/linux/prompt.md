@@ -12,6 +12,10 @@ For each module's ops array:
 - "kind":"return" -> return value
 
 Where the address shows "base + REGISTER_NAME", use the register name as-is (it is a #define constant).
+- "kind":"tx_write" -> regmap write. Use: regmap_write(regmap, SELECTOR, payload). Declare a static struct regmap *regmap at the top of the function if any tx_* ops appear. The target field is the regmap handle name.
+- "kind":"tx_update" -> regmap update. Use: regmap_update_bits(regmap, SELECTOR, mask, value).
+- "kind":"tx_read" -> regmap read. Use: regmap_read(regmap, SELECTOR, &var).
+For regmap operations, add #include <linux/regmap.h> and declare a dummy static struct regmap pointer for each unique target name. Since this is a harness, use NULL or a placeholder for the regmap pointer.
 
 ## Bus Type Detection
 
@@ -21,7 +25,7 @@ Check evidence.bus_type:
 
 ## Required Components
 
-1. Includes: <linux/module.h>, <linux/io.h>, <linux/fs.h>, <linux/uaccess.h>, <linux/miscdevice.h>, <linux/slab.h>, <linux/err.h>, plus bus-specific headers.
+1. Includes: <linux/module.h>, <linux/io.h>, <linux/fs.h>, <linux/uaccess.h>, <linux/miscdevice.h>, <linux/slab.h>, <linux/err.h>, <linux/of.h>, plus bus-specific headers.
 
 2. Driver private struct containing:
    - void __iomem *base (the MMIO base address)
@@ -57,7 +61,7 @@ static void __iomem *__rh_mmio_base;
    - misc_register with KBUILD_MODNAME
    - Proper error handling
 
-6. Remove function: call the remove/suspend module functions if they exist, then misc_deregister.
+6. Remove function (return void for platform_driver): call the remove/suspend module functions if they exist, then misc_deregister.
 
 7. PCI identity: If evidence.pci_identity exists with vendor/device, create pci_device_id table.
 
@@ -74,6 +78,7 @@ If evidence.constants exist, define them as macros. These include register offse
 - Use devm_ managed resources where possible.
 - Include error handling.
 - Do NOT invent or skip register accesses. Every op in every module must appear.
+- Transaction (tx_*) operations represent regmap/I2C bus accesses, not MMIO. Generate them as regmap_* calls with placeholder pointers. Include #include <linux/regmap.h> when any tx_* op is present.
 
 Driver name: __DRIVER_NAME__
 

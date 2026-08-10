@@ -25,6 +25,7 @@ device dw-apb-ssi {
   register DW_SPI_RISR: B4 at base + 0x34
   register DW_SPI_ICR: B4 at base + 0x48
   register DW_SPI_VERSION: B4 at base + 0x5c
+  register DW_SPI_DR: B4 at base + 0x60
   register DW_SPI_RX_SAMPLE_DLY: B4 at base + 0xf0
   register DW_SPI_CS_OVERRIDE: B4 at base + 0xf4
   invariant forall line: UInt. line < num_irqs -> valid_interrupt_line(line)
@@ -59,6 +60,7 @@ device dw-apb-ssi {
     ris dw_spi_transfer_handler
     effect writes_register(DW_SPI_IMR)
     effect writes_register(DW_SPI_RXFTLR)
+    effect writes_register(DW_SPI_DR)
     effect handles_interrupt()
     ensure interrupt_serviced
   }
@@ -96,6 +98,7 @@ device dw-apb-ssi {
     ris dw_spi_transfer_one
     effect writes_register(DW_SPI_SSIENR)
     effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_DR)
     effect writes_register(DW_SPI_TXFTLR)
     effect writes_register(DW_SPI_RXFTLR)
   }
@@ -133,6 +136,7 @@ device dw-apb-ssi {
     ris dw_spi_exec_mem_op
     effect writes_register(DW_SPI_SSIENR)
     effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_DR)
   }
   function dw_spi_add_controller(dev: DeviceState, dws: DeviceState) -> UInt {
     role unknown

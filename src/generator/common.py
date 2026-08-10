@@ -26,12 +26,15 @@ def split_header_source(code: str, driver_name: str, backend: str) -> tuple[str,
             break
     if first_struct_end < 0:
         return "", code
-    guard = f"REHARNESS_{driver_name.upper()}_{backend.upper()}_H"
+    raw_guard = f"REHARNESS_{driver_name.upper()}_{backend.upper()}_H"
+    guard = re.sub(r"\W", "_", raw_guard)
     header_body = "\n".join(lines[:first_struct_end + 1])
     source_body = "\n".join(lines[first_struct_end + 1:])
     header = (f"#ifndef {guard}\n#define {guard}\n\n"
               + header_body + f"\n\n#endif /* {guard} */\n")
-    source = f'#include "{driver_name}_{backend}.h"\n\n' + source_body
+    safe_name = re.sub(r"\W", "_", f"{driver_name}_{backend}")
+    source = f'#include "{safe_name}.h"\n\n' + source_body
+
     return header, source
 
 

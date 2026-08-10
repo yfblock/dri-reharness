@@ -94,6 +94,27 @@ def _simplify_ops(ops, depth=0):
             out.append({"kind": "loop", "guard": _expr_str(l.get("guard")), "body": _simplify_ops(l.get("body", []), depth + 1), "bounded": l.get("bounded", False)})
         elif "Return" in op:
             out.append({"kind": "return", "value": _expr_str(op["Return"].get("value"))})
+        elif "TransactionWrite" in op:
+            o = op["TransactionWrite"]
+            out.append({"kind": "tx_write", "op_id": o.get("op_id", "?"),
+                        "transport": o.get("transport", "regmap"),
+                        "target": _expr_str(o.get("target")),
+                        "selector": _expr_str(o.get("selector")),
+                        "payload": _expr_str(o.get("value"))})
+        elif "TransactionUpdate" in op:
+            o = op["TransactionUpdate"]
+            out.append({"kind": "tx_update", "op_id": o.get("op_id", "?"),
+                        "transport": o.get("transport", "regmap"),
+                        "target": _expr_str(o.get("target")),
+                        "selector": _expr_str(o.get("selector")),
+                        "mask": _expr_str(o.get("update_mask")),
+                        "value": _expr_str(o.get("update_value"))})
+        elif "TransactionRead" in op:
+            o = op["TransactionRead"]
+            out.append({"kind": "tx_read", "op_id": o.get("op_id", "?"),
+                        "transport": o.get("transport", "regmap"),
+                        "target": _expr_str(o.get("target")),
+                        "selector": _expr_str(o.get("selector"))})
     return out
 
 

@@ -277,4 +277,19 @@ driver dw-apb-ssi v0.1.0 {
     intentionally_unreachable 1
     complete true
   }
+  ir_analysis {
+    source "spi-dw-core.c" {
+      ir_generated true
+      total_ops 103
+      missing_offsets 0
+    }
+    source "spi-dw-mmio.c" {
+      ir_generated true
+      total_ops 0
+      missing_offsets 0
+    }
+    total_ir_ops 103
+    total_missing_from_ast 0
+    coverage_pct 100.0
+  }
 }
