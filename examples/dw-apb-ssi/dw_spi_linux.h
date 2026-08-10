@@ -39,7 +39,6 @@
 #define DW_SPI_DMACR_TDMAE 2
 #define DW_SPI_DMARDLR 84
 #define DW_SPI_DMATDLR 80
-#define DW_SPI_DR 96
 #define DW_SPI_IDR 88
 #define DW_SPI_INT_MSTI 32
 #define DW_SPI_INT_RXFI 16
@@ -77,6 +76,7 @@
 #define DW_SPI_CS_OVERRIDE 244
 #define DW_SPI_CTRLR0 0
 #define DW_SPI_CTRLR1 4
+#define DW_SPI_DR 96
 #define DW_SPI_ICR 72
 #define DW_SPI_IMR 44
 #define DW_SPI_ISR 48
@@ -92,7 +92,6 @@
 #define DW_SPI_VERSION 92
 #define MSCC_SPI_MST_SW_MODE 20
 
-/* MMIO Trace Instrumentation */
 static void __iomem *__rh_mmio_base;
 #define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
 #define RH_TRACE_FN(name) pr_info("[rhfn] %s\n", (name))
@@ -106,33 +105,6 @@ struct driver_priv {
     void __iomem *base;
     struct miscdevice misc;
     struct device *dev;
-    u32 ver;
-    u32 num_cs;
-    u32 fifo_len;
-    u32 caps;
-    u32 irq;
-    u32 current_freq;
-    u32 cur_rx_sample_dly;
-    u32 reg_io_width;
-    u32 rx_len;
-    u32 tx_len;
-    u32 dma_mapped;
-    u32 chip_select[4];
-    u32 cr0_val;
-    u32 cfg_tmode;
-    u32 cfg_ndf;
-    u32 speed_hz;
-    u32 clk_div;
-    u32 chip_rx_sample_dly;
-    u32 cs_high;
-    u32 enable;
-    u32 cs;
-    u32 sw_mode;
-    u32 cur_msg;
-    u32 level;
-    u32 new_mask;
-    u32 raw;
-    u32 ret;
 };
 
 #endif /* REHARNESS_DW-APB-SSI_LINUX_H */
