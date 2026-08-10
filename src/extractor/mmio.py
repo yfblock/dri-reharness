@@ -30,10 +30,11 @@ MMIO_WRITE_FNS = {
 # avoids treating arbitrary functions named read/write as MMIO.
 PRIVATE_MMIO_READ_LAYOUTS = {
     "dwc2_readl": (0, 1, "regs"),
+    "dw_readl": (0, 1, "regs"),
 }
-
 PRIVATE_MMIO_WRITE_LAYOUTS = {
     "dwc2_writel": (0, 1, 2, "regs"),
+    "dw_writel": (0, 1, 2, "regs"),
 }
 
 # Public subsystem accessors with stable, type-defined register contracts.

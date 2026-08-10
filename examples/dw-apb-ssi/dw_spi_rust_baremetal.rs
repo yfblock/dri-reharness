@@ -12,38 +12,41 @@ register_structs! {
         (0x000 => ctrlr0: ReadWrite<u32, Ctlr0::Register>),
         (0x004 => ctrlr1: ReadWrite<u32, Ctlr1::Register>),
         (0x008 => _reserved0),
-        (0x010 => ser: ReadWrite<u32, Ser::Register>),
-        (0x014 => mscc_spi_mst_sw_mode: ReadWrite<u32, MsccSpiMstSwMode::Register>),
+        (0x010 => ssienr: ReadWrite<u32, Ssienr::Register>),
+        (0x014 => _reserved1),
+        (0x018 => ser: ReadWrite<u32, Ser::Register>),
+        (0x01c => bacr: ReadWrite<u32, Bacr::Register>),
+        (0x014 => _reserved2), // Padding to align with TXFTLR
         (0x018 => txftlr: ReadWrite<u32, Txftlr::Register>),
         (0x01c => rxftlr: ReadWrite<u32, Rxftlr::Register>),
         (0x020 => txflr: ReadOnly<u32, Txflr::Register>),
         (0x024 => rxflr: ReadOnly<u32, Rxflr::Register>),
         (0x028 => sr: ReadOnly<u32, Sr::Register>),
-        (0x02c => isr: ReadOnly<u32, Isr::Register>),
-        (0x030 => risr: ReadOnly<u32, Risr::Register>),
-        (0x034 => _reserved1),
+        (0x02c => imr: ReadWrite<u32, Imr::Register>),
+        (0x030 => isr: ReadOnly<u32, Isr::Register>),
+        (0x034 => risr: ReadOnly<u32, Risr::Register>),
+        (0x038 => _reserved3),
         (0x05c => version: ReadOnly<u32, Version::Register>),
-        (0x060 => _reserved2),
-        (0x0f0 => rx_sample_dly: ReadWrite<u32, RxSampleDly::Register>),
-        (0x0f4 => cs_override: ReadWrite<u32, CsOverride::Register>),
-        (0x0f8 => @END),
+        (0x060 => cs_override: ReadWrite<u32, CsOverride::Register>),
+        (0x064 => @END),
     }
 }
 
 register_bitfields![u32,
     Ctlr0 [],
     Ctlr1 [],
+    Ssienr [],
     Ser [],
-    MsccSpiMstSwMode [],
+    Bacr [],
     Txftlr [],
     Rxftlr [],
     Txflr [],
     Rxflr [],
     Sr [],
+    Imr [],
     Isr [],
     Risr [],
     Version [],
-    RxSampleDly [],
     CsOverride []
 ];
 
@@ -58,171 +61,194 @@ impl DwApbSsi {
         }
     }
 
-    pub fn dw_spi_set_cs(&self, cs_high: bool, enable: bool, chipselect: u32) {
+    pub fn dw_spi_set_cs(&self, cs_high: bool, enable: bool, cs: u32) {
         if cs_high == enable {
-            self.regs.ser.set(0x1 << chipselect);
-        } else if cs_high != enable {
-            self.regs.ser.set(0x0);
+            let offset = 1u32 << cs;
+            self.regs.ser.set(offset);
+        }
+        if cs_high != enable {
+            self.regs.ser.set(0);
         }
     }
 
     pub fn dw_spi_check_status(&self, raw: bool) -> u32 {
+        let irq_status;
         if raw {
-            self.regs.risr.get()
-        } else if !raw {
-            self.regs.isr.get()
+            irq_status = self.regs.risr.get();
         } else {
-            0
+            irq_status = self.regs.isr.get();
         }
+        irq_status
     }
 
-    pub fn dw_spi_transfer_handler(&self, irq_status: u32, rx_len: u32) {
-        let _r6 = 0; 
+    pub fn dw_spi_transfer_handler(&self, rx_len: u32) {
+        let irq_status = self.regs.isr.get();
+        let _r6 = self.regs.ser.get();
         if rx_len != 0 {
             let r7 = self.regs.rxftlr.get();
             if rx_len <= r7 {
-                self.regs.rxftlr.set(rx_len - 1);
+                let offset = rx_len - 1;
+                self.regs.rxftlr.set(offset);
             }
         }
-        if irq_status & (1 << 0) != 0 { 
+        if (irq_status & (1 << 0)) != 0 {
             let _tx_room = self.regs.txflr.get();
         }
     }
 
     pub fn dw_spi_irq(&self) -> u32 {
-        self.regs.isr.get()
+        let irq_status = self.regs.isr.get();
+        irq_status
     }
 
-    pub fn dw_spi_update_config(&self, cr0: u32, tmode: u32, ndf: u32, cur_rx_sample_dly: u32, rx_sample_dly: u32) {
+    pub fn dw_spi_update_config(&self, cr0: u32, cfg_tmode: u32, cfg_ndf: u32, current_freq: u32, speed_hz: u32, cur_rx_sample_dly: u32, chip_rx_sample_dly: u32, clk_div: u32) {
         self.regs.ctrlr0.set(cr0);
-        if (tmode | (1 << 1)) == (1 << 1) { 
-            let val = if ndf != 0 { ndf - 1 } else { 0 };
+        if (cfg_tmode | (1 << 10)) == (1 << 8) {
+            let val = if cfg_ndf != 0 { cfg_ndf - 1 } else { 0 };
             self.regs.ctrlr1.set(val);
         }
-        if cur_rx_sample_dly != rx_sample_dly {
-            self.regs.rx_sample_dly.set(rx_sample_dly);
+        if current_freq != speed_hz {
+            self.regs.bacr.set(clk_div);
+        }
+        if cur_rx_sample_dly != chip_rx_sample_dly {
+            self.regs.cs_override.set(chip_rx_sample_dly);
         }
     }
 
-    pub fn dw_spi_transfer_one(&self, dma_mapped: bool, irq: u32, rx_len: u32, level: u32) {
-        if !dma_mapped {
-            if irq == 0xFFFFFFFF { 
-                while rx_len != 0 {
-                    let _tx_room = self.regs.txflr.get();
-                    let _r15 = 0; 
-                }
-            }
+    pub fn dw_spi_transfer_one(&self, level: u32) {
+        self.regs.ssienr.set(0);
+        self.regs.ssienr.set(1);
+        let mut rx_len = 1;
+        while rx_len != 0 {
+            let _tx_room = self.regs.txflr.get();
+            let _r18 = self.regs.ser.get();
+            rx_len = 0;
         }
         self.regs.txftlr.set(level);
         self.regs.rxftlr.set(level - 1);
     }
 
-    pub fn dw_spi_exec_mem_op(&self, len: u32, ret: u32, busy: bool, mut retry: u32) {
-        let mut _len1 = len;
-        while _len1 != 0 {
+    pub fn dw_spi_exec_mem_op(&self) {
+        self.regs.ssienr.set(0);
+        self.regs.ssienr.set(1);
+        let mut len = 1;
+        while len != 0 {
             let _entries = self.regs.txflr.get();
-            _len1 = _len1.saturating_sub(1);
+            len = 0;
         }
-
-        let mut _len2 = len;
-        while _len2 != 0 {
+        let mut len2 = 1;
+        while len2 != 0 {
             let entries = self.regs.rxflr.get();
             if entries == 0 {
                 let _sts = self.regs.risr.get();
             }
-            _len2 = _len2.saturating_sub(1);
+            len2 = 0;
         }
-
+        let ret = 0;
         if ret == 0 {
             let _nents = self.regs.txflr.get();
-            while busy && retry > 0 {
-                let _sr = self.regs.sr.get();
+            let mut retry = 1000;
+            while retry > 0 {
+                let _busy = self.regs.sr.get();
                 retry -= 1;
             }
         }
+        self.regs.ssienr.set(0);
+        self.regs.ssienr.set(1);
     }
 
-    pub fn dw_spi_add_controller(&self, dws_valid: bool, mut ver: u32, is_target: bool, mut num_cs: u32, mut fifo_len: u32, is_pssi: bool, caps: u32) {
-        if dws_valid {
+    pub fn dw_spi_add_controller(&self, mut ver: u32, num_cs: u32, mut fifo_len: u32, is_pssi: bool, caps: u32) -> u32 {
+        if true {
             if ver == 0 {
                 ver = self.regs.version.get();
             }
-            if !is_target {
+            if true {
                 if num_cs == 0 {
                     self.regs.ser.set(0xffff);
                     let _ser = self.regs.ser.get();
-                    self.regs.ser.set(0x0);
-                    num_cs = 1; 
+                    self.regs.ser.set(0);
                 }
             }
             if fifo_len == 0 {
                 let mut fifo = 0;
                 while fifo < 0x100 {
                     self.regs.txftlr.set(fifo);
-                    let _r28 = self.regs.txftlr.get();
+                    let _r35 = self.regs.txftlr.get();
                     fifo += 1;
                 }
-                self.regs.txftlr.set(0x0);
-                fifo_len = 1; 
+                self.regs.txftlr.set(0);
             }
             if is_pssi {
-                let _r30 = self.regs.ctrlr0.get();
+                let _r37 = self.regs.ctrlr0.get();
+                self.regs.ssienr.set(0);
                 self.regs.ctrlr0.set(0xffffffff);
                 let cr0 = self.regs.ctrlr0.get();
-                self.regs.ctrlr0.set(cr0); 
+                self.regs.ctrlr0.set(cr0);
+                self.regs.ssienr.set(1);
             }
-            if caps & (1 << 0) != 0 { 
+            if (caps & (1 << 0)) != 0 {
                 self.regs.cs_override.set(0xf);
             }
         }
+        if false {
+            if true {
+                if true {
+                    if true {
+                        self.regs.ssienr.set(0);
+                    }
+                }
+            }
+        }
+        ver
     }
 
-    pub fn dw_spi_resume_controller(&self, mut ver: u32, is_target: bool, mut num_cs: u32, mut fifo_len: u32, is_pssi: bool, caps: u32) {
+    pub fn dw_spi_resume_controller(&self, mut ver: u32, num_cs: u32, mut fifo_len: u32, is_pssi: bool, caps: u32) -> u32 {
         if ver == 0 {
             ver = self.regs.version.get();
         }
-        if !is_target {
+        if true {
             if num_cs == 0 {
                 self.regs.ser.set(0xffff);
                 let _ser = self.regs.ser.get();
-                self.regs.ser.set(0x0);
-                num_cs = 1; 
+                self.regs.ser.set(0);
             }
         }
         if fifo_len == 0 {
             let mut fifo = 0;
             while fifo < 0x100 {
                 self.regs.txftlr.set(fifo);
-                let _r40 = self.regs.txftlr.get();
+                let _r50 = self.regs.txftlr.get();
                 fifo += 1;
             }
-            self.regs.txftlr.set(0x0);
-            fifo_len = 1; 
+            self.regs.txftlr.set(0);
         }
         if is_pssi {
-            let _r42 = self.regs.ctrlr0.get();
+            let _r52 = self.regs.ctrlr0.get();
+            self.regs.ssienr.set(0);
             self.regs.ctrlr0.set(0xffffffff);
             let cr0 = self.regs.ctrlr0.get();
-            self.regs.ctrlr0.set(cr0); 
+            self.regs.ctrlr0.set(cr0);
+            self.regs.ssienr.set(1);
         }
-        if caps & (1 << 0) != 0 { 
+        if (caps & (1 << 0)) != 0 {
             self.regs.cs_override.set(0xf);
         }
+        ver
     }
 
     pub fn dw_spi_mscc_set_cs(&self, cs: u32, sw_mode: u32) {
         if cs < 4 {
             let val = if cs < 4 { 8192 } else { sw_mode };
-            self.regs.mscc_spi_mst_sw_mode.set(val);
+            self.regs.imr.set(val);
         }
     }
 
     pub fn dw_spi_mscc_ocelot_init(&self) {
-        self.regs.mscc_spi_mst_sw_mode.set(0x0);
+        self.regs.imr.set(0);
     }
 
     pub fn dw_spi_mscc_jaguar2_init(&self) {
-        self.regs.mscc_spi_mst_sw_mode.set(0x0);
+        self.regs.imr.set(0);
     }
 
     pub fn dw_spi_sparx5_set_cs(&self, enable: u32) {
