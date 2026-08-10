@@ -658,6 +658,26 @@ def default_bind(device_spec, backend: str) -> BindSpec:
         for fn in device_spec.functions:
             b.exports.append(ExportMap(fn.role, f"{device_spec.name}_{fn.role}"))
     elif backend == "harness":
+        pass  # handled below
+    if backend == "rust_baremetal":
+        b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "uintptr_t"),
+                   TypeMap("LogicalIRQ", "unsigned int"), TypeMap("UInt", "uint32_t"),
+                   TypeMap("UIntPtr", "uint32_t *")]
+        b.primitives = [PrimitiveMap("MmioRead", "B4", "mmio_read32"),
+                        PrimitiveMap("MmioWrite", "B4", "mmio_write32"),
+                        PrimitiveMap("MmioRead", "B2", "mmio_read16"),
+                        PrimitiveMap("MmioWrite", "B2", "mmio_write16"),
+                        PrimitiveMap("MmioRead", "B1", "mmio_read8"),
+                        PrimitiveMap("MmioWrite", "B1", "mmio_write8"),
+                        PrimitiveMap("MmioWriteW1C", "B4", "mmio_write_w1c32"),
+                        PrimitiveMap("MmioWriteW1C", "B2", "mmio_write_w1c16"),
+                        PrimitiveMap("MmioWriteW1C", "B1", "mmio_write_w1c8"),
+                        PrimitiveMap("MmioReadBE", "B2", "mmio_read16be"),
+                        PrimitiveMap("MmioWriteBE", "B2", "mmio_write16be"),
+                        PrimitiveMap("MmioReadBE", "B4", "mmio_read32be"),
+                        PrimitiveMap("MmioWriteBE", "B4", "mmio_write32be")]
+        b.state = [StateMap("dev.base", "dev->base")]
+    elif backend == "harness":
         b.types = [TypeMap("DeviceState", priv), TypeMap("MmioBase", "uintptr_t"),
                    TypeMap("LogicalIRQ", "unsigned int"), TypeMap("UInt", "uint32_t"),
                    TypeMap("UIntPtr", "uint32_t *")]

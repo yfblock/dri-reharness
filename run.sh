@@ -19,6 +19,7 @@ Commands:
   show <ris>                print a .ris file
   spec <src> [out.dspec]    infer & print backend-independent .dspec
   gen <src> <backend> [out.c]   generate C (backend: harness|baremetal|linux)
+                                  backend rust_baremetal outputs .rs
   gen-pair <src> <backend> [out_base]   generate .h + .c pair
   driver <src> [outdir]         one-shot full pipeline (RIS+dspec+bind+backends+trace)
   facts <src>                  source facts (.facts) for LLM synthesis

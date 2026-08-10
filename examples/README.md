@@ -17,3 +17,4 @@ Regenerate with:
 | `edu_harness.h` / `edu_harness.c` | Userspace harness | Fake MMIO + trace logging, compiles with `cc -Wall` |
 | `edu_baremetal.h` / `edu_baremetal.c` | Bare-metal | Portable C, compiles with `cc -ffreestanding -c` |
 | `edu_linux.h` / `edu_linux.c` | Linux kernel module | Platform/PCI driver, builds via Kbuild |
+| `edu_rust_baremetal.rs` | Rust bare-metal | Portable Rust no_std, compiles with rustc --crate-type lib |

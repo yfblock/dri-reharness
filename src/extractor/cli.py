@@ -87,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("-s", "--source", required=True,
                    help="C source file or multi-source JSON manifest")
     g.add_argument("-b", "--backend", required=True,
-                   choices=["harness", "baremetal", "linux"])
+                   choices=["harness", "baremetal", "linux", "rust_baremetal"])
     g.add_argument("-o", "--output", default=None,
                    help="output .c file (default: artifacts/output/<driver>_<backend>.c)")
     g.add_argument("--manifest", default=None,
@@ -118,7 +118,8 @@ def main(argv: list[str] | None = None) -> int:
     bu = sub.add_parser("bundle", help="Build LLM input bundle (RIS+dspec+bind+facts)")
     bu.add_argument("-s", "--source", required=True,
                     help="C source file or multi-source JSON manifest")
-    bu.add_argument("-b", "--backend", default="harness", choices=["harness", "baremetal", "linux"])
+    bu.add_argument("-b", "--backend", default="harness",
+                    choices=["harness", "baremetal", "linux", "rust_baremetal"])
     bu.add_argument("-o", "--outdir", default=None,
                     help="bundle directory (default: artifacts/output/<driver>.bundle-<backend>/)")
     _add_analysis_options(bu)
@@ -189,10 +190,12 @@ def main(argv: list[str] | None = None) -> int:
         from generator import harness as G_harness
         from generator import baremetal as G_baremetal
         from generator import linux as G_linux
+        from generator import rust_baremetal as G_rust_baremetal
         from generator.common import generate_pair
         res = extract_ris(_config_from_args(args))
         bind = default_bind(res.device_spec, args.backend)
-        gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux}
+        gens = {"harness": G_harness, "baremetal": G_baremetal, "linux": G_linux,
+                "rust_baremetal": G_rust_baremetal}
         if args.backend == "linux":
             pci_identity = None
             if args.manifest:
