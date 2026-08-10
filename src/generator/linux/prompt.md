@@ -1,5 +1,18 @@
 You are an expert Linux kernel module developer. Generate a complete, compilable Linux kernel module that reproduces the exact MMIO register access pattern described in the evidence JSON below.
 
+## CRITICAL: Module-to-Function Mapping
+
+Every entry in evidence.modules MUST be generated as a separate C function. Do NOT skip, merge, or omit any module. The function name must match the module name exactly. Each function takes "struct driver_priv *priv" and uses "void __iomem *base = priv->base;" to access MMIO.
+
+For each module's ops array:
+- "kind":"write" -> writel(value, base + REGISTER_NAME)
+- "kind":"read" -> variable = readl(base + REGISTER_NAME)
+- "kind":"cond" -> if (guard) { ...then... } else { ...else... }
+- "kind":"loop" -> while/for loop with body
+- "kind":"return" -> return value
+
+Where the address shows "base + REGISTER_NAME", use the register name as-is (it is a #define constant).
+
 ## Bus Type Detection
 
 Check evidence.bus_type:
@@ -17,13 +30,17 @@ Check evidence.bus_type:
 
 3. MMIO trace instrumentation (REQUIRED): Add after includes, before any function:
 static void __iomem *__rh_mmio_base;
-#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
-#define RH_TRACE_FN(name) pr_info("[rhfn] %s\n", (name))
+#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px
+", (void __iomem *)(b)); } while (0)
+#define RH_TRACE_FN(name) pr_info("[rhfn] %s
+", (name))
 #define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))
 #undef readl
-#define readl(p) ({ u32 __v = __raw_readl(p); pr_info("[rh] R 0x%lx 0x%x\n", rh_off(p), __v); __v; })
+#define readl(p) ({ u32 __v = __raw_readl(p); pr_info("[rh] R 0x%lx 0x%x
+", rh_off(p), __v); __v; })
 #undef writel
-#define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
+#define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x
+", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
 
 4. file_operations with open, read, write:
    - open: store priv in file->private_data
@@ -36,24 +53,27 @@ static void __iomem *__rh_mmio_base;
    - PCI: pci_enable_device_mem, pci_request_regions, pci_ioremap_bar(pdev, 0)
    - Platform: devm_platform_ioremap_resource(pdev, 0)
    - RH_SET_BASE(base)
-   - RH_TRACE_FN(function_name)
-   - Execute register accesses from evidence.modules
+   - Call EVERY module function in order, each preceded by RH_TRACE_FN("function_name")
    - misc_register with KBUILD_MODNAME
-   - Proper error handling with goto labels
+   - Proper error handling
 
-6. Remove function: misc_deregister, cleanup (iounmap for PCI, release_regions for PCI)
+6. Remove function: call the remove/suspend module functions if they exist, then misc_deregister.
 
 7. PCI identity: If evidence.pci_identity exists with vendor/device, create pci_device_id table.
 
 8. Module boilerplate: MODULE_LICENSE("GPL"), MODULE_DESCRIPTION, module_pci_driver or module_platform_driver.
 
 ## Constants
-If evidence.constants exist, define them as macros.
+If evidence.constants exist, define them as macros. These include register offset macros (e.g. DW_SPI_SSIENR = 0x08).
 
 ## Rules
-- Use readl/writel for MMIO access.
+- Use readl/writel for MMIO access (B4 width), readw/writew for B2 width.
+- EVERY module in evidence.modules must become a separate function. No exceptions.
+- The probe function must call ALL module functions in order.
+- Use register macro names directly (e.g. writel(0, base + DW_SPI_SSIENR)).
 - Use devm_ managed resources where possible.
 - Include error handling.
+- Do NOT invent or skip register accesses. Every op in every module must appear.
 
 Driver name: __DRIVER_NAME__
 

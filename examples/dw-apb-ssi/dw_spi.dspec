@@ -10,7 +10,10 @@ device dw-apb-ssi {
   resource clk0: ClockResource { required true bind clk }
   resource irq0: IrqResource { required true }
   register DW_SPI_CTRLR0: B4 at base + 0x0
+  register DW_SPI_CTRLR1: B4 at base + 0x4
+  register DW_SPI_SSIENR: B4 at base + 0x8
   register DW_SPI_SER: B4 at base + 0x10
+  register DW_SPI_BAUDR: B4 at base + 0x14
   register MSCC_SPI_MST_SW_MODE: B4 at base + 0x14
   register DW_SPI_TXFTLR: B4 at base + 0x18
   register DW_SPI_RXFTLR: B4 at base + 0x1c
@@ -22,13 +25,18 @@ device dw-apb-ssi {
   register DW_SPI_RISR: B4 at base + 0x34
   register DW_SPI_ICR: B4 at base + 0x48
   register DW_SPI_VERSION: B4 at base + 0x5c
+  register DW_SPI_RX_SAMPLE_DLY: B4 at base + 0xf0
+  register DW_SPI_CS_OVERRIDE: B4 at base + 0xf4
   invariant forall line: UInt. line < num_irqs -> valid_interrupt_line(line)
   function dw_spi_set_cs(spi: DeviceState, enable: UInt) -> Void {
     role unknown
     source "spi-dw-core.c:90"
     context thread
     callback spi_controller.set_cs
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
     ris dw_spi_set_cs
+    effect writes_register(DW_SPI_SER)
   }
   function dw_spi_check_status(dws: DeviceState, raw: UInt) -> UInt {
     role unknown
@@ -37,6 +45,9 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_check_status
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_SER)
   }
   function dw_spi_transfer_handler(dws: DeviceState) -> UInt {
     role interrupt_handler
@@ -46,6 +57,8 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_transfer_handler
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_RXFTLR)
     effect handles_interrupt()
     ensure interrupt_serviced
   }
@@ -57,6 +70,7 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_irq
+    effect writes_register(DW_SPI_IMR)
     effect handles_interrupt()
     ensure interrupt_serviced
   }
@@ -64,7 +78,13 @@ device dw-apb-ssi {
     role unknown
     source "spi-dw-core.c:315"
     context thread
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
     ris dw_spi_update_config
+    effect writes_register(DW_SPI_CTRLR0)
+    effect writes_register(DW_SPI_CTRLR1)
+    effect writes_register(DW_SPI_BAUDR)
+    effect writes_register(DW_SPI_RX_SAMPLE_DLY)
   }
   function dw_spi_transfer_one(ctlr: DeviceState, spi: DeviceState, transfer: DeviceState) -> UInt {
     role unknown
@@ -74,6 +94,10 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_transfer_one
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_TXFTLR)
+    effect writes_register(DW_SPI_RXFTLR)
   }
   function dw_spi_handle_err(ctlr: DeviceState, msg: DeviceState) -> Void {
     role unknown
@@ -83,6 +107,9 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_handle_err
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_SER)
   }
   function dw_spi_target_abort(ctlr: DeviceState) -> UInt {
     role unknown
@@ -92,6 +119,9 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_target_abort
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_SER)
   }
   function dw_spi_exec_mem_op(mem: DeviceState, op: DeviceState) -> UInt {
     role unknown
@@ -101,6 +131,8 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_exec_mem_op
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
   }
   function dw_spi_add_controller(dev: DeviceState, dws: DeviceState) -> UInt {
     role unknown
@@ -109,12 +141,22 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_add_controller
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_SER)
+    effect writes_register(DW_SPI_TXFTLR)
+    effect writes_register(DW_SPI_CTRLR0)
+    effect writes_register(DW_SPI_CS_OVERRIDE)
   }
   function dw_spi_remove_controller(dws: DeviceState) -> Void {
     role remove
     source "spi-dw-core.c:1023"
     context thread
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
     ris dw_spi_remove_controller
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_BAUDR)
     effect releases_device()
     ensure device_state == OFF
   }
@@ -122,7 +164,11 @@ device dw-apb-ssi {
     role suspend
     source "spi-dw-core.c:1038"
     context thread
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
     ris dw_spi_suspend_controller
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_BAUDR)
     effect suspends_device()
     ensure device_state == SUSPENDED
   }
@@ -133,6 +179,12 @@ device dw-apb-ssi {
     bind dev: DeviceState from dws
     bind base: MmioBase from dws->regs
     ris dw_spi_resume_controller
+    effect writes_register(DW_SPI_SSIENR)
+    effect writes_register(DW_SPI_IMR)
+    effect writes_register(DW_SPI_SER)
+    effect writes_register(DW_SPI_TXFTLR)
+    effect writes_register(DW_SPI_CTRLR0)
+    effect writes_register(DW_SPI_CS_OVERRIDE)
     effect resumes_device()
     ensure device_state == READY
   }

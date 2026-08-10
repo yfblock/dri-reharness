@@ -11,7 +11,6 @@
 #define DW_SPI_CTRLR0           0x00
 #define DW_SPI_CTRLR1           0x04
 #define DW_SPI_SSIENR           0x08
-#define DW_SPI_MWCR             0x0C
 #define DW_SPI_SER              0x10
 #define DW_SPI_BAUDR            0x14
 #define DW_SPI_TXFTLR           0x18
@@ -25,22 +24,20 @@
 #define DW_SPI_ICR              0x48
 #define DW_SPI_VERSION          0x5C
 #define DW_SPI_RX_SAMPLE_DLY    0xF0
-
+#define DW_SPI_CS_OVERRIDE      0xF4
 #define MSCC_SPI_MST_SW_MODE    0x14
-#define DW_SPI_CS_OVERRIDE      0x2C
 
-/* Register Values */
 #define DW_SPI_INT_TXEI         0x00000001
 #define DW_SPI_CTRLR0_TMOD_EPROMREAD 0x0
 #define DW_SPI_CTRLR0_TMOD_RO   0x0
-#define DW_SPI_CAP_CS_OVERRIDE  0x0
-#define IRQ_NOTCONNECTED        0xFFFFFFFF
-#define EPROBE_DEFER            -517
-#define ENOTCONN                -107
+#define DW_SPI_CAP_CS_OVERRIDE  0x1
+
+#define IRQ_NOTCONNECTED        (-1)
+#define EPROBE_DEFER            (-517)
+#define ENOTCONN                (-107)
 
 struct dw_apb_ssi_priv {
     uintptr_t base;
-    uintptr_t regs;
     uint32_t ver;
     uint32_t num_cs;
     uint32_t fifo_len;
@@ -50,11 +47,12 @@ struct dw_apb_ssi_priv {
     uint32_t reg_io_width;
     uint32_t rx_len;
     uint32_t tx_len;
-    uint32_t irq;
     uint32_t dma_mapped;
+    int irq;
     void *ctlr;
     void *cur_msg;
     void *dma_ops;
+    uint8_t chip_select[4];
 };
 
 #endif /* REHARNESS_DW-APB-SSI_BAREMETAL_H */

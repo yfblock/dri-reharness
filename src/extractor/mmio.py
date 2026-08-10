@@ -34,7 +34,7 @@ PRIVATE_MMIO_READ_LAYOUTS = {
 }
 PRIVATE_MMIO_WRITE_LAYOUTS = {
     "dwc2_writel": (0, 1, 2, "regs"),
-    "dw_writel": (0, 1, 2, "regs"),
+    "dw_writel": (0, 2, 1, "regs"),
 }
 
 # Public subsystem accessors with stable, type-defined register contracts.

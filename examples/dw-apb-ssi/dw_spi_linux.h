@@ -24,10 +24,8 @@
 #define DW_PSSI_CTRLR0_SLV_OE 1024
 #define DW_PSSI_CTRLR0_SRL 2048
 #define DW_PSSI_ID 0
-#define DW_SPI_BAUDR 20
 #define DW_SPI_CAP_CS_OVERRIDE 1
 #define DW_SPI_CAP_DFS32 2
-#define DW_SPI_CS_OVERRIDE 244
 #define DW_SPI_CTRLR0_FRF_MOTO_SPI 0
 #define DW_SPI_CTRLR0_FRF_NS_MICROWIRE 2
 #define DW_SPI_CTRLR0_FRF_RESV 3
@@ -36,7 +34,6 @@
 #define DW_SPI_CTRLR0_TMOD_RO 2
 #define DW_SPI_CTRLR0_TMOD_TO 1
 #define DW_SPI_CTRLR0_TMOD_TR 0
-#define DW_SPI_CTRLR1 4
 #define DW_SPI_DMACR 76
 #define DW_SPI_DMACR_RDMAE 1
 #define DW_SPI_DMACR_TDMAE 2
@@ -54,7 +51,6 @@
 #define DW_SPI_MWCR 12
 #define DW_SPI_RXOICR 60
 #define DW_SPI_RXUICR 64
-#define DW_SPI_RX_SAMPLE_DLY 240
 #define DW_SPI_SR_BUSY 1
 #define DW_SPI_SR_DCOL 64
 #define DW_SPI_SR_RF_FULL 16
@@ -62,7 +58,6 @@
 #define DW_SPI_SR_TF_EMPT 4
 #define DW_SPI_SR_TF_NOT_FULL 2
 #define DW_SPI_SR_TX_ERR 32
-#define DW_SPI_SSIENR 8
 #define DW_SPI_TXOICR 56
 #define DW_SPI_WAIT_RETRIES 5
 #define ELBA_SPICS_REG 9320
@@ -78,21 +73,26 @@
 #define SPARX5_FORCE_VAL 168
 
 /* Registers */
+#define DW_SPI_BAUDR 20
+#define DW_SPI_CS_OVERRIDE 244
 #define DW_SPI_CTRLR0 0
+#define DW_SPI_CTRLR1 4
 #define DW_SPI_ICR 72
 #define DW_SPI_IMR 44
 #define DW_SPI_ISR 48
 #define DW_SPI_RISR 52
 #define DW_SPI_RXFLR 36
 #define DW_SPI_RXFTLR 28
+#define DW_SPI_RX_SAMPLE_DLY 240
 #define DW_SPI_SER 16
 #define DW_SPI_SR 40
+#define DW_SPI_SSIENR 8
 #define DW_SPI_TXFLR 32
 #define DW_SPI_TXFTLR 24
 #define DW_SPI_VERSION 92
 #define MSCC_SPI_MST_SW_MODE 20
 
-/* MMIO trace instrumentation */
+/* MMIO Trace Instrumentation */
 static void __iomem *__rh_mmio_base;
 #define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info("[rhbase] %px\n", (void __iomem *)(b)); } while (0)
 #define RH_TRACE_FN(name) pr_info("[rhfn] %s\n", (name))
@@ -102,10 +102,37 @@ static void __iomem *__rh_mmio_base;
 #undef writel
 #define writel(v,p) ({ pr_info("[rh] W 0x%lx 0x%x\n", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })
 
-struct dw_apb_ssi_priv {
-	void __iomem *base;
-	struct miscdevice misc;
-	struct device *dev;
+struct driver_priv {
+    void __iomem *base;
+    struct miscdevice misc;
+    struct device *dev;
+    u32 ver;
+    u32 num_cs;
+    u32 fifo_len;
+    u32 caps;
+    u32 irq;
+    u32 current_freq;
+    u32 cur_rx_sample_dly;
+    u32 reg_io_width;
+    u32 rx_len;
+    u32 tx_len;
+    u32 dma_mapped;
+    u32 chip_select[4];
+    u32 cr0_val;
+    u32 cfg_tmode;
+    u32 cfg_ndf;
+    u32 speed_hz;
+    u32 clk_div;
+    u32 chip_rx_sample_dly;
+    u32 cs_high;
+    u32 enable;
+    u32 cs;
+    u32 sw_mode;
+    u32 cur_msg;
+    u32 level;
+    u32 new_mask;
+    u32 raw;
+    u32 ret;
 };
 
 #endif /* REHARNESS_DW-APB-SSI_LINUX_H */
