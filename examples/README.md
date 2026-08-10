@@ -10,6 +10,7 @@ Regenerate with:
 ./run.sh gen-pair benchmarks/drivers/baseline/edu.c harness examples/edu/edu_harness
 ./run.sh gen-pair benchmarks/drivers/baseline/edu.c baremetal examples/edu/edu_baremetal
 ./run.sh gen-pair benchmarks/drivers/baseline/edu.c linux examples/edu/edu_linux
+./run.sh gen benchmarks/drivers/baseline/edu.c rust_baremetal examples/edu/edu_rust_baremetal.rs
 ```
 
 | File | Backend | Description |
