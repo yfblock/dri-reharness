@@ -6,6 +6,8 @@ from pathlib import Path
 import clang.cindex as cx
 
 _LIBCLANG_CANDIDATES = [
+    "/usr/lib/llvm-20/lib/libclang-20.so.20",
+    "/usr/lib/llvm-20/lib/libclang.so.1",
     "/usr/lib/llvm-18/lib/libclang-18.so.18",
     "/usr/lib/llvm-18/lib/libclang.so.1",
     "/lib/x86_64-linux-gnu/libclang-18.so.18",
