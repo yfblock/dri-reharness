@@ -22,10 +22,10 @@ from .emit import *  # noqa: F401,F403
 NAME = "linux"
 
 
-def generate(formal: dict, device_spec, bind) -> str:
+def generate(formal: dict, device_spec, bind, **kwargs) -> str:
     """Generate code via LLM if available, otherwise fall back to rules."""
     import os
-    if os.environ.get("REHARNESS_USE_LLM"):
+    if os.environ.get("REHARNESS_USE_LLM", "").lower() in ("1", "true", "yes"):
         try:
             from generator.llm_bridge import generate_via_llm, llm_available
             if llm_available():
@@ -33,7 +33,7 @@ def generate(formal: dict, device_spec, bind) -> str:
         except Exception as e:
             import sys
             print("LLM failed: " + str(e) + ", using rules", file=sys.stderr)
-    return generate_rules(formal, device_spec, bind)
+    return generate_rules(formal, device_spec, bind, **kwargs)
 
 def generate_rules(formal: dict, device_spec, bind, facts=None, pci_identity=None) -> str:
     dev = device_spec.name

@@ -59,7 +59,7 @@ def vars_in_expr(e) -> set[str]:
 def generate(formal: dict, device_spec, bind) -> str:
     """Generate code via LLM if available, otherwise fall back to rules."""
     import os
-    if os.environ.get("REHARNESS_USE_LLM"):
+    if os.environ.get("REHARNESS_USE_LLM", "").lower() in ("1", "true", "yes"):
         try:
             from generator.llm_bridge import generate_via_llm, llm_available
             if llm_available():
