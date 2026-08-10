@@ -3,114 +3,142 @@
 
 static int edu_open(struct inode *inode, struct file *file)
 {
-	struct edu_priv *g = container_of(file->private_data, struct edu_priv, misc);
-	file->private_data = g;
-	return 0;
+    struct edu_priv *priv = container_of(file->private_data, struct edu_priv, mdev);
+    file->private_data = priv;
+    return 0;
 }
 
-static ssize_t edu_read(struct file *file, char __user *buf, size_t len, loff_t *off)
+static ssize_t edu_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
-	struct edu_priv *g = file->private_data;
-	u32 value;
-	if ((*off & 3) || len < sizeof(value))
-		return -EINVAL;
-	/* REHARNESS_RIS_OP id=op_3 kind=Read status=lowered digest=dbf046aef312a382 */
-	value = readl(g->base + *off);
-	if (copy_to_user(buf, &value, sizeof(value)))
-		return -EFAULT;
-	*off += sizeof(value);
-	return sizeof(value);
+    struct edu_priv *priv = file->private_data;
+    u32 val;
+
+    if (*ppos & 3 || count < 4)
+        return -EINVAL;
+
+    val = readl(priv->mmio + *ppos);
+    if (copy_to_user(buf, &val, 4))
+        return -EFAULT;
+    *ppos += 4;
+    return 4;
 }
 
-static ssize_t edu_write(struct file *file, const char __user *buf, size_t len, loff_t *off)
+static ssize_t edu_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
 {
-	struct edu_priv *g = file->private_data;
-	u32 value;
-	if ((*off & 3) || len < sizeof(value))
-		return -EINVAL;
-	if (copy_from_user(&value, buf, sizeof(value)))
-		return -EFAULT;
-	/* REHARNESS_RIS_OP id=op_4 kind=Write status=lowered digest=a145d50fd28e9830 */
-	writel(value, g->base + *off);
-	*off += sizeof(value);
-	return sizeof(value);
+    struct edu_priv *priv = file->private_data;
+    u32 val;
+
+    if (*ppos & 3 || count < 4)
+        return -EINVAL;
+
+    if (copy_from_user(&val, buf, 4))
+        return -EFAULT;
+    writel(val, priv->mmio + *ppos);
+    *ppos += 4;
+    return 4;
 }
 
 static const struct file_operations edu_fops = {
-	.owner = THIS_MODULE,
-	.open = edu_open,
-	.read = edu_read,
-	.write = edu_write,
+    .owner = THIS_MODULE,
+    .open = edu_open,
+    .read = edu_read,
+    .write = edu_write,
 };
 
-static int edu_probe(struct pci_dev *pdev, const struct pci_device_id *id)
+static irqreturn_t edu_irq_handler(int irq, void *dev_id)
 {
-	struct edu_priv *g;
-	int ret;
-	(void)id;
-	g = devm_kzalloc(&pdev->dev, sizeof(*g), GFP_KERNEL);
-	if (!g)
-		return -ENOMEM;
-	g->dev = &pdev->dev;
-	g->pdev = pdev;
-	ret = pci_enable_device_mem(pdev);
-	if (ret)
-		return ret;
-	ret = pci_request_regions(pdev, KBUILD_MODNAME);
-	if (ret)
-		goto err_disable;
-	g->base = pci_ioremap_bar(pdev, 0);
-	if (!g->base) {
-		ret = -ENOMEM;
-		goto err_regions;
+    struct edu_priv *priv = dev_id;
+    u32 status;
+
+    RH_TRACE_FN(__func__);
+
+    status = readl(priv->mmio + IO_IRQ_STATUS);
+    writel(status, priv->mmio + IO_IRQ_ACK);
+
+    return IRQ_HANDLED;
 }
-	pci_set_drvdata(pdev, g);
-	u32 dev_id = 0;
-	void __iomem *base = g->base;
-	/* REHARNESS_RIS_OP id=op_5 kind=Read status=lowered digest=4b8a9ab4cb9122ff */
-	__rh_op_op_5: {
-		dev_id = readl(base + IO_ID);
-		(void)dev_id;
-	}
-	g->misc.minor = MISC_DYNAMIC_MINOR;
-	g->misc.name = KBUILD_MODNAME;
-	g->misc.fops = &edu_fops;
-	ret = misc_register(&g->misc);
-	if (ret)
-		goto err_iounmap;
-	dev_info(&pdev->dev, "edu probed\n");
-	return 0;
-err_iounmap:
-	iounmap(g->base);
+
+static int edu_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+{
+    struct edu_priv *priv;
+    int ret;
+    u32 dev_id;
+
+    RH_TRACE_FN(__func__);
+
+    priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
+    if (!priv)
+        return -ENOMEM;
+
+    priv->pdev = pdev;
+    priv->dev = &pdev->dev;
+    pci_set_drvdata(pdev, priv);
+
+    ret = pci_enable_device_mem(pdev);
+    if (ret)
+        return ret;
+
+    ret = pci_request_regions(pdev, KBUILD_MODNAME);
+    if (ret)
+        goto err_disable;
+
+    priv->mmio = pci_ioremap_bar(pdev, 0);
+    if (!priv->mmio) {
+        ret = -ENOMEM;
+        goto err_regions;
+    }
+
+    RH_SET_BASE(priv->mmio);
+
+    if (priv->mmio != NULL) {
+        if (ret == 0) {
+            dev_id = readl(priv->mmio + IO_ID);
+        }
+    }
+
+    priv->mdev.minor = MISC_DYNAMIC_MINOR;
+    priv->mdev.name = KBUILD_MODNAME;
+    priv->mdev.fops = &edu_fops;
+
+    ret = misc_register(&priv->mdev);
+    if (ret)
+        goto err_iomap;
+
+    return 0;
+
+err_iomap:
+    iounmap(priv->mmio);
 err_regions:
-	pci_release_regions(pdev);
+    pci_release_regions(pdev);
 err_disable:
-	pci_disable_device(pdev);
-	return ret;
+    pci_disable_device(pdev);
+    return ret;
 }
 
-static void edu_remove(struct pci_dev *pdev)
+static void edu_pci_remove(struct pci_dev *pdev)
 {
-	struct edu_priv *g = pci_get_drvdata(pdev);
-	misc_deregister(&g->misc);
-	iounmap(g->base);
-	pci_release_regions(pdev);
-	pci_disable_device(pdev);
+    struct edu_priv *priv = pci_get_drvdata(pdev);
+
+    misc_deregister(&priv->mdev);
+    iounmap(priv->mmio);
+    pci_release_regions(pdev);
+    pci_disable_device(pdev);
 }
 
-static const struct pci_device_id edu_ids[] = {
-	{ PCI_DEVICE(0x1234, 0x11e8) },
-	{ }
+static const struct pci_device_id edu_pci_ids[] = {
+    { PCI_DEVICE(EDU_VENDOR_ID, EDU_DEVICE_ID) },
+    { 0, }
 };
-MODULE_DEVICE_TABLE(pci, edu_ids);
+MODULE_DEVICE_TABLE(pci, edu_pci_ids);
 
-static struct pci_driver edu_driver = {
-	.name = "edu",
-	.id_table = edu_ids,
-	.probe = edu_probe,
-	.remove = edu_remove,
+static struct pci_driver edu_pci_driver = {
+    .name = KBUILD_MODNAME,
+    .id_table = edu_pci_ids,
+    .probe = edu_pci_probe,
+    .remove = edu_pci_remove,
 };
-module_pci_driver(edu_driver);
+
+module_pci_driver(edu_pci_driver);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("reharness generated driver for edu");
+MODULE_DESCRIPTION("Edu PCI MMIO driver");
