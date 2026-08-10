@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "name": "dw-apb-ssi",
+  "description": "Synopsys DesignWare APB SSI SPI controller (core + mmio)",
+  "sources": [
+    "../../../vendor/linux/drivers/spi/spi-dw-core.c",
+    "../../../vendor/linux/drivers/spi/spi-dw-mmio.c"
+  ]
+}

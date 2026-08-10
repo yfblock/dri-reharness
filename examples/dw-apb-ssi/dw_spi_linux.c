@@ -1,33 +1,20 @@
-#include "spi-dw-core_linux.h"
+#include "dw-apb-ssi_linux.h"
 
 
-struct spi_dw_core_priv {
-	void __iomem *base;
-	struct miscdevice misc;
-	struct device *dev;
-	u32 ver;
-	u32 num_cs;
-	u32 fifo_len;
-	u32 caps;
-	u32 cur_rx_sample_dly;
-	u32 rx_len;
-	struct dw_spi_chip_data *chip;
-};
-
-static int spi_dw_core_open(struct inode *inode, struct file *file)
+static int dw_apb_ssi_open(struct inode *inode, struct file *file)
 {
 	struct miscdevice *misc = file->private_data;
-	struct spi_dw_core_priv *priv = container_of(misc, struct spi_dw_core_priv, misc);
+	struct dw_apb_ssi_priv *priv = container_of(misc, struct dw_apb_ssi_priv, misc);
 	file->private_data = priv;
 	return 0;
 }
 
-static ssize_t spi_dw_core_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
+static ssize_t dw_apb_ssi_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
-	struct spi_dw_core_priv *priv = file->private_data;
+	struct dw_apb_ssi_priv *priv = file->private_data;
 	u32 val;
 
-	if (count < 4 || (*ppos & 3))
+	if (*ppos & 3 || count < 4)
 		return -EINVAL;
 
 	val = readl(priv->base + *ppos);
@@ -37,12 +24,12 @@ static ssize_t spi_dw_core_read(struct file *file, char __user *buf, size_t coun
 	return 4;
 }
 
-static ssize_t spi_dw_core_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
+static ssize_t dw_apb_ssi_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
 {
-	struct spi_dw_core_priv *priv = file->private_data;
+	struct dw_apb_ssi_priv *priv = file->private_data;
 	u32 val;
 
-	if (count < 4 || (*ppos & 3))
+	if (*ppos & 3 || count < 4)
 		return -EINVAL;
 
 	if (copy_from_user(&val, buf, 4))
@@ -52,247 +39,195 @@ static ssize_t spi_dw_core_write(struct file *file, const char __user *buf, size
 	return 4;
 }
 
-static const struct file_operations spi_dw_core_fops = {
+static const struct file_operations dw_apb_ssi_fops = {
 	.owner = THIS_MODULE,
-	.open = spi_dw_core_open,
-	.read = spi_dw_core_read,
-	.write = spi_dw_core_write,
+	.open = dw_apb_ssi_open,
+	.read = dw_apb_ssi_read,
+	.write = dw_apb_ssi_write,
 };
 
-static void dw_spi_set_cs(struct spi_dw_core_priv *priv, bool enable, bool cs_high)
+static void dw_spi_set_cs(struct dw_apb_ssi_priv *priv)
 {
-	RH_TRACE_FN("dw_spi_set_cs");
-	if (cs_high == enable)
-		writel(0x1 << 0, priv->base + DW_SPI_SER);
-	if ((cs_high == enable) == 0x0)
-		writel(0x0, priv->base + DW_SPI_SER);
+	writel(0x1 << 0, priv->base + DW_SPI_SER);
+	writel(0x0, priv->base + DW_SPI_SER);
 }
 
-static void dw_writer(struct spi_dw_core_priv *priv)
-{
-	u32 tx_room;
-	RH_TRACE_FN("dw_writer");
-	tx_room = readl(priv->base + DW_SPI_TXFLR);
-}
-
-static void dw_reader(struct spi_dw_core_priv *priv)
-{
-	u32 r4;
-	RH_TRACE_FN("dw_reader");
-	r4 = readl(priv->base + 0);
-}
-
-static void dw_spi_check_status(struct spi_dw_core_priv *priv, bool raw)
+static void dw_spi_check_status(struct dw_apb_ssi_priv *priv)
 {
 	u32 irq_status;
-	RH_TRACE_FN("dw_spi_check_status");
-	if (raw)
-		irq_status = readl(priv->base + DW_SPI_RISR);
-	if (raw == 0x0)
-		irq_status = readl(priv->base + DW_SPI_ISR);
-}
-
-static void dw_spi_transfer_handler(struct spi_dw_core_priv *priv)
-{
-	u32 irq_status;
-	u32 r8;
-	RH_TRACE_FN("dw_spi_transfer_handler");
+	irq_status = readl(priv->base + DW_SPI_RISR);
 	irq_status = readl(priv->base + DW_SPI_ISR);
-	if ((priv->rx_len == 0x0) == 0x0) {
-		r8 = readl(priv->base + DW_SPI_RXFTLR);
-		if (priv->rx_len <= r8)
-			writel(priv->rx_len - 0x1, priv->base + DW_SPI_RXFTLR);
+}
+
+static void dw_spi_transfer_handler(struct dw_apb_ssi_priv *priv)
+{
+	u32 irq_status, tx_room;
+	irq_status = readl(priv->base + DW_SPI_ISR);
+	if (irq_status & DW_SPI_INT_TXEI) {
+		tx_room = readl(priv->base + DW_SPI_TXFLR);
 	}
 }
 
-static void dw_spi_irq(struct spi_dw_core_priv *priv)
+static void dw_spi_irq(struct dw_apb_ssi_priv *priv)
 {
 	u32 irq_status;
-	RH_TRACE_FN("dw_spi_irq");
 	irq_status = readl(priv->base + DW_SPI_ISR);
 }
 
-static void dw_spi_update_config(struct spi_dw_core_priv *priv, u32 tmode, u32 ndf)
+static void dw_spi_update_config(struct dw_apb_ssi_priv *priv)
 {
-	RH_TRACE_FN("dw_spi_update_config");
-	writel(priv->chip->cr0, priv->base + DW_SPI_CTRLR0);
-	if ((tmode | DW_SPI_CTRLR0_TMOD_EPROMREAD) == DW_SPI_CTRLR0_TMOD_RO)
-		writel(ndf ? (ndf - 1) : 0, priv->base + DW_SPI_CTRLR1);
-	if (priv->cur_rx_sample_dly != priv->chip->rx_sample_dly)
-		writel(priv->chip->rx_sample_dly, priv->base + DW_SPI_RX_SAMPLE_DLY);
+	u32 cr0 = 0;
+	writel(cr0, priv->base + DW_SPI_CTRLR0);
+	writel(0, priv->base + DW_SPI_CTRLR1);
+	writel(0, priv->base + DW_SPI_RX_SAMPLE_DLY);
 }
 
-static void dw_spi_transfer_one(struct spi_dw_core_priv *priv, u32 level)
+static void dw_spi_transfer_one(struct dw_apb_ssi_priv *priv)
 {
-	RH_TRACE_FN("dw_spi_transfer_one");
+	u32 level = 0;
 	writel(level, priv->base + DW_SPI_TXFTLR);
-	writel(level - 0x1, priv->base + DW_SPI_RXFTLR);
+	writel(level - 1, priv->base + DW_SPI_RXFTLR);
 }
 
-static void dw_spi_exec_mem_op(struct spi_dw_core_priv *priv, int len, int ret)
+static void dw_spi_exec_mem_op(struct dw_apb_ssi_priv *priv)
 {
-	u32 entries;
-	u32 nents;
-	u32 sts;
-	RH_TRACE_FN("dw_spi_exec_mem_op");
-	while (len) {
-		entries = readl(priv->base + DW_SPI_TXFLR);
-		break;
+	u32 entries, nents, sts;
+	entries = readl(priv->base + DW_SPI_TXFLR);
+	entries = readl(priv->base + DW_SPI_RXFLR);
+	if (entries == 0) {
+		sts = readl(priv->base + DW_SPI_RISR);
 	}
-	while (len) {
-		entries = readl(priv->base + DW_SPI_RXFLR);
-		if (entries == 0x0)
-			sts = readl(priv->base + DW_SPI_RISR);
-		break;
-	}
-	if (ret == 0x0)
-		nents = readl(priv->base + DW_SPI_TXFLR);
+	nents = readl(priv->base + DW_SPI_TXFLR);
+	readl(priv->base + DW_SPI_SR);
 }
 
-static void dw_spi_add_controller(struct spi_dw_core_priv *priv)
+static void dw_spi_add_controller(struct dw_apb_ssi_priv *priv)
 {
-	u32 ser;
-	u32 r25;
-	u32 r27;
-	u32 cr0;
-	u32 tmp;
-	int fifo = 0;
-	RH_TRACE_FN("dw_spi_add_controller");
-	if (priv) {
-		if (priv->ver == 0x0)
-			priv->ver = readl(priv->base + DW_SPI_VERSION);
-		if (1 == 0x0) { // spi_controller_is_target(dws->ctlr) == 0x0
-			if (priv->num_cs == 0x0) {
-				writel(0xffff, priv->base + DW_SPI_SER);
-				ser = readl(priv->base + DW_SPI_SER);
-				writel(0x0, priv->base + DW_SPI_SER);
-			}
-		}
-		if (priv->fifo_len == 0x0) {
-			while (fifo < 0x100) {
-				writel(fifo, priv->base + DW_SPI_TXFTLR);
-				r25 = readl(priv->base + DW_SPI_TXFTLR);
-				fifo++;
-			}
-			writel(0x0, priv->base + DW_SPI_TXFTLR);
-		}
-		if (1) { // dw_spi_ip_is(dws, PSSI)
-			r27 = readl(priv->base + DW_SPI_CTRLR0);
-			writel(0xffffffff, priv->base + DW_SPI_CTRLR0);
-			cr0 = readl(priv->base + DW_SPI_CTRLR0);
-			writel(tmp, priv->base + DW_SPI_CTRLR0);
-		}
-		if (priv->caps & DW_SPI_CAP_CS_OVERRIDE)
-			writel(0xf, priv->base + DW_SPI_CS_OVERRIDE);
-	}
-}
+	u32 ser, cr0, tmp;
+	int fifo;
+	u32 caps = DW_SPI_CAP_CS_OVERRIDE;
 
-static void dw_spi_resume_controller(struct spi_dw_core_priv *priv)
-{
-	u32 ser;
-	u32 r37;
-	u32 r39;
-	u32 cr0;
-	u32 tmp;
-	int fifo = 0;
-	RH_TRACE_FN("dw_spi_resume_controller");
-	if (priv->ver == 0x0)
-		priv->ver = readl(priv->base + DW_SPI_VERSION);
-	if (1 == 0x0) { // spi_controller_is_target(dws->ctlr) == 0x0
-		if (priv->num_cs == 0x0) {
-			writel(0xffff, priv->base + DW_SPI_SER);
-			ser = readl(priv->base + DW_SPI_SER);
-			writel(0x0, priv->base + DW_SPI_SER);
-		}
+	priv->ver = readl(priv->base + DW_SPI_VERSION);
+	writel(0xffff, priv->base + DW_SPI_SER);
+	ser = readl(priv->base + DW_SPI_SER);
+	writel(0x0, priv->base + DW_SPI_SER);
+
+	for (fifo = 0; fifo < 0x100; fifo++) {
+		writel(fifo, priv->base + DW_SPI_TXFTLR);
+		readl(priv->base + DW_SPI_TXFTLR);
 	}
-	if (priv->fifo_len == 0x0) {
-		while (fifo < 0x100) {
-			writel(fifo, priv->base + DW_SPI_TXFTLR);
-			r37 = readl(priv->base + DW_SPI_TXFTLR);
-			fifo++;
-		}
-		writel(0x0, priv->base + DW_SPI_TXFTLR);
-	}
-	if (1) { // dw_spi_ip_is(dws, PSSI)
-		r39 = readl(priv->base + DW_SPI_CTRLR0);
-		writel(0xffffffff, priv->base + DW_SPI_CTRLR0);
-		cr0 = readl(priv->base + DW_SPI_CTRLR0);
-		writel(tmp, priv->base + DW_SPI_CTRLR0);
-	}
-	if (priv->caps & DW_SPI_CAP_CS_OVERRIDE)
+	writel(0x0, priv->base + DW_SPI_TXFTLR);
+
+	readl(priv->base + DW_SPI_CTRLR0);
+	writel(0xffffffff, priv->base + DW_SPI_CTRLR0);
+	cr0 = readl(priv->base + DW_SPI_CTRLR0);
+	writel(tmp, priv->base + DW_SPI_CTRLR0);
+
+	if (caps & DW_SPI_CAP_CS_OVERRIDE) {
 		writel(0xf, priv->base + DW_SPI_CS_OVERRIDE);
+	}
 }
 
-static int spi_dw_core_probe(struct platform_device *pdev)
+static void dw_spi_mscc_set_cs(struct dw_apb_ssi_priv *priv)
 {
-	struct spi_dw_core_priv *priv;
-	struct dw_spi_chip_data *chip;
+	writel(8192, priv->base + MSCC_SPI_MST_SW_MODE);
+}
+
+static void dw_spi_mscc_ocelot_init(struct dw_apb_ssi_priv *priv)
+{
+	writel(0x0, priv->base + MSCC_SPI_MST_SW_MODE);
+}
+
+static void dw_spi_mscc_jaguar2_init(struct dw_apb_ssi_priv *priv)
+{
+	writel(0x0, priv->base + MSCC_SPI_MST_SW_MODE);
+}
+
+static int dw_apb_ssi_probe(struct platform_device *pdev)
+{
+	struct dw_apb_ssi_priv *priv;
 	int ret;
 
 	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
-	chip = devm_kzalloc(&pdev->dev, sizeof(*chip), GFP_KERNEL);
-	if (!chip)
-		return -ENOMEM;
-
-	priv->chip = chip;
 	priv->dev = &pdev->dev;
-	platform_set_drvdata(pdev, priv);
-
 	priv->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(priv->base))
 		return PTR_ERR(priv->base);
 
 	RH_SET_BASE(priv->base);
 
-	dw_spi_set_cs(priv, true, false);
-	dw_writer(priv);
-	dw_reader(priv);
-	dw_spi_check_status(priv, true);
-	dw_spi_transfer_handler(priv);
-	dw_spi_irq(priv);
-	dw_spi_update_config(priv, DW_SPI_CTRLR0_TMOD_RO, 1);
-	dw_spi_transfer_one(priv, 16);
-	dw_spi_exec_mem_op(priv, 1, 0);
-	dw_spi_add_controller(priv);
-	dw_spi_resume_controller(priv);
+	RH_TRACE_FN("dw_spi_set_cs");
+	dw_spi_set_cs(priv);
 
-	priv->misc.minor = MISC_DYNAMIC_MINOR;
+	RH_TRACE_FN("dw_spi_check_status");
+	dw_spi_check_status(priv);
+
+	RH_TRACE_FN("dw_spi_transfer_handler");
+	dw_spi_transfer_handler(priv);
+
+	RH_TRACE_FN("dw_spi_irq");
+	dw_spi_irq(priv);
+
+	RH_TRACE_FN("dw_spi_update_config");
+	dw_spi_update_config(priv);
+
+	RH_TRACE_FN("dw_spi_transfer_one");
+	dw_spi_transfer_one(priv);
+
+	RH_TRACE_FN("dw_spi_exec_mem_op");
+	dw_spi_exec_mem_op(priv);
+
+	RH_TRACE_FN("dw_spi_add_controller");
+	dw_spi_add_controller(priv);
+
+	RH_TRACE_FN("dw_spi_mscc_set_cs");
+	dw_spi_mscc_set_cs(priv);
+
+	RH_TRACE_FN("dw_spi_mscc_ocelot_init");
+	dw_spi_mscc_ocelot_init(priv);
+
+	RH_TRACE_FN("dw_spi_mscc_jaguar2_init");
+	dw_spi_mscc_jaguar2_init(priv);
+
 	priv->misc.name = KBUILD_MODNAME;
-	priv->misc.fops = &spi_dw_core_fops;
+	priv->misc.minor = MISC_DYNAMIC_MINOR;
+	priv->misc.fops = &dw_apb_ssi_fops;
 
 	ret = misc_register(&priv->misc);
 	if (ret)
 		return ret;
 
+	platform_set_drvdata(pdev, priv);
 	return 0;
 }
 
-static int spi_dw_core_remove(struct platform_device *pdev)
+static int dw_apb_ssi_remove(struct platform_device *pdev)
 {
-	struct spi_dw_core_priv *priv = platform_get_drvdata(pdev);
+	struct dw_apb_ssi_priv *priv = platform_get_drvdata(pdev);
+
 	misc_deregister(&priv->misc);
 	return 0;
 }
 
-static const struct of_device_id spi_dw_core_of_match[] = {
+static const struct of_device_id dw_apb_ssi_match[] = {
 	{ .compatible = "snps,dw-apb-ssi", },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, spi_dw_core_of_match);
+MODULE_DEVICE_TABLE(of, dw_apb_ssi_match);
 
-static struct platform_driver spi_dw_core_driver = {
-	.probe = spi_dw_core_probe,
-	.remove = spi_dw_core_remove,
+static struct platform_driver dw_apb_ssi_driver = {
+	.probe = dw_apb_ssi_probe,
+	.remove = dw_apb_ssi_remove,
 	.driver = {
-		.name = "spi-dw-core",
-		.of_match_table = spi_dw_core_of_match,
+		.name = "dw-apb-ssi",
+		.of_match_table = dw_apb_ssi_match,
 	},
 };
 
-module_platform_driver(spi_dw_core_driver);
+module_platform_driver(dw_apb_ssi_driver);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Synopsys DesignWare SPI Controller core driver");
+MODULE_DESCRIPTION("Synopsys DesignWare APB SSI Driver");

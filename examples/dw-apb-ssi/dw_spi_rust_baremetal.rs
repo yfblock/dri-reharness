@@ -8,12 +8,12 @@ use tock_registers::{
 };
 
 register_structs! {
-    pub DwSpiCoreRegisters {
-        (0x000 => ctrlr0: ReadWrite<u32, Ctrlr0::Register>),
-        (0x004 => ctrlr1: ReadWrite<u32, Ctrlr1::Register>),
+    pub DwApbSsiRegisters {
+        (0x000 => ctrlr0: ReadWrite<u32, Ctlr0::Register>),
+        (0x004 => ctrlr1: ReadWrite<u32, Ctlr1::Register>),
         (0x008 => _reserved0),
         (0x010 => ser: ReadWrite<u32, Ser::Register>),
-        (0x014 => _reserved1),
+        (0x014 => mscc_spi_mst_sw_mode: ReadWrite<u32, MsccSpiMstSwMode::Register>),
         (0x018 => txftlr: ReadWrite<u32, Txftlr::Register>),
         (0x01c => rxftlr: ReadWrite<u32, Rxftlr::Register>),
         (0x020 => txflr: ReadOnly<u32, Txflr::Register>),
@@ -21,9 +21,9 @@ register_structs! {
         (0x028 => sr: ReadOnly<u32, Sr::Register>),
         (0x02c => isr: ReadOnly<u32, Isr::Register>),
         (0x030 => risr: ReadOnly<u32, Risr::Register>),
-        (0x034 => _reserved2),
+        (0x034 => _reserved1),
         (0x05c => version: ReadOnly<u32, Version::Register>),
-        (0x060 => _reserved3),
+        (0x060 => _reserved2),
         (0x0f0 => rx_sample_dly: ReadWrite<u32, RxSampleDly::Register>),
         (0x0f4 => cs_override: ReadWrite<u32, CsOverride::Register>),
         (0x0f8 => @END),
@@ -31,9 +31,10 @@ register_structs! {
 }
 
 register_bitfields![u32,
-    Ctrlr0 [],
-    Ctrlr1 [],
+    Ctlr0 [],
+    Ctlr1 [],
     Ser [],
+    MsccSpiMstSwMode [],
     Txftlr [],
     Rxftlr [],
     Txflr [],
@@ -46,54 +47,45 @@ register_bitfields![u32,
     CsOverride []
 ];
 
-pub struct SpiDwCore {
-    regs: &'static DwSpiCoreRegisters,
+pub struct DwApbSsi {
+    regs: &'static DwApbSsiRegisters,
 }
 
-impl SpiDwCore {
+impl DwApbSsi {
     pub fn new(base: *mut u8) -> Self {
         Self {
-            regs: unsafe { &*(base as *const DwSpiCoreRegisters) },
+            regs: unsafe { &*(base as *const DwApbSsiRegisters) },
         }
     }
 
-    pub fn dw_spi_set_cs(&self, cs_high: bool, enable: bool, chip_select: u32) {
+    pub fn dw_spi_set_cs(&self, cs_high: bool, enable: bool, chipselect: u32) {
         if cs_high == enable {
-            self.regs.ser.set(0x1 << chip_select);
-        }
-        if (cs_high == enable) == false {
+            self.regs.ser.set(0x1 << chipselect);
+        } else if cs_high != enable {
             self.regs.ser.set(0x0);
         }
     }
 
-    pub fn dw_writer(&self) -> u32 {
-        self.regs.txflr.get()
-    }
-
-    pub fn dw_reader(&self, offset: usize) -> u32 {
-        // offset is dynamically calculated in original driver, but for standard MMIO
-        // we map it directly to the RXFLR register as implied by typical DW SPI usage.
-        let _ = offset;
-        self.regs.rxflr.get()
-    }
-
     pub fn dw_spi_check_status(&self, raw: bool) -> u32 {
         if raw {
-            return self.regs.risr.get();
+            self.regs.risr.get()
+        } else if !raw {
+            self.regs.isr.get()
+        } else {
+            0
         }
-        if raw == false {
-            return self.regs.isr.get();
-        }
-        0
     }
 
-    pub fn dw_spi_transfer_handler(&self, rx_len: u32) {
-        let _irq_status = self.regs.isr.get();
+    pub fn dw_spi_transfer_handler(&self, irq_status: u32, rx_len: u32) {
+        let _r6 = 0; 
         if rx_len != 0 {
-            let r8 = self.regs.rxftlr.get();
-            if rx_len <= r8 {
+            let r7 = self.regs.rxftlr.get();
+            if rx_len <= r7 {
                 self.regs.rxftlr.set(rx_len - 1);
             }
+        }
+        if irq_status & (1 << 0) != 0 { 
+            let _tx_room = self.regs.txflr.get();
         }
     }
 
@@ -101,16 +93,9 @@ impl SpiDwCore {
         self.regs.isr.get()
     }
 
-    pub fn dw_spi_update_config(
-        &self,
-        cr0: u32,
-        tmode: u32,
-        ndf: u32,
-        cur_rx_sample_dly: u32,
-        rx_sample_dly: u32,
-    ) {
+    pub fn dw_spi_update_config(&self, cr0: u32, tmode: u32, ndf: u32, cur_rx_sample_dly: u32, rx_sample_dly: u32) {
         self.regs.ctrlr0.set(cr0);
-        if (tmode | 0x200) == 0x200 {
+        if (tmode | (1 << 1)) == (1 << 1) { 
             let val = if ndf != 0 { ndf - 1 } else { 0 };
             self.regs.ctrlr1.set(val);
         }
@@ -119,46 +104,45 @@ impl SpiDwCore {
         }
     }
 
-    pub fn dw_spi_transfer_one(&self, level: u32) {
+    pub fn dw_spi_transfer_one(&self, dma_mapped: bool, irq: u32, rx_len: u32, level: u32) {
+        if !dma_mapped {
+            if irq == 0xFFFFFFFF { 
+                while rx_len != 0 {
+                    let _tx_room = self.regs.txflr.get();
+                    let _r15 = 0; 
+                }
+            }
+        }
         self.regs.txftlr.set(level);
         self.regs.rxftlr.set(level - 1);
     }
 
-    pub fn dw_spi_exec_mem_op(&self, len: usize, ret: i32) {
-        let mut _entries;
-        let mut _sts;
-        let mut _nents = 0;
-
-        let mut i = 0;
-        while i < len {
-            _entries = self.regs.txflr.get();
-            i += 1;
+    pub fn dw_spi_exec_mem_op(&self, len: u32, ret: u32, busy: bool, mut retry: u32) {
+        let mut _len1 = len;
+        while _len1 != 0 {
+            let _entries = self.regs.txflr.get();
+            _len1 = _len1.saturating_sub(1);
         }
 
-        let mut j = 0;
-        while j < len {
-            _entries = self.regs.rxflr.get();
-            if _entries == 0 {
-                _sts = self.regs.risr.get();
+        let mut _len2 = len;
+        while _len2 != 0 {
+            let entries = self.regs.rxflr.get();
+            if entries == 0 {
+                let _sts = self.regs.risr.get();
             }
-            j += 1;
+            _len2 = _len2.saturating_sub(1);
         }
 
         if ret == 0 {
-            _nents = self.regs.txflr.get();
+            let _nents = self.regs.txflr.get();
+            while busy && retry > 0 {
+                let _sr = self.regs.sr.get();
+                retry -= 1;
+            }
         }
     }
 
-    pub fn dw_spi_add_controller(
-        &self,
-        dws_valid: bool,
-        mut ver: u32,
-        is_target: bool,
-        mut num_cs: u32,
-        mut fifo_len: u32,
-        is_pssi: bool,
-        caps: u32,
-    ) -> (u32, u32, u32) {
+    pub fn dw_spi_add_controller(&self, dws_valid: bool, mut ver: u32, is_target: bool, mut num_cs: u32, mut fifo_len: u32, is_pssi: bool, caps: u32) {
         if dws_valid {
             if ver == 0 {
                 ver = self.regs.version.get();
@@ -168,44 +152,32 @@ impl SpiDwCore {
                     self.regs.ser.set(0xffff);
                     let _ser = self.regs.ser.get();
                     self.regs.ser.set(0x0);
-                    num_cs = 1; // Simulate update
+                    num_cs = 1; 
                 }
             }
             if fifo_len == 0 {
                 let mut fifo = 0;
                 while fifo < 0x100 {
                     self.regs.txftlr.set(fifo);
-                    let _r25 = self.regs.txftlr.get();
-                    if _r25 != fifo {
-                        break;
-                    }
+                    let _r28 = self.regs.txftlr.get();
                     fifo += 1;
                 }
                 self.regs.txftlr.set(0x0);
-                fifo_len = fifo;
+                fifo_len = 1; 
             }
             if is_pssi {
-                let _r27 = self.regs.ctrlr0.get();
+                let _r30 = self.regs.ctrlr0.get();
                 self.regs.ctrlr0.set(0xffffffff);
                 let cr0 = self.regs.ctrlr0.get();
-                self.regs.ctrlr0.set(cr0); // write 'tmp' (cr0)
+                self.regs.ctrlr0.set(cr0); 
             }
-            if (caps & 0x1) != 0 {
+            if caps & (1 << 0) != 0 { 
                 self.regs.cs_override.set(0xf);
             }
         }
-        (ver, num_cs, fifo_len)
     }
 
-    pub fn dw_spi_resume_controller(
-        &self,
-        mut ver: u32,
-        is_target: bool,
-        mut num_cs: u32,
-        mut fifo_len: u32,
-        is_pssi: bool,
-        caps: u32,
-    ) -> (u32, u32, u32) {
+    pub fn dw_spi_resume_controller(&self, mut ver: u32, is_target: bool, mut num_cs: u32, mut fifo_len: u32, is_pssi: bool, caps: u32) {
         if ver == 0 {
             ver = self.regs.version.get();
         }
@@ -214,31 +186,51 @@ impl SpiDwCore {
                 self.regs.ser.set(0xffff);
                 let _ser = self.regs.ser.get();
                 self.regs.ser.set(0x0);
-                num_cs = 1;
+                num_cs = 1; 
             }
         }
         if fifo_len == 0 {
             let mut fifo = 0;
             while fifo < 0x100 {
                 self.regs.txftlr.set(fifo);
-                let _r37 = self.regs.txftlr.get();
-                if _r37 != fifo {
-                    break;
-                }
+                let _r40 = self.regs.txftlr.get();
                 fifo += 1;
             }
             self.regs.txftlr.set(0x0);
-            fifo_len = fifo;
+            fifo_len = 1; 
         }
         if is_pssi {
-            let _r39 = self.regs.ctrlr0.get();
+            let _r42 = self.regs.ctrlr0.get();
             self.regs.ctrlr0.set(0xffffffff);
             let cr0 = self.regs.ctrlr0.get();
-            self.regs.ctrlr0.set(cr0);
+            self.regs.ctrlr0.set(cr0); 
         }
-        if (caps & 0x1) != 0 {
+        if caps & (1 << 0) != 0 { 
             self.regs.cs_override.set(0xf);
         }
-        (ver, num_cs, fifo_len)
+    }
+
+    pub fn dw_spi_mscc_set_cs(&self, cs: u32, sw_mode: u32) {
+        if cs < 4 {
+            let val = if cs < 4 { 8192 } else { sw_mode };
+            self.regs.mscc_spi_mst_sw_mode.set(val);
+        }
+    }
+
+    pub fn dw_spi_mscc_ocelot_init(&self) {
+        self.regs.mscc_spi_mst_sw_mode.set(0x0);
+    }
+
+    pub fn dw_spi_mscc_jaguar2_init(&self) {
+        self.regs.mscc_spi_mst_sw_mode.set(0x0);
+    }
+
+    pub fn dw_spi_sparx5_set_cs(&self, enable: u32) {
+        if enable == 0 {}
+        if enable != 0 {}
+    }
+
+    pub fn dw_spi_elba_set_cs(&self, cs: u32) {
+        if cs < 2 {}
     }
 }
