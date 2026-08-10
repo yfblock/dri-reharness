@@ -1,0 +1,153 @@
+source: /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/multisource/dw-apb-ssi.json
+includes:
+  - linux/bitfield.h
+  - linux/bitops.h
+  - linux/dma-mapping.h
+  - linux/interrupt.h
+  - linux/module.h
+  - linux/preempt.h
+  - linux/highmem.h
+  - linux/delay.h
+  - linux/slab.h
+  - linux/spi/spi.h
+  - linux/spi/spi-mem.h
+  - linux/string.h
+  - linux/of.h
+  - internals.h
+  - spi-dw.h
+  - linux/debugfs.h
+  - linux/clk.h
+  - linux/err.h
+  - linux/platform_device.h
+  - linux/pm_runtime.h
+  - linux/scatterlist.h
+  - linux/mfd/syscon.h
+  - linux/of_platform.h
+  - linux/acpi.h
+  - linux/property.h
+  - linux/regmap.h
+  - linux/reset.h
+structs:
+  dw_spi_chip_data:
+    fields:
+      cr0: "u32"
+      rx_sample_dly: "u32"
+  dw_spi_mmio:
+    fields:
+      dws: "struct dw_spi"
+      clk: "struct clk *"
+      pclk: "struct clk *"
+      priv: "void *"
+      rstc: "struct reset_control *"
+  dw_spi_mscc:
+    fields:
+      syscon: "struct regmap *"
+      spi_mst: "void *"
+constants:
+  IRQ_NOTCONNECTED: 0x80000000
+  DW_PSSI_ID: 0x0
+  DW_HSSI_ID: 0x1
+  DW_HSSI_102A: 0x3130322a
+  DW_SPI_CAP_CS_OVERRIDE: 0x1
+  DW_SPI_CAP_DFS32: 0x2
+  DW_SPI_CTRLR1: 0x4
+  DW_SPI_SSIENR: 0x8
+  DW_SPI_MWCR: 0xc
+  DW_SPI_BAUDR: 0x14
+  DW_SPI_TXOICR: 0x38
+  DW_SPI_RXOICR: 0x3c
+  DW_SPI_RXUICR: 0x40
+  DW_SPI_MSTICR: 0x44
+  DW_SPI_DMACR: 0x4c
+  DW_SPI_DMATDLR: 0x50
+  DW_SPI_DMARDLR: 0x54
+  DW_SPI_IDR: 0x58
+  DW_SPI_DR: 0x60
+  DW_SPI_RX_SAMPLE_DLY: 0xf0
+  DW_SPI_CS_OVERRIDE: 0xf4
+  DW_SPI_CTRLR0_FRF_MOTO_SPI: 0x0
+  DW_SPI_CTRLR0_FRF_TI_SSP: 0x1
+  DW_SPI_CTRLR0_FRF_NS_MICROWIRE: 0x2
+  DW_SPI_CTRLR0_FRF_RESV: 0x3
+  DW_PSSI_CTRLR0_SCPHA: 0x40
+  DW_PSSI_CTRLR0_SCPOL: 0x80
+  DW_SPI_CTRLR0_TMOD_TR: 0x0
+  DW_SPI_CTRLR0_TMOD_TO: 0x1
+  DW_SPI_CTRLR0_TMOD_RO: 0x2
+  DW_SPI_CTRLR0_TMOD_EPROMREAD: 0x3
+  DW_PSSI_CTRLR0_SLV_OE: 0x400
+  DW_PSSI_CTRLR0_SRL: 0x800
+  DW_PSSI_CTRLR0_CFS: 0x1000
+  DW_HSSI_CTRLR0_SCPHA: 0x100
+  DW_HSSI_CTRLR0_SCPOL: 0x200
+  DW_HSSI_CTRLR0_SRL: 0x2000
+  DW_HSSI_CTRLR0_MST: 0x80000000
+  DW_SPI_SR_BUSY: 0x1
+  DW_SPI_SR_TF_NOT_FULL: 0x2
+  DW_SPI_SR_TF_EMPT: 0x4
+  DW_SPI_SR_RF_NOT_EMPT: 0x8
+  DW_SPI_SR_RF_FULL: 0x10
+  DW_SPI_SR_TX_ERR: 0x20
+  DW_SPI_SR_DCOL: 0x40
+  DW_SPI_INT_TXEI: 0x1
+  DW_SPI_INT_TXOI: 0x2
+  DW_SPI_INT_RXUI: 0x4
+  DW_SPI_INT_RXOI: 0x8
+  DW_SPI_INT_RXFI: 0x10
+  DW_SPI_INT_MSTI: 0x20
+  DW_SPI_DMACR_RDMAE: 0x1
+  DW_SPI_DMACR_TDMAE: 0x2
+  DW_SPI_WAIT_RETRIES: 0x5
+  MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL: 0x24
+  OCELOT_IF_SI_OWNER_OFFSET: 0x4
+  JAGUAR2_IF_SI_OWNER_OFFSET: 0x6
+  MSCC_IF_SI_OWNER_SISL: 0x0
+  MSCC_IF_SI_OWNER_SIBM: 0x1
+  MSCC_IF_SI_OWNER_SIMC: 0x2
+  MSCC_SPI_MST_SW_MODE_SW_PIN_CTRL_MODE: 0x2000
+  SPARX5_FORCE_ENA: 0xa4
+  SPARX5_FORCE_VAL: 0xa8
+  ELBA_SPICS_REG: 0x2468
+callbacks:
+  dw_spi.transfer_handler: dw_spi_transfer_handler
+  spi_controller_mem_ops.adjust_op_size: dw_spi_adjust_mem_op_size
+  spi_controller_mem_ops.supports_op: dw_spi_supports_mem_op
+  spi_controller_mem_ops.exec_op: dw_spi_exec_mem_op
+  irq_handler.handler: dw_spi_irq
+  spi_controller.setup: dw_spi_setup
+  spi_controller.cleanup: dw_spi_cleanup
+  spi_controller.transfer_one: dw_spi_transfer_one
+  spi_controller.handle_err: dw_spi_handle_err
+  spi_controller.set_cs: dw_spi_set_cs
+  spi_controller.target_abort: dw_spi_target_abort
+  dw_spi.set_cs: dw_spi_elba_set_cs
+  dev_pm_ops.suspend: dw_spi_mmio_suspend
+  dev_pm_ops.freeze: dw_spi_mmio_suspend
+  dev_pm_ops.poweroff: dw_spi_mmio_suspend
+  dev_pm_ops.resume: dw_spi_mmio_resume
+  dev_pm_ops.restore: dw_spi_mmio_resume
+  dev_pm_ops.thaw: dw_spi_mmio_resume
+  platform_driver.probe: dw_spi_mmio_probe
+  platform_driver.remove: dw_spi_mmio_remove
+resources:
+  resource0:
+    acquisition: "devm_platform_ioremap_resource"
+    binds_to: "g->base"
+  resource1:
+    acquisition: "devm_clk_get_enabled"
+    binds_to: "g->clk"
+  resource2:
+    acquisition: "platform_get_irq"
+error_paths:
+  - "return -EINVAL"
+  - "return -EIO"
+  - "return -ENOMEM"
+  - "return PTR_ERR(dws->regs)"
+  - "return PTR_ERR(dwsmmio->clk)"
+  - "return PTR_ERR(dwsmmio->pclk)"
+  - "return PTR_ERR(dwsmmio->rstc)"
+  - "return PTR_ERR(dwsmscc->spi_mst)"
+  - "return PTR_ERR(dwsmscc->syscon)"
+helper_calls:
+  - "clk_disable_unprepare"
+  - "clk_prepare_enable"

@@ -1,0 +1,190 @@
+device dw-apb-ssi {
+  class generic_mmio
+  source "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/multisource/dw-apb-ssi.json"
+  state {
+    base: MmioBase
+    clk: Clock
+    num_irqs: UInt
+  }
+  resource transaction0: TransactionResource { required true bind regmap }
+  resource clk0: ClockResource { required true bind clk }
+  resource irq0: IrqResource { required true }
+  register DW_SPI_CTRLR0: B4 at base + 0x0
+  register DW_SPI_SER: B4 at base + 0x10
+  register MSCC_SPI_MST_SW_MODE: B4 at base + 0x14
+  register DW_SPI_TXFTLR: B4 at base + 0x18
+  register DW_SPI_RXFTLR: B4 at base + 0x1c
+  register DW_SPI_TXFLR: B4 at base + 0x20
+  register DW_SPI_RXFLR: B4 at base + 0x24
+  register DW_SPI_SR: B4 at base + 0x28
+  register DW_SPI_IMR: B4 at base + 0x2c
+  register DW_SPI_ISR: B4 at base + 0x30
+  register DW_SPI_RISR: B4 at base + 0x34
+  register DW_SPI_ICR: B4 at base + 0x48
+  register DW_SPI_VERSION: B4 at base + 0x5c
+  invariant forall line: UInt. line < num_irqs -> valid_interrupt_line(line)
+  function dw_spi_set_cs(spi: DeviceState, enable: UInt) -> Void {
+    role unknown
+    source "spi-dw-core.c:90"
+    context thread
+    callback spi_controller.set_cs
+    ris dw_spi_set_cs
+  }
+  function dw_spi_check_status(dws: DeviceState, raw: UInt) -> UInt {
+    role unknown
+    source "spi-dw-core.c:177"
+    context thread
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_check_status
+  }
+  function dw_spi_transfer_handler(dws: DeviceState) -> UInt {
+    role interrupt_handler
+    source "spi-dw-core.c:213"
+    context irq
+    callback dw_spi.transfer_handler
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_transfer_handler
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function dw_spi_irq(irq: UInt, dev_id: DeviceState) -> UInt {
+    role interrupt_handler
+    source "spi-dw-core.c:251"
+    context irq
+    callback irq_handler.handler
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_irq
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function dw_spi_update_config(dws: DeviceState, spi: DeviceState, cfg: DeviceState) -> Void {
+    role unknown
+    source "spi-dw-core.c:315"
+    context thread
+    ris dw_spi_update_config
+  }
+  function dw_spi_transfer_one(ctlr: DeviceState, spi: DeviceState, transfer: DeviceState) -> UInt {
+    role unknown
+    source "spi-dw-core.c:416"
+    context thread
+    callback spi_controller.transfer_one
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_transfer_one
+  }
+  function dw_spi_handle_err(ctlr: DeviceState, msg: DeviceState) -> Void {
+    role unknown
+    source "spi-dw-core.c:478"
+    context thread
+    callback spi_controller.handle_err
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_handle_err
+  }
+  function dw_spi_target_abort(ctlr: DeviceState) -> UInt {
+    role unknown
+    source "spi-dw-core.c:484"
+    context thread
+    callback spi_controller.target_abort
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_target_abort
+  }
+  function dw_spi_exec_mem_op(mem: DeviceState, op: DeviceState) -> UInt {
+    role unknown
+    source "spi-dw-core.c:675"
+    context thread
+    callback spi_controller_mem_ops.exec_op
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_exec_mem_op
+  }
+  function dw_spi_add_controller(dev: DeviceState, dws: DeviceState) -> UInt {
+    role unknown
+    source "spi-dw-core.c:921"
+    context thread
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_add_controller
+  }
+  function dw_spi_remove_controller(dws: DeviceState) -> Void {
+    role remove
+    source "spi-dw-core.c:1023"
+    context thread
+    ris dw_spi_remove_controller
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dw_spi_suspend_controller(dws: DeviceState) -> UInt {
+    role suspend
+    source "spi-dw-core.c:1038"
+    context thread
+    ris dw_spi_suspend_controller
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function dw_spi_resume_controller(dws: DeviceState) -> UInt {
+    role resume
+    source "spi-dw-core.c:1051"
+    context thread
+    bind dev: DeviceState from dws
+    bind base: MmioBase from dws->regs
+    ris dw_spi_resume_controller
+    effect resumes_device()
+    ensure device_state == READY
+  }
+  function dw_spi_mscc_set_cs(spi: DeviceState, enable: UInt) -> Void {
+    role unknown
+    source "spi-dw-mmio.c:77"
+    context thread
+    callback dw_spi.set_cs
+    bind dev: DeviceState from dwsmscc
+    bind base: MmioBase from dwsmscc->spi_mst
+    ris dw_spi_mscc_set_cs
+    effect writes_register(MSCC_SPI_MST_SW_MODE)
+  }
+  function dw_spi_mscc_ocelot_init(pdev: DeviceState, dwsmmio: DeviceState) -> UInt {
+    role init
+    source "spi-dw-mmio.c:128"
+    context thread
+    bind dev: DeviceState from dwsmscc
+    bind base: MmioBase from dwsmscc->spi_mst
+    ris dw_spi_mscc_ocelot_init
+    effect writes_register(MSCC_SPI_MST_SW_MODE)
+    effect updates_transaction(regmap)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dw_spi_mscc_jaguar2_init(pdev: DeviceState, dwsmmio: DeviceState) -> UInt {
+    role init
+    source "spi-dw-mmio.c:135"
+    context thread
+    bind dev: DeviceState from dwsmscc
+    bind base: MmioBase from dwsmscc->spi_mst
+    ris dw_spi_mscc_jaguar2_init
+    effect writes_register(MSCC_SPI_MST_SW_MODE)
+    effect updates_transaction(regmap)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dw_spi_sparx5_set_cs(spi: DeviceState, enable: UInt) -> Void {
+    role unknown
+    source "spi-dw-mmio.c:148"
+    context thread
+    callback dw_spi.set_cs
+    ris dw_spi_sparx5_set_cs
+    effect writes_transaction(regmap)
+    effect writes_transaction(regmap)
+  }
+  function dw_spi_elba_set_cs(spi: DeviceState, enable: UInt) -> Void {
+    role unknown
+    source "spi-dw-mmio.c:276"
+    context thread
+    callback dw_spi.set_cs
+    ris dw_spi_elba_set_cs
+    effect updates_transaction(regmap)
+  }
+}
