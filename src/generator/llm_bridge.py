@@ -27,11 +27,8 @@ def load_dotenv():
 
 load_dotenv()
 
-_PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
-
-
 def load_prompt_template(backend: str) -> str:
-    p = _PROMPT_DIR / (backend + ".md")
+    p = Path(__file__).resolve().parent / backend / "prompt.md"
     if not p.exists():
         raise FileNotFoundError("No prompt template: " + str(p))
     return p.read_text(encoding="utf-8")
