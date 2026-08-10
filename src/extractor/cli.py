@@ -44,6 +44,7 @@ def _config_from_args(args) -> ExtractorConfig:
         driver_name=getattr(args, "driver_name", None),
         compile_commands=getattr(args, "compile_commands", None),
         compile_context_mode=getattr(args, "compile_context", "auto"),
+        ir_mode=getattr(args, "ir_mode", "off"),
     )
 
 
@@ -59,6 +60,9 @@ def _add_analysis_options(parser, *, extended: bool = False) -> None:
     parser.add_argument("--compile-context", choices=["off", "auto", "required"],
                         default="auto",
                         help="Kbuild context importer mode (default: auto)")
+    parser.add_argument("--ir-mode", choices=["off", "auto", "required"],
+                        default="off",
+                        help="LLVM IR enhancement: compile to IR at -O1 to find MMIO ops missed by AST (default: off)")
     if extended:
         parser.add_argument("--include-framework", action="store_true")
         parser.add_argument("--blacklist", default="",

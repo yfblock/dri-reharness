@@ -31,6 +31,7 @@ class ExtractorConfig:
     driver_name: str | None = None          # required only for direct multi-source API use
     compile_commands: str | None = None      # optional Linux compile_commands.json
     compile_context_mode: str = "auto"       # off | auto | required
+    ir_mode: str = "off"                     # off | auto | required
 
 
 @dataclass
@@ -191,6 +192,153 @@ def _merge_facts(parts, source: str, warnings: list[str]):
         error_paths=sorted(error_paths), helper_calls=sorted(helper_calls),
         source_snippets=source_snippets,
     )
+
+
+def _extract_computed_offset(computed: dict) -> int | None:
+    """Best-effort extraction of a constant byte offset from a Computed addr."""
+    def _eval(node) -> int | None:
+        if isinstance(node, (int, float)):
+            return int(node)
+        if isinstance(node, dict):
+            if "Const" in node:
+                return int(node["Const"])
+            if "BinOp" in node:
+                binop = node["BinOp"]
+                left = _eval(binop.get("left", {}))
+                right = _eval(binop.get("right", {}))
+                op = binop.get("op", "")
+                if left is not None and right is not None:
+                    if op == "Add":
+                        return left + right
+                    if op == "Sub":
+                        return left - right
+                    if op == "Shl":
+                        return left << right
+                    if op == "BitOr":
+                        return left | right
+            if "Var" in node:
+                return None
+        return None
+    return _eval(computed)
+
+
+def _run_ir_analysis(
+        config: ExtractorConfig, sources: list[str], formal: dict,
+        warnings: list[str]) -> dict:
+    """Run LLVM IR-based MMIO enhancement analysis.
+
+    Compiles each source to LLVM IR at -O1 (inlines static inline helpers),
+    parses MMIO operations from the IR, and compares with AST-extracted ops
+    to find coverage gaps.
+    """
+    try:
+        from .ir_enhance import enhance_multi_from_ir
+    except ImportError:
+        return {"mode": config.ir_mode, "status": "unavailable",
+                "error": "ir_enhance module not found"}
+
+    from .formal import walk_leaf_ops
+    ast_ops_by_module: dict[str, list[dict]] = {}
+    reg_map = {reg["name"]: reg["offset"]
+               for reg in formal.get("register_map", [])}
+    for module in formal.get("modules", []):
+        mod_name = module.get("name", "")
+        ops_list = []
+        for op in walk_leaf_ops(module.get("ops", [])):
+            body = (op.get("Read") or op.get("Write")
+                    or op.get("ReadModifyWrite"))
+            if body:
+                addr = body.get("addr", {})
+                offset = None
+                if "Fixed" in addr:
+                    offset = addr["Fixed"].get("offset")
+                elif "Symbolic" in addr:
+                    reg_name = addr["Symbolic"].get("register", "")
+                    offset = reg_map.get(reg_name)
+                elif "Computed" in addr:
+                    offset = _extract_computed_offset(addr["Computed"])
+                ops_list.append({
+                    "kind": "read" if "Read" in op else "write",
+                    "offset": offset,
+                    "op_id": body.get("op_id"),
+                })
+        ast_ops_by_module[mod_name] = ops_list
+
+    try:
+        ir_results = enhance_multi_from_ir(
+            sources, linux_root=config.linux_root,
+            compile_commands=config.compile_commands,
+            compile_context_mode=config.compile_context_mode)
+    except Exception as exc:
+        if config.ir_mode == "required":
+            raise
+        msg = f"IR analysis failed: {exc}"
+        warnings.append(msg)
+        return {"mode": config.ir_mode, "status": "failed",
+                "error": str(exc)}
+
+    source_summaries = {}
+    total_ir_ops = 0
+    total_missing = 0
+    for source, summary in ir_results.items():
+        if not summary.ir_generated:
+            warnings.append(f"IR generation failed for {source}")
+            continue
+        ops_data = []
+        for op in summary.ops:
+            ops_data.append({
+                "kind": op.kind,
+                "function": op.function,
+                "source_line": op.source_line,
+                "offset": op.offset,
+                "inlined_chain": op.inlined_chain,
+            })
+        # AST ops are matched by byte offset only, since function attribution
+        # differs: AST inlines helpers into their caller while IR attributes
+        # to the original function definition.
+        ast_offsets: set[int] = set()
+        for mod_ops in ast_ops_by_module.values():
+            for op_dict in mod_ops:
+                off = op_dict.get("offset")
+                if off is not None:
+                    ast_offsets.add(off)
+        ir_offsets: set[int] = set()
+        for op in summary.ops:
+            if op.offset is not None:
+                ir_offsets.add(op.offset)
+        missing_offsets = ir_offsets - ast_offsets
+        new_offsets = sorted(missing_offsets)
+        # Also report per-function attribution differences
+        ast_functions = set(ast_ops_by_module.keys())
+        ir_functions = set(summary.ops_by_function.keys())
+        ir_only_functions = sorted(ir_functions - ast_functions)
+        total_ir_ops += len(summary.ops)
+        total_missing += len(missing_offsets)
+        source_summaries[os.path.basename(source)] = {
+            "ir_generated": True,
+            "total_ops": len(summary.ops),
+            "ops_by_function": {
+                fn: len(ops) for fn, ops in summary.ops_by_function.items()
+            },
+            "ops_sample": ops_data[:20],
+            "missing_offsets": new_offsets,
+            "missing_count": len(missing_offsets),
+            "ir_only_functions": ir_only_functions,
+            "ir_function_count": len(ir_functions),
+            "ast_function_count": len(ast_functions),
+        }
+
+    return {
+        "mode": config.ir_mode,
+        "status": "success" if source_summaries else "degraded",
+        "engine": "clang -O1 IR inline-asm analysis",
+        "sources": source_summaries,
+        "total_ir_ops": total_ir_ops,
+        "total_missing_from_ast": total_missing,
+        "coverage_pct": (
+            round(100 * (1 - total_missing / max(total_ir_ops, 1)), 1)
+            if total_ir_ops > 0 else 100.0),
+    }
 
 
 def _extract_multi(config: ExtractorConfig, sources: list[str],
@@ -449,6 +597,12 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
                 f"{binding['table']}.{binding['field']}",
                 binding["function"])
 
+    if config.ir_mode != "off":
+        ir_analysis = _run_ir_analysis(
+            config, sources, formal, warnings)
+        formal["metadata"]["ir_analysis"] = ir_analysis
+        stats["ir_analysis"] = ir_analysis
+
     return ExtractionResult(
         formal=formal, device_spec=device_spec, facts=facts,
         warnings=warnings, stats=stats)
@@ -485,6 +639,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
                                            config.compile_commands,
                                            config.compile_context_mode)
                   for source in sources),
+            config.ir_mode,
         )
         if cache_key not in _extraction_cache:
             _extraction_cache[cache_key] = _extract_multi(
@@ -510,6 +665,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         compile_context_identity(source, config.linux_root,
                                  config.compile_commands,
                                  config.compile_context_mode),
+        config.ir_mode,
     )
     if cache_key in _extraction_cache:
         return _extraction_cache[cache_key]
@@ -658,6 +814,12 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     register_names = {r["name"] for r in formal.get("register_map", [])}
     facts = infer_facts(source_text, source, tu, macros, cb_bindings,
                         register_names, formal=formal, driver_name=driver_name)
+
+    if config.ir_mode != "off":
+        ir_analysis = _run_ir_analysis(
+            config, [source], formal, warnings)
+        formal["metadata"]["ir_analysis"] = ir_analysis
+        stats["ir_analysis"] = ir_analysis
 
     result = ExtractionResult(formal=formal, device_spec=device_spec, facts=facts,
                              warnings=warnings, stats=stats)

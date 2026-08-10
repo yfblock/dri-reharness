@@ -418,6 +418,22 @@ def formal_display(formal: dict) -> str:
                   f"    intentionally_unreachable {validation.get('intentionally_unreachable', 0)}",
                   f"    complete {str(validation.get('complete', False)).lower()}",
                   "  }"]
+    ir = formal.get("metadata", {}).get("ir_analysis")
+    if ir and ir.get("mode", "off") != "off":
+        lines += ["  ir_analysis {"]
+        for src_name, info in ir.get("sources", {}).items():
+            lines += [
+                '    source "' + src_name + '" {',
+                '      ir_generated ' + str(info.get('ir_generated', False)).lower(),
+                '      total_ops ' + str(info.get('total_ops', 0)),
+                '      missing_offsets ' + str(info.get('missing_count', 0)),
+                '    }',
+            ]
+        lines += [
+            '    total_ir_ops ' + str(ir.get('total_ir_ops', 0)),
+            '    total_missing_from_ast ' + str(ir.get('total_missing_from_ast', 0)),
+            '    coverage_pct ' + str(ir.get('coverage_pct', 100.0)),
+            '  }']
     lines.append("}")
     return "\n".join(lines)
 
