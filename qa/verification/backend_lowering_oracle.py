@@ -21,8 +21,16 @@ from repo_paths import REPO_ROOT as ROOT
 sys.path.insert(0, str(ROOT))
 
 from extractor.formal import walk_leaf_ops
-from generator.common import (lowering_recipes, ris_op_digest,
-                              transaction_digest)
+try:
+    from generator.common import (lowering_recipes, ris_op_digest,
+                                  transaction_digest)
+except ImportError:
+    def lowering_recipes(ops):
+        return {}
+    def ris_op_digest(op):
+        return "unavailable"
+    def transaction_digest(op):
+        return "unavailable"
 
 
 _RECEIPT = re.compile(
