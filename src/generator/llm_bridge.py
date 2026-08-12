@@ -35,11 +35,14 @@ def load_prompt_template(backend: str) -> str:
 
 
 def llm_available() -> bool:
-    if os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_BASE_URL"):
-        return True
     root = Path(__file__).resolve().parents[2]
     pi_script = root / "tools" / "pi" / "pi_synth.sh"
     if pi_script.exists() and os.access(pi_script, os.X_OK):
+        # Check project-level or user-level Pi config exists
+        pi_config = root / ".reharness" / "pi" / "models.json"
+        user_config = Path(os.path.expanduser("~/.pi/agent/models.json"))
+        if pi_config.exists() or user_config.exists():
+            return True
         return True
     return False
 
@@ -115,6 +118,32 @@ def _simplify_ops(ops, depth=0):
                         "transport": o.get("transport", "regmap"),
                         "target": _expr_str(o.get("target")),
                         "selector": _expr_str(o.get("selector"))})
+        elif "StateRead" in op:
+            o = op["StateRead"]
+            out.append({"kind": "state_read", "op_id": o.get("op_id", "?"),
+                        "field": o.get("field", ""),
+                        "var": o.get("var", "state_value"),
+                        "width": o.get("width", "Unknown")})
+        elif "StateWrite" in op:
+            o = op["StateWrite"]
+            out.append({"kind": "state_write", "op_id": o.get("op_id", "?"),
+                        "field": o.get("field", ""),
+                        "value": _expr_str(o.get("value")),
+                        "width": o.get("width", "Unknown")})
+        elif "OutputWrite" in op:
+            o = op["OutputWrite"]
+            out.append({"kind": "output_write", "op_id": o.get("op_id", "?"),
+                        "target": o.get("target", ""),
+                        "value": _expr_str(o.get("value"))})
+        elif "ValueBind" in op:
+            o = op["ValueBind"]
+            out.append({"kind": "value_bind", "op_id": o.get("op_id", "?"),
+                        "var": o.get("var", ""),
+                        "value": _expr_str(o.get("value"))})
+        elif "Delay" in op:
+            o = op["Delay"]
+            out.append({"kind": "delay", "op_id": o.get("op_id", "?"),
+                        "cycles": _expr_str(o.get("cycles"))})
     return out
 
 
@@ -129,13 +158,8 @@ def _addr_str(addr):
 
 def _expr_str(expr):
     if expr is None: return "0"
-    if isinstance(expr, dict):
-        if "Const" in expr: return "0x" + format(expr["Const"], "x")
-        if "Var" in expr: return expr["Var"]
-        if "BinOp" in expr:
-            b = expr["BinOp"]
-            return "(" + _expr_str(b.get("left")) + " " + str(b.get("op")) + " " + _expr_str(b.get("right")) + ")"
-    return str(expr)
+    from extractor.formal import expr_to_c
+    return expr_to_c(expr)
 
 
 def extract_code_block(text, lang=None):
@@ -151,22 +175,12 @@ def extract_code_block(text, lang=None):
 
 
 def call_llm(prompt, timeout=120):
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if api_key: return _call_openai(prompt, api_key, timeout)
     root = Path(__file__).resolve().parents[2]
     pi_script = root / "tools" / "pi" / "pi_synth.sh"
     if pi_script.exists(): return _call_pi_synth(prompt, pi_script, timeout)
-    raise RuntimeError("No LLM backend available (set OPENAI_API_KEY)")
+    raise RuntimeError("No Pi bridge found at tools/pi/pi_synth.sh")
 
 
-def _call_openai(prompt, api_key, timeout):
-    model = os.environ.get("REHARNESS_LLM_MODEL", "gpt-4o")
-    payload = json.dumps({"model": model, "messages": [{"role": "system", "content": "Generate only code."}, {"role": "user", "content": prompt}], "temperature": 0.2})
-    r = subprocess.run(["curl", "-s", "-X", "POST", (lambda b: b + "/chat/completions" if b.endswith("/v1") else b.rstrip("/") + "/v1/chat/completions")(
-        os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")), "-H", "Content-Type: application/json", "-H", "Authorization: Bearer " + api_key, "-d", "@-", "--max-time", str(timeout)], input=payload, capture_output=True, text=True, timeout=timeout + 10)
-    resp = json.loads(r.stdout)
-    if "error" in resp: raise RuntimeError(str(resp["error"]))
-    return resp["choices"][0]["message"]["content"]
 
 
 def _call_pi_synth(prompt, script, timeout):

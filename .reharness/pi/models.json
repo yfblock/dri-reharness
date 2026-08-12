@@ -1,0 +1,18 @@
+{
+  "providers": {
+    "yfblock": {
+      "baseUrl": "https://ai.yfblock.cn/v1",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "glm-5.2-highspeed",
+          "name": "GLM 5.2 Highspeed",
+          "reasoning": false,
+          "input": ["text"],
+          "contextWindow": 128000,
+          "maxTokens": 16384
+        }
+      ]
+    }
+  }
+}

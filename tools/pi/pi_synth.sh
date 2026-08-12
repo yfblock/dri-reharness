@@ -10,6 +10,17 @@
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
+
+# project-level config auto-discovery
+PI_MODELS_FILE=""
+PI_AUTH_FILE=""
+if [ -f "$ROOT/.reharness/pi/models.json" ]; then
+  PI_MODELS_FILE="$ROOT/.reharness/pi/models.json"
+fi
+if [ -f "$ROOT/.reharness/pi/auth.json" ]; then
+  PI_AUTH_FILE="$ROOT/.reharness/pi/auth.json"
+fi
+
 TMP_P="$(mktemp /tmp/pi_synth_prompt.XXXXXX.txt)"
 TMP_C="$(mktemp /tmp/pi_synth_out.XXXXXX.c)"
 TMP_E="$(mktemp /tmp/pi_synth_err.XXXXXX.txt)"
@@ -26,6 +37,15 @@ else
   STRUCTURED=0
 fi
 [ -n "$MODEL" ] && ARGS+=(--model "$MODEL")
+[ -n "$PI_MODELS_FILE" ] && ARGS+=(--model-file "$PI_MODELS_FILE")
+[ -n "$PI_AUTH_FILE" ] && ARGS+=(--auth-file "$PI_AUTH_FILE")
+
+if [ -n "$PI_MODELS_FILE" ]; then
+  echo "[pi_synth] project config: $PI_MODELS_FILE" >&2
+else
+  echo "[pi_synth] fallback to ~/.pi/agent" >&2
+fi
+
 if node "$HERE/synth.mjs" "${ARGS[@]}" >"$TMP_O" 2>"$TMP_E"; then
   if [ "$STRUCTURED" -eq 1 ]; then
     cat "$TMP_O"

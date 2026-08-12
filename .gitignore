@@ -44,3 +44,6 @@ modules.order
 
 # LLM secrets (use .env.example as template)
 .env
+
+# Project-level Pi config: models.json is safe to commit, auth.json contains secrets
+.reharness/pi/auth.json
