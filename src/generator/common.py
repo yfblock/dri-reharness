@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import re
+from extractor.spec import TypeMap, PrimitiveMap, StateMap, ExportMap
 
 _VAR_ID = re.compile(r"^[A-Za-z_]\w*$")
 _STRUCT_END_RE = re.compile(r"^};\s*$")
@@ -63,9 +64,8 @@ def make_freestanding_bind(bind, priv: str, base_expr: str, *,
 
     These backends share identical type mappings and state mappings.
     Only the primitive function name prefix differs (e.g. harness_read32
-    vs mmio_read32).
-    """
-    from extractor.spec import TypeMap, PrimitiveMap, StateMap
+   vs mmio_read32).
+   """
     p = prefix
     bind.types = [
         TypeMap("DeviceState", priv),
@@ -88,9 +88,8 @@ def make_freestanding_bind(bind, priv: str, base_expr: str, *,
         PrimitiveMap("MmioWriteBE", "B2", f"{p}_write16be"),
         PrimitiveMap("MmioReadBE", "B4", f"{p}_read32be"),
         PrimitiveMap("MmioWriteBE", "B4", f"{p}_write32be"),
-    ]
+   ]
     bind.state = [StateMap("dev.base", "dev->base")]
     if exports:
-        from extractor.spec import ExportMap
         for fn in exports:
             bind.exports.append(ExportMap(fn.role, f"{fn.name}"))
