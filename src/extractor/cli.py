@@ -245,9 +245,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "score":
-        return 0
-
-    if args.command == "score":
         from .metrics import score, format_score
         res = extract_ris(_config_from_args(args))
         print(format_score(score(res.device_spec, res.formal, res.warnings, res.facts)))
@@ -257,6 +254,8 @@ def main(argv: list[str] | None = None) -> int:
         from driver_pipeline import run_driver_pipeline
         res = extract_ris(_config_from_args(args))
         return run_driver_pipeline(res, args)
+
+    if args.command == "bundle":
         import synthesis
         res = extract_ris(_config_from_args(args))
         outdir = (args.outdir or

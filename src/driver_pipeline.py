@@ -39,10 +39,9 @@ def run_driver_pipeline(res, args) -> int:
         verify_backend_lowering_plan)
     from verification.generated_c_ast_oracle import verify_generated_c_ast
     from verification.linux_registration_ast_oracle import (
-        linux_kbuild_compile_context,
-        verify_linux_registration_ast)
+       linux_kbuild_compile_context,
+       verify_linux_registration_ast)
 
-    res = extract_ris(_config_from_args(args))
     name = res.formal["driver"]
     outdir = args.outdir or f"artifacts/output/{name}"
     gen_dir = os.path.join(outdir, "generated")
