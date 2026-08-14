@@ -16,6 +16,10 @@ def split_header_source(code: str, driver_name: str, backend: str) -> tuple[str,
     header followed by the function implementations, callback tables and
     entry point.
     """
+    # Some models wrap one section of a pair in a second Markdown fence even
+    # after the outer code block has been extracted.  Standalone fences are
+    # transport syntax, not C/Rust source, and must not enter the header.
+    code = re.sub(r"(?m)^\s*```(?:c|cpp|rust)?\s*$\n?", "", code)
     lines = code.split("\n")
     first_struct_end = -1
     depth = 0
@@ -52,3 +56,41 @@ _C_KEYWORDS = {
     "struct", "typedef", "union", "unsigned", "void", "volatile", "while",
 }
 
+
+def make_freestanding_bind(bind, priv: str, base_expr: str, *,
+                           prefix: str = "mmio", exports=None) -> None:
+    """Populate bind for freestanding C backends (harness, baremetal, rust_baremetal).
+
+    These backends share identical type mappings and state mappings.
+    Only the primitive function name prefix differs (e.g. harness_read32
+    vs mmio_read32).
+    """
+    from extractor.spec import TypeMap, PrimitiveMap, StateMap
+    p = prefix
+    bind.types = [
+        TypeMap("DeviceState", priv),
+        TypeMap("MmioBase", "uintptr_t"),
+        TypeMap("LogicalIRQ", "unsigned int"),
+        TypeMap("UInt", "uint32_t"),
+        TypeMap("UIntPtr", "uint32_t *"),
+    ]
+    bind.primitives = [
+        PrimitiveMap("MmioRead", "B4", f"{p}_read32"),
+        PrimitiveMap("MmioWrite", "B4", f"{p}_write32"),
+        PrimitiveMap("MmioRead", "B2", f"{p}_read16"),
+        PrimitiveMap("MmioWrite", "B2", f"{p}_write16"),
+        PrimitiveMap("MmioRead", "B1", f"{p}_read8"),
+        PrimitiveMap("MmioWrite", "B1", f"{p}_write8"),
+        PrimitiveMap("MmioWriteW1C", "B4", f"{p}_write_w1c32"),
+        PrimitiveMap("MmioWriteW1C", "B2", f"{p}_write_w1c16"),
+        PrimitiveMap("MmioWriteW1C", "B1", f"{p}_write_w1c8"),
+        PrimitiveMap("MmioReadBE", "B2", f"{p}_read16be"),
+        PrimitiveMap("MmioWriteBE", "B2", f"{p}_write16be"),
+        PrimitiveMap("MmioReadBE", "B4", f"{p}_read32be"),
+        PrimitiveMap("MmioWriteBE", "B4", f"{p}_write32be"),
+    ]
+    bind.state = [StateMap("dev.base", "dev->base")]
+    if exports:
+        from extractor.spec import ExportMap
+        for fn in exports:
+            bind.exports.append(ExportMap(fn.role, f"{fn.name}"))

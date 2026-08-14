@@ -247,3 +247,23 @@ def build_bundle(res, backend: str, outdir: str) -> str:
 def _w(outdir: str, name: str, text: str):
     with open(os.path.join(outdir, name), "w", encoding="utf-8") as fh:
         fh.write(text.rstrip() + "\n")
+
+
+def run_pi_synth(input_text: str, *, timeout: int = 600) -> str:
+    """Run pi_synth.sh with arbitrary stdin and return stdout.
+
+    This is the single subprocess entry point for all Pi bridge calls.
+    Both text-mode (generator) and JSON-envelope (synthesis) callers
+    go through this function.
+    """
+    root = Path(__file__).resolve().parent
+    script = root / "tools" / "pi" / "pi_synth.sh"
+    # Fallback: tools/ may be alongside src/
+    if not script.exists():
+        script = root.parent / "tools" / "pi" / "pi_synth.sh"
+    completed = subprocess.run(
+        [str(script)], input=input_text,
+        capture_output=True, text=True, timeout=timeout, check=False)
+    if completed.returncode != 0:
+        raise RuntimeError(completed.stderr.strip() or "Pi bridge failed")
+    return completed.stdout

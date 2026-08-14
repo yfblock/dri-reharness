@@ -7,26 +7,6 @@ import re
 import subprocess
 from pathlib import Path
 
-
-def load_dotenv():
-    env_path = Path(__file__).resolve().parents[2] / ".env"
-    if not env_path.exists():
-        return
-    for line in env_path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        key = key.strip()
-        value = value.strip().strip(chr(39) + chr(34))
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
-load_dotenv()
-
 def load_prompt_template(backend: str) -> str:
     p = Path(__file__).resolve().parent / backend / "prompt.md"
     if not p.exists():
@@ -38,11 +18,6 @@ def llm_available() -> bool:
     root = Path(__file__).resolve().parents[2]
     pi_script = root / "tools" / "pi" / "pi_synth.sh"
     if pi_script.exists() and os.access(pi_script, os.X_OK):
-        # Check project-level or user-level Pi config exists
-        pi_config = root / ".reharness" / "pi" / "models.json"
-        user_config = Path(os.path.expanduser("~/.pi/agent/models.json"))
-        if pi_config.exists() or user_config.exists():
-            return True
         return True
     return False
 
@@ -177,16 +152,13 @@ def extract_code_block(text, lang=None):
 def call_llm(prompt, timeout=120):
     root = Path(__file__).resolve().parents[2]
     pi_script = root / "tools" / "pi" / "pi_synth.sh"
-    if pi_script.exists(): return _call_pi_synth(prompt, pi_script, timeout)
+    if pi_script.exists():
+        r = subprocess.run([str(pi_script)], input=prompt,
+                           capture_output=True, text=True, timeout=timeout)
+        if r.returncode != 0:
+            raise RuntimeError("pi_synth failed: " + r.stderr)
+        return r.stdout
     raise RuntimeError("No Pi bridge found at tools/pi/pi_synth.sh")
-
-
-
-
-def _call_pi_synth(prompt, script, timeout):
-    r = subprocess.run([str(script)], input=prompt, capture_output=True, text=True, timeout=timeout)
-    if r.returncode != 0: raise RuntimeError("pi_synth failed: " + r.stderr)
-    return r.stdout
 
 
 def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type=None, pci_identity=None, **kwargs):

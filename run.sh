@@ -26,9 +26,8 @@ Commands:
   bundle <src> [backend] [outdir]   build LLM input bundle (RIS+dspec+bind+facts)
   metrics <src>             per-module extraction quality metrics
   score <src>               generation readiness scoring
-  reliability [src ...]     machine-readable scoped RIS reliability report
-  pipeline <src> [out.ris]  extract (alias of extract)
-  compare [-j N]              per-driver extraction stats (N=parallel jobs, 0=auto)
+ reliability [src ...]     machine-readable scoped RIS reliability report
+ compare [-j N]              per-driver extraction stats (N=parallel jobs, 0=auto)
   test                      run the test suite
   e2e <src> [target] [skip_synth]   full synthesis and runtime workflow
   experiment <manifest> [options]   manifest-driven closed-loop experiment
@@ -82,11 +81,6 @@ cmd_qemu() { bash scripts/qemu/qemu_run.sh "$@"; }
 cmd_qemu_experiments() { bash qa/verification/run_qemu_experiments.sh "$@"; }
 cmd_log_event() { bash scripts/maintenance/log_event.sh "$@"; }
 
-cmd_pipeline() {
-  local src="${1:?need src}" out="${2:-$OUTPUT_ROOT/ris.ris}"
-  cmd_extract "$src" "$out"
-}
-
 cmd_compare() { "$PY" qa/verification/compare.py "$@"; }
 cmd_test()    {
   "$PY" qa/verification/check_generalization_guard.py
@@ -118,9 +112,8 @@ case "${1:-help}" in
   bundle)    shift; cmd_bundle "$@";;
   metrics)   shift; cmd_metrics "$@";;
   score)     shift; cmd_score "$@";;
-  reliability) shift; cmd_reliability "$@";;
-  pipeline)  shift; cmd_pipeline "$@";;
-  compare)   shift; cmd_compare "$@";;
+ reliability) shift; cmd_reliability "$@";;
+ compare)   shift; cmd_compare "$@";;
   test)      shift; cmd_test "$@";;
   e2e)       shift; cmd_e2e "$@";;
   experiment) shift; cmd_experiment "$@";;
