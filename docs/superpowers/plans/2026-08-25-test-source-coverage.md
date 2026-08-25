@@ -16,7 +16,7 @@
 - Create: `qa/tests/test_subsystem_test_reporting.py`
 - Modify: `qa/tests/test_profile_runtime.py`
 
-- [ ] **Step 1: Write tests for required and optional evidence.**
+- [x] **Step 1: Write tests for required and optional evidence.**
 
 ```python
 def test_required_tests_need_exact_pass_evidence():
@@ -64,7 +64,7 @@ def test_required_failure_and_optional_failure_are_distinguished():
     assert report["declared"]["by_kind"] == {"kselftest": 1, "kunit": 1}
 ```
 
-- [ ] **Step 2: Run the focused tests and verify RED.**
+- [x] **Step 2: Run the focused tests and verify RED.**
 
 Run:
 
@@ -75,7 +75,7 @@ PYTHONPATH=src:qa:qa/verification pytest -q qa/tests/test_subsystem_test_reporti
 Expected: collection fails because the new report module and function do not
 exist.
 
-- [ ] **Step 3: Add tests for duplicate names and runtime capability mapping.**
+- [x] **Step 3: Add tests for duplicate names and runtime capability mapping.**
 
 Append these report tests:
 
@@ -109,7 +109,7 @@ assert result["test_source_report"]["status"] == "accepted"
 assert result["payload"]["test_source_report"]["declared"]["total"] == 1
 ```
 
-- [ ] **Step 4: Run the focused tests and verify the failures are behavioral.**
+- [x] **Step 4: Run the focused tests and verify the failures are behavioral.**
 
 - [ ] **Step 4: Run the focused tests and verify the failures are behavioral.**
 
@@ -131,7 +131,7 @@ yet implemented.
 - Create: `qa/verification/subsystem_test_reporting.py`
 - Test: `qa/tests/test_subsystem_test_reporting.py`
 
-- [ ] **Step 1: Implement exact name reconciliation.**
+- [x] **Step 1: Implement exact name reconciliation.**
 
 Create `qa/verification/subsystem_test_reporting.py` with this public shape:
 
@@ -204,7 +204,7 @@ Implement `_declared_row`, `_declared_counts`, and `_observed_status` as pure
 helpers; reject a non-mapping observed item by treating it as an unnamed
 inconclusive observation rather than raising from the runtime path.
 
-- [ ] **Step 2: Implement fail-closed status classification.**
+- [x] **Step 2: Implement fail-closed status classification.**
 
 Use the following predicate in `_observed_status`:
 
@@ -222,7 +222,7 @@ Required explicit failures take precedence over the report-level
 `inconclusive` status; all other missing, malformed, skipped, unexpected, and
 duplicate evidence remains inconclusive.
 
-- [ ] **Step 3: Run report tests and verify GREEN.**
+- [x] **Step 3: Run report tests and verify GREEN.**
 
 Run:
 
@@ -238,7 +238,7 @@ Expected: all report contract tests pass.
 - Modify: `qa/verification/profile_runtime.py`
 - Test: `qa/tests/test_profile_runtime.py`
 
-- [ ] **Step 1: Replace loose subsystem summarization.**
+- [x] **Step 1: Replace loose subsystem summarization.**
 
 Call the report builder from `QemuProfileRuntime.run()` using
 `manifest.test.subsystem.tests` and `payload["subsystem_tests"]`. Set
@@ -246,13 +246,13 @@ Call the report builder from `QemuProfileRuntime.run()` using
 status when requested. Do not infer a pass when the payload has no declared
 test evidence.
 
-- [ ] **Step 2: Preserve the structured report.**
+- [x] **Step 2: Preserve the structured report.**
 
 Add the report under result `test_source_report` and payload
 `test_source_report`; retain the existing raw `subsystem_tests` list for
 compatibility.
 
-- [ ] **Step 3: Run runtime tests and verify GREEN.**
+- [x] **Step 3: Run runtime tests and verify GREEN.**
 
 Run:
 
@@ -271,20 +271,20 @@ Expected: all report and profile-runtime tests pass.
 - Modify: `REPRO.md`
 - Test: `qa/tests/test_profile_matrix.py`
 
-- [ ] **Step 1: Add matrix report assertions.**
+- [x] **Step 1: Add matrix report assertions.**
 
 Assert that accepted profile results include a test-source report with
 declared/observed counts, and that a missing required guest marker becomes
 `inconclusive` rather than accepted.
 
-- [ ] **Step 2: Document the report boundary.**
+- [x] **Step 2: Document the report boundary.**
 
 State that provider catalog entries describe test sources but do not imply
 coverage; only exact declared-and-observed evidence participates in required
 capability acceptance. Keep the explicit limitation that one fixture per
 profile is not whole-subsystem validation.
 
-- [ ] **Step 3: Run focused and static verification.**
+- [x] **Step 3: Run focused and static verification.**
 
 ```bash
 PYTHONPATH=src:qa:qa/verification pytest -q \
