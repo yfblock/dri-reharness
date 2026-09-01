@@ -238,6 +238,9 @@ The evaluation addresses five research questions:
 \begin{itemize}
 \item \textbf{RQ1 (Address resolution):} Among emitted addressable operations,
 what fractions are symbolic, fixed, or computed?
+\item \textbf{RQ1b (Layer contribution and external validity):} Which
+properties does each extraction layer uniquely contribute, and does an
+independent third-party tool (CodeQL) agree with the combined result?
 \item \textbf{RQ2 (Extracted structure):} How many RMW patterns and branch
 conditions does the extractor report?
 \item \textbf{RQ3 (Baseline translation):} Do the deterministically generated
@@ -292,7 +295,56 @@ that the MacroTable resolves. The edu driver has the lowest symbolic rate
 (60\%) because two of its five accesses use fixed numeric offsets in the
 original source. virtio\_mmio exercises the most complex extraction: 59
 operations across 44 conditions, reflecting the virtio configuration-space
-negotiation protocol.
+
+\subsection{Layer Ablation and Third-Party Cross-Validation (RQ1b)}
+\label{sec:ablation}
+
+The IR-primary architecture (Section~3.3) separates two concerns: the
+compiled artifact supplies address truth, and the AST supplies intent. An
+ablation over the single-source corpus ($N{=}12$ compilable drivers) runs
+the extractor in three configurations and measures the effect of removing
+each layer (Table~\ref{tab:ablation}).
+
+\begin{table}[t]
+\centering
+\caption{Layer ablation over 12 single-source drivers (IR-only runs on the
+11 drivers that compile on the pinned x86 context; gpio-pl061 requires ARM
+headers and falls back in all configurations). Recall is line-identified
+source MMIO sites covered; named-fixed counts macro-named constant offsets
+per driver; quality is the readiness score consumed by the synthesis gate.}
+\label{tab:ablation}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Configuration & Recall & Named-fixed/op & Quality & Time \\
+\midrule
+AST-only & 0.982 & 0.0 / 27.0 & 0.878 & 7.7\,s \\
+IR-only & 0.450 & 4.3 / 12.3 & 0.795 & 0.3\,s \\
+Hybrid (default) & \textbf{0.982} & 3.9 / 30.9 & \textbf{0.894} & $+$0.3\,s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations. First, \emph{named-fixed addresses come exclusively from
+the IR layer}: the AST never emits a macro-named constant offset in this
+configuration (0.0 per driver), while both IR-bearing configurations do.
+Second, \emph{recall is preserved only by the AST supplement}: single-TU IR
+alone reaches 0.450 because library-mediated accesses (GPIO generic
+callbacks, SDHCI accessors) never appear in the driver's own translation
+unit. Third, the hybrid matches AST-only recall while improving quality
+(named addresses feed the resolution component) and adds 0.3\,s of IR
+analysis on top of the cached AST pass.
+
+\textbf{Cross-validation.} An independent CodeQL query (function-call match
+on the accessor family, run over databases created with the same Kbuild
+contexts) agrees with the combined extraction on \emph{206 of 209}
+line-identified sites across the 11 database-capable drivers. The three
+divergences are the same three lines in the ahci driver that both tools
+miss: a ThunderX errata handler gated by \texttt{\#ifdef CONFIG\_ARM64},
+which the pinned x86 configuration compiles out. The two tools'
+independent agreement converts these from unexplained misses into mutually
+confirmed dead code, and the remaining disagreement universe is empty after
+filtering header-inline accessor definitions out of the CodeQL result.
 
 The same corpus also quantifies the two interleaved concerns of Section~2:
 classifying each driver's non-blank lines by provenance, the aggregate

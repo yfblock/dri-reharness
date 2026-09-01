@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.28)  30 AUG 2026 04:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.28)  2 SEP 2026 01:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1528,20 +1528,27 @@ ates the ad-dress ex-pres-sion against
 
 [6.6{/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_oexx6f.enc}{/
 usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_kijugd.enc}]
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Overfull \hbox (21.58746pt too wide) in paragraph at lines 265--274
+\T1/LinuxLibertineT-TLF/m/n/10 (-20) key), width (from the ac-ces-sor fam-ily: 
+\T1/zi4/m/n/10 readb$\LMS/ntxsy/m/n/10 !$\T1/LinuxLibertineT-TLF/m/n/10 (-20) B
+1 ...\T1/zi4/m/n/10 readq$\LMS/ntxsy/m/n/10 !$\T1/LinuxLibertineT-TLF/m/n/10 (-
+20) B8),
+ []
 
 
-Overfull \hbox (5.04675pt too wide) in paragraph at lines 282--283
+Overfull \hbox (17.2723pt too wide) in paragraph at lines 275--282
+[]\T1/LinuxLibertineT-TLF/b/n/10 (-20) Variable-name re-cov-ery. \T1/LinuxLiber
+tineT-TLF/m/n/10 (-20) De-bug in-trin-sics (\T1/zi4/m/n/10 llvm.dbg.value
+ []
+
+
+Overfull \hbox (5.04675pt too wide) in paragraph at lines 316--317
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) tion is recorded. This in-cludes pointer a
 d-vance-ments (\T1/zi4/m/n/10 dws->tx
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [7.7])
-(./sections_6_8.tex
-Overfull \hbox (3.95494pt too wide) in paragraph at lines 294--5
+[7.7]) (./sections_6_8.tex
+Overfull \hbox (3.95494pt too wide) in paragraph at lines 328--5
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) tics that flat MMIO rep-re-sen-ta-tions lo
 se: a \T1/zi4/m/n/10 TXUPDATE[regmap]
  []
@@ -1564,18 +1571,22 @@ Overfull \hbox (2.31459pt too wide) in paragraph at lines 40--48
 mpt.md
  []
 
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [8.8]
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
 (Font)              scaled to size 8.0pt on input line 112.
 LaTeX Font Info:    Font shape `TS1/LinuxLibertineT-TLF/m/n' will be
 (Font)              scaled to size 7.0pt on input line 112.
 
-Underfull \vbox (badness 1137) has occurred while \output is active []
-
- [8.8]
 Overfull \hbox (6.29329pt too wide) in paragraph at lines 133--144
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) ac-count-ing check. Each rec-og-nized op-e
 r-a-tion re-ceives a unique
  []
+
+
+Underfull \vbox (badness 1102) has occurred while \output is active []
 
 
 Overfull \hbox (4.98366pt too wide) in paragraph at lines 158--162
@@ -1596,89 +1607,42 @@ Overfull \hbox (5.95085pt too wide) in paragraph at lines 228--235
  []
 
 
-Overfull \hbox (5.78827pt too wide) in paragraph at lines 278--288
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Overfull \hbox (5.78827pt too wide) in paragraph at lines 281--291
 []\T1/LinuxLibertineT-TLF/m/n/10 (-20) The sym-bolic rate of 77.7% shows that p
 re-pro-cess-ing records
  []
 
-! Dimension too large.
-<recently read> \pgf@xx 
-                        
-l.310 \resizebox{\columnwidth}{!}{\GlueRatioChart}
-                                                  
-I can't work with sizes bigger than about 19 feet.
-Continue and I'll use the largest value I can.
+[10.10]
+LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/it' will be
+(Font)              scaled to size 9.0pt on input line 317.
 
-! Dimension too large.
-\pgfusepath ...@x by.5\pgflinewidth \ifdim \pgf@x 
-                                                  >\pgf@picmaxx \global \pgf...
-l.310 \resizebox{\columnwidth}{!}{\GlueRatioChart}
-                                                  
-I can't work with sizes bigger than about 19 feet.
-Continue and I'll use the largest value I can.
-
-LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
-(Font)              scaled to size 7.0pt on input line 310.
-! Misplaced alignment tab character &.
-\GlueRatioChart ...t (8.90,-8.32) {Glue wrappers &
-                                                   other function bodies}; \...
-l.310 \resizebox{\columnwidth}{!}{\GlueRatioChart}
-                                                  
-I can't figure out why you would want to use a tab mark
-here. If you just want an ampersand, the remedy is
-simple: Just type `I\&' now. But if some right brace
-up above has ended a previous alignment prematurely,
-you're probably due for more error messages, and you
-might try typing `S' now just to see what is salvageable.
-
-! Misplaced alignment tab character &.
-\GlueRatioChart ....32) {File-scope declarations &
-                                                   registration}; \end {tikz...
-l.310 \resizebox{\columnwidth}{!}{\GlueRatioChart}
-                                                  
-I can't figure out why you would want to use a tab mark
-here. If you just want an ampersand, the remedy is
-simple: Just type `I\&' now. But if some right brace
-up above has ended a previous alignment prematurely,
-you're probably due for more error messages, and you
-might try typing `S' now just to see what is salvageable.
-
-! Dimension too large.
-\pgfsys@typesetpicturebox ... \wd #1=\pgf@picmaxx 
-                                                  \dp #1=0pt\leavevmode \pgf...
-l.310 \resizebox{\columnwidth}{!}{\GlueRatioChart}
-                                                  
-I can't work with sizes bigger than about 19 feet.
-Continue and I'll use the largest value I can.
-
-! Dimension too large.
-\width ->\wd \@tempboxa 
-                        
-l.310 \resizebox{\columnwidth}{!}{\GlueRatioChart}
-                                                  
-I can't work with sizes bigger than about 19 feet.
-Continue and I'll use the largest value I can.
-
-
-Overfull \hbox (18.69386pt too wide) in paragraph at lines 328--337
-\T1/LinuxLibertineT-TLF/m/n/10 (-20) set (se-lec-tion cri-te-ria as in Ta-ble [
-][]1[][]). Un-der the frozen deterministic-
+Overfull \hbox (9.54575pt too wide) in paragraph at lines 338--348
+[]\T1/LinuxLibertineT-TLF/b/n/10 (-20) Cross-validation. \T1/LinuxLibertineT-TL
+F/m/n/10 (-20) An in-de-pen-dent Cod-eQL query (function-
  []
 
-[10.10]
-Overfull \hbox (2.47256pt too wide) in paragraph at lines 429--435
+LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
+(Font)              scaled to size 7.0pt on input line 362.
+
+Underfull \vbox (badness 3364) has occurred while \output is active []
+
+ [11.11]
+Overfull \hbox (2.47256pt too wide) in paragraph at lines 482--488
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) for bind-ings, un-sup-ported op-er-a-tions
 , and source facts needed
  []
 
-[11.11]
-Overfull \hbox (33.91264pt too wide) in paragraph at lines 533--540
+
+Overfull \hbox (33.91264pt too wide) in paragraph at lines 586--593
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) (re-stored as an ex-plicit in-tree mode, \
 T1/zi4/m/n/10 REHARNESS_GENERATION=rules\T1/LinuxLibertineT-TLF/m/n/10 (-20) ,
  []
 
-
-Overfull \hbox (147.754pt too wide) in paragraph at lines 588--606
+[12.12]
+Overfull \hbox (147.754pt too wide) in paragraph at lines 641--659
 \T1/zi4/m/n/10 examples/dw-apb-ssi/ \T1/LinuxLibertineT-TLF/m/n/10 (-20) and \T
 1/zi4/m/n/10 research/experiments/results/dw-apb-ssi-checklist.json\T1/LinuxLib
 ertineT-TLF/m/n/10 (-20) . 
@@ -1687,7 +1651,7 @@ ertineT-TLF/m/n/10 (-20) .
 
 Underfull \vbox (badness 2698) has occurred while \output is active []
 
- [12.12])
+)
 (./sections_9_11.tex
 Overfull \hbox (2.0801pt too wide) in paragraph at lines 13--19
 \T1/LinuxLibertineT-TLF/m/sc/10 (-20) reharness \T1/LinuxLibertineT-TLF/m/n/10 
@@ -1695,6 +1659,9 @@ Overfull \hbox (2.0801pt too wide) in paragraph at lines 13--19
  []
 
 
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [13.13]
 Overfull \hbox (7.356pt too wide) in paragraph at lines 45--52
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) 9.6, on the eval-u-a-tion ma-chine; the th
 ree multi-source pipelines
@@ -1708,7 +1675,12 @@ LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
 (Font)              scaled to size 6.0pt on input line 93.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
 (Font)              scaled to size 6.0pt on input line 100.
-[13.13]) (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
+)
+
+Package balance Warning: You have called \balance in second column
+(balance)                Columns might not be balanced.
+
+(/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-utf8.def
@@ -1724,16 +1696,16 @@ L3 programming layer <2024-01-22>
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 9A0F4604000C16F063AFFDD29309CEFD;7263.
+(rerunfilecheck)             Checksum: 233A5C8C3DE1217CD1025E6C7D85EB6C;7759.
  ) 
 Here is how much of TeX's memory you used:
- 38304 strings out of 474222
- 723711 string characters out of 5748733
+ 38327 strings out of 474222
+ 724186 string characters out of 5748733
  2040975 words of memory out of 5000000
- 58906 multiletter control sequences out of 15000+600000
- 827162 words of font info for 599 fonts, out of 8000000 for 9000
+ 58914 multiletter control sequences out of 15000+600000
+ 830358 words of font info for 608 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
- 90i,17n,131p,2243b,1331s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 90i,16n,131p,2243b,1331s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4
 b.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/inconsolata/Inconsolata
 -zi4r.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/newtx/LibertineMath
@@ -1749,10 +1721,10 @@ texlive/texmf-dist/fonts/type1/public/newtx/txexs.pfb></usr/share/texlive/texmf
 -dist/fonts/type1/public/newtx/txmiaX.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/newtx/txsym.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
 newtx/txsys.pfb>
-Output written on main.pdf (14 pages, 598984 bytes).
+Output written on main.pdf (14 pages, 604015 bytes).
 PDF statistics:
- 440 PDF objects out of 1000 (max. 8388607)
- 382 compressed objects within 4 object streams
- 121 named destinations out of 1000 (max. 500000)
- 162581 words of extra memory for PDF output out of 184870 (max. 10000000)
+ 447 PDF objects out of 1000 (max. 8388607)
+ 389 compressed objects within 4 object streams
+ 123 named destinations out of 1000 (max. 500000)
+ 164637 words of extra memory for PDF output out of 184870 (max. 10000000)
 

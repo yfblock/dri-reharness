@@ -236,11 +236,24 @@ The inlining depth is bounded (default 3) to prevent unbounded expansion of deep
 
 For multi-source drivers spanning multiple translation units, the call graph is extended with cross-TU edges resolved through symbol linkage. The multi-source manifest links bitcode via whole-program analysis, resolving \MultiSourceCrossTUEdges{} cross-translation-unit call edges in the evaluation corpus.
 
-\subsection{LLVM-IR Evidence Recovery}
+\subsection{IR-Primary Evidence and the Tree-Preserving Join}
 
-The AST path handles macro offsets, wrappers, conditions, and arithmetic addresses, but a further challenge remains in our source-file-oriented libclang path: \texttt{static~inline} MMIO accessors defined in kernel headers. When a driver's \texttt{.c} file calls \texttt{dw\_readl(dws, DW\_SPI\_CTRLR0)}, this path records the wrapper call but may not expose the nested \texttt{readl} and address computation as a direct MMIO operation in the analyzed function.
+The AST path handles macro offsets, wrappers, conditions, and arithmetic
+addresses, but two systematic gaps remain in a source-file-oriented libclang
+path: \texttt{static~inline} MMIO accessors defined in kernel headers, and
+\emph{address truth}. The AST models an access such as
+\texttt{readl(mmio + IO\_ID)} through pattern-matched wrapper summaries; the
+address classification it produces (symbolic vs.\ fixed) is an inference, not
+a fact about the compiled artifact.
 
-\reharness{} addresses this blind spot through a complementary IR pass. The translation unit is compiled to LLVM IR with \texttt{clang -O1 -emit-llvm -g}. In the evaluated toolchain, \texttt{-O1} inlines the relevant header accessors. Linux MMIO primitives implemented via inline assembly then expand to recognizable patterns:
+\reharness{} therefore inverts the classical division of labor: the compiled
+artifact is the \emph{primary} source of register-access truth, and the AST
+provides the intent layer on top. Each translation unit is compiled with the
+driver's real Kbuild flags (\texttt{clang -O1 -emit-llvm -g}); when a
+baseline driver is byte-identical to an in-tree source, its Kbuild
+\texttt{.cmd} context is borrowed so the analyzed IR is the artifact as
+built. At \texttt{-O1}, header accessors inline and MMIO primitives surface
+as inline-assembly templates:
 
 \begin{lstlisting}
 ; write: movl $0, $1
@@ -249,25 +262,46 @@ tail call void asm sideeffect "movl $0,$1", "r,*m,~{...}"(...)
 %r = tail call i32 asm sideeffect "movl $1,$0", "=r,*m,~{...}"(...)
 \end{lstlisting}
 
-The IR pass scans for \texttt{asm sideeffect} instructions matching these templates and classifies each as a read or write. It then extracts three pieces of evidence for each operation.
+\textbf{Physical truth extraction.} Every template match yields an
+operation with GEP-verified byte offset (the address chain is walked
+through \texttt{getelementptr} instructions; loop unrolling and peeling are
+deduplicated by a function/line/offset key), width (from the accessor
+family: \texttt{readb}\,$\rightarrow$\,B1 \dots \texttt{readq}\,$\rightarrow$\,B8),
+and provenance: the \texttt{!dbg} chain resolves through
+\texttt{inlinedAt} links to the driver source line, and register offsets are
+mapped back to driver-local macro names via a \texttt{clang -dM} reverse
+index filtered to macros defined in the driver's own sources.
 
-\textbf{Offset recovery.} The pointer operand is traced backward through preceding \texttt{getelementptr} instructions to recover the byte offset from the MMIO base; the \texttt{i64} constant in the GEP index yields the numeric register offset. For example, if the GEP is \texttt{getelementptr i8, ptr \%base, i64 0x60}, the register offset is \texttt{0x60}.
+\textbf{Variable-name recovery.} Debug intrinsics
+(\texttt{llvm.dbg.value} $\rightarrow$ \texttt{!DILocalVariable}) bind SSA
+values to source variables. After inlining, one SSA temporary can carry
+\emph{several} source variables, so name selection is scope-aware: the
+binding whose subprogram scope matches the frame the statement belongs to
+(innermost driver-file frame first) wins; genuinely ambiguous temporaries
+keep synthetic names rather than fabricating provenance.
 
-\textbf{Inline chain resolution.} Debug-location and subprogram metadata reconstruct the chain from the MMIO primitive through the inlined accessor to the outermost non-primitive caller, attributing each IR operation to its source function.
+\textbf{Tree-preserving join.} The AST formal is a tree (Cond/Seq/Loop
+wrapping Read/Write/RMW leaves that carry values, transforms, and guards).
+The join walks this tree and \emph{upgrades} matched leaves in place:
+symbolic addresses become \texttt{Fixed\{offset, name\}} from the IR fact;
+guards, values, and RMW transforms are preserved; read/write pairs that the
+AST modeled as one read-modify-write are consolidated against the IR
+physical pair. Unmatched IR operations (physical accesses the AST missed)
+are appended as pure-IR operations; unmatched AST operations (code the
+compiler eliminated, or library callbacks) are flagged
+\texttt{supplementary}. The join only ever \emph{upgrades} an address to a
+GEP-verified constant; it never downgrades an AST-resolved address to the
+IR's generic runtime-offset encoding.
 
-\textbf{Source provenance.} The source line number is recovered from the outermost \texttt{DILocation}, providing provenance matching the AST evidence format.
-
-The recovered IR operations are merged with the AST extraction by a
-\texttt{(function,~offset)} key. If the AST path already found an operation at
-the same offset in the same function, the IR operation is treated as redundant;
-otherwise it fills an AST blind spot. This conservative merge is useful for the
-header-inline case, but the key does not encode access multiplicity, source
-location, call-site instance, or guard. Same-address repeated accesses can
-therefore collide and are an explicit limitation of the current evidence
-contract. The merge is additive with respect to distinct keys: no AST operation
-is removed or rewritten by the IR pass.
-
-IR evidence supplements rather than replaces the AST: IR exposes inlined MMIO, while macro names, predicates, callback bindings, and functional-state operations remain AST evidence. The DesignWare case study combines both paths to extract 244 evidenced operations across 28 modules.
+IR evidence is primary for addresses, offsets, widths, and physical
+completeness; the AST supplies macro names, predicates, callback bindings,
+functional-state operations, and values. Section~\ref{sec:evaluation}
+quantifies the division: the ablation shows named-fixed addresses come
+exclusively from the IR layer, while recall is preserved only by the AST
+supplement (single-TU IR misses library-mediated accesses), and a
+third-party CodeQL query agrees with the combined extraction on 206 of 209
+line-identified sites, with all three divergences mutually confirmed as
+configuration-gated dead code.
 
 \subsection{Functional-State and Typed-Transaction Extraction}
 
