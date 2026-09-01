@@ -14,7 +14,7 @@ sys.path.insert(0, ROOT)
 from extractor.extractor import ExtractorConfig, extract_ris
 from extractor.formal import walk_leaf_ops
 from extractor.spec import default_bind
-from generator import linux as linux_gen
+from backends import linux as linux_gen
 from verification.subsystem_callback_oracle import _execute
 
 

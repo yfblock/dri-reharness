@@ -1,0 +1,19 @@
+{
+  "functions": [
+    "ftgpio_gpio_ack_irq",
+    "ftgpio_gpio_mask_irq",
+    "ftgpio_gpio_unmask_irq",
+    "ftgpio_gpio_set_irq_type",
+    "ftgpio_gpio_irq_handler",
+    "ftgpio_gpio_set_config",
+    "ftgpio_gpio_probe__gpio_generic_get",
+    "ftgpio_gpio_probe__gpio_generic_get_multiple",
+    "ftgpio_gpio_probe__gpio_generic_set",
+    "ftgpio_gpio_probe__gpio_generic_set_multiple",
+    "ftgpio_gpio_probe__gpio_generic_direction_input",
+    "ftgpio_gpio_probe__gpio_generic_direction_output",
+    "ftgpio_gpio_probe__gpio_generic_get_direction",
+    "ftgpio_gpio_probe",
+    "gpio_ftgpio010_remove"
+  ]
+}

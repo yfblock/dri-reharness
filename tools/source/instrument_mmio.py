@@ -10,8 +10,24 @@ import re, sys
 p = sys.argv[1]
 s = open(p).read()
 orig = s
-# 去除旧 instrumentation (幂等): 删 INSTR 块 + RH_SET_BASE 行
-s = re.sub(r'/\* === reharness MMIO trace instrumentation.*?=== end instrumentation === \*/\n*', '', s, flags=re.S)
+# Remove old instrumentation definitions before inserting one canonical block.
+# Model output can contain a complete block, an incomplete block, or an orphan
+# copy without the marker.  Removing definitions line-by-line handles all
+# three forms without deleting surrounding driver code.
+_OLD_INSTRUMENTATION_LINE = re.compile(
+    r'^\s*(?:'
+    r'/\* === reharness MMIO trace instrumentation.*\*/|'
+    r'/\* === end instrumentation === \*/|'
+    r'static void __iomem \*__rh_mmio_base;|'
+    r'#(?:undef|define)\s+(?:RH_SET_BASE|RH_TRACE_FN|rh_off|'
+    r'readl|writel|readb|writeb|readw|writew|ioread32|iowrite32)'
+    r').*$'
+)
+s = "\n".join(
+    line for line in s.splitlines()
+    if not _OLD_INSTRUMENTATION_LINE.match(line)
+)
+s += "\n"
 s = re.sub(r'\n\tRH_SET_BASE\([^)]*\);', '', s)
 s = re.sub(r'\n\tRH_TRACE_FN\("[A-Za-z_]\w*"\);', '', s)
 
@@ -63,14 +79,34 @@ def inj(m):
 s = re.sub(rf'(\S+)\s*=\s*({_ioremap_pat})\([^;]*\);',
            inj, s, count=1)
 
-# 3) 给生成的 file-local 函数注入精确入口标记。生成器稳定地产生单行函数签名，
-#    后接单独一行的左花括号；仅处理定义，不触碰 prototype 或宏。
+# 3) 给 file-local 函数定义注入精确入口标记。参数列表允许跨行；通过要求
+#    左花括号并排除分号/花括号，避免触碰 prototype 或宏。
+#    只对函数体内含 MMIO 原语调用的函数注入：空段（如纯 remove/释放
+#    函数）不应产生 [rhfn] 边界，否则 trace oracle 会把它们当作意外段。
+_MMIO_CALL = re.compile(
+    r'\b(?:readl|writel|readb|writeb|readw|writew|'
+    r'ioread32|iowrite32)\s*\(')
+
 def inject_function_entry(match):
     name = match.group(2)
+    start = match.end() - 1  # 指向 '{'
+    depth = 0
+    for i in range(start, len(s)):
+        if s[i] == '{':
+            depth += 1
+        elif s[i] == '}':
+            depth -= 1
+            if depth == 0:
+                body = s[start:i]
+                break
+    else:
+        body = ''
+    if not _MMIO_CALL.search(body):
+        return match.group(1)
     return match.group(1) + f'\n\tRH_TRACE_FN("{name}");'
 
 s = re.sub(
-    r'(^static\s+[^\n;]+?\b([A-Za-z_]\w*)\s*\([^;\n]*\)\n\{)',
+    r'(^static\s+[^;{}]*?\b([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\{)',
     inject_function_entry, s, flags=re.M)
 
 if s != orig:

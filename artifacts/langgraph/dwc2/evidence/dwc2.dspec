@@ -1,0 +1,2628 @@
+device dwc2 {
+  class generic_mmio
+  source "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/multisource/dwc2.json"
+  state {
+    base: MmioBase
+    clk: Clock
+    num_irqs: UInt
+    lx_state: UInt
+    hsotg->hibernated: UInt
+    hsotg->bus_suspended: UInt
+    hsotg->op_state: UInt
+    hsotg->lx_state: UInt
+    op_state: UInt
+    hsotg->connected: UInt
+    hsotg->test_mode: UInt
+    hsotg->eps_in[ep]->req: UInt
+    fifo_size: UInt
+    hsotg->eps_out[ep]->req: UInt
+    hsotg->srp_success: UInt
+    hsotg->flags.b.port_connect_status_change: UInt
+    hsotg->flags.b.port_connect_status: UInt
+    channel->qh: UInt
+    hsotg->available_host_channels: UInt
+    hsotg->non_periodic_channels: UInt
+    hsotg->periodic_channels: UInt
+    hcd->self.is_b_host: UInt
+    hsotg->priv: UInt
+    hsotg->status_buf: UInt
+    hsotg->ll_hw_enabled: UInt
+    hsotg->dev: UInt
+    dev->dev.dma_mask: UInt
+    hsotg->phy: UInt
+    hsotg->uphy: UInt
+    hsotg->vbus_supply: UInt
+    hsotg->dr_mode: UInt
+    hw->dev_ep_dirs: UInt
+    hw->op_mode: UInt
+    hw->arch: UInt
+    hw->enable_dynamic_fifo: UInt
+    hw->host_channels: UInt
+    hw->hs_phy_type: UInt
+    hw->fs_phy_type: UInt
+    hw->num_dev_ep: UInt
+    hw->nperio_tx_q_depth: UInt
+    hw->host_perio_tx_q_depth: UInt
+    hw->dev_token_q_depth: UInt
+    hw->max_transfer_size: UInt
+    hw->max_packet_count: UInt
+    hw->i2c_enable: UInt
+    hw->total_fifo_size: UInt
+    hw->lpm_mode: UInt
+    hw->en_multiple_tx_fifo: UInt
+    hw->num_dev_perio_in_ep: UInt
+    hw->num_dev_in_eps: UInt
+    hw->dma_desc_enable: UInt
+    hw->power_optimized: UInt
+    hw->hibernation: UInt
+    hw->utmi_phy_data_width: UInt
+    hw->acg_enable: UInt
+    hw->ipg_isoc_en: UInt
+    hw->service_interval_mode: UInt
+    hw->rx_fifo_size: UInt
+    hw->host_nperio_tx_fifo_size: UInt
+    hw->host_perio_tx_fifo_size: UInt
+    hw->dev_nperio_tx_fifo_size: UInt
+    hsotg->params.otg_caps.hnp_support: UInt
+    hsotg->params.otg_caps.srp_support: UInt
+    hsotg->params.phy_type: UInt
+    hsotg->params.speed: UInt
+    hsotg->params.phy_utmi_width: UInt
+    hsotg->params.power_down: UInt
+    p->lpm: UInt
+    p->lpm_clock_gating: UInt
+    p->besl: UInt
+    p->hird_threshold_en: UInt
+    p->hird_threshold: UInt
+    p->phy_ulpi_ddr: UInt
+    p->phy_ulpi_ext_vbus: UInt
+    p->eusb2_disc: UInt
+    p->enable_dynamic_fifo: UInt
+    p->en_multiple_tx_fifo: UInt
+    p->i2c_enable: UInt
+    p->acg_enable: UInt
+    p->ulpi_fs_ls: UInt
+    p->ts_dline: UInt
+    p->reload_ctl: UInt
+    p->uframe_sched: UInt
+    p->external_id_pin_ctl: UInt
+    p->ipg_isoc_en: UInt
+    p->service_interval: UInt
+    p->max_packet_count: UInt
+    p->max_transfer_size: UInt
+    p->ahbcfg: UInt
+    p->ref_clk_per: UInt
+    p->sof_cnt_wkup_alert: UInt
+    p->host_dma: UInt
+    p->dma_desc_enable: UInt
+    p->dma_desc_fs_enable: UInt
+    p->host_support_fs_ls_low_power: UInt
+    p->host_ls_low_power_phy_clk: UInt
+    p->host_channels: UInt
+    p->host_rx_fifo_size: UInt
+    p->host_nperio_tx_fifo_size: UInt
+    p->host_perio_tx_fifo_size: UInt
+    p->g_dma: UInt
+    p->g_dma_desc: UInt
+    p->g_rx_fifo_size: UInt
+    p->g_np_tx_fifo_size: UInt
+    hsotg->params.eusb2_disc: UInt
+    role_sw_desc.driver_data: UInt
+    role_sw_desc.set: UInt
+    role_sw_desc.allow_userspace_control: UInt
+    hsotg->role_sw: UInt
+    hsotg->gadget_enabled: UInt
+    hsotg->reset_phy_on_wake: UInt
+    hsotg->last_frame_num: UInt
+    hsotg->params.host_dma: UInt
+    hsotg->params.dma_desc_enable: UInt
+    dwc2_hc_driver.free_dev: UInt
+    dwc2_hc_driver.reset_device: UInt
+    dwc2_hc_driver.flags: UInt
+    flags: UInt
+    hcd->has_tt: UInt
+    hcd->rsrc_start: UInt
+    channel->hc_num: UInt
+    hsotg->params.dma_desc_fs_enable: UInt
+    hsotg->otg_port: UInt
+    hsotg->frame_list: UInt
+    hsotg->frame_list_dma: UInt
+    hsotg->periodic_qh_count: UInt
+    hcd->self.otg_port: UInt
+    hcd->self.sg_tablesize: UInt
+    hsotg->hcd_enabled: UInt
+    dwc2->phy_off_for_suspend: UInt
+    p->otg_caps.hnp_support: UInt
+    p->otg_caps.srp_support: UInt
+    p->speed: UInt
+    p->phy_type: UInt
+    p->phy_utmi_width: UInt
+    p->change_speed_quirk: UInt
+    p->power_down: UInt
+    p->no_clock_gating: UInt
+    p->activate_stm_fs_transceiver: UInt
+    p->otg_caps.otg_rev: UInt
+    p->activate_stm_id_vb_detection: UInt
+    urb->transfer_buffer: UInt
+    urb->transfer_flags: UInt
+    hsotg->eps_out[0]->req: UInt
+    req->req.status: UInt
+    dir_in: Bool
+    periodic: Bool
+    hs_ep->req: UInt
+    hsotg->fifo_map: UInt
+    hs_ep->fifo_index: UInt
+    hs_ep->fifo_size: UInt
+    req->zero: UInt
+    req->length: UInt
+    req->buf: UInt
+    req->complete: UInt
+    hsotg->ep0_state: UInt
+    req->actual: UInt
+    req->status: UInt
+    isochronous: Bool
+    target_frame: UInt
+    hs_ep->dir_in: UInt
+    frame_number: UInt
+    hsotg->flags.b.port_suspend_change: UInt
+    hsotg->flags.b.port_l1_change: UInt
+    hsotg->flags.b.port_reset_change: UInt
+    hcd->state: UInt
+    hsotg->flags.d32: UInt
+    hsotg->non_periodic_qh_ptr: UInt
+    chan->xfer_started: UInt
+    channel->xfer_started: UInt
+    urb->packet_count: UInt
+    dwc2_urb->pipe_info.dev_addr: UInt
+    dwc2_urb->pipe_info.ep_num: UInt
+    dwc2_urb->pipe_info.pipe_type: UInt
+    dwc2_urb->pipe_info.pipe_dir: UInt
+    dwc2_urb->pipe_info.maxp: UInt
+    dwc2_urb->pipe_info.maxp_mult: UInt
+    dwc2_urb->priv: UInt
+    dwc2_urb->buf: UInt
+    dwc2_urb->dma: UInt
+    dwc2_urb->length: UInt
+    dwc2_urb->setup_packet: UInt
+    dwc2_urb->setup_dma: UInt
+    dwc2_urb->flags: UInt
+    dwc2_urb->interval: UInt
+    dwc2_urb->status: UInt
+    urb->hcpriv: UInt
+    qh->hsotg: UInt
+    qh->ep_type: UInt
+    qh->ep_is_in: UInt
+    qh->data_toggle: UInt
+    qh->maxp: UInt
+    qh->maxp_mult: UInt
+    qh->do_split: UInt
+    qh->dev_speed: UInt
+    dwc_tt->usb_tt: UInt
+    dwc_tt->usb_tt->hcpriv: UInt
+    dwc_tt->refcount: UInt
+    qh->dwc_tt: UInt
+    qh->device_interval: UInt
+    qh->host_interval: UInt
+    qh->schedule_low_speed: UInt
+    qh->num_hs_transfers: UInt
+    qh->desc_list: UInt
+    hsotg->frame_list_sz: UInt
+    qh->ntd: UInt
+    qh->n_bytes: UInt
+    qh->unreserve_pending: UInt
+    hsotg->periodic_usecs: UInt
+    qh->dwc_tt->refcount: UInt
+    qh->dwc_tt->usb_tt->hcpriv: UInt
+    ep->hcpriv: UInt
+    qtd->urb: UInt
+    qtd->data_toggle: UInt
+    qtd->control_phase: UInt
+    qtd->complete_split: UInt
+    qtd->isoc_split_pos: UInt
+    qtd->isoc_split_offset: UInt
+    qtd->in_process: UInt
+    dwc2_urb->qtd: UInt
+    qh->start_active_frame: UInt
+    qh->next_active_frame: UInt
+    qh->wait_timer_cancel: UInt
+    qtd->qh: UInt
+    qh->channel: UInt
+    chan->speed: UInt
+    chan->max_packet: UInt
+    chan->halt_status: UInt
+    chan->error_state: UInt
+    chan->halt_on_queue: UInt
+    chan->halt_pending: UInt
+    chan->requests: UInt
+    chan->do_ping: UInt
+    chan->data_pid_start: UInt
+    chan->multi_count: UInt
+    dwc2_urb->actual_length: UInt
+    chan->xfer_dma: UInt
+    dma: UInt64
+    chan->xfer_buf: UInt
+    chan->xfer_len: UInt
+    chan->xfer_count: UInt
+    chan->do_split: UInt
+    chan->align_buf: UInt
+    chan->desc_list_addr: UInt
+    chan->desc_list_sz: UInt
+    chan->qh: UInt
+    hsotg->queuing_high_bandwidth: UInt
+    bus->bandwidth_allocated: UInt
+    bus->bandwidth_isoc_reqs: UInt
+    bus->bandwidth_int_reqs: UInt
+    qh->channel->qh: UInt
+    &qtd2->qtd_list_entry->next: UInt
+    &qtd2->qtd_list_entry->prev: UInt
+    urb->hcpriv->priv: UInt
+    qh->channel->halt_status: UInt
+    qh->channel->halt_pending: UInt
+    qh->channel->halt_on_queue: UInt
+    &urb_qtd->qtd_list_entry->next: UInt
+    &urb_qtd->qtd_list_entry->prev: UInt
+    &qtd->qtd_list_entry->next: UInt
+    &qtd->qtd_list_entry->prev: UInt
+    hsotg->new_connection: UInt
+    hsotg->flags.b.port_enable_change: UInt
+    hsotg->flags.b.port_over_current_change: UInt
+    chan->hcint: UInt
+    dwc2_hcd_to_hsotg(hcd)->flags.b.port_connect_status_change: UInt
+    dwc2_hcd_to_hsotg(hcd)->flags.b.port_reset_change: UInt
+    dwc2_hcd_to_hsotg(hcd)->flags.b.port_enable_change: UInt
+    dwc2_hcd_to_hsotg(hcd)->flags.b.port_suspend_change: UInt
+    dwc2_hcd_to_hsotg(hcd)->flags.b.port_l1_change: UInt
+    dwc2_hcd_to_hsotg(hcd)->flags.b.port_over_current_change: UInt
+    hub_desc->bDescLength: UInt
+    hub_desc->bDescriptorType: UInt
+    hub_desc->bNbrPorts: UInt
+    hub_desc->bPwrOn2PwrGood: UInt
+    hub_desc->bHubContrCurrent: UInt
+    dwc2_hcd_to_hsotg(hcd)->params.dma_desc_enable: UInt
+    dwc2_hcd_to_hsotg(hcd)->new_connection: UInt
+    dwc2_hcd_to_hsotg(hcd)->bus_suspended: UInt
+    dwc2_hcd_to_hsotg(hcd)->lx_state: UInt
+    qh->tt_buffer_dirty: UInt
+    qh->channel->qh->ping_state: UInt
+    hr->valid: UInt
+    hsotg->frame_number: UInt
+    gr->valid: UInt
+    hsotg->in_ppd: UInt
+    qh->want_wait: UInt
+    urb->actual_length: UInt
+    chan->xact_pos: UInt
+    chan->complete_split: UInt
+    chan->hub_addr: UInt
+    chan->hub_port: UInt
+    chan->ep_type: UInt
+    chan->ep_is_in: UInt
+    frame_desc->status: UInt
+    hs->lx_state: UInt
+    hs->bus_suspended: UInt
+    hs_req->req.buf: UInt
+    hs_req->saved_req_buf: UInt
+    hs_ep->map_dir: UInt
+    hs_ep->desc_list: UInt
+    hs_ep->desc_list_dma: UInt
+    desc->status: UInt
+    desc->buf: UInt
+    hs_ep->target_frame: UInt
+    hs_ep->frame_overrun: UInt
+    hs_ep->next_desc: UInt
+    next_desc: UInt
+    hs_ep->send_zlp: UInt
+    hs_ep->desc_count: UInt
+    hs_req->req.frame_number: UInt
+    hs_req->req.actual: UInt
+    hs_req->req.status: UInt
+    hs_ep->size_loaded: UInt
+    hs_ep->last_load: UInt
+    hs_ep->fifo_load: UInt
+    hs_ep->total_data: UInt
+    total_data: UInt
+    fifo_load: UInt
+    ep0->dir_in: UInt
+    hsotg->ep0_reply: UInt
+    hsotg->remote_wakeup_allowed: UInt
+    wedged: Bool
+    hs_ep->wedged: UInt
+    hs_ep->halted: UInt
+    ep->req: UInt
+    hsotg->delayed_status: UInt
+    hsotg->gadget.speed: UInt
+    hs_ep->ep.maxpacket: UInt
+    hs_ep->mc: UInt
+    ureq->actual: UInt
+    ureq->frame_number: UInt
+    hs_ep->compl_desc: UInt
+    compl_desc: UInt
+    desc_count: UInt
+    req->frame_number: UInt
+    get_ep_head(hs_ep)->req.status: UInt
+    ep->total_data: UInt
+    ep->fifo_load: UInt
+    halted: Bool
+    hs_ep->isochronous: UInt
+    hs_ep->periodic: UInt
+    hs_ep->interval: UInt
+    hs->ep0_state: UInt
+    hsotg->driver: UInt
+    hsotg->gadget.dev.of_node: UInt
+    hsotg->enabled: UInt
+    gadget->is_selfpowered: UInt
+    enabled: Bool
+    hsotg->gadget.max_speed: UInt
+    hsotg->gadget.ops: UInt
+    hsotg->gadget.otg_caps: UInt
+    hsotg->gadget.lpm_capable: UInt
+    hsotg->gadget.is_otg: UInt
+    hsotg->num_of_eps: UInt
+    hsotg->fifo_mem: UInt
+    hsotg->dedicated_fifos: UInt
+    hsotg->gadget.ep0: UInt
+    hsotg->eps_in[epnum]->dir_in: UInt
+    hsotg->eps_in[epnum]->index: UInt
+    hsotg->eps_in[epnum]->parent: UInt
+    hsotg->eps_in[epnum]->ep.name: UInt
+    hsotg->eps_in[epnum]->ep.ops: UInt
+    hsotg->eps_in[epnum]->ep.caps.type_control: UInt
+    hsotg->eps_in[epnum]->ep.caps.type_iso: UInt
+    hsotg->eps_in[epnum]->ep.caps.type_bulk: UInt
+    hsotg->eps_in[epnum]->ep.caps.type_int: UInt
+    hsotg->eps_in[epnum]->ep.caps.dir_in: UInt
+    hsotg->eps_in[epnum]->ep.caps.dir_out: UInt
+    hsotg->eps_out[epnum]->dir_in: UInt
+    hsotg->eps_out[epnum]->index: UInt
+    hsotg->eps_out[epnum]->parent: UInt
+    hsotg->eps_out[epnum]->ep.name: UInt
+    hsotg->eps_out[epnum]->ep.ops: UInt
+    hsotg->eps_out[epnum]->ep.caps.type_control: UInt
+    hsotg->eps_out[epnum]->ep.caps.type_iso: UInt
+    hsotg->eps_out[epnum]->ep.caps.type_bulk: UInt
+    hsotg->eps_out[epnum]->ep.caps.type_int: UInt
+    hsotg->eps_out[epnum]->ep.caps.dir_in: UInt
+    hsotg->eps_out[epnum]->ep.caps.dir_out: UInt
+    dr->valid: UInt
+  }
+  resource mmio0: MmioResource { required true bind base }
+  resource clk0: ClockResource { required true bind clk }
+  resource irq0: IrqResource { required true }
+  register GOTGCTL: B4 at base + 0x0
+  register GOTGINT: B4 at base + 0x4
+  register GAHBCFG: B4 at base + 0x8
+  register GUSBCFG: B4 at base + 0xc
+  register GRSTCTL: B4 at base + 0x10
+  register GINTSTS: B4 at base + 0x14
+  register GINTMSK: B4 at base + 0x18
+  register GRXSTSP: B4 at base + 0x20
+  register GRXFSIZ: B4 at base + 0x24
+  register GNPTXFSIZ: B4 at base + 0x28
+  register GNPTXSTS: B4 at base + 0x2c
+  register GI2CCTL: B4 at base + 0x30
+  register GGPIO: B4 at base + 0x38
+  register GSNPSID: B4 at base + 0x40
+  register GHWCFG1: B4 at base + 0x44
+  register GHWCFG2: B4 at base + 0x48
+  register GHWCFG3: B4 at base + 0x4c
+  register GHWCFG4: B4 at base + 0x50
+  register GLPMCFG: B4 at base + 0x54
+  register GPWRDN: B4 at base + 0x58
+  register GDFIFOCFG: B4 at base + 0x5c
+  register GREFCLK: B4 at base + 0x64
+  register GINTMSK2: B4 at base + 0x68
+  register GINTSTS2: B4 at base + 0x6c
+  register HPTXFSIZ: B4 at base + 0x100
+  register HCFG: B4 at base + 0x400
+  register HFIR: B4 at base + 0x404
+  register HFNUM: B4 at base + 0x408
+  register HPTXSTS: B4 at base + 0x410
+  register HAINT: B4 at base + 0x414
+  register HAINTMSK: B4 at base + 0x418
+  register HFLBADDR: B4 at base + 0x41c
+  register HPRT0: B4 at base + 0x440
+  register DCFG: B4 at base + 0x800
+  register DCTL: B4 at base + 0x804
+  register DSTS: B4 at base + 0x808
+  register DIEPMSK: B4 at base + 0x810
+  register DOEPMSK: B4 at base + 0x814
+  register DAINT: B4 at base + 0x818
+  register DAINTMSK: B4 at base + 0x81c
+  register DIEPEMPMSK: B4 at base + 0x834
+  register DIEPCTL0: B4 at base + 0x900
+  register DOEPCTL0: B4 at base + 0xb00
+  register DOEPTSIZ0: B4 at base + 0xb10
+  register PCGCTL: B4 at base + 0xe00
+  register PCGCCTL1: B4 at base + 0xe04
+  invariant forall line: UInt. line < num_irqs -> valid_interrupt_line(line)
+  function dwc2_backup_global_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core.c:37"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_backup_global_registers
+  }
+  function dwc2_restore_global_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core.c:70"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_restore_global_registers
+    effect writes_register(GINTSTS)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(PCGCCTL1)
+    effect writes_register(GLPMCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(GI2CCTL)
+  }
+  function dwc2_enter_partial_power_down(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core.c:132"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_enter_partial_power_down
+  }
+  function dwc2_restore_essential_regs(hsotg: DeviceState, rmode: UInt, is_host: UInt) -> Void {
+    role helper
+    source "core.c:147"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_restore_essential_regs
+    effect writes_register(PCGCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(HCFG)
+    effect writes_register(DCFG)
+  }
+  function dwc2_hib_restore_common(hsotg: DeviceState, rem_wakeup: UInt, is_host: UInt) -> Void {
+    role helper
+    source "core.c:215"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hib_restore_common
+    effect writes_register(GPWRDN)
+    effect writes_register(GINTSTS)
+  }
+  function dwc2_core_reset(hsotg: DeviceState, skip_wait: UInt) -> UInt {
+    role reset
+    source "core.c:399"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_core_reset
+    effect writes_register(GRSTCTL)
+    effect resets_device()
+    ensure device_state == RESET
+  }
+  function dwc2_clear_force_mode(hsotg: DeviceState) -> Void {
+    role helper
+    source "core.c:556"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_clear_force_mode
+    effect writes_register(GUSBCFG)
+  }
+  function dwc2_force_dr_mode(hsotg: DeviceState) -> Void {
+    role helper
+    source "core.c:577"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_force_dr_mode
+  }
+  function dwc2_is_controller_alive(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core.c:840"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_is_controller_alive
+  }
+  function dwc2_disable_global_interrupts(hsotg: DeviceState) -> Void {
+    role helper
+    source "core.c:868"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_disable_global_interrupts
+    effect writes_register(GAHBCFG)
+  }
+  function dwc2_hw_is_host(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core.c:896"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hw_is_host
+  }
+  function dwc2_hw_is_device(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core.c:905"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hw_is_device
+  }
+  function dwc2_set_clock_switch_timer(hsotg: DeviceState) -> Void {
+    role helper
+    source "core.c:985"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_set_clock_switch_timer
+    effect writes_register(GRSTCTL)
+  }
+  function dwc2_phy_init(hsotg: DeviceState, select_phy: UInt) -> UInt {
+    role init
+    source "core.c:1167"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_phy_init
+    effect writes_register(GUSBCFG)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_handle_usb_port_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:52"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_usb_port_intr
+    effect writes_register(HPRT0)
+  }
+  function dwc2_handle_mode_mismatch_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:67"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_mode_mismatch_intr
+    effect writes_register(GINTSTS)
+  }
+  function dwc2_handle_otg_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:82"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_otg_intr
+    effect writes_register(PCGCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GINTMSK)
+    effect writes_register(GOTGINT)
+  }
+  function dwc2_handle_conn_id_status_change_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:259"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_conn_id_status_change_intr
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+  }
+  function dwc2_handle_session_req_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:292"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_session_req_intr
+    effect writes_register(GINTSTS)
+    effect writes_register(HPRT0)
+  }
+  function dwc2_handle_wakeup_detected_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:414"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_wakeup_detected_intr
+    effect writes_register(GINTSTS)
+    effect writes_register(DCTL)
+  }
+  function dwc2_handle_disconnect_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:494"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_disconnect_intr
+    effect writes_register(GINTSTS)
+  }
+  function dwc2_handle_usb_suspend_intr(hsotg: DeviceState) -> Void {
+    role suspend
+    source "core_intr.c:514"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_usb_suspend_intr
+    effect writes_register(GINTSTS)
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function dwc2_handle_lpm_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "core_intr.c:602"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_lpm_intr
+    effect writes_register(GINTSTS)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_read_common_intr(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core_intr.c:669"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_read_common_intr
+  }
+  function dwc_handle_gpwrdn_disc_det(hsotg: DeviceState, gpwrdn: UInt) -> Void {
+    role helper
+    source "core_intr.c:698"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc_handle_gpwrdn_disc_det
+    effect writes_register(GPWRDN)
+  }
+  function dwc2_handle_gpwrdn_intr(hsotg: DeviceState) -> UInt {
+    role helper
+    source "core_intr.c:767"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_gpwrdn_intr
+    effect writes_register(GPWRDN)
+  }
+  function dwc2_handle_common_intr(irq: UInt, dev: DeviceState) -> UInt {
+    role interrupt_handler
+    source "core_intr.c:844"
+    context irq
+    callback irq_handler.handler
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_common_intr
+    effect writes_register(GPWRDN)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GUSBCFG)
+    effect writes_register(DCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DAINTMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(HPRT0)
+    effect writes_register(PCGCTL)
+    effect writes_register(GRSTCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(GLPMCFG)
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function dwc2_get_dr_mode(hsotg: DeviceState) -> UInt {
+    role helper
+    source "platform.c:52"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_get_dr_mode
+  }
+  function dwc2_driver_remove(dev: DeviceState) -> Void {
+    role remove
+    source "platform.c:304"
+    context thread
+    callback platform_driver.remove
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_driver_remove
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(HPRT0)
+    effect writes_register(GINTMSK)
+    effect writes_register(GAHBCFG)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_driver_shutdown(dev: DeviceState) -> Void {
+    role remove
+    source "platform.c:368"
+    context thread
+    callback platform_driver.shutdown
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_driver_shutdown
+    effect writes_register(GAHBCFG)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_check_core_version(hsotg: DeviceState) -> UInt {
+    role helper
+    source "platform.c:402"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_check_core_version
+  }
+  function dwc2_driver_probe(dev: DeviceState) -> UInt {
+    role probe
+    source "platform.c:439"
+    context boot
+    callback platform_driver.probe
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    require resources_available
+    ris dwc2_driver_probe
+    effect writes_register(GRSTCTL)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GGPIO)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GINTMSK)
+    effect writes_register(DCTL)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_suspend(dev: DeviceState) -> UInt {
+    role suspend
+    source "platform.c:649"
+    context sleepable
+    callback dev_pm_ops.suspend
+    bind dev: DeviceState from dwc2
+    bind base: MmioBase from dwc2->regs
+    ris dwc2_suspend
+    effect writes_register(GINTMSK)
+    effect writes_register(GINTSTS)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GGPIO)
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function dwc2_resume(dev: DeviceState) -> UInt {
+    role resume
+    source "platform.c:730"
+    context sleepable
+    callback dev_pm_ops.resume
+    bind dev: DeviceState from dwc2
+    bind base: MmioBase from dwc2->regs
+    ris dwc2_resume
+    effect writes_register(GGPIO)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect resumes_device()
+    ensure device_state == READY
+  }
+  function dwc2_ovr_init(hsotg: DeviceState) -> Void {
+    role init
+    source "drd.c:20"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_ovr_init
+    effect writes_register(GOTGCTL)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_ovr_avalid(hsotg: DeviceState, valid: UInt) -> UInt {
+    role helper
+    source "drd.c:42"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_ovr_avalid
+    effect writes_register(GOTGCTL)
+  }
+  function dwc2_ovr_bvalid(hsotg: DeviceState, valid: UInt) -> UInt {
+    role helper
+    source "drd.c:64"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_ovr_bvalid
+    effect writes_register(GOTGCTL)
+  }
+  function dwc2_drd_role_sw_set(sw: DeviceState, role: UInt) -> UInt {
+    role unknown
+    source "drd.c:86"
+    context thread
+    callback usb_role_switch_desc.set
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_drd_role_sw_set
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GUSBCFG)
+  }
+  function dwc2_drd_suspend(hsotg: DeviceState) -> Void {
+    role suspend
+    source "drd.c:204"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_drd_suspend
+    effect writes_register(GINTMSK)
+    effect writes_register(GINTSTS)
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function dwc2_drd_resume(hsotg: DeviceState) -> Void {
+    role resume
+    source "drd.c:217"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_drd_resume
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect resumes_device()
+    ensure device_state == READY
+  }
+  function dwc2_set_bcm_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:18"
+    context thread
+    ris dwc2_set_bcm_params
+  }
+  function dwc2_set_his_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:28"
+    context thread
+    ris dwc2_set_his_params
+  }
+  function dwc2_set_jz4775_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:51"
+    context thread
+    ris dwc2_set_jz4775_params
+  }
+  function dwc2_set_loongson_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:63"
+    context thread
+    ris dwc2_set_loongson_params
+  }
+  function dwc2_set_x1600_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:71"
+    context thread
+    ris dwc2_set_x1600_params
+  }
+  function dwc2_set_x2000_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:84"
+    context thread
+    ris dwc2_set_x2000_params
+  }
+  function dwc2_set_s3c6400_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:100"
+    context thread
+    ris dwc2_set_s3c6400_params
+  }
+  function dwc2_set_socfpga_agilex_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:109"
+    context thread
+    ris dwc2_set_socfpga_agilex_params
+  }
+  function dwc2_set_rk_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:117"
+    context thread
+    ris dwc2_set_rk_params
+  }
+  function dwc2_set_ltq_danube_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:136"
+    context thread
+    ris dwc2_set_ltq_danube_params
+  }
+  function dwc2_set_ltq_ase_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:144"
+    context thread
+    ris dwc2_set_ltq_ase_params
+  }
+  function dwc2_set_ltq_xrx200_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:157"
+    context thread
+    ris dwc2_set_ltq_xrx200_params
+  }
+  function dwc2_set_amlogic_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:168"
+    context thread
+    ris dwc2_set_amlogic_params
+  }
+  function dwc2_set_amlogic_g12a_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:185"
+    context thread
+    ris dwc2_set_amlogic_g12a_params
+  }
+  function dwc2_set_amlogic_a1_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:195"
+    context thread
+    ris dwc2_set_amlogic_a1_params
+  }
+  function dwc2_set_amcc_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:214"
+    context thread
+    ris dwc2_set_amcc_params
+  }
+  function dwc2_set_cv1800_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:221"
+    context thread
+    ris dwc2_set_cv1800_params
+  }
+  function dwc2_set_stm32f4x9_fsotg_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:240"
+    context thread
+    ris dwc2_set_stm32f4x9_fsotg_params
+  }
+  function dwc2_set_stm32f7_hsotg_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:256"
+    context thread
+    ris dwc2_set_stm32f7_hsotg_params
+  }
+  function dwc2_set_stm32mp15_fsotg_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:265"
+    context thread
+    ris dwc2_set_stm32mp15_fsotg_params
+  }
+  function dwc2_set_stm32mp15_hsotg_params(hsotg: DeviceState) -> Void {
+    role unknown
+    source "params.c:287"
+    context thread
+    ris dwc2_set_stm32mp15_hsotg_params
+  }
+  function dwc2_check_params(hsotg: DeviceState) -> Void {
+    role helper
+    source "params.c:819"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_check_params
+  }
+  function dwc2_get_host_hwparams(hsotg: DeviceState) -> Void {
+    role helper
+    source "params.c:893"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_get_host_hwparams
+  }
+  function dwc2_get_dev_hwparams(hsotg: DeviceState) -> Void {
+    role helper
+    source "params.c:918"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_get_dev_hwparams
+  }
+  function dwc2_get_hwparams(hsotg: DeviceState) -> UInt {
+    role helper
+    source "params.c:950"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_get_hwparams
+  }
+  function dwc2_init_params(hsotg: DeviceState) -> UInt {
+    role init
+    source "params.c:1055"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_init_params
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_enable_common_interrupts(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd.c:42"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_enable_common_interrupts
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+  }
+  function dwc2_gahbcfg_init(hsotg: DeviceState) -> UInt {
+    role init
+    source "hcd.c:69"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gahbcfg_init
+    effect writes_register(GAHBCFG)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_gusbcfg_init(hsotg: DeviceState) -> Void {
+    role init
+    source "hcd.c:103"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gusbcfg_init
+    effect writes_register(GUSBCFG)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_calc_frame_interval(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:326"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_calc_frame_interval
+  }
+  function dwc2_hc_enable_slave_ints(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:495"
+    context thread
+    ris dwc2_hc_enable_slave_ints
+  }
+  function dwc2_hc_enable_dma_ints(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:573"
+    context thread
+    ris dwc2_hc_enable_dma_ints
+  }
+  function dwc2_hc_enable_ints(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:610"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hc_enable_ints
+    effect writes_register(HAINTMSK)
+    effect writes_register(GINTMSK)
+  }
+  function dwc2_hc_halt(hsotg: DeviceState, chan: DeviceState, halt_status: UInt) -> Void {
+    role helper
+    source "hcd.c:766"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hc_halt
+  }
+  function dwc2_hc_set_even_odd_frame(hsotg: DeviceState, chan: DeviceState, hcchar: DeviceState) -> Void {
+    role helper
+    source "hcd.c:958"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hc_set_even_odd_frame
+  }
+  function dwc2_hc_write_packet(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:1093"
+    context thread
+    ris dwc2_hc_write_packet
+  }
+  function dwc2_hc_do_ping(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:1139"
+    context thread
+    ris dwc2_hc_do_ping
+  }
+  function dwc2_hc_start_transfer(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:1192"
+    context thread
+    ris dwc2_hc_start_transfer
+  }
+  function dwc2_hc_start_transfer_ddma(hsotg: DeviceState, chan: DeviceState) -> Void {
+    role helper
+    source "hcd.c:1407"
+    context thread
+    ris dwc2_hc_start_transfer_ddma
+  }
+  function dwc2_hc_continue_transfer(hsotg: DeviceState, chan: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:1496"
+    context thread
+    ris dwc2_hc_continue_transfer
+  }
+  function dwc2_hcd_disconnect(hsotg: DeviceState, force: UInt) -> Void {
+    role helper
+    source "hcd.c:1740"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_disconnect
+    effect writes_register(GINTMSK)
+    effect writes_register(GINTSTS)
+    effect writes_register(HPRT0)
+  }
+  function dwc2_hcd_stop(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd.c:1825"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_stop
+    effect writes_register(HPRT0)
+  }
+  function dwc2_hcd_urb_enqueue(hsotg: DeviceState, urb: DeviceState, qh: DeviceState, qtd: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:1844"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_urb_enqueue
+  }
+  function dwc2_hcd_urb_dequeue(hsotg: DeviceState, urb: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:1904"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_urb_dequeue
+  }
+  function dwc2_core_init(hsotg: DeviceState, initial_setup: UInt) -> UInt {
+    role init
+    source "hcd.c:2041"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_core_init
+    effect writes_register(GUSBCFG)
+    effect writes_register(GOTGCTL)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_core_host_init(hsotg: DeviceState) -> Void {
+    role init
+    source "hcd.c:2129"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_core_host_init
+    effect writes_register(GUSBCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(HCFG)
+    effect writes_register(HFIR)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GRSTCTL)
+    effect writes_register(HPRT0)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_map_urb_for_dma(hcd: DeviceState, urb: DeviceState, mem_flags: UInt) -> UInt {
+    role setup_queue
+    source "hcd.c:2509"
+    context thread
+    callback hc_driver.map_urb_for_dma
+    ris dwc2_map_urb_for_dma
+    effect configures_queue(queue)
+    ensure queue_ready[queue] == true
+  }
+  function dwc2_unmap_urb_for_dma(hcd: DeviceState, urb: DeviceState) -> Void {
+    role remove
+    source "hcd.c:2529"
+    context thread
+    callback hc_driver.unmap_urb_for_dma
+    ris dwc2_unmap_urb_for_dma
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_conn_id_status_change(work: DeviceState) -> Void {
+    role unknown
+    source "hcd.c:3137"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_conn_id_status_change
+    effect writes_register(GUSBCFG)
+    effect writes_register(GRSTCTL)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(DAINTMSK)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(DCTL)
+    effect writes_register(DCFG)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect writes_register(GREFCLK)
+    effect writes_register(PCGCCTL1)
+    effect writes_register(HPRT0)
+  }
+  function dwc2_wakeup_detected(t: DeviceState) -> Void {
+    role unknown
+    source "hcd.c:3228"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_wakeup_detected
+    effect writes_register(HPRT0)
+  }
+  function dwc2_port_suspend(hsotg: DeviceState, windex: UInt) -> UInt {
+    role suspend
+    source "hcd.c:3271"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_port_suspend
+    effect writes_register(GOTGCTL)
+    effect writes_register(HPRT0)
+    effect writes_register(PCGCTL)
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function dwc2_port_resume(hsotg: DeviceState) -> UInt {
+    role resume
+    source "hcd.c:3345"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_port_resume
+    effect writes_register(PCGCTL)
+    effect writes_register(HPRT0)
+    effect resumes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hcd_hub_control(hsotg: DeviceState, typereq: UInt, wvalue: UInt, windex: UInt, buf: DeviceState, wlength: UInt) -> UInt {
+    role helper
+    source "hcd.c:3382"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_hub_control
+    effect writes_register(HPRT0)
+    effect writes_register(HCFG)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_hcd_get_frame_number(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:3775"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_get_frame_number
+  }
+  function dwc2_hcd_get_future_frame_number(hsotg: DeviceState, us: UInt) -> UInt {
+    role helper
+    source "hcd.c:3786"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_get_future_frame_number
+  }
+  function dwc2_hcd_reset_func(work: DeviceState) -> Void {
+    role reset
+    source "hcd.c:4206"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_reset_func
+    effect writes_register(HPRT0)
+    effect resets_device()
+    ensure device_state == RESET
+  }
+  function _dwc2_hcd_start(hcd: DeviceState) -> UInt {
+    role init
+    source "hcd.c:4247"
+    context thread
+    callback hc_driver.start
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_start
+    effect writes_register(GUSBCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(HCFG)
+    effect writes_register(HFIR)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(HPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GRSTCTL)
+    effect writes_register(PCGCCTL1)
+    effect writes_register(HPRT0)
+    effect writes_register(GINTMSK)
+    effect writes_register(HAINTMSK)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function _dwc2_hcd_stop(hcd: DeviceState) -> Void {
+    role remove
+    source "hcd.c:4296"
+    context thread
+    callback hc_driver.stop
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_stop
+    effect writes_register(GINTMSK)
+    effect writes_register(GINTSTS)
+    effect writes_register(HPRT0)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function _dwc2_hcd_suspend(hcd: DeviceState) -> UInt {
+    role suspend
+    source "hcd.c:4325"
+    context sleepable
+    callback hc_driver.bus_suspend
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_suspend
+    effect writes_register(HPRT0)
+    effect writes_register(PCGCTL)
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function _dwc2_hcd_resume(hcd: DeviceState) -> UInt {
+    role resume
+    source "hcd.c:4407"
+    context sleepable
+    callback hc_driver.bus_resume
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_resume
+    effect writes_register(PCGCTL)
+    effect writes_register(HPRT0)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GRSTCTL)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(HCFG)
+    effect writes_register(HFIR)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(HPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(PCGCCTL1)
+    effect writes_register(HAINTMSK)
+    effect resumes_device()
+    ensure device_state == READY
+  }
+  function _dwc2_hcd_urb_enqueue(hcd: DeviceState, urb: DeviceState, mem_flags: UInt) -> UInt {
+    role setup_queue
+    source "hcd.c:4613"
+    context thread
+    callback hc_driver.urb_enqueue
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_urb_enqueue
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(HPRT0)
+    effect writes_register(HFLBADDR)
+    effect writes_register(HCFG)
+    effect writes_register(GINTMSK)
+    effect configures_queue(queue)
+    ensure queue_ready[queue] == true
+  }
+  function _dwc2_hcd_urb_dequeue(hcd: DeviceState, urb: DeviceState, status: UInt) -> UInt {
+    role remove
+    source "hcd.c:4801"
+    context thread
+    callback hc_driver.urb_dequeue
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_urb_dequeue
+    effect writes_register(GINTMSK)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function _dwc2_hcd_endpoint_disable(hcd: DeviceState, ep: DeviceState) -> Void {
+    role remove
+    source "hcd.c:4849"
+    context thread
+    callback hc_driver.endpoint_disable
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_endpoint_disable
+    effect writes_register(GINTMSK)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function _dwc2_hcd_endpoint_reset(hcd: DeviceState, ep: DeviceState) -> Void {
+    role reset
+    source "hcd.c:4865"
+    context thread
+    callback hc_driver.endpoint_reset
+    ris _dwc2_hcd_endpoint_reset
+    effect resets_device()
+    ensure device_state == RESET
+  }
+  function _dwc2_hcd_irq(hcd: DeviceState) -> UInt {
+    role interrupt_handler
+    source "hcd.c:4887"
+    context irq
+    callback hc_driver.irq
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_irq
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(HPRT0)
+    effect writes_register(HFIR)
+    effect writes_register(GUSBCFG)
+    effect writes_register(HCFG)
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function _dwc2_hcd_hub_control(hcd: DeviceState, typereq: UInt, wvalue: UInt, windex: UInt, buf: DeviceState, wlength: UInt) -> UInt {
+    role write_config
+    source "hcd.c:4909"
+    context thread
+    callback hc_driver.hub_control
+    ris _dwc2_hcd_hub_control
+    effect writes_register(HPRT0)
+    effect writes_register(HCFG)
+    effect writes_register(PCGCTL)
+    effect writes_config(offset)
+  }
+  function _dwc2_hcd_clear_tt_buffer_complete(hcd: DeviceState, ep: DeviceState) -> Void {
+    role remove
+    source "hcd.c:4918"
+    context thread
+    callback hc_driver.clear_tt_buffer_complete
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris _dwc2_hcd_clear_tt_buffer_complete
+    effect writes_register(GINTMSK)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_free_dev(hcd: DeviceState, udev: DeviceState) -> Void {
+    role remove
+    source "hcd.c:4953"
+    context thread
+    callback hc_driver.free_dev
+    ris dwc2_free_dev
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_reset_device(hcd: DeviceState, udev: DeviceState) -> UInt {
+    role reset
+    source "hcd.c:4970"
+    context thread
+    callback hc_driver.reset_device
+    ris dwc2_reset_device
+    effect resets_device()
+    ensure device_state == RESET
+  }
+  function dwc2_hcd_init(hsotg: DeviceState) -> UInt {
+    role init
+    source "hcd.c:5103"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_init
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_backup_host_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:5406"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_backup_host_registers
+  }
+  function dwc2_restore_host_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:5442"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_restore_host_registers
+    effect writes_register(HCFG)
+    effect writes_register(HFLBADDR)
+    effect writes_register(HAINTMSK)
+    effect writes_register(HPRT0)
+    effect writes_register(HFIR)
+    effect writes_register(HPTXFSIZ)
+  }
+  function dwc2_host_backup_critical_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:5479"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_backup_critical_registers
+  }
+  function dwc2_host_restore_critical_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:5501"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_restore_critical_registers
+    effect writes_register(GINTSTS)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(PCGCCTL1)
+    effect writes_register(GLPMCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(GI2CCTL)
+  }
+  function dwc2_host_enter_hibernation(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:5527"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_enter_hibernation
+    effect writes_register(HPRT0)
+    effect writes_register(GPWRDN)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_host_exit_hibernation(hsotg: DeviceState, rem_wakeup: UInt, reset: UInt) -> UInt {
+    role helper
+    source "hcd.c:5633"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_exit_hibernation
+    effect writes_register(GPWRDN)
+    effect writes_register(PCGCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(HCFG)
+    effect writes_register(DCFG)
+    effect writes_register(HPRT0)
+  }
+  function dwc2_host_enter_partial_power_down(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd.c:5783"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_enter_partial_power_down
+    effect writes_register(HPRT0)
+    effect writes_register(GINTSTS)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_host_exit_partial_power_down(hsotg: DeviceState, rem_wakeup: UInt, restore: UInt) -> UInt {
+    role helper
+    source "hcd.c:5848"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_exit_partial_power_down
+    effect writes_register(PCGCTL)
+    effect writes_register(HPRT0)
+  }
+  function dwc2_host_enter_clock_gating(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd.c:5920"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_enter_clock_gating
+    effect writes_register(HPRT0)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_host_exit_clock_gating(hsotg: DeviceState, rem_wakeup: UInt) -> Void {
+    role helper
+    source "hcd.c:5956"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_host_exit_clock_gating
+    effect writes_register(PCGCTL)
+    effect writes_register(HPRT0)
+  }
+  function dwc2_sof_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:110"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_sof_intr
+    effect writes_register(GINTSTS)
+  }
+  function dwc2_rx_fifo_level_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:156"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_rx_fifo_level_intr
+  }
+  function dwc2_port_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:325"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_port_intr
+    effect writes_register(HPRT0)
+    effect writes_register(HCFG)
+  }
+  function dwc2_get_actual_xfer_length(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState, halt_status: UInt, short_read: DeviceState) -> UInt {
+    role helper
+    source "hcd_intr.c:406"
+    context thread
+    ris dwc2_get_actual_xfer_length
+  }
+  function dwc2_update_urb_state(hsotg: DeviceState, chan: DeviceState, chnum: UInt, urb: DeviceState, qtd: DeviceState) -> UInt {
+    role helper
+    source "hcd_intr.c:460"
+    context thread
+    ris dwc2_update_urb_state
+  }
+  function dwc2_hcd_save_data_toggle(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:510"
+    context thread
+    ris dwc2_hcd_save_data_toggle
+  }
+  function dwc2_update_isoc_urb_state(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState, halt_status: UInt) -> UInt {
+    role helper
+    source "hcd_intr.c:554"
+    context thread
+    ris dwc2_update_isoc_urb_state
+  }
+  function dwc2_deactivate_qh(hsotg: DeviceState, qh: DeviceState, free_qtd: UInt) -> Void {
+    role helper
+    source "hcd_intr.c:628"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_deactivate_qh
+  }
+  function dwc2_release_channel(hsotg: DeviceState, chan: DeviceState, qtd: DeviceState, halt_status: UInt) -> Void {
+    role helper
+    source "hcd_intr.c:674"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_release_channel
+    effect writes_register(HAINTMSK)
+  }
+  function dwc2_halt_channel(hsotg: DeviceState, chan: DeviceState, qtd: DeviceState, halt_status: UInt) -> Void {
+    role helper
+    source "hcd_intr.c:773"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_halt_channel
+    effect writes_register(GINTMSK)
+  }
+  function dwc2_complete_periodic_xfer(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState, halt_status: UInt) -> Void {
+    role helper
+    source "hcd_intr.c:883"
+    context thread
+    ris dwc2_complete_periodic_xfer
+  }
+  function dwc2_xfercomp_isoc_split_in(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> UInt {
+    role helper
+    source "hcd_intr.c:900"
+    context thread
+    ris dwc2_xfercomp_isoc_split_in
+  }
+  function dwc2_hc_xfercomp_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:958"
+    context thread
+    ris dwc2_hc_xfercomp_intr
+  }
+  function dwc2_update_urb_state_abn(hsotg: DeviceState, chan: DeviceState, chnum: UInt, urb: DeviceState, qtd: DeviceState, halt_status: UInt) -> Void {
+    role helper
+    source "hcd_intr.c:1141"
+    context thread
+    ris dwc2_update_urb_state_abn
+  }
+  function dwc2_hc_nak_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1178"
+    context thread
+    ris dwc2_hc_nak_intr
+  }
+  function dwc2_hc_nyet_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1362"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hc_nyet_intr
+  }
+  function dwc2_hc_babble_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1486"
+    context thread
+    ris dwc2_hc_babble_intr
+  }
+  function dwc2_hc_ahberr_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1520"
+    context thread
+    ris dwc2_hc_ahberr_intr
+  }
+  function dwc2_hc_xacterr_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1624"
+    context thread
+    ris dwc2_hc_xacterr_intr
+  }
+  function dwc2_hc_frmovrun_intr(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1682"
+    context thread
+    ris dwc2_hc_frmovrun_intr
+  }
+  function dwc2_hc_chhltd_intr_dma(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:1800"
+    context thread
+    ris dwc2_hc_chhltd_intr_dma
+  }
+  function dwc2_hc_intr(hsotg: DeviceState) -> Void {
+    role helper
+    source "hcd_intr.c:2166"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hc_intr
+  }
+  function dwc2_handle_hcd_intr(hsotg: DeviceState) -> UInt {
+    role helper
+    source "hcd_intr.c:2202"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_handle_hcd_intr
+  }
+  function dwc2_pick_first_frame(hsotg: DeviceState, qh: DeviceState) -> Void {
+    role helper
+    source "hcd_queue.c:1020"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_pick_first_frame
+  }
+  function dwc2_do_reserve(hsotg: DeviceState, qh: DeviceState) -> UInt {
+    role helper
+    source "hcd_queue.c:1135"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_do_reserve
+  }
+  function dwc2_unreserve_timer_fn(t: DeviceState) -> Void {
+    role unknown
+    source "hcd_queue.c:1216"
+    context thread
+    ris dwc2_unreserve_timer_fn
+  }
+  function dwc2_schedule_periodic(hsotg: DeviceState, qh: DeviceState) -> UInt {
+    role helper
+    source "hcd_queue.c:1292"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_schedule_periodic
+  }
+  function dwc2_wait_timer_fn(t: DeviceState) -> UInt {
+    role unknown
+    source "hcd_queue.c:1404"
+    context thread
+    callback hrtimer.function
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_wait_timer_fn
+    effect writes_register(GINTMSK)
+  }
+  function dwc2_qh_init(hsotg: DeviceState, qh: DeviceState, urb: DeviceState, mem_flags: UInt) -> Void {
+    role init
+    source "hcd_queue.c:1442"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_qh_init
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hcd_qh_create(hsotg: DeviceState, urb: DeviceState, mem_flags: UInt) -> UInt {
+    role helper
+    source "hcd_queue.c:1578"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_qh_create
+  }
+  function dwc2_hcd_qh_deactivate(hsotg: DeviceState, qh: DeviceState, sched_next_periodic_split: UInt) -> Void {
+    role helper
+    source "hcd_queue.c:1910"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_qh_deactivate
+  }
+  function dwc2_calc_starting_frame(hsotg: DeviceState, qh: DeviceState, skip_frames: DeviceState) -> UInt {
+    role helper
+    source "hcd_ddma.c:398"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_calc_starting_frame
+  }
+  function dwc2_recalc_initial_desc_idx(hsotg: DeviceState, qh: DeviceState) -> UInt {
+    role init
+    source "hcd_ddma.c:460"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_recalc_initial_desc_idx
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_init_isoc_dma_desc(hsotg: DeviceState, qh: DeviceState, skip_frames: UInt) -> Void {
+    role init
+    source "hcd_ddma.c:550"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_init_isoc_dma_desc
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hcd_start_xfer_ddma(hsotg: DeviceState, qh: DeviceState) -> Void {
+    role helper
+    source "hcd_ddma.c:817"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hcd_start_xfer_ddma
+  }
+  function dwc2_cmpl_host_isoc_dma_desc(hsotg: DeviceState, chan: DeviceState, qtd: DeviceState, qh: DeviceState, idx: UInt) -> UInt {
+    role helper
+    source "hcd_ddma.c:862"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_cmpl_host_isoc_dma_desc
+  }
+  function dwc2_process_non_isoc_desc(hsotg: DeviceState, chan: DeviceState, chnum: UInt, qtd: DeviceState, desc_num: UInt, halt_status: UInt, xfer_done: DeviceState) -> UInt {
+    role helper
+    source "hcd_ddma.c:1126"
+    context thread
+    ris dwc2_process_non_isoc_desc
+  }
+  function dwc2_complete_non_isoc_xfer_ddma(hsotg: DeviceState, chan: DeviceState, chnum: UInt, halt_status: UInt) -> Void {
+    role helper
+    source "hcd_ddma.c:1198"
+    context thread
+    ris dwc2_complete_non_isoc_xfer_ddma
+  }
+  function dwc2_clear_bit(hsotg: DeviceState, offset: UInt, val: UInt) -> Void {
+    role helper
+    source "gadget.c:56"
+    context thread
+    ris dwc2_clear_bit
+  }
+  function dwc2_hsotg_en_gsint(hsotg: DeviceState, ints: UInt) -> Void {
+    role helper
+    source "gadget.c:161"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_en_gsint
+    effect writes_register(GINTMSK)
+  }
+  function dwc2_gadget_wkup_alert_handler(hsotg: DeviceState) -> Void {
+    role interrupt_handler
+    source "gadget.c:267"
+    context irq
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_wkup_alert_handler
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function dwc2_hsotg_init_fifo(hsotg: DeviceState) -> Void {
+    role init
+    source "gadget.c:308"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_init_fifo
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(GRSTCTL)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hsotg_ep_queue_lock(ep: DeviceState, req: DeviceState, gfp_flags: UInt) -> UInt {
+    role setup_queue
+    source "gadget.c:1526"
+    context thread
+    callback usb_ep_ops.queue
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_ep_queue_lock
+    effect writes_register(GLPMCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(DAINTMSK)
+    effect configures_queue(queue)
+    ensure queue_ready[queue] == true
+  }
+  function dwc2_hsotg_set_test_mode(hsotg: DeviceState, testmode: UInt) -> UInt {
+    role helper
+    source "gadget.c:1597"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_set_test_mode
+    effect writes_register(DCTL)
+  }
+  function dwc2_hsotg_process_req_status(hsotg: DeviceState, ctrl: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:1670"
+    context thread
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_process_req_status
+  }
+  function dwc2_hsotg_process_req_feature(hsotg: DeviceState, ctrl: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:1774"
+    context thread
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_process_req_feature
+  }
+  function dwc2_hsotg_process_control(hsotg: DeviceState, ctrl: DeviceState) -> Void {
+    role helper
+    source "gadget.c:1932"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_process_control
+    effect writes_register(DCFG)
+  }
+  function dwc2_hsotg_complete_setup(ep: DeviceState, req: DeviceState) -> Void {
+    role unknown
+    source "gadget.c:2012"
+    context thread
+    callback usb_request.complete
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_complete_setup
+    effect writes_register(GLPMCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(DCFG)
+  }
+  function dwc2_gadget_handle_isoc_bna(hs_ep: DeviceState) -> Void {
+    role helper
+    source "gadget.c:2240"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_handle_isoc_bna
+    effect writes_register(GRSTCTL)
+  }
+  function dwc2_hsotg_rx_data(hsotg: DeviceState, ep_idx: UInt, size: UInt) -> Void {
+    role helper
+    source "gadget.c:2263"
+    context thread
+    ris dwc2_hsotg_rx_data
+  }
+  function dwc2_hsotg_handle_outdone(hsotg: DeviceState, epnum: UInt) -> Void {
+    role helper
+    source "gadget.c:2390"
+    context thread
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_handle_outdone
+  }
+  function dwc2_hsotg_handle_rx(hsotg: DeviceState) -> Void {
+    role helper
+    source "gadget.c:2481"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_handle_rx
+  }
+  function dwc2_hsotg_set_ep_maxpacket(hsotg: DeviceState, ep: UInt, mps: UInt, mc: UInt, dir_in: UInt) -> Void {
+    role helper
+    source "gadget.c:2581"
+    context thread
+    ris dwc2_hsotg_set_ep_maxpacket
+  }
+  function dwc2_hsotg_complete_in(hsotg: DeviceState, hs_ep: DeviceState) -> Void {
+    role helper
+    source "gadget.c:2685"
+    context thread
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_complete_in
+  }
+  function dwc2_gadget_read_ep_interrupts(hsotg: DeviceState, idx: UInt, dir_in: UInt) -> UInt {
+    role helper
+    source "gadget.c:2792"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_read_ep_interrupts
+  }
+  function dwc2_gadget_handle_ep_disabled(hs_ep: DeviceState) -> Void {
+    role helper
+    source "gadget.c:2824"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_handle_ep_disabled
+    effect writes_register(GRSTCTL)
+    effect writes_register(DCTL)
+  }
+  function dwc2_gadget_handle_out_token_ep_disabled(ep: DeviceState) -> Void {
+    role helper
+    source "gadget.c:2888"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_handle_out_token_ep_disabled
+  }
+  function dwc2_gadget_handle_nak(hs_ep: DeviceState) -> Void {
+    role helper
+    source "gadget.c:2956"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_handle_nak
+    effect writes_register(GRSTCTL)
+  }
+  function dwc2_hsotg_epint(hsotg: DeviceState, idx: UInt, dir_in: UInt) -> Void {
+    role helper
+    source "gadget.c:3039"
+    context thread
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_epint
+  }
+  function dwc2_hsotg_irq_enumdone(hsotg: DeviceState) -> Void {
+    role helper
+    source "gadget.c:3200"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_irq_enumdone
+  }
+  function dwc2_gadget_handle_incomplete_isoc_in(hsotg: DeviceState) -> Void {
+    role helper
+    source "gadget.c:3620"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_handle_incomplete_isoc_in
+    effect writes_register(GINTSTS)
+  }
+  function dwc2_gadget_handle_incomplete_isoc_out(hsotg: DeviceState) -> Void {
+    role helper
+    source "gadget.c:3663"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_handle_incomplete_isoc_out
+    effect writes_register(GINTMSK)
+    effect writes_register(GINTSTS)
+  }
+  function dwc2_hsotg_irq(irq: UInt, pw: DeviceState) -> UInt {
+    role interrupt_handler
+    source "gadget.c:3708"
+    context irq
+    callback irq_handler.handler
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_irq
+    effect writes_register(GINTSTS)
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect writes_register(GRSTCTL)
+    effect writes_register(DCFG)
+    effect writes_register(DAINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTMSK)
+    effect writes_register(GAHBCFG)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect writes_register(GREFCLK)
+    effect writes_register(GINTSTS2)
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function dwc2_hsotg_ep_enable(ep: DeviceState, desc: DeviceState) -> UInt {
+    role init
+    source "gadget.c:4017"
+    context thread
+    callback usb_ep_ops.enable
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_ep_enable
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DAINTMSK)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hsotg_ep_disable(ep: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:4247"
+    context thread
+    ris dwc2_hsotg_ep_disable
+  }
+  function dwc2_hsotg_ep_disable_lock(ep: DeviceState) -> UInt {
+    role remove
+    source "gadget.c:4295"
+    context thread
+    callback usb_ep_ops.disable
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_ep_disable_lock
+    effect writes_register(DCTL)
+    effect writes_register(GINTMSK)
+    effect writes_register(GRSTCTL)
+    effect writes_register(DAINTMSK)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_hsotg_ep_dequeue(ep: DeviceState, req: DeviceState) -> UInt {
+    role remove
+    source "gadget.c:4330"
+    context thread
+    callback usb_ep_ops.dequeue
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_ep_dequeue
+    effect writes_register(DCTL)
+    effect writes_register(GINTMSK)
+    effect writes_register(GRSTCTL)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_gadget_ep_set_wedge(ep: DeviceState) -> UInt {
+    role write_config
+    source "gadget.c:4361"
+    context thread
+    callback usb_ep_ops.set_wedge
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_gadget_ep_set_wedge
+    effect writes_register(GINTMSK)
+    effect writes_register(DCTL)
+    effect writes_config(offset)
+  }
+  function dwc2_hsotg_ep_sethalt_lock(ep: DeviceState, value: UInt) -> UInt {
+    role write_config
+    source "gadget.c:4466"
+    context thread
+    callback usb_ep_ops.set_halt
+    bind dev: DeviceState from hs
+    bind base: MmioBase from hs->regs
+    ris dwc2_hsotg_ep_sethalt_lock
+    effect writes_register(GINTMSK)
+    effect writes_register(DCTL)
+    effect writes_config(offset)
+  }
+  function dwc2_hsotg_init(hsotg: DeviceState) -> Void {
+    role init
+    source "gadget.c:4496"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_init
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DAINTMSK)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hsotg_udc_start(gadget: DeviceState, driver: DeviceState) -> UInt {
+    role init
+    source "gadget.c:4533"
+    context thread
+    callback usb_gadget_ops.udc_start
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_udc_start
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DAINTMSK)
+    effect writes_register(DCTL)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(GRSTCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(DCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect writes_register(GREFCLK)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hsotg_udc_stop(gadget: DeviceState) -> UInt {
+    role remove
+    source "gadget.c:4598"
+    context thread
+    callback usb_gadget_ops.udc_stop
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_udc_stop
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function dwc2_hsotg_gadget_getframe(gadget: DeviceState) -> UInt {
+    role get_status
+    source "gadget.c:4647"
+    context thread
+    callback usb_gadget_ops.get_frame
+    ris dwc2_hsotg_gadget_getframe
+    effect reads_status()
+  }
+  function dwc2_hsotg_set_selfpowered(gadget: DeviceState, is_selfpowered: UInt) -> UInt {
+    role write_config
+    source "gadget.c:4659"
+    context thread
+    callback usb_gadget_ops.set_selfpowered
+    ris dwc2_hsotg_set_selfpowered
+    effect writes_config(offset)
+  }
+  function dwc2_hsotg_pullup(gadget: DeviceState, is_on: UInt) -> UInt {
+    role write_config
+    source "gadget.c:4679"
+    context thread
+    callback usb_gadget_ops.pullup
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_pullup
+    effect writes_register(GRSTCTL)
+    effect writes_register(DAINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(DCTL)
+    effect writes_register(DCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(GAHBCFG)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect writes_register(GREFCLK)
+    effect writes_register(PCGCCTL1)
+    effect writes_config(offset)
+  }
+  function dwc2_hsotg_vbus_session(gadget: DeviceState, is_active: UInt) -> UInt {
+    role write_config
+    source "gadget.c:4712"
+    context thread
+    callback usb_gadget_ops.vbus_session
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_vbus_session
+    effect writes_register(GRSTCTL)
+    effect writes_register(DAINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(DCTL)
+    effect writes_register(DCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(GAHBCFG)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect writes_register(GREFCLK)
+    effect writes_register(PCGCCTL1)
+    effect writes_config(offset)
+  }
+  function dwc2_gadget_set_speed(g: DeviceState, speed: UInt) -> Void {
+    role write_config
+    source "gadget.c:4765"
+    context thread
+    callback usb_gadget_ops.udc_set_speed
+    ris dwc2_gadget_set_speed
+    effect writes_config(offset)
+  }
+  function dwc2_hsotg_initep(hsotg: DeviceState, hs_ep: DeviceState, epnum: UInt, dir_in: UInt) -> Void {
+    role init
+    source "gadget.c:4809"
+    context thread
+    ris dwc2_hsotg_initep
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_gadget_init(hsotg: DeviceState) -> UInt {
+    role init
+    source "gadget.c:4987"
+    context thread
+    ris dwc2_gadget_init
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_hsotg_suspend(hsotg: DeviceState) -> UInt {
+    role suspend
+    source "gadget.c:5101"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_suspend
+    effect writes_register(DCTL)
+    effect writes_register(GRSTCTL)
+    effect suspends_device()
+    ensure device_state == SUSPENDED
+  }
+  function dwc2_hsotg_resume(hsotg: DeviceState) -> UInt {
+    role resume
+    source "gadget.c:5132"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_hsotg_resume
+    effect writes_register(GRSTCTL)
+    effect writes_register(DAINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GGPIO)
+    effect writes_register(GI2CCTL)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(DCTL)
+    effect writes_register(DCFG)
+    effect writes_register(GOTGINT)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(GAHBCFG)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+    effect writes_register(DOEPTSIZ0)
+    effect writes_register(DOEPCTL0)
+    effect writes_register(DIEPCTL0)
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect writes_register(GREFCLK)
+    effect writes_register(PCGCCTL1)
+    effect resumes_device()
+    ensure device_state == READY
+  }
+  function dwc2_backup_device_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:5163"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_backup_device_registers
+  }
+  function dwc2_restore_device_registers(hsotg: DeviceState, flags: UInt) -> UInt {
+    role helper
+    source "gadget.c:5219"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_restore_device_registers
+    effect writes_register(DCFG)
+    effect writes_register(DCTL)
+    effect writes_register(DAINTMSK)
+    effect writes_register(DIEPMSK)
+    effect writes_register(DOEPMSK)
+  }
+  function dwc2_gadget_init_lpm(hsotg: DeviceState) -> Void {
+    role init
+    source "gadget.c:5283"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_init_lpm
+    effect writes_register(GLPMCFG)
+    effect writes_register(GINTMSK2)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function dwc2_gadget_program_ref_clk(hsotg: DeviceState) -> Void {
+    role helper
+    source "gadget.c:5311"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_program_ref_clk
+    effect writes_register(GREFCLK)
+  }
+  function dwc2_gadget_backup_critical_registers(hsotg: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:5324"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_backup_critical_registers
+  }
+  function dwc2_gadget_restore_critical_registers(hsotg: DeviceState, flags: UInt) -> UInt {
+    role helper
+    source "gadget.c:5346"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_restore_critical_registers
+    effect writes_register(GINTSTS)
+    effect writes_register(GOTGCTL)
+    effect writes_register(GINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GRXFSIZ)
+    effect writes_register(GNPTXFSIZ)
+    effect writes_register(GDFIFOCFG)
+    effect writes_register(PCGCCTL1)
+    effect writes_register(GLPMCFG)
+    effect writes_register(PCGCTL)
+    effect writes_register(GI2CCTL)
+  }
+  function dwc2_gadget_enter_hibernation(hsotg: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:5374"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_enter_hibernation
+    effect writes_register(GPWRDN)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_gadget_exit_hibernation(hsotg: DeviceState, rem_wakeup: UInt, reset: UInt) -> UInt {
+    role helper
+    source "gadget.c:5470"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_exit_hibernation
+    effect writes_register(GPWRDN)
+    effect writes_register(PCGCTL)
+    effect writes_register(GAHBCFG)
+    effect writes_register(GINTSTS)
+    effect writes_register(GINTMSK)
+    effect writes_register(GUSBCFG)
+    effect writes_register(HCFG)
+    effect writes_register(DCFG)
+    effect writes_register(DCTL)
+  }
+  function dwc2_gadget_enter_partial_power_down(hsotg: DeviceState) -> UInt {
+    role helper
+    source "gadget.c:5576"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_enter_partial_power_down
+    effect writes_register(GINTSTS)
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_gadget_exit_partial_power_down(hsotg: DeviceState, restore: UInt) -> UInt {
+    role helper
+    source "gadget.c:5628"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_exit_partial_power_down
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+  }
+  function dwc2_gadget_enter_clock_gating(hsotg: DeviceState) -> Void {
+    role helper
+    source "gadget.c:5679"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_enter_clock_gating
+    effect writes_register(PCGCTL)
+  }
+  function dwc2_gadget_exit_clock_gating(hsotg: DeviceState, rem_wakeup: UInt) -> Void {
+    role helper
+    source "gadget.c:5709"
+    context thread
+    bind dev: DeviceState from hsotg
+    bind base: MmioBase from hsotg->regs
+    ris dwc2_gadget_exit_clock_gating
+    effect writes_register(PCGCTL)
+    effect writes_register(DCTL)
+  }
+}

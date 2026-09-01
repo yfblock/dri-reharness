@@ -16,6 +16,9 @@ from ..taint import (BasePtr, Const, SymExpr, Top, addr_base_of, addr_fixed,
                     addr_indirect, addr_offset)
 
 
+_GPIO_CONFIG_FIELDS = {"sz", "dat", "set", "clr", "dirout", "dirin", "flags"}
+
+
 
 def _split_initializer(body: str) -> list[str]:
     parts: list[str] = []
@@ -433,3 +436,6 @@ def _make_callback(owner: Func, suffix: str, params: list[tuple[str, str]],
     return func, FuncExtraction(
         name=func.name, params=[name for name, _ctype in params], ops=ops)
 
+
+# Subsystem modules use a wildcard import for this shared helper namespace.
+__all__ = [name for name in globals() if not name.startswith("__")]

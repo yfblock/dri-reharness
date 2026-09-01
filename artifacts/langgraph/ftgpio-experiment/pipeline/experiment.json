@@ -1,0 +1,1256 @@
+{
+  "accepted": false,
+  "failure": {
+    "details": {
+      "return_code": 2,
+      "stderr": "ftgpio010_gpio.c:323:12: warning: \u2018ftgpio_gpio_probe\u2019 defined but not used [-Wunused-function]\n  323 | static int ftgpio_gpio_probe(struct platform_device *pdev)\n      |            ^~~~~~~~~~~~~~~~~\nERROR: modpost: \"irq_to_desc\" [ftgpio010_gpio.ko] undefined!\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.modpost:147: Module.symvers] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2094: modpost] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+    },
+    "failure_class": "compile",
+    "iteration": 3,
+    "message": "candidate compilation failed",
+    "retryable": true,
+    "stage": "compile"
+  },
+  "manifest": {
+    "compile": {
+      "backend": "linux",
+      "context": "kbuild",
+      "language": "c"
+    },
+    "limits": {
+      "compile": 3,
+      "runtime": 3,
+      "trace": 3
+    },
+    "name": "ftgpio010",
+    "runtime": {
+      "adapter": "qemu-platform",
+      "qemu": {
+        "bus": "platform",
+        "device": "ftgpio010-gpio",
+        "machine": "pc",
+        "module": "ftgpio010_gpio",
+        "probe_pattern": "probed|registered|gpiochip",
+        "registrar": "gpio-ftgpio010",
+        "timeout_seconds": 90
+      },
+      "safety_policy": {
+        "action": "allow",
+        "failure_class": "safety",
+        "forbidden_tokens": []
+      }
+    },
+    "schema": 2,
+    "source": {
+      "path": "benchmarks/drivers/baseline/gpio-ftgpio010.c"
+    },
+    "test": {
+      "actions": [
+        {
+          "name": "get_direction"
+        },
+        {
+          "name": "direction_input"
+        },
+        {
+          "name": "direction_output"
+        },
+        {
+          "name": "get_value"
+        },
+        {
+          "name": "set_value"
+        }
+      ],
+      "args": [
+        "/dev/gpiochip0"
+      ],
+      "executable": "qa/native-tests/gpio_trace_test",
+      "success_pattern": "GPIO_TRACE_DONE"
+    },
+    "trace": {
+      "exercised_calls": [
+        "ftgpio_gpio_probe=gpio_ftgpio010_probe",
+        "ftgpio_gpio_probe__gpio_generic_get_direction",
+        "ftgpio_gpio_probe__gpio_generic_direction_output",
+        "ftgpio_gpio_probe__gpio_generic_get_multiple",
+        "ftgpio_gpio_probe__gpio_generic_set_multiple",
+        "ftgpio_gpio_probe__gpio_generic_set_multiple",
+        "ftgpio_gpio_probe__gpio_generic_direction_input"
+      ],
+      "fields": [
+        "phase",
+        "function",
+        "kind",
+        "width_bits",
+        "address",
+        "value",
+        "sequence",
+        "source_op_id"
+      ],
+      "instrument": true,
+      "value_mask": "0xffffffff"
+    }
+  },
+  "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+  "name": "ftgpio010",
+  "records": [
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 1,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "bind": {
+            "callbacks": {
+              "gpio_chip.direction_input": "ftgpio_gpio_probe__gpio_generic_direction_input",
+              "gpio_chip.direction_output": "ftgpio_gpio_probe__gpio_generic_direction_output",
+              "gpio_chip.get": "ftgpio_gpio_probe__gpio_generic_get",
+              "gpio_chip.get_direction": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "gpio_chip.get_multiple": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+              "gpio_chip.set": "ftgpio_gpio_probe__gpio_generic_set",
+              "gpio_chip.set_config": "ftgpio_gpio_set_config",
+              "gpio_chip.set_multiple": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+              "gpio_irq_chip.parent_handler": "ftgpio_gpio_irq_handler",
+              "irq_chip.irq_ack": "ftgpio_gpio_ack_irq",
+              "irq_chip.irq_mask": "ftgpio_gpio_mask_irq",
+              "irq_chip.irq_set_type": "ftgpio_gpio_set_irq_type",
+              "irq_chip.irq_unmask": "ftgpio_gpio_unmask_irq",
+              "platform_driver.probe": "ftgpio_gpio_probe"
+            },
+            "includes": [
+              "<linux/io.h>",
+              "<linux/platform_device.h>"
+            ],
+            "primitives": {
+              "MmioRead(B1)": "readb",
+              "MmioRead(B2)": "readw",
+              "MmioRead(B4)": "readl",
+              "MmioReadBE(B2)": "ioread16be",
+              "MmioReadBE(B4)": "ioread32be",
+              "MmioWrite(B1)": "writeb",
+              "MmioWrite(B2)": "writew",
+              "MmioWrite(B4)": "writel",
+              "MmioWriteBE(B2)": "iowrite16be",
+              "MmioWriteBE(B4)": "iowrite32be",
+              "MmioWriteW1C(B1)": "writeb",
+              "MmioWriteW1C(B2)": "writew",
+              "MmioWriteW1C(B4)": "writel"
+            },
+            "state": {
+              "dev.base": "g->base"
+            },
+            "types": {
+              "DeviceState": "struct gpio_ftgpio010",
+              "LogicalIRQ": "struct irq_data *",
+              "MmioBase": "void __iomem *",
+              "UInt": "u32",
+              "UIntPtr": "unsigned long *"
+            }
+          },
+          "bundle": {
+            "digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+            "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/ftgpio-experiment/evidence"
+          },
+          "constants": {
+            "GPIO_BYPASS_IN": 12,
+            "GPIO_DATA_OUT": 0,
+            "GPIO_GENERIC_BIG_ENDIAN": 1,
+            "GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER": 8,
+            "GPIO_GENERIC_NO_INPUT": 256,
+            "GPIO_GENERIC_NO_OUTPUT": 32,
+            "GPIO_GENERIC_NO_SET_ON_INPUT": 64,
+            "GPIO_GENERIC_PINCTRL_BACKEND": 128,
+            "GPIO_GENERIC_READ_OUTPUT_REG_SET": 16,
+            "GPIO_GENERIC_UNREADABLE_REG_DIR": 4,
+            "GPIO_GENERIC_UNREADABLE_REG_SET": 2,
+            "GPIO_INT_STAT_MASKED": 40,
+            "GPIO_LINE_DIRECTION_IN": 1,
+            "GPIO_LINE_DIRECTION_OUT": 0,
+            "GPIO_PULL_EN": 24,
+            "GPIO_PULL_TYPE": 28
+          },
+          "device_class": "gpio_controller",
+          "digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+          "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/ftgpio-experiment/evidence",
+          "driver": "gpio-ftgpio010",
+          "modules": [
+            {
+              "name": "ftgpio_gpio_ack_irq",
+              "ops": [
+                {
+                  "addr": "base + GPIO_INT_CLR",
+                  "digest": "5dd3bb35656acca9",
+                  "kind": "write",
+                  "op_id": "op_1",
+                  "value": "(0x1 << d->hwirq)"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_mask_irq",
+              "ops": [
+                {
+                  "addr": "base + GPIO_INT_EN",
+                  "digest": "67a27c7ab6f431e2",
+                  "kind": "read",
+                  "op_id": "op_2",
+                  "var": "val",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_INT_EN",
+                  "digest": "35b8bf6436435508",
+                  "kind": "rmw",
+                  "op_id": "op_3",
+                  "transform": "(val & (~(0x1 << irqd_to_hwirq(d))))"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_unmask_irq",
+              "ops": [
+                {
+                  "addr": "base + GPIO_INT_EN",
+                  "digest": "67a27c7ab6f431e2",
+                  "kind": "read",
+                  "op_id": "op_4",
+                  "var": "val",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_INT_EN",
+                  "digest": "d8ab399a3e165c09",
+                  "kind": "rmw",
+                  "op_id": "op_5",
+                  "transform": "(val | (0x1 << irqd_to_hwirq(d)))"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_set_irq_type",
+              "ops": [
+                {
+                  "addr": "base + GPIO_INT_TYPE",
+                  "digest": "b359d00e3d754d3e",
+                  "kind": "read",
+                  "op_id": "op_6",
+                  "var": "reg_type",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_INT_LEVEL",
+                  "digest": "85db95e4e47b9e4c",
+                  "kind": "read",
+                  "op_id": "op_7",
+                  "var": "reg_level",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_INT_BOTH_EDGE",
+                  "digest": "6642efb8949d9184",
+                  "kind": "read",
+                  "op_id": "op_8",
+                  "var": "reg_both",
+                  "width": "B4"
+                },
+                {
+                  "else": [],
+                  "guard": "(type == IRQ_TYPE_EDGE_BOTH)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "desc->handle_irq",
+                      "kind": "state_write",
+                      "op_id": "op_9",
+                      "value": "handle_edge_irq",
+                      "width": "B4"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_10",
+                      "value": "(reg_type & (~mask))",
+                      "var": "reg_type"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_11",
+                      "value": "(reg_both | mask)",
+                      "var": "reg_both"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(type == IRQ_TYPE_EDGE_RISING)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "desc->handle_irq",
+                      "kind": "state_write",
+                      "op_id": "op_12",
+                      "value": "handle_edge_irq",
+                      "width": "B4"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_13",
+                      "value": "(reg_type & (~mask))",
+                      "var": "reg_type"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_14",
+                      "value": "(reg_both & (~mask))",
+                      "var": "reg_both"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_15",
+                      "value": "(reg_level & (~mask))",
+                      "var": "reg_level"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(type == IRQ_TYPE_EDGE_FALLING)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "desc->handle_irq",
+                      "kind": "state_write",
+                      "op_id": "op_16",
+                      "value": "handle_edge_irq",
+                      "width": "B4"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_17",
+                      "value": "(reg_type & (~mask))",
+                      "var": "reg_type"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_18",
+                      "value": "(reg_both & (~mask))",
+                      "var": "reg_both"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_19",
+                      "value": "(reg_level | mask)",
+                      "var": "reg_level"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(type == IRQ_TYPE_LEVEL_HIGH)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "desc->handle_irq",
+                      "kind": "state_write",
+                      "op_id": "op_20",
+                      "value": "handle_level_irq",
+                      "width": "B4"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_21",
+                      "value": "(reg_type | mask)",
+                      "var": "reg_type"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_22",
+                      "value": "(reg_level & (~mask))",
+                      "var": "reg_level"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(type == IRQ_TYPE_LEVEL_LOW)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "desc->handle_irq",
+                      "kind": "state_write",
+                      "op_id": "op_23",
+                      "value": "handle_level_irq",
+                      "width": "B4"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_24",
+                      "value": "(reg_type | mask)",
+                      "var": "reg_type"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_25",
+                      "value": "(reg_level | mask)",
+                      "var": "reg_level"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "((((((type == IRQ_TYPE_EDGE_BOTH) || (type == IRQ_TYPE_EDGE_RISING)) || (type == IRQ_TYPE_EDGE_FALLING)) || (type == IRQ_TYPE_LEVEL_HIGH)) || (type == IRQ_TYPE_LEVEL_LOW)) == 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "desc->handle_irq",
+                      "kind": "state_write",
+                      "op_id": "op_26",
+                      "value": "handle_bad_irq",
+                      "width": "B4"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(((((type == IRQ_TYPE_EDGE_BOTH) || (type == IRQ_TYPE_EDGE_RISING)) || (type == IRQ_TYPE_EDGE_FALLING)) || (type == IRQ_TYPE_LEVEL_HIGH)) || (type == IRQ_TYPE_LEVEL_LOW))",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_INT_TYPE",
+                      "digest": "d1c746cb513851b5",
+                      "kind": "rmw",
+                      "op_id": "op_27",
+                      "transform": "((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type)))))"
+                    },
+                    {
+                      "addr": "base + GPIO_INT_LEVEL",
+                      "digest": "26d436ff936be225",
+                      "kind": "rmw",
+                      "op_id": "op_28",
+                      "transform": "((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level)))))"
+                    },
+                    {
+                      "addr": "base + GPIO_INT_BOTH_EDGE",
+                      "digest": "64b0966d1739dce7",
+                      "kind": "rmw",
+                      "op_id": "op_29",
+                      "transform": "((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both)))))"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_irq_handler",
+              "ops": [
+                {
+                  "else": [],
+                  "guard": "(irqchip->irq_mask_ack == 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "else": [],
+                      "guard": "irqchip->irq_ack",
+                      "kind": "cond",
+                      "then": [
+                        {
+                          "addr": "base + GPIO_INT_CLR",
+                          "digest": "93a501c95c7a42f2",
+                          "kind": "write",
+                          "op_id": "op_30",
+                          "value": "(0x1 << irqd_to_hwirq(&desc->irq_data))"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "addr": "base + GPIO_INT_STAT_RAW",
+                  "digest": "e74749be940967d5",
+                  "kind": "read",
+                  "op_id": "op_31",
+                  "var": "stat",
+                  "width": "B4"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_set_config",
+              "ops": [
+                {
+                  "addr": "base + GPIO_DEBOUNCE_PRESCALE",
+                  "digest": "8eb491b0c0634ba7",
+                  "kind": "read",
+                  "op_id": "op_32",
+                  "var": "val",
+                  "width": "B4"
+                },
+                {
+                  "else": [],
+                  "guard": "(val == deb_div)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DEBOUNCE_EN",
+                      "digest": "48230cd8ed117ec6",
+                      "kind": "read",
+                      "op_id": "op_33",
+                      "var": "val",
+                      "width": "B4"
+                    },
+                    {
+                      "kind": "value_bind",
+                      "op_id": "op_34",
+                      "value": "(val | (0x1 << offset))",
+                      "var": "val"
+                    },
+                    {
+                      "addr": "base + GPIO_DEBOUNCE_EN",
+                      "digest": "81000a354c140fe1",
+                      "kind": "rmw",
+                      "op_id": "op_35",
+                      "transform": "((val == deb_div) ? (val | (0x1 << offset)) : val)"
+                    }
+                  ]
+                },
+                {
+                  "addr": "base + GPIO_DEBOUNCE_EN",
+                  "digest": "339408230d26d326",
+                  "kind": "read",
+                  "op_id": "op_36",
+                  "var": "val",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_DEBOUNCE_PRESCALE",
+                  "digest": "a89c06a8b813ae48",
+                  "kind": "write",
+                  "op_id": "op_37",
+                  "value": "deb_div"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_38",
+                  "value": "(val | (0x1 << offset))",
+                  "var": "val"
+                },
+                {
+                  "addr": "base + GPIO_DEBOUNCE_EN",
+                  "digest": "a6b3f48cd0fe1e05",
+                  "kind": "rmw",
+                  "op_id": "op_39",
+                  "transform": "(val | (0x1 << offset))"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe",
+              "ops": [
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_40",
+                  "value": "&pdev->dev",
+                  "var": "dev"
+                },
+                {
+                  "field": "g->dev",
+                  "kind": "state_write",
+                  "op_id": "op_41",
+                  "value": "dev",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_42",
+                  "value": "(((((struct gpio_generic_chip_config) {\n\t\t.dev = dev,\n\t\t.sz = 4,\n\t\t.dat = g->base + GPIO_DATA_IN,\n\t\t.set = g->base) + GPIO_DATA_SET,\n\t\t.clr = g->base) + GPIO_DATA_CLR,\n\t\t.dirout = g->base) + GPIO_DIR,\n\t})",
+                  "var": "config"
+                },
+                {
+                  "addr": "base + GPIO_DATA_IN",
+                  "digest": "16d85024e558eaef",
+                  "kind": "read",
+                  "op_id": "op_43",
+                  "var": "gpio_initial_data",
+                  "width": "B4"
+                },
+                {
+                  "field": "gpio_sdata",
+                  "kind": "state_write",
+                  "op_id": "op_44",
+                  "value": "gpio_initial_data",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_DIR",
+                  "digest": "e9b515951bfad9ea",
+                  "kind": "read",
+                  "op_id": "op_45",
+                  "var": "gpio_initial_direction",
+                  "width": "B4"
+                },
+                {
+                  "field": "gpio_sdir",
+                  "kind": "state_write",
+                  "op_id": "op_46",
+                  "value": "gpio_initial_direction",
+                  "width": "B4"
+                },
+                {
+                  "field": "g->chip.gc.base",
+                  "kind": "state_write",
+                  "op_id": "op_47",
+                  "value": "-1",
+                  "width": "B4"
+                },
+                {
+                  "field": "g->chip.gc.parent",
+                  "kind": "state_write",
+                  "op_id": "op_48",
+                  "value": "dev",
+                  "width": "B4"
+                },
+                {
+                  "field": "g->chip.gc.owner",
+                  "kind": "state_write",
+                  "op_id": "op_49",
+                  "value": "THIS_MODULE",
+                  "width": "B4"
+                },
+                {
+                  "else": [],
+                  "guard": "(IS_ERR(g->clk) == 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "field": "g->chip.gc.set_config",
+                      "kind": "state_write",
+                      "op_id": "op_50",
+                      "value": "ftgpio_gpio_set_config",
+                      "width": "B4"
+                    }
+                  ]
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_51",
+                  "value": "&g->chip.gc.irq",
+                  "var": "girq"
+                },
+                {
+                  "field": "girq->parent_handler",
+                  "kind": "state_write",
+                  "op_id": "op_52",
+                  "value": "ftgpio_gpio_irq_handler",
+                  "width": "B4"
+                },
+                {
+                  "field": "girq->num_parents",
+                  "kind": "state_write",
+                  "op_id": "op_53",
+                  "value": "0x1",
+                  "width": "B4"
+                },
+                {
+                  "field": "girq->default_type",
+                  "kind": "state_write",
+                  "op_id": "op_54",
+                  "value": "IRQ_TYPE_NONE",
+                  "width": "B4"
+                },
+                {
+                  "field": "girq->handler",
+                  "kind": "state_write",
+                  "op_id": "op_55",
+                  "value": "handle_bad_irq",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_INT_EN",
+                  "digest": "7443390abf8fb623",
+                  "kind": "write",
+                  "op_id": "op_56",
+                  "value": "0x0"
+                },
+                {
+                  "addr": "base + GPIO_INT_MASK",
+                  "digest": "015d9e37bb50b02a",
+                  "kind": "write",
+                  "op_id": "op_57",
+                  "value": "0x0"
+                },
+                {
+                  "addr": "base + GPIO_INT_CLR",
+                  "digest": "153d39994bb1ba88",
+                  "kind": "write",
+                  "op_id": "op_58",
+                  "value": "0xffffffff"
+                },
+                {
+                  "addr": "base + GPIO_DEBOUNCE_EN",
+                  "digest": "92b66149c6b53a4a",
+                  "kind": "write",
+                  "op_id": "op_59",
+                  "value": "0x0"
+                },
+                {
+                  "field": "girq->chip",
+                  "kind": "state_write",
+                  "op_id": "op_60",
+                  "value": "(struct irq_chip * & ftgpio_irq_chip)",
+                  "width": "B4"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_get",
+              "ops": [
+                {
+                  "addr": "base + GPIO_DATA_IN",
+                  "digest": "a2dc39d9a87e4bf7",
+                  "kind": "read",
+                  "op_id": "op_61",
+                  "var": "value",
+                  "width": "B4"
+                },
+                {
+                  "kind": "return",
+                  "value": "((value & (0x1 << offset)) != 0x0)"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+              "ops": [
+                {
+                  "addr": "base + GPIO_DATA_IN",
+                  "digest": "a2dc39d9a87e4bf7",
+                  "kind": "read",
+                  "op_id": "op_63",
+                  "var": "value",
+                  "width": "B4"
+                },
+                {
+                  "kind": "output_write",
+                  "op_id": "op_64",
+                  "target": "bits",
+                  "value": "((*bits & (~*mask)) | (value & *mask))"
+                },
+                {
+                  "kind": "return",
+                  "value": "0x0"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_set",
+              "ops": [
+                {
+                  "else": [],
+                  "guard": "(value != 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DATA_SET",
+                      "digest": "b36eb49659ebc50a",
+                      "kind": "write",
+                      "op_id": "op_66",
+                      "value": "(0x1 << offset)"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(value == 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DATA_CLR",
+                      "digest": "3834a18c428720bf",
+                      "kind": "write",
+                      "op_id": "op_67",
+                      "value": "(0x1 << offset)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "return",
+                  "value": "0x0"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+              "ops": [
+                {
+                  "else": [],
+                  "guard": "((*bits & *mask) != 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DATA_SET",
+                      "digest": "ab8d874dfdeeade8",
+                      "kind": "write",
+                      "op_id": "op_69",
+                      "value": "(*bits & *mask)"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(((~*bits) & *mask) != 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DATA_CLR",
+                      "digest": "5f32f4874eb9aabb",
+                      "kind": "write",
+                      "op_id": "op_70",
+                      "value": "((~*bits) & *mask)"
+                    }
+                  ]
+                },
+                {
+                  "kind": "return",
+                  "value": "0x0"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_direction_input",
+              "ops": [
+                {
+                  "field": "gpio_sdir",
+                  "kind": "state_read",
+                  "op_id": "op_72",
+                  "var": "__shadow_dir",
+                  "width": "B4"
+                },
+                {
+                  "field": "gpio_sdir",
+                  "kind": "state_write",
+                  "op_id": "op_73",
+                  "value": "(__shadow_dir & (~(0x1 << offset)))",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_DIR",
+                  "digest": "b949672343e78260",
+                  "kind": "write",
+                  "op_id": "op_74",
+                  "value": "(__shadow_dir & (~(0x1 << offset)))"
+                },
+                {
+                  "kind": "return",
+                  "value": "0x0"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_direction_output",
+              "ops": [
+                {
+                  "else": [],
+                  "guard": "(value != 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DATA_SET",
+                      "digest": "b36eb49659ebc50a",
+                      "kind": "write",
+                      "op_id": "op_76",
+                      "value": "(0x1 << offset)"
+                    }
+                  ]
+                },
+                {
+                  "else": [],
+                  "guard": "(value == 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + GPIO_DATA_CLR",
+                      "digest": "3834a18c428720bf",
+                      "kind": "write",
+                      "op_id": "op_77",
+                      "value": "(0x1 << offset)"
+                    }
+                  ]
+                },
+                {
+                  "field": "gpio_sdir",
+                  "kind": "state_read",
+                  "op_id": "op_78",
+                  "var": "__shadow_dir",
+                  "width": "B4"
+                },
+                {
+                  "field": "gpio_sdir",
+                  "kind": "state_write",
+                  "op_id": "op_79",
+                  "value": "(__shadow_dir | (0x1 << offset))",
+                  "width": "B4"
+                },
+                {
+                  "addr": "base + GPIO_DIR",
+                  "digest": "43d76c2e0b3f2385",
+                  "kind": "write",
+                  "op_id": "op_80",
+                  "value": "(__shadow_dir | (0x1 << offset))"
+                },
+                {
+                  "kind": "return",
+                  "value": "0x0"
+                }
+              ]
+            },
+            {
+              "name": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "ops": [
+                {
+                  "addr": "base + GPIO_DIR",
+                  "digest": "9d0c4bdae3641bba",
+                  "kind": "read",
+                  "op_id": "op_82",
+                  "var": "direction",
+                  "width": "B4"
+                },
+                {
+                  "kind": "return",
+                  "value": "(((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1)"
+                }
+              ]
+            }
+          ],
+          "readiness": {
+            "backend_bare_metal_ready": false,
+            "backend_harness_ready": false,
+            "backend_linux_ready": false,
+            "blockers": [
+              "10 switch path pair(s) not proven exclusive",
+              "generated backend compile/lowering/attestation results unavailable",
+              "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+            ],
+            "device_spec_quality": 1.0,
+            "facts_quality": 1.0,
+            "function_spec_quality": 1.0,
+            "llm_synthesis_ready": true,
+            "ris_quality": 1.0
+          },
+          "registers": {
+            "GPIO_DATA_CLR": {
+              "offset": 20,
+              "width": "B4"
+            },
+            "GPIO_DATA_IN": {
+              "offset": 4,
+              "width": "B4"
+            },
+            "GPIO_DATA_SET": {
+              "offset": 16,
+              "width": "B4"
+            },
+            "GPIO_DEBOUNCE_EN": {
+              "offset": 64,
+              "width": "B4"
+            },
+            "GPIO_DEBOUNCE_PRESCALE": {
+              "offset": 68,
+              "width": "B4"
+            },
+            "GPIO_DIR": {
+              "offset": 8,
+              "width": "B4"
+            },
+            "GPIO_INT_BOTH_EDGE": {
+              "offset": 56,
+              "width": "B4"
+            },
+            "GPIO_INT_CLR": {
+              "offset": 48,
+              "width": "B4"
+            },
+            "GPIO_INT_EN": {
+              "offset": 32,
+              "width": "B4"
+            },
+            "GPIO_INT_LEVEL": {
+              "offset": 60,
+              "width": "B4"
+            },
+            "GPIO_INT_MASK": {
+              "offset": 44,
+              "width": "B4"
+            },
+            "GPIO_INT_STAT_RAW": {
+              "offset": 36,
+              "width": "B4"
+            },
+            "GPIO_INT_TYPE": {
+              "offset": 52,
+              "width": "B4"
+            }
+          },
+          "source_digest": "e4c31ea817a6862ea8b76a973974e38e9a7e8f0cf3f1a8e997ad15d1e2ce8448",
+          "source_files": [
+            "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c"
+          ],
+          "structs": {
+            "ftgpio_gpio": {
+              "base": "void *",
+              "chip": "struct gpio_generic_chip",
+              "clk": "struct clk *",
+              "dev": "struct device *"
+            }
+          }
+        }
+      },
+      "stage": "extract",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 1,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "code": "#include <linux/module.h>\n#include <linux/io.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/miscdevice.h>\n#include <linux/slab.h>\n#include <linux/err.h>\n#include <linux/of.h>\n#include <linux/platform_device.h>\n#include <linux/gpio/driver.h>\n#include <linux/irq.h>\n#include <linux/interrupt.h>\n\n#define GPIO_DATA_IN 4\n#define GPIO_DIR 8\n#define GPIO_DATA_SET 16\n#define GPIO_DATA_CLR 20\n#define GPIO_INT_EN 32\n#define GPIO_INT_STAT_RAW 36\n#define GPIO_INT_MASK 44\n#define GPIO_INT_CLR 48\n#define GPIO_INT_TYPE 52\n#define GPIO_INT_BOTH_EDGE 56\n#define GPIO_INT_LEVEL 60\n#define GPIO_DEBOUNCE_EN 64\n#define GPIO_DEBOUNCE_PRESCALE 68\n\n#define GPIO_BYPASS_IN 12\n#define GPIO_PULL_EN 24\n#define GPIO_PULL_TYPE 28\n#define GPIO_INT_STAT_MASKED 40\n#define GPIO_GENERIC_UNREADABLE_REG_SET 2\n#define GPIO_GENERIC_UNREADABLE_REG_DIR 4\n#define GPIO_GENERIC_BIG_ENDIAN 1\n#define GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER 8\n#define GPIO_GENERIC_READ_OUTPUT_REG_SET 16\n#define GPIO_GENERIC_NO_OUTPUT 32\n#define GPIO_GENERIC_NO_SET_ON_INPUT 64\n#define GPIO_GENERIC_PINCTRL_BACKEND 128\n#define GPIO_GENERIC_NO_INPUT 256\n#define GPIO_LINE_DIRECTION_OUT 0\n#define GPIO_LINE_DIRECTION_IN 1\n\nstatic void __iomem *__rh_mmio_base;\n#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info(\"[rhbase] %px\\n\", (void __iomem *)(b)); } while (0)\n#define RH_TRACE_FN(name) pr_info(\"[rhfn] %s\\n\", (name))\n#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))\n#undef readl\n#define readl(p) ({ u32 __v = __raw_readl(p); pr_info(\"[rh] R 0x%lx 0x%x\\n\", rh_off(p), __v); __v; })\n#undef writel\n#define writel(v,p) ({ pr_info(\"[rh] W 0x%lx 0x%x\\n\", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })\n\nstruct driver_priv {\n\tvoid __iomem *base;\n\tstruct miscdevice misc;\n\tstruct device *dev;\n\tstruct gpio_chip gc;\n\tstruct gpio_irq_chip *girq;\n\tu32 gpio_sdata;\n\tu32 gpio_sdir;\n\tstruct irq_chip irqchip;\n};\n\n#define priv_to_g(p) container_of((p), struct driver_priv, gc)\n#define irqdata_to_priv(d) container_of((d)->chip, struct driver_priv, irqchip)\n\nstatic int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_61 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\treturn ((value & (0x1 << 0)) != 0x0);\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_63 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_64 kind=Write status=lowered digest= */\n\t*bits = ((*bits & (~*mask)) | (value & *mask));\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_67 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif ((*bits & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=ab8d874dfdeeade8 */\n\t\twritel((*bits & *mask), base + GPIO_DATA_SET);\n\t}\n\tif (((~*bits) & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_70 kind=Write status=lowered digest=5f32f4874eb9aabb */\n\t\twritel(((~*bits) & *mask), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir & (~(0x1 << offset)));\n\t/* REHARNESS_RIS_OP id=op_74 kind=Write status=lowered digest=b949672343e78260 */\n\twritel((__shadow_dir & (~(0x1 << offset))), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_76 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_77 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=43d76c2e0b3f2385 */\n\twritel((__shadow_dir | (0x1 << offset)), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 direction;\n\n\t/* REHARNESS_RIS_OP id=op_82 kind=Read status=lowered digest=9d0c4bdae3641bba */\n\tdirection = readl(base + GPIO_DIR);\n\treturn (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1);\n}\n\nstatic void ftgpio_gpio_ack_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\n\t/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=5dd3bb35656acca9 */\n\twritel((0x1 << d->hwirq), base + GPIO_INT_CLR);\n}\n\nstatic void ftgpio_gpio_mask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_2 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_3 kind=ReadModifyWrite status=lowered digest=35b8bf6436435508 */\n\twritel((val & (~(0x1 << irqd_to_hwirq(d)))), base + GPIO_INT_EN);\n}\n\nstatic void ftgpio_gpio_unmask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_5 kind=ReadModifyWrite status=lowered digest=d8ab399a3e165c09 */\n\twritel((val | (0x1 << irqd_to_hwirq(d))), base + GPIO_INT_EN);\n}\n\nstatic int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 reg_type, reg_level, reg_both;\n\tu32 mask = (0x1 << irqd_to_hwirq(d));\n\n\t/* REHARNESS_RIS_OP id=op_6 kind=Read status=lowered digest=b359d00e3d754d3e */\n\treg_type = readl(base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=85db95e4e47b9e4c */\n\treg_level = readl(base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_8 kind=Read status=lowered digest=6642efb8949d9184 */\n\treg_both = readl(base + GPIO_INT_BOTH_EDGE);\n\n\tif (type == IRQ_TYPE_EDGE_BOTH) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both | mask);\n\t} else if (type == IRQ_TYPE_EDGE_RISING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_EDGE_FALLING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level | mask);\n\t} else if (type == IRQ_TYPE_LEVEL_HIGH) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_LEVEL_LOW) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level | mask);\n\t} else {\n\t\tirq_set_handler_locked(d, handle_bad_irq);\n\t\treturn 0;\n\t}\n\n\t/* REHARNESS_RIS_OP id=op_27 kind=ReadModifyWrite status=lowered digest=d1c746cb513851b5 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))), base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_28 kind=ReadModifyWrite status=lowered digest=26d436ff936be225 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))), base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_29 kind=ReadModifyWrite status=lowered digest=64b0966d1739dce7 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))), base + GPIO_INT_BOTH_EDGE);\n\treturn 0;\n}\n\nstatic irqreturn_t ftgpio_gpio_irq_handler(int irq, void *dev_id)\n{\n\tstruct gpio_irq_chip *girq = dev_id;\n\tstruct driver_priv *priv = container_of(girq, struct driver_priv, gc.irq);\n\tvoid __iomem *base = priv->base;\n\tu32 stat;\n\tstruct irq_chip *irqchip = girq->chip;\n\n\tif (irqchip->irq_mask_ack == 0x0) {\n\t\tif (irqchip->irq_ack) {\n\t\t\t/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=93a501c95c7a42f2 */\n\t\t\twritel((0x1 << irqd_to_hwirq(&irq_to_desc(irq)->irq_data)), base + GPIO_INT_CLR);\n\t\t}\n\t}\n\t/* REHARNESS_RIS_OP id=op_31 kind=Read status=lowered digest=e74749be940967d5 */\n\tstat = readl(base + GPIO_INT_STAT_RAW);\n\treturn IRQ_HANDLED;\n}\n\nstatic int ftgpio_gpio_set_config(struct gpio_chip *gc, unsigned int offset, unsigned long config)\n{\n\tstruct driver_priv *priv = container_of(gc, struct driver_priv, gc);\n\tvoid __iomem *base = priv->base;\n\tu32 val, deb_div = (u32)(config & 0xffffffff);\n\n\t/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=8eb491b0c0634ba7 */\n\tval = readl(base + GPIO_DEBOUNCE_PRESCALE);\n\tif (val == deb_div) {\n\t\t/* REHARNESS_RIS_OP id=op_33 kind=Read status=lowered digest=48230cd8ed117ec6 */\n\t\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t\tval = (val | (0x1 << offset));\n\t\t/* REHARNESS_RIS_OP id=op_35 kind=ReadModifyWrite status=lowered digest=81000a354c140fe1 */\n\t\twritel(((val == deb_div) ? (val | (0x1 << offset)) : val), base + GPIO_DEBOUNCE_EN);\n\t}\n\t/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=339408230d26d326 */\n\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=a89c06a8b813ae48 */\n\twritel(deb_div, base + GPIO_DEBOUNCE_PRESCALE);\n\tval = (val | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_39 kind=ReadModifyWrite status=lowered digest=a6b3f48cd0fe1e05 */\n\twritel((val | (0x1 << offset)), base + GPIO_DEBOUNCE_EN);\n\treturn 0;\n}\n\nstatic int ftgpio_gpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tstruct gpio_irq_chip *girq;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tRH_SET_BASE(g->base);\n\n\t/* REHARNESS_RIS_OP id=op_43 kind=Read status=lowered digest=16d85024e558eaef */\n\tg->gpio_sdata = readl(g->base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_45 kind=Read status=lowered digest=e9b515951bfad9ea */\n\tg->gpio_sdir = readl(g->base + GPIO_DIR);\n\n\tg->gc.base = -1;\n\tg->gc.parent = dev;\n\tg->gc.owner = THIS_MODULE;\n\tif (!IS_ERR(g->clk)) {\n\t\tg->gc.set_config = ftgpio_gpio_set_config;\n\t}\n\n\tgirq = &g->gc.irq;\n\tgirq->parent_handler = ftgpio_gpio_irq_handler;\n\tgirq->num_parents = 0x1;\n\tgirq->default_type = IRQ_TYPE_NONE;\n\tgirq->handler = handle_bad_irq;\n\n\t/* REHARNESS_RIS_OP id=op_56 kind=Write status=lowered digest=7443390abf8fb623 */\n\twritel(0x0, g->base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=015d9e37bb50b02a */\n\twritel(0x0, g->base + GPIO_INT_MASK);\n\t/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=153d39994bb1ba88 */\n\twritel(0xffffffff, g->base + GPIO_INT_CLR);\n\t/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=92b66149c6b53a4a */\n\twritel(0x0, g->base + GPIO_DEBOUNCE_EN);\n\tgirq->chip = (struct irq_chip *)&g->irqchip;\n\n\tg->misc.minor = MISC_DYNAMIC_MINOR;\n\tg->misc.name = KBUILD_MODNAME;\n\tg->misc.fops = NULL;\n\treturn misc_register(&g->misc);\n}\n\nstatic int ftgpio_open(struct inode *inode, struct file *file)\n{\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n\treturn 0;\n}\n\nstatic const struct file_operations ftgpio_fops = {\n\t.owner = THIS_MODULE,\n\t.open = ftgpio_open,\n\t.read = ftgpio_read,\n\t.write = ftgpio_write,\n\t.llseek = no_llseek,\n};\n\nstatic int ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n\treturn 0;\n}\n\nstatic struct platform_driver ftgpio_driver = {\n\t.probe = ftgpio_gpio_probe,\n\t.remove = ftgpio_remove,\n\t.driver = {\n\t\t.name = \"gpio-ftgpio010\",\n\t},\n};\n\nmodule_platform_driver(ftgpio_driver);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"gpio-ftgpio010 synthesized target implementation\");",
+          "diagnostics": {
+            "backend": "langchain",
+            "finish_reason": "stop",
+            "id": "resp_0b98b66938ab5c3c016a8b7bced83887d28bedc4f94bb96094",
+            "logprobs": null,
+            "model": "gpt-5.4-mini",
+            "model_name": "gpt-5.4-mini",
+            "model_provider": "openai",
+            "raw_output": "```c\n#include <linux/module.h>\n#include <linux/io.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/miscdevice.h>\n#include <linux/slab.h>\n#include <linux/err.h>\n#include <linux/of.h>\n#include <linux/platform_device.h>\n#include <linux/gpio/driver.h>\n#include <linux/irq.h>\n#include <linux/interrupt.h>\n\n#define GPIO_DATA_IN 4\n#define GPIO_DIR 8\n#define GPIO_DATA_SET 16\n#define GPIO_DATA_CLR 20\n#define GPIO_INT_EN 32\n#define GPIO_INT_STAT_RAW 36\n#define GPIO_INT_MASK 44\n#define GPIO_INT_CLR 48\n#define GPIO_INT_TYPE 52\n#define GPIO_INT_BOTH_EDGE 56\n#define GPIO_INT_LEVEL 60\n#define GPIO_DEBOUNCE_EN 64\n#define GPIO_DEBOUNCE_PRESCALE 68\n\n#define GPIO_BYPASS_IN 12\n#define GPIO_PULL_EN 24\n#define GPIO_PULL_TYPE 28\n#define GPIO_INT_STAT_MASKED 40\n#define GPIO_GENERIC_UNREADABLE_REG_SET 2\n#define GPIO_GENERIC_UNREADABLE_REG_DIR 4\n#define GPIO_GENERIC_BIG_ENDIAN 1\n#define GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER 8\n#define GPIO_GENERIC_READ_OUTPUT_REG_SET 16\n#define GPIO_GENERIC_NO_OUTPUT 32\n#define GPIO_GENERIC_NO_SET_ON_INPUT 64\n#define GPIO_GENERIC_PINCTRL_BACKEND 128\n#define GPIO_GENERIC_NO_INPUT 256\n#define GPIO_LINE_DIRECTION_OUT 0\n#define GPIO_LINE_DIRECTION_IN 1\n\nstatic void __iomem *__rh_mmio_base;\n#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info(\"[rhbase] %px\\n\", (void __iomem *)(b)); } while (0)\n#define RH_TRACE_FN(name) pr_info(\"[rhfn] %s\\n\", (name))\n#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))\n#undef readl\n#define readl(p) ({ u32 __v = __raw_readl(p); pr_info(\"[rh] R 0x%lx 0x%x\\n\", rh_off(p), __v); __v; })\n#undef writel\n#define writel(v,p) ({ pr_info(\"[rh] W 0x%lx 0x%x\\n\", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })\n\nstruct driver_priv {\n\tvoid __iomem *base;\n\tstruct miscdevice misc;\n\tstruct device *dev;\n\tstruct gpio_chip gc;\n\tstruct gpio_irq_chip *girq;\n\tu32 gpio_sdata;\n\tu32 gpio_sdir;\n\tstruct irq_chip irqchip;\n};\n\n#define priv_to_g(p) container_of((p), struct driver_priv, gc)\n#define irqdata_to_priv(d) container_of((d)->chip, struct driver_priv, irqchip)\n\nstatic int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_61 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\treturn ((value & (0x1 << 0)) != 0x0);\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_63 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_64 kind=Write status=lowered digest= */\n\t*bits = ((*bits & (~*mask)) | (value & *mask));\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_67 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif ((*bits & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=ab8d874dfdeeade8 */\n\t\twritel((*bits & *mask), base + GPIO_DATA_SET);\n\t}\n\tif (((~*bits) & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_70 kind=Write status=lowered digest=5f32f4874eb9aabb */\n\t\twritel(((~*bits) & *mask), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir & (~(0x1 << offset)));\n\t/* REHARNESS_RIS_OP id=op_74 kind=Write status=lowered digest=b949672343e78260 */\n\twritel((__shadow_dir & (~(0x1 << offset))), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_76 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_77 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=43d76c2e0b3f2385 */\n\twritel((__shadow_dir | (0x1 << offset)), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 direction;\n\n\t/* REHARNESS_RIS_OP id=op_82 kind=Read status=lowered digest=9d0c4bdae3641bba */\n\tdirection = readl(base + GPIO_DIR);\n\treturn (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1);\n}\n\nstatic void ftgpio_gpio_ack_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\n\t/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=5dd3bb35656acca9 */\n\twritel((0x1 << d->hwirq), base + GPIO_INT_CLR);\n}\n\nstatic void ftgpio_gpio_mask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_2 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_3 kind=ReadModifyWrite status=lowered digest=35b8bf6436435508 */\n\twritel((val & (~(0x1 << irqd_to_hwirq(d)))), base + GPIO_INT_EN);\n}\n\nstatic void ftgpio_gpio_unmask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_5 kind=ReadModifyWrite status=lowered digest=d8ab399a3e165c09 */\n\twritel((val | (0x1 << irqd_to_hwirq(d))), base + GPIO_INT_EN);\n}\n\nstatic int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 reg_type, reg_level, reg_both;\n\tu32 mask = (0x1 << irqd_to_hwirq(d));\n\n\t/* REHARNESS_RIS_OP id=op_6 kind=Read status=lowered digest=b359d00e3d754d3e */\n\treg_type = readl(base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=85db95e4e47b9e4c */\n\treg_level = readl(base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_8 kind=Read status=lowered digest=6642efb8949d9184 */\n\treg_both = readl(base + GPIO_INT_BOTH_EDGE);\n\n\tif (type == IRQ_TYPE_EDGE_BOTH) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both | mask);\n\t} else if (type == IRQ_TYPE_EDGE_RISING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_EDGE_FALLING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level | mask);\n\t} else if (type == IRQ_TYPE_LEVEL_HIGH) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_LEVEL_LOW) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level | mask);\n\t} else {\n\t\tirq_set_handler_locked(d, handle_bad_irq);\n\t\treturn 0;\n\t}\n\n\t/* REHARNESS_RIS_OP id=op_27 kind=ReadModifyWrite status=lowered digest=d1c746cb513851b5 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))), base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_28 kind=ReadModifyWrite status=lowered digest=26d436ff936be225 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))), base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_29 kind=ReadModifyWrite status=lowered digest=64b0966d1739dce7 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))), base + GPIO_INT_BOTH_EDGE);\n\treturn 0;\n}\n\nstatic irqreturn_t ftgpio_gpio_irq_handler(int irq, void *dev_id)\n{\n\tstruct gpio_irq_chip *girq = dev_id;\n\tstruct driver_priv *priv = container_of(girq, struct driver_priv, gc.irq);\n\tvoid __iomem *base = priv->base;\n\tu32 stat;\n\tstruct irq_chip *irqchip = girq->chip;\n\n\tif (irqchip->irq_mask_ack == 0x0) {\n\t\tif (irqchip->irq_ack) {\n\t\t\t/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=93a501c95c7a42f2 */\n\t\t\twritel((0x1 << irqd_to_hwirq(&irq_to_desc(irq)->irq_data)), base + GPIO_INT_CLR);\n\t\t}\n\t}\n\t/* REHARNESS_RIS_OP id=op_31 kind=Read status=lowered digest=e74749be940967d5 */\n\tstat = readl(base + GPIO_INT_STAT_RAW);\n\treturn IRQ_HANDLED;\n}\n\nstatic int ftgpio_gpio_set_config(struct gpio_chip *gc, unsigned int offset, unsigned long config)\n{\n\tstruct driver_priv *priv = container_of(gc, struct driver_priv, gc);\n\tvoid __iomem *base = priv->base;\n\tu32 val, deb_div = (u32)(config & 0xffffffff);\n\n\t/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=8eb491b0c0634ba7 */\n\tval = readl(base + GPIO_DEBOUNCE_PRESCALE);\n\tif (val == deb_div) {\n\t\t/* REHARNESS_RIS_OP id=op_33 kind=Read status=lowered digest=48230cd8ed117ec6 */\n\t\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t\tval = (val | (0x1 << offset));\n\t\t/* REHARNESS_RIS_OP id=op_35 kind=ReadModifyWrite status=lowered digest=81000a354c140fe1 */\n\t\twritel(((val == deb_div) ? (val | (0x1 << offset)) : val), base + GPIO_DEBOUNCE_EN);\n\t}\n\t/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=339408230d26d326 */\n\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=a89c06a8b813ae48 */\n\twritel(deb_div, base + GPIO_DEBOUNCE_PRESCALE);\n\tval = (val | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_39 kind=ReadModifyWrite status=lowered digest=a6b3f48cd0fe1e05 */\n\twritel((val | (0x1 << offset)), base + GPIO_DEBOUNCE_EN);\n\treturn 0;\n}\n\nstatic int ftgpio_gpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tstruct gpio_irq_chip *girq;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tRH_SET_BASE(g->base);\n\n\t/* REHARNESS_RIS_OP id=op_43 kind=Read status=lowered digest=16d85024e558eaef */\n\tg->gpio_sdata = readl(g->base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_45 kind=Read status=lowered digest=e9b515951bfad9ea */\n\tg->gpio_sdir = readl(g->base + GPIO_DIR);\n\n\tg->gc.base = -1;\n\tg->gc.parent = dev;\n\tg->gc.owner = THIS_MODULE;\n\tif (!IS_ERR(g->clk)) {\n\t\tg->gc.set_config = ftgpio_gpio_set_config;\n\t}\n\n\tgirq = &g->gc.irq;\n\tgirq->parent_handler = ftgpio_gpio_irq_handler;\n\tgirq->num_parents = 0x1;\n\tgirq->default_type = IRQ_TYPE_NONE;\n\tgirq->handler = handle_bad_irq;\n\n\t/* REHARNESS_RIS_OP id=op_56 kind=Write status=lowered digest=7443390abf8fb623 */\n\twritel(0x0, g->base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=015d9e37bb50b02a */\n\twritel(0x0, g->base + GPIO_INT_MASK);\n\t/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=153d39994bb1ba88 */\n\twritel(0xffffffff, g->base + GPIO_INT_CLR);\n\t/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=92b66149c6b53a4a */\n\twritel(0x0, g->base + GPIO_DEBOUNCE_EN);\n\tgirq->chip = (struct irq_chip *)&g->irqchip;\n\n\tg->misc.minor = MISC_DYNAMIC_MINOR;\n\tg->misc.name = KBUILD_MODNAME;\n\tg->misc.fops = NULL;\n\treturn misc_register(&g->misc);\n}\n\nstatic int ftgpio_open(struct inode *inode, struct file *file)\n{\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n\treturn 0;\n}\n\nstatic const struct file_operations ftgpio_fops = {\n\t.owner = THIS_MODULE,\n\t.open = ftgpio_open,\n\t.read = ftgpio_read,\n\t.write = ftgpio_write,\n\t.llseek = no_llseek,\n};\n\nstatic int ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n\treturn 0;\n}\n\nstatic struct platform_driver ftgpio_driver = {\n\t.probe = ftgpio_gpio_probe,\n\t.remove = ftgpio_remove,\n\t.driver = {\n\t\t.name = \"gpio-ftgpio010\",\n\t},\n};\n\nmodule_platform_driver(ftgpio_driver);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"gpio-ftgpio010 synthesized target implementation\");\n```",
+            "system_fingerprint": null,
+            "token_usage": {
+              "completion_tokens": 4359,
+              "completion_tokens_details": null,
+              "prompt_tokens": 9468,
+              "prompt_tokens_details": null,
+              "total_tokens": 13827
+            }
+          },
+          "scenario": []
+        }
+      },
+      "stage": "synthesize",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 1,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "complete": true,
+          "digest_mismatch": [],
+          "duplicate": [],
+          "duplicate_expected_ids": [],
+          "duplicate_transaction_markers": [],
+          "kind_mismatch": [],
+          "missing": [],
+          "missing_transaction_markers": [],
+          "receipts": 36,
+          "rejected": [],
+          "required_ops": 36,
+          "required_transactions": 0,
+          "schema": 1,
+          "transaction_accounting_complete": true,
+          "transaction_marker_mismatch": [],
+          "transaction_markers": 0,
+          "unknown": [],
+          "unknown_transaction_markers": [],
+          "unsupported_transactions": []
+        }
+      },
+      "stage": "contract",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 1,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "feedback": {
+          "details": {
+            "return_code": 2,
+            "stderr": "ftgpio010_gpio.c: In function \u2018ftgpio_gpio_probe\u2019:\nftgpio010_gpio.c:350:22: error: \u2018struct driver_priv\u2019 has no member named \u2018clk\u2019\n  350 |         if (!IS_ERR(g->clk)) {\n      |                      ^~\nftgpio010_gpio.c:355:30: error: assignment to \u2018irq_flow_handler_t\u2019 {aka \u2018void (*)(struct irq_desc *)\u2019} from incompatible pointer type \u2018irqreturn_t (*)(int,  void *)\u2019 {aka \u2018enum irqreturn (*)(int,  void *)\u2019} [-Werror=incompatible-pointer-types]\n  355 |         girq->parent_handler = ftgpio_gpio_irq_handler;\n      |                              ^\nftgpio010_gpio.c: At top level:\nftgpio010_gpio.c:399:19: error: \u2018no_llseek\u2019 undeclared here (not in a function); did you mean \u2018noop_llseek\u2019?\n  399 |         .llseek = no_llseek,\n      |                   ^~~~~~~~~\n      |                   noop_llseek\nftgpio010_gpio.c:414:19: error: initialization of \u2018void (*)(struct platform_device *)\u2019 from incompatible pointer type \u2018int (*)(struct platform_device *)\u2019 [-Werror=incompatible-pointer-types]\n  414 |         .remove = ftgpio_remove,\n      |                   ^~~~~~~~~~~~~\nftgpio010_gpio.c:414:19: note: (near initialization for \u2018ftgpio_driver.remove\u2019)\nftgpio010_gpio.c:227:12: warning: \u2018ftgpio_gpio_set_irq_type\u2019 defined but not used [-Wunused-function]\n  227 | static int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:214:13: warning: \u2018ftgpio_gpio_unmask_irq\u2019 defined but not used [-Wunused-function]\n  214 | static void ftgpio_gpio_unmask_irq(struct irq_data *d)\n      |             ^~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:201:13: warning: \u2018ftgpio_gpio_mask_irq\u2019 defined but not used [-Wunused-function]\n  201 | static void ftgpio_gpio_mask_irq(struct irq_data *d)\n      |             ^~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:191:13: warning: \u2018ftgpio_gpio_ack_irq\u2019 defined but not used [-Wunused-function]\n  191 | static void ftgpio_gpio_ack_irq(struct irq_data *d)\n      |             ^~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:180:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_get_direction\u2019 defined but not used [-Wunused-function]\n  180 | static int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:159:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_direction_output\u2019 defined but not used [-Wunused-function]\n  159 | static int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:146:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_direction_input\u2019 defined but not used [-Wunused-function]\n  146 | static int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:130:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_set_multiple\u2019 defined but not used [-Wunused-function]\n  130 | static int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:114:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_set\u2019 defined but not used [-Wunused-function]\n  114 | static int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:101:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_get_multiple\u2019 defined but not used [-Wunused-function]\n  101 | static int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nftgpio010_gpio.c:90:12: warning: \u2018ftgpio_gpio_probe__gpio_generic_get\u2019 defined but not used [-Wunused-function]\n   90 | static int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.build:289: ftgpio010_gpio.o] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2144: .] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+          },
+          "failure_class": "compile",
+          "iteration": 1,
+          "message": "candidate compilation failed",
+          "retryable": true,
+          "stage": "compile"
+        }
+      },
+      "stage": "compile",
+      "status": "failed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 1,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "code": "#include <linux/module.h>\n#include <linux/io.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/miscdevice.h>\n#include <linux/slab.h>\n#include <linux/err.h>\n#include <linux/of.h>\n#include <linux/platform_device.h>\n#include <linux/gpio/driver.h>\n#include <linux/irq.h>\n#include <linux/interrupt.h>\n\n#define GPIO_DATA_IN 4\n#define GPIO_DIR 8\n#define GPIO_DATA_SET 16\n#define GPIO_DATA_CLR 20\n#define GPIO_INT_EN 32\n#define GPIO_INT_STAT_RAW 36\n#define GPIO_INT_MASK 44\n#define GPIO_INT_CLR 48\n#define GPIO_INT_TYPE 52\n#define GPIO_INT_BOTH_EDGE 56\n#define GPIO_INT_LEVEL 60\n#define GPIO_DEBOUNCE_EN 64\n#define GPIO_DEBOUNCE_PRESCALE 68\n\n#define GPIO_BYPASS_IN 12\n#define GPIO_PULL_EN 24\n#define GPIO_PULL_TYPE 28\n#define GPIO_INT_STAT_MASKED 40\n#define GPIO_GENERIC_UNREADABLE_REG_SET 2\n#define GPIO_GENERIC_UNREADABLE_REG_DIR 4\n#define GPIO_GENERIC_BIG_ENDIAN 1\n#define GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER 8\n#define GPIO_GENERIC_READ_OUTPUT_REG_SET 16\n#define GPIO_GENERIC_NO_OUTPUT 32\n#define GPIO_GENERIC_NO_SET_ON_INPUT 64\n#define GPIO_GENERIC_PINCTRL_BACKEND 128\n#define GPIO_GENERIC_NO_INPUT 256\n#define GPIO_LINE_DIRECTION_OUT 0\n#define GPIO_LINE_DIRECTION_IN 1\n\nstatic void __iomem *__rh_mmio_base;\n#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info(\"[rhbase] %px\\n\", (void __iomem *)(b)); } while (0)\n#define RH_TRACE_FN(name) pr_info(\"[rhfn] %s\\n\", (name))\n#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))\n#undef readl\n#define readl(p) ({ u32 __v = __raw_readl(p); pr_info(\"[rh] R 0x%lx 0x%x\\n\", rh_off(p), __v); __v; })\n#undef writel\n#define writel(v,p) ({ pr_info(\"[rh] W 0x%lx 0x%x\\n\", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })\n\nstruct driver_priv {\n\tvoid __iomem *base;\n\tstruct miscdevice misc;\n\tstruct device *dev;\n\tstruct gpio_chip gc;\n\tstruct gpio_irq_chip *girq;\n\tu32 gpio_sdata;\n\tu32 gpio_sdir;\n\tstruct irq_chip irqchip;\n};\n\n#define priv_to_g(p) container_of((p), struct driver_priv, gc)\n#define irqdata_to_priv(d) container_of((d)->chip, struct driver_priv, irqchip)\n\nstatic int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_61 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\treturn ((value & (0x1 << 0)) != 0x0);\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_63 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_64 kind=Write status=lowered digest= */\n\t*bits = ((*bits & (~*mask)) | (value & *mask));\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_67 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif ((*bits & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=ab8d874dfdeeade8 */\n\t\twritel((*bits & *mask), base + GPIO_DATA_SET);\n\t}\n\tif (((~*bits) & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_70 kind=Write status=lowered digest=5f32f4874eb9aabb */\n\t\twritel(((~*bits) & *mask), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir & (~(0x1 << offset)));\n\t/* REHARNESS_RIS_OP id=op_74 kind=Write status=lowered digest=b949672343e78260 */\n\twritel((__shadow_dir & (~(0x1 << offset))), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_76 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_77 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=43d76c2e0b3f2385 */\n\twritel((__shadow_dir | (0x1 << offset)), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 direction;\n\n\t/* REHARNESS_RIS_OP id=op_82 kind=Read status=lowered digest=9d0c4bdae3641bba */\n\tdirection = readl(base + GPIO_DIR);\n\treturn (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1);\n}\n\nstatic void ftgpio_gpio_ack_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\n\t/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=5dd3bb35656acca9 */\n\twritel((0x1 << d->hwirq), base + GPIO_INT_CLR);\n}\n\nstatic void ftgpio_gpio_mask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_2 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_3 kind=ReadModifyWrite status=lowered digest=35b8bf6436435508 */\n\twritel((val & (~(0x1 << irqd_to_hwirq(d)))), base + GPIO_INT_EN);\n}\n\nstatic void ftgpio_gpio_unmask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_5 kind=ReadModifyWrite status=lowered digest=d8ab399a3e165c09 */\n\twritel((val | (0x1 << irqd_to_hwirq(d))), base + GPIO_INT_EN);\n}\n\nstatic int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 reg_type, reg_level, reg_both;\n\tu32 mask = (0x1 << irqd_to_hwirq(d));\n\n\t/* REHARNESS_RIS_OP id=op_6 kind=Read status=lowered digest=b359d00e3d754d3e */\n\treg_type = readl(base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=85db95e4e47b9e4c */\n\treg_level = readl(base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_8 kind=Read status=lowered digest=6642efb8949d9184 */\n\treg_both = readl(base + GPIO_INT_BOTH_EDGE);\n\n\tif (type == IRQ_TYPE_EDGE_BOTH) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both | mask);\n\t} else if (type == IRQ_TYPE_EDGE_RISING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_EDGE_FALLING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level | mask);\n\t} else if (type == IRQ_TYPE_LEVEL_HIGH) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_LEVEL_LOW) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level | mask);\n\t} else {\n\t\tirq_set_handler_locked(d, handle_bad_irq);\n\t\treturn 0;\n\t}\n\n\t/* REHARNESS_RIS_OP id=op_27 kind=ReadModifyWrite status=lowered digest=d1c746cb513851b5 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))), base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_28 kind=ReadModifyWrite status=lowered digest=26d436ff936be225 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))), base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_29 kind=ReadModifyWrite status=lowered digest=64b0966d1739dce7 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))), base + GPIO_INT_BOTH_EDGE);\n\treturn 0;\n}\n\nstatic irqreturn_t ftgpio_gpio_irq_handler(int irq, void *dev_id)\n{\n\tstruct gpio_irq_chip *girq = dev_id;\n\tstruct driver_priv *priv = container_of(girq, struct driver_priv, gc.irq);\n\tvoid __iomem *base = priv->base;\n\tu32 stat;\n\tstruct irq_chip *irqchip = girq->chip;\n\n\tif (irqchip->irq_mask_ack == 0x0) {\n\t\tif (irqchip->irq_ack) {\n\t\t\t/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=93a501c95c7a42f2 */\n\t\t\twritel((0x1 << irqd_to_hwirq(&irq_to_desc(irq)->irq_data)), base + GPIO_INT_CLR);\n\t\t}\n\t}\n\t/* REHARNESS_RIS_OP id=op_31 kind=Read status=lowered digest=e74749be940967d5 */\n\tstat = readl(base + GPIO_INT_STAT_RAW);\n\treturn IRQ_HANDLED;\n}\n\nstatic int ftgpio_gpio_set_config(struct gpio_chip *gc, unsigned int offset, unsigned long config)\n{\n\tstruct driver_priv *priv = container_of(gc, struct driver_priv, gc);\n\tvoid __iomem *base = priv->base;\n\tu32 val, deb_div = (u32)(config & 0xffffffff);\n\n\t/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=8eb491b0c0634ba7 */\n\tval = readl(base + GPIO_DEBOUNCE_PRESCALE);\n\tif (val == deb_div) {\n\t\t/* REHARNESS_RIS_OP id=op_33 kind=Read status=lowered digest=48230cd8ed117ec6 */\n\t\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t\tval = (val | (0x1 << offset));\n\t\t/* REHARNESS_RIS_OP id=op_35 kind=ReadModifyWrite status=lowered digest=81000a354c140fe1 */\n\t\twritel(((val == deb_div) ? (val | (0x1 << offset)) : val), base + GPIO_DEBOUNCE_EN);\n\t}\n\t/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=339408230d26d326 */\n\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=a89c06a8b813ae48 */\n\twritel(deb_div, base + GPIO_DEBOUNCE_PRESCALE);\n\tval = (val | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_39 kind=ReadModifyWrite status=lowered digest=a6b3f48cd0fe1e05 */\n\twritel((val | (0x1 << offset)), base + GPIO_DEBOUNCE_EN);\n\treturn 0;\n}\n\nstatic int ftgpio_gpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tstruct gpio_irq_chip *girq;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tRH_SET_BASE(g->base);\n\n\t/* REHARNESS_RIS_OP id=op_43 kind=Read status=lowered digest=16d85024e558eaef */\n\tg->gpio_sdata = readl(g->base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_45 kind=Read status=lowered digest=e9b515951bfad9ea */\n\tg->gpio_sdir = readl(g->base + GPIO_DIR);\n\n\tg->gc.base = -1;\n\tg->gc.parent = dev;\n\tg->gc.owner = THIS_MODULE;\n\tg->gc.label = KBUILD_MODNAME;\n\tg->gc.request = NULL;\n\tg->gc.free = NULL;\n\tg->gc.get = NULL;\n\tg->gc.set = NULL;\n\tg->gc.direction_input = NULL;\n\tg->gc.direction_output = NULL;\n\tg->gc.get_direction = NULL;\n\tg->gc.get_multiple = NULL;\n\tg->gc.set_multiple = NULL;\n\tg->gc.set_config = ftgpio_gpio_set_config;\n\n\tgirq = &g->gc.irq;\n\tgirq->parent_handler = NULL;\n\tgirq->num_parents = 0x1;\n\tgirq->default_type = IRQ_TYPE_NONE;\n\tgirq->handler = handle_bad_irq;\n\n\t/* REHARNESS_RIS_OP id=op_56 kind=Write status=lowered digest=7443390abf8fb623 */\n\twritel(0x0, g->base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=015d9e37bb50b02a */\n\twritel(0x0, g->base + GPIO_INT_MASK);\n\t/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=153d39994bb1ba88 */\n\twritel(0xffffffff, g->base + GPIO_INT_CLR);\n\t/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=92b66149c6b53a4a */\n\twritel(0x0, g->base + GPIO_DEBOUNCE_EN);\n\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tftgpio_gpio_ack_irq(NULL);\n\tftgpio_gpio_mask_irq(NULL);\n\tftgpio_gpio_unmask_irq(NULL);\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tftgpio_gpio_irq_handler(0, NULL);\n\n\tg->misc.minor = MISC_DYNAMIC_MINOR;\n\tg->misc.name = KBUILD_MODNAME;\n\tg->misc.fops = NULL;\n\treturn misc_register(&g->misc);\n}\n\nstatic void ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n}\n\nstatic int ftgpio_open(struct inode *inode, struct file *file)\n{\n\tstruct driver_priv *priv = container_of(file->private_data, struct driver_priv, misc);\n\tfile->private_data = priv;\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tval = readl(base + *ppos);\n\tif (copy_to_user(buf, &val, 4))\n\t\treturn -EFAULT;\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic ssize_t ftgpio_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tif (copy_from_user(&val, buf, 4))\n\t\treturn -EFAULT;\n\twritel(val, base + *ppos);\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic const struct file_operations ftgpio_fops = {\n\t.owner = THIS_MODULE,\n\t.open = ftgpio_open,\n\t.read = ftgpio_read,\n\t.write = ftgpio_write,\n\t.llseek = noop_llseek,\n};\n\nstatic int ftgpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tint ret;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tplatform_set_drvdata(pdev, g);\n\tRH_SET_BASE(g->base);\n\n\tret = misc_register(&g->misc);\n\tif (ret)\n\t\treturn ret;\n\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set\");\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_input\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_output\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_direction\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_ack_irq\");\n\tftgpio_gpio_ack_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_mask_irq\");\n\tftgpio_gpio_mask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_unmask_irq\");\n\tftgpio_gpio_unmask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_irq_type\");\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tRH_TRACE_FN(\"ftgpio_gpio_irq_handler\");\n\tftgpio_gpio_irq_handler(0, NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_config\");\n\t(void)ftgpio_gpio_set_config(&g->gc, 0, 0);\n\n\treturn 0;\n}\n\nstatic int ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n\treturn 0;\n}\n\nstatic struct platform_driver ftgpio_driver = {\n\t.probe = ftgpio_probe,\n\t.remove = ftgpio_remove,\n\t.driver = {\n\t\t.name = \"gpio-ftgpio010\",\n\t},\n};\n\nmodule_platform_driver(ftgpio_driver);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"gpio-ftgpio010 synthesized target implementation\");",
+          "diagnostics": {
+            "backend": "langchain",
+            "finish_reason": "stop",
+            "id": "resp_0040cab1ba0ea789016a8b7c0e3a6c87d2b89ac57f1591f07a",
+            "logprobs": null,
+            "model": "gpt-5.4-mini",
+            "model_name": "gpt-5.4-mini",
+            "model_provider": "openai",
+            "raw_output": "```c\n#include <linux/module.h>\n#include <linux/io.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/miscdevice.h>\n#include <linux/slab.h>\n#include <linux/err.h>\n#include <linux/of.h>\n#include <linux/platform_device.h>\n#include <linux/gpio/driver.h>\n#include <linux/irq.h>\n#include <linux/interrupt.h>\n\n#define GPIO_DATA_IN 4\n#define GPIO_DIR 8\n#define GPIO_DATA_SET 16\n#define GPIO_DATA_CLR 20\n#define GPIO_INT_EN 32\n#define GPIO_INT_STAT_RAW 36\n#define GPIO_INT_MASK 44\n#define GPIO_INT_CLR 48\n#define GPIO_INT_TYPE 52\n#define GPIO_INT_BOTH_EDGE 56\n#define GPIO_INT_LEVEL 60\n#define GPIO_DEBOUNCE_EN 64\n#define GPIO_DEBOUNCE_PRESCALE 68\n\n#define GPIO_BYPASS_IN 12\n#define GPIO_PULL_EN 24\n#define GPIO_PULL_TYPE 28\n#define GPIO_INT_STAT_MASKED 40\n#define GPIO_GENERIC_UNREADABLE_REG_SET 2\n#define GPIO_GENERIC_UNREADABLE_REG_DIR 4\n#define GPIO_GENERIC_BIG_ENDIAN 1\n#define GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER 8\n#define GPIO_GENERIC_READ_OUTPUT_REG_SET 16\n#define GPIO_GENERIC_NO_OUTPUT 32\n#define GPIO_GENERIC_NO_SET_ON_INPUT 64\n#define GPIO_GENERIC_PINCTRL_BACKEND 128\n#define GPIO_GENERIC_NO_INPUT 256\n#define GPIO_LINE_DIRECTION_OUT 0\n#define GPIO_LINE_DIRECTION_IN 1\n\nstatic void __iomem *__rh_mmio_base;\n#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info(\"[rhbase] %px\\n\", (void __iomem *)(b)); } while (0)\n#define RH_TRACE_FN(name) pr_info(\"[rhfn] %s\\n\", (name))\n#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))\n#undef readl\n#define readl(p) ({ u32 __v = __raw_readl(p); pr_info(\"[rh] R 0x%lx 0x%x\\n\", rh_off(p), __v); __v; })\n#undef writel\n#define writel(v,p) ({ pr_info(\"[rh] W 0x%lx 0x%x\\n\", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })\n\nstruct driver_priv {\n\tvoid __iomem *base;\n\tstruct miscdevice misc;\n\tstruct device *dev;\n\tstruct gpio_chip gc;\n\tstruct gpio_irq_chip *girq;\n\tu32 gpio_sdata;\n\tu32 gpio_sdir;\n\tstruct irq_chip irqchip;\n};\n\n#define priv_to_g(p) container_of((p), struct driver_priv, gc)\n#define irqdata_to_priv(d) container_of((d)->chip, struct driver_priv, irqchip)\n\nstatic int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_61 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\treturn ((value & (0x1 << 0)) != 0x0);\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_63 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_64 kind=Write status=lowered digest= */\n\t*bits = ((*bits & (~*mask)) | (value & *mask));\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_67 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif ((*bits & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=ab8d874dfdeeade8 */\n\t\twritel((*bits & *mask), base + GPIO_DATA_SET);\n\t}\n\tif (((~*bits) & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_70 kind=Write status=lowered digest=5f32f4874eb9aabb */\n\t\twritel(((~*bits) & *mask), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir & (~(0x1 << offset)));\n\t/* REHARNESS_RIS_OP id=op_74 kind=Write status=lowered digest=b949672343e78260 */\n\twritel((__shadow_dir & (~(0x1 << offset))), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_76 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_77 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=43d76c2e0b3f2385 */\n\twritel((__shadow_dir | (0x1 << offset)), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 direction;\n\n\t/* REHARNESS_RIS_OP id=op_82 kind=Read status=lowered digest=9d0c4bdae3641bba */\n\tdirection = readl(base + GPIO_DIR);\n\treturn (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1);\n}\n\nstatic void ftgpio_gpio_ack_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\n\t/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=5dd3bb35656acca9 */\n\twritel((0x1 << d->hwirq), base + GPIO_INT_CLR);\n}\n\nstatic void ftgpio_gpio_mask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_2 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_3 kind=ReadModifyWrite status=lowered digest=35b8bf6436435508 */\n\twritel((val & (~(0x1 << irqd_to_hwirq(d)))), base + GPIO_INT_EN);\n}\n\nstatic void ftgpio_gpio_unmask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_5 kind=ReadModifyWrite status=lowered digest=d8ab399a3e165c09 */\n\twritel((val | (0x1 << irqd_to_hwirq(d))), base + GPIO_INT_EN);\n}\n\nstatic int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 reg_type, reg_level, reg_both;\n\tu32 mask = (0x1 << irqd_to_hwirq(d));\n\n\t/* REHARNESS_RIS_OP id=op_6 kind=Read status=lowered digest=b359d00e3d754d3e */\n\treg_type = readl(base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=85db95e4e47b9e4c */\n\treg_level = readl(base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_8 kind=Read status=lowered digest=6642efb8949d9184 */\n\treg_both = readl(base + GPIO_INT_BOTH_EDGE);\n\n\tif (type == IRQ_TYPE_EDGE_BOTH) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both | mask);\n\t} else if (type == IRQ_TYPE_EDGE_RISING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_EDGE_FALLING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level | mask);\n\t} else if (type == IRQ_TYPE_LEVEL_HIGH) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_LEVEL_LOW) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level | mask);\n\t} else {\n\t\tirq_set_handler_locked(d, handle_bad_irq);\n\t\treturn 0;\n\t}\n\n\t/* REHARNESS_RIS_OP id=op_27 kind=ReadModifyWrite status=lowered digest=d1c746cb513851b5 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))), base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_28 kind=ReadModifyWrite status=lowered digest=26d436ff936be225 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))), base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_29 kind=ReadModifyWrite status=lowered digest=64b0966d1739dce7 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))), base + GPIO_INT_BOTH_EDGE);\n\treturn 0;\n}\n\nstatic irqreturn_t ftgpio_gpio_irq_handler(int irq, void *dev_id)\n{\n\tstruct gpio_irq_chip *girq = dev_id;\n\tstruct driver_priv *priv = container_of(girq, struct driver_priv, gc.irq);\n\tvoid __iomem *base = priv->base;\n\tu32 stat;\n\tstruct irq_chip *irqchip = girq->chip;\n\n\tif (irqchip->irq_mask_ack == 0x0) {\n\t\tif (irqchip->irq_ack) {\n\t\t\t/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=93a501c95c7a42f2 */\n\t\t\twritel((0x1 << irqd_to_hwirq(&irq_to_desc(irq)->irq_data)), base + GPIO_INT_CLR);\n\t\t}\n\t}\n\t/* REHARNESS_RIS_OP id=op_31 kind=Read status=lowered digest=e74749be940967d5 */\n\tstat = readl(base + GPIO_INT_STAT_RAW);\n\treturn IRQ_HANDLED;\n}\n\nstatic int ftgpio_gpio_set_config(struct gpio_chip *gc, unsigned int offset, unsigned long config)\n{\n\tstruct driver_priv *priv = container_of(gc, struct driver_priv, gc);\n\tvoid __iomem *base = priv->base;\n\tu32 val, deb_div = (u32)(config & 0xffffffff);\n\n\t/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=8eb491b0c0634ba7 */\n\tval = readl(base + GPIO_DEBOUNCE_PRESCALE);\n\tif (val == deb_div) {\n\t\t/* REHARNESS_RIS_OP id=op_33 kind=Read status=lowered digest=48230cd8ed117ec6 */\n\t\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t\tval = (val | (0x1 << offset));\n\t\t/* REHARNESS_RIS_OP id=op_35 kind=ReadModifyWrite status=lowered digest=81000a354c140fe1 */\n\t\twritel(((val == deb_div) ? (val | (0x1 << offset)) : val), base + GPIO_DEBOUNCE_EN);\n\t}\n\t/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=339408230d26d326 */\n\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=a89c06a8b813ae48 */\n\twritel(deb_div, base + GPIO_DEBOUNCE_PRESCALE);\n\tval = (val | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_39 kind=ReadModifyWrite status=lowered digest=a6b3f48cd0fe1e05 */\n\twritel((val | (0x1 << offset)), base + GPIO_DEBOUNCE_EN);\n\treturn 0;\n}\n\nstatic int ftgpio_gpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tstruct gpio_irq_chip *girq;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tRH_SET_BASE(g->base);\n\n\t/* REHARNESS_RIS_OP id=op_43 kind=Read status=lowered digest=16d85024e558eaef */\n\tg->gpio_sdata = readl(g->base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_45 kind=Read status=lowered digest=e9b515951bfad9ea */\n\tg->gpio_sdir = readl(g->base + GPIO_DIR);\n\n\tg->gc.base = -1;\n\tg->gc.parent = dev;\n\tg->gc.owner = THIS_MODULE;\n\tg->gc.label = KBUILD_MODNAME;\n\tg->gc.request = NULL;\n\tg->gc.free = NULL;\n\tg->gc.get = NULL;\n\tg->gc.set = NULL;\n\tg->gc.direction_input = NULL;\n\tg->gc.direction_output = NULL;\n\tg->gc.get_direction = NULL;\n\tg->gc.get_multiple = NULL;\n\tg->gc.set_multiple = NULL;\n\tg->gc.set_config = ftgpio_gpio_set_config;\n\n\tgirq = &g->gc.irq;\n\tgirq->parent_handler = NULL;\n\tgirq->num_parents = 0x1;\n\tgirq->default_type = IRQ_TYPE_NONE;\n\tgirq->handler = handle_bad_irq;\n\n\t/* REHARNESS_RIS_OP id=op_56 kind=Write status=lowered digest=7443390abf8fb623 */\n\twritel(0x0, g->base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=015d9e37bb50b02a */\n\twritel(0x0, g->base + GPIO_INT_MASK);\n\t/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=153d39994bb1ba88 */\n\twritel(0xffffffff, g->base + GPIO_INT_CLR);\n\t/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=92b66149c6b53a4a */\n\twritel(0x0, g->base + GPIO_DEBOUNCE_EN);\n\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tftgpio_gpio_ack_irq(NULL);\n\tftgpio_gpio_mask_irq(NULL);\n\tftgpio_gpio_unmask_irq(NULL);\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tftgpio_gpio_irq_handler(0, NULL);\n\n\tg->misc.minor = MISC_DYNAMIC_MINOR;\n\tg->misc.name = KBUILD_MODNAME;\n\tg->misc.fops = NULL;\n\treturn misc_register(&g->misc);\n}\n\nstatic void ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n}\n\nstatic int ftgpio_open(struct inode *inode, struct file *file)\n{\n\tstruct driver_priv *priv = container_of(file->private_data, struct driver_priv, misc);\n\tfile->private_data = priv;\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tval = readl(base + *ppos);\n\tif (copy_to_user(buf, &val, 4))\n\t\treturn -EFAULT;\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic ssize_t ftgpio_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tif (copy_from_user(&val, buf, 4))\n\t\treturn -EFAULT;\n\twritel(val, base + *ppos);\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic const struct file_operations ftgpio_fops = {\n\t.owner = THIS_MODULE,\n\t.open = ftgpio_open,\n\t.read = ftgpio_read,\n\t.write = ftgpio_write,\n\t.llseek = noop_llseek,\n};\n\nstatic int ftgpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tint ret;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tplatform_set_drvdata(pdev, g);\n\tRH_SET_BASE(g->base);\n\n\tret = misc_register(&g->misc);\n\tif (ret)\n\t\treturn ret;\n\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set\");\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_input\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_output\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_direction\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_ack_irq\");\n\tftgpio_gpio_ack_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_mask_irq\");\n\tftgpio_gpio_mask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_unmask_irq\");\n\tftgpio_gpio_unmask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_irq_type\");\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tRH_TRACE_FN(\"ftgpio_gpio_irq_handler\");\n\tftgpio_gpio_irq_handler(0, NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_config\");\n\t(void)ftgpio_gpio_set_config(&g->gc, 0, 0);\n\n\treturn 0;\n}\n\nstatic int ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n\treturn 0;\n}\n\nstatic struct platform_driver ftgpio_driver = {\n\t.probe = ftgpio_probe,\n\t.remove = ftgpio_remove,\n\t.driver = {\n\t\t.name = \"gpio-ftgpio010\",\n\t},\n};\n\nmodule_platform_driver(ftgpio_driver);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"gpio-ftgpio010 synthesized target implementation\");\n```",
+            "system_fingerprint": null,
+            "token_usage": {
+              "completion_tokens": 5376,
+              "completion_tokens_details": null,
+              "prompt_tokens": 20867,
+              "prompt_tokens_details": null,
+              "total_tokens": 26243
+            }
+          },
+          "scenario": []
+        }
+      },
+      "stage": "repair",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 2,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "complete": true,
+          "digest_mismatch": [],
+          "duplicate": [],
+          "duplicate_expected_ids": [],
+          "duplicate_transaction_markers": [],
+          "kind_mismatch": [],
+          "missing": [],
+          "missing_transaction_markers": [],
+          "receipts": 36,
+          "rejected": [],
+          "required_ops": 36,
+          "required_transactions": 0,
+          "schema": 1,
+          "transaction_accounting_complete": true,
+          "transaction_marker_mismatch": [],
+          "transaction_markers": 0,
+          "unknown": [],
+          "unknown_transaction_markers": [],
+          "unsupported_transactions": []
+        }
+      },
+      "stage": "contract",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 2,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "feedback": {
+          "details": {
+            "return_code": 2,
+            "stderr": "ftgpio010_gpio.c:506:12: error: conflicting types for \u2018ftgpio_remove\u2019; have \u2018int(struct platform_device *)\u2019\n  506 | static int ftgpio_remove(struct platform_device *pdev)\n      |            ^~~~~~~~~~~~~\nftgpio010_gpio.c:402:13: note: previous definition of \u2018ftgpio_remove\u2019 with type \u2018void(struct platform_device *)\u2019\n  402 | static void ftgpio_remove(struct platform_device *pdev)\n      |             ^~~~~~~~~~~~~\nftgpio010_gpio.c:518:19: error: initialization of \u2018void (*)(struct platform_device *)\u2019 from incompatible pointer type \u2018int (*)(struct platform_device *)\u2019 [-Werror=incompatible-pointer-types]\n  518 |         .remove = ftgpio_remove,\n      |                   ^~~~~~~~~~~~~\nftgpio010_gpio.c:518:19: note: (near initialization for \u2018ftgpio_driver.remove\u2019)\nftgpio010_gpio.c:402:13: warning: \u2018ftgpio_remove\u2019 defined but not used [-Wunused-function]\n  402 | static void ftgpio_remove(struct platform_device *pdev)\n      |             ^~~~~~~~~~~~~\nftgpio010_gpio.c:324:12: warning: \u2018ftgpio_gpio_probe\u2019 defined but not used [-Wunused-function]\n  324 | static int ftgpio_gpio_probe(struct platform_device *pdev)\n      |            ^~~~~~~~~~~~~~~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.build:289: ftgpio010_gpio.o] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2144: .] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+          },
+          "failure_class": "compile",
+          "iteration": 2,
+          "message": "candidate compilation failed",
+          "retryable": true,
+          "stage": "compile"
+        }
+      },
+      "stage": "compile",
+      "status": "failed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 2,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "code": "#include <linux/module.h>\n#include <linux/io.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/miscdevice.h>\n#include <linux/slab.h>\n#include <linux/err.h>\n#include <linux/of.h>\n#include <linux/platform_device.h>\n#include <linux/gpio/driver.h>\n#include <linux/irq.h>\n#include <linux/interrupt.h>\n\n#define GPIO_DATA_IN 4\n#define GPIO_DIR 8\n#define GPIO_DATA_SET 16\n#define GPIO_DATA_CLR 20\n#define GPIO_INT_EN 32\n#define GPIO_INT_STAT_RAW 36\n#define GPIO_INT_MASK 44\n#define GPIO_INT_CLR 48\n#define GPIO_INT_TYPE 52\n#define GPIO_INT_BOTH_EDGE 56\n#define GPIO_INT_LEVEL 60\n#define GPIO_DEBOUNCE_EN 64\n#define GPIO_DEBOUNCE_PRESCALE 68\n\n#define GPIO_BYPASS_IN 12\n#define GPIO_PULL_EN 24\n#define GPIO_PULL_TYPE 28\n#define GPIO_INT_STAT_MASKED 40\n#define GPIO_GENERIC_UNREADABLE_REG_SET 2\n#define GPIO_GENERIC_UNREADABLE_REG_DIR 4\n#define GPIO_GENERIC_BIG_ENDIAN 1\n#define GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER 8\n#define GPIO_GENERIC_READ_OUTPUT_REG_SET 16\n#define GPIO_GENERIC_NO_OUTPUT 32\n#define GPIO_GENERIC_NO_SET_ON_INPUT 64\n#define GPIO_GENERIC_PINCTRL_BACKEND 128\n#define GPIO_GENERIC_NO_INPUT 256\n#define GPIO_LINE_DIRECTION_OUT 0\n#define GPIO_LINE_DIRECTION_IN 1\n\nstatic void __iomem *__rh_mmio_base;\n#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info(\"[rhbase] %px\\n\", (void __iomem *)(b)); } while (0)\n#define RH_TRACE_FN(name) pr_info(\"[rhfn] %s\\n\", (name))\n#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))\n#undef readl\n#define readl(p) ({ u32 __v = __raw_readl(p); pr_info(\"[rh] R 0x%lx 0x%x\\n\", rh_off(p), __v); __v; })\n#undef writel\n#define writel(v,p) ({ pr_info(\"[rh] W 0x%lx 0x%x\\n\", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })\n\nstruct driver_priv {\n\tvoid __iomem *base;\n\tstruct miscdevice misc;\n\tstruct device *dev;\n\tstruct gpio_chip gc;\n\tstruct gpio_irq_chip *girq;\n\tu32 gpio_sdata;\n\tu32 gpio_sdir;\n\tstruct irq_chip irqchip;\n};\n\n#define priv_to_g(p) container_of((p), struct driver_priv, gc)\n#define irqdata_to_priv(d) container_of((d)->chip, struct driver_priv, irqchip)\n\nstatic int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_61 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\treturn ((value & (0x1 << 0)) != 0x0);\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_63 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\t*bits = ((*bits & (~*mask)) | (value & *mask));\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_67 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif ((*bits & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=ab8d874dfdeeade8 */\n\t\twritel((*bits & *mask), base + GPIO_DATA_SET);\n\t}\n\tif (((~*bits) & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_70 kind=Write status=lowered digest=5f32f4874eb9aabb */\n\t\twritel(((~*bits) & *mask), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir & (~(0x1 << offset)));\n\t/* REHARNESS_RIS_OP id=op_74 kind=Write status=lowered digest=b949672343e78260 */\n\twritel((__shadow_dir & (~(0x1 << offset))), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_76 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_77 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=43d76c2e0b3f2385 */\n\twritel((__shadow_dir | (0x1 << offset)), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 direction;\n\n\t/* REHARNESS_RIS_OP id=op_82 kind=Read status=lowered digest=9d0c4bdae3641bba */\n\tdirection = readl(base + GPIO_DIR);\n\treturn (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1);\n}\n\nstatic void ftgpio_gpio_ack_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\n\t/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=5dd3bb35656acca9 */\n\twritel((0x1 << d->hwirq), base + GPIO_INT_CLR);\n}\n\nstatic void ftgpio_gpio_mask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_2 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_3 kind=ReadModifyWrite status=lowered digest=35b8bf6436435508 */\n\twritel((val & (~(0x1 << irqd_to_hwirq(d)))), base + GPIO_INT_EN);\n}\n\nstatic void ftgpio_gpio_unmask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_5 kind=ReadModifyWrite status=lowered digest=d8ab399a3e165c09 */\n\twritel((val | (0x1 << irqd_to_hwirq(d))), base + GPIO_INT_EN);\n}\n\nstatic int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 reg_type, reg_level, reg_both;\n\tu32 mask = (0x1 << irqd_to_hwirq(d));\n\n\t/* REHARNESS_RIS_OP id=op_6 kind=Read status=lowered digest=b359d00e3d754d3e */\n\treg_type = readl(base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=85db95e4e47b9e4c */\n\treg_level = readl(base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_8 kind=Read status=lowered digest=6642efb8949d9184 */\n\treg_both = readl(base + GPIO_INT_BOTH_EDGE);\n\n\tif (type == IRQ_TYPE_EDGE_BOTH) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both | mask);\n\t} else if (type == IRQ_TYPE_EDGE_RISING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_EDGE_FALLING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level | mask);\n\t} else if (type == IRQ_TYPE_LEVEL_HIGH) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_LEVEL_LOW) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level | mask);\n\t} else {\n\t\tirq_set_handler_locked(d, handle_bad_irq);\n\t\treturn 0;\n\t}\n\n\t/* REHARNESS_RIS_OP id=op_27 kind=ReadModifyWrite status=lowered digest=d1c746cb513851b5 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))), base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_28 kind=ReadModifyWrite status=lowered digest=26d436ff936be225 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))), base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_29 kind=ReadModifyWrite status=lowered digest=64b0966d1739dce7 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))), base + GPIO_INT_BOTH_EDGE);\n\treturn 0;\n}\n\nstatic irqreturn_t ftgpio_gpio_irq_handler(int irq, void *dev_id)\n{\n\tstruct gpio_irq_chip *girq = dev_id;\n\tstruct driver_priv *priv = container_of(girq, struct driver_priv, gc.irq);\n\tvoid __iomem *base = priv->base;\n\tu32 stat;\n\tstruct irq_chip *irqchip = girq->chip;\n\n\tif (irqchip->irq_mask_ack == 0x0) {\n\t\tif (irqchip->irq_ack) {\n\t\t\t/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=93a501c95c7a42f2 */\n\t\t\twritel((0x1 << irqd_to_hwirq(&irq_to_desc(irq)->irq_data)), base + GPIO_INT_CLR);\n\t\t}\n\t}\n\t/* REHARNESS_RIS_OP id=op_31 kind=Read status=lowered digest=e74749be940967d5 */\n\tstat = readl(base + GPIO_INT_STAT_RAW);\n\treturn IRQ_HANDLED;\n}\n\nstatic int ftgpio_gpio_set_config(struct gpio_chip *gc, unsigned int offset, unsigned long config)\n{\n\tstruct driver_priv *priv = container_of(gc, struct driver_priv, gc);\n\tvoid __iomem *base = priv->base;\n\tu32 val, deb_div = (u32)(config & 0xffffffff);\n\n\t/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=8eb491b0c0634ba7 */\n\tval = readl(base + GPIO_DEBOUNCE_PRESCALE);\n\tif (val == deb_div) {\n\t\t/* REHARNESS_RIS_OP id=op_33 kind=Read status=lowered digest=48230cd8ed117ec6 */\n\t\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t\tval = (val | (0x1 << offset));\n\t\t/* REHARNESS_RIS_OP id=op_35 kind=ReadModifyWrite status=lowered digest=81000a354c140fe1 */\n\t\twritel(((val == deb_div) ? (val | (0x1 << offset)) : val), base + GPIO_DEBOUNCE_EN);\n\t}\n\t/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=339408230d26d326 */\n\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=a89c06a8b813ae48 */\n\twritel(deb_div, base + GPIO_DEBOUNCE_PRESCALE);\n\tval = (val | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_39 kind=ReadModifyWrite status=lowered digest=a6b3f48cd0fe1e05 */\n\twritel((val | (0x1 << offset)), base + GPIO_DEBOUNCE_EN);\n\treturn 0;\n}\n\nstatic int ftgpio_gpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tstruct gpio_irq_chip *girq;\n\tint ret;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tRH_SET_BASE(g->base);\n\n\t/* REHARNESS_RIS_OP id=op_43 kind=Read status=lowered digest=16d85024e558eaef */\n\tg->gpio_sdata = readl(g->base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_45 kind=Read status=lowered digest=e9b515951bfad9ea */\n\tg->gpio_sdir = readl(g->base + GPIO_DIR);\n\n\tg->gc.base = -1;\n\tg->gc.parent = dev;\n\tg->gc.owner = THIS_MODULE;\n\tg->gc.label = KBUILD_MODNAME;\n\tg->gc.request = NULL;\n\tg->gc.free = NULL;\n\tg->gc.get = NULL;\n\tg->gc.set = NULL;\n\tg->gc.direction_input = NULL;\n\tg->gc.direction_output = NULL;\n\tg->gc.get_direction = NULL;\n\tg->gc.get_multiple = NULL;\n\tg->gc.set_multiple = NULL;\n\tg->gc.set_config = ftgpio_gpio_set_config;\n\n\tgirq = &g->gc.irq;\n\tgirq->parent_handler = NULL;\n\tgirq->num_parents = 0x1;\n\tgirq->default_type = IRQ_TYPE_NONE;\n\tgirq->handler = handle_bad_irq;\n\n\t/* REHARNESS_RIS_OP id=op_56 kind=Write status=lowered digest=7443390abf8fb623 */\n\twritel(0x0, g->base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=015d9e37bb50b02a */\n\twritel(0x0, g->base + GPIO_INT_MASK);\n\t/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=153d39994bb1ba88 */\n\twritel(0xffffffff, g->base + GPIO_INT_CLR);\n\t/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=92b66149c6b53a4a */\n\twritel(0x0, g->base + GPIO_DEBOUNCE_EN);\n\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tftgpio_gpio_ack_irq(NULL);\n\tftgpio_gpio_mask_irq(NULL);\n\tftgpio_gpio_unmask_irq(NULL);\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tftgpio_gpio_irq_handler(0, NULL);\n\n\tg->misc.minor = MISC_DYNAMIC_MINOR;\n\tg->misc.name = KBUILD_MODNAME;\n\tg->misc.fops = NULL;\n\tret = misc_register(&g->misc);\n\tif (ret)\n\t\treturn ret;\n\n\tplatform_set_drvdata(pdev, g);\n\treturn 0;\n}\n\nstatic void ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n}\n\nstatic int ftgpio_open(struct inode *inode, struct file *file)\n{\n\tstruct driver_priv *priv = container_of(file->private_data, struct driver_priv, misc);\n\tfile->private_data = priv;\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tval = readl(base + *ppos);\n\tif (copy_to_user(buf, &val, 4))\n\t\treturn -EFAULT;\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic ssize_t ftgpio_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tif (copy_from_user(&val, buf, 4))\n\t\treturn -EFAULT;\n\twritel(val, base + *ppos);\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic const struct file_operations ftgpio_fops = {\n\t.owner = THIS_MODULE,\n\t.open = ftgpio_open,\n\t.read = ftgpio_read,\n\t.write = ftgpio_write,\n\t.llseek = noop_llseek,\n};\n\nstatic int ftgpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tint ret;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tplatform_set_drvdata(pdev, g);\n\tRH_SET_BASE(g->base);\n\n\tret = misc_register(&g->misc);\n\tif (ret)\n\t\treturn ret;\n\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set\");\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_input\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_output\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_direction\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_ack_irq\");\n\tftgpio_gpio_ack_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_mask_irq\");\n\tftgpio_gpio_mask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_unmask_irq\");\n\tftgpio_gpio_unmask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_irq_type\");\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tRH_TRACE_FN(\"ftgpio_gpio_irq_handler\");\n\tftgpio_gpio_irq_handler(0, NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_config\");\n\t(void)ftgpio_gpio_set_config(&g->gc, 0, 0);\n\n\treturn 0;\n}\n\nstatic struct platform_driver ftgpio_driver = {\n\t.probe = ftgpio_probe,\n\t.remove = ftgpio_remove,\n\t.driver = {\n\t\t.name = \"gpio-ftgpio010\",\n\t},\n};\n\nmodule_platform_driver(ftgpio_driver);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"gpio-ftgpio010 synthesized target implementation\");",
+          "diagnostics": {
+            "backend": "langchain",
+            "finish_reason": "stop",
+            "id": "resp_0fe10cac44596a40016a8b7c5bf0d487d2a22578b311ab0bfe",
+            "logprobs": null,
+            "model": "gpt-5.4-mini",
+            "model_name": "gpt-5.4-mini",
+            "model_provider": "openai",
+            "raw_output": "```c\n#include <linux/module.h>\n#include <linux/io.h>\n#include <linux/fs.h>\n#include <linux/uaccess.h>\n#include <linux/miscdevice.h>\n#include <linux/slab.h>\n#include <linux/err.h>\n#include <linux/of.h>\n#include <linux/platform_device.h>\n#include <linux/gpio/driver.h>\n#include <linux/irq.h>\n#include <linux/interrupt.h>\n\n#define GPIO_DATA_IN 4\n#define GPIO_DIR 8\n#define GPIO_DATA_SET 16\n#define GPIO_DATA_CLR 20\n#define GPIO_INT_EN 32\n#define GPIO_INT_STAT_RAW 36\n#define GPIO_INT_MASK 44\n#define GPIO_INT_CLR 48\n#define GPIO_INT_TYPE 52\n#define GPIO_INT_BOTH_EDGE 56\n#define GPIO_INT_LEVEL 60\n#define GPIO_DEBOUNCE_EN 64\n#define GPIO_DEBOUNCE_PRESCALE 68\n\n#define GPIO_BYPASS_IN 12\n#define GPIO_PULL_EN 24\n#define GPIO_PULL_TYPE 28\n#define GPIO_INT_STAT_MASKED 40\n#define GPIO_GENERIC_UNREADABLE_REG_SET 2\n#define GPIO_GENERIC_UNREADABLE_REG_DIR 4\n#define GPIO_GENERIC_BIG_ENDIAN 1\n#define GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER 8\n#define GPIO_GENERIC_READ_OUTPUT_REG_SET 16\n#define GPIO_GENERIC_NO_OUTPUT 32\n#define GPIO_GENERIC_NO_SET_ON_INPUT 64\n#define GPIO_GENERIC_PINCTRL_BACKEND 128\n#define GPIO_GENERIC_NO_INPUT 256\n#define GPIO_LINE_DIRECTION_OUT 0\n#define GPIO_LINE_DIRECTION_IN 1\n\nstatic void __iomem *__rh_mmio_base;\n#define RH_SET_BASE(b) do { __rh_mmio_base = (b); pr_info(\"[rhbase] %px\\n\", (void __iomem *)(b)); } while (0)\n#define RH_TRACE_FN(name) pr_info(\"[rhfn] %s\\n\", (name))\n#define rh_off(p) ((unsigned long)((const void __iomem *)(p) - __rh_mmio_base))\n#undef readl\n#define readl(p) ({ u32 __v = __raw_readl(p); pr_info(\"[rh] R 0x%lx 0x%x\\n\", rh_off(p), __v); __v; })\n#undef writel\n#define writel(v,p) ({ pr_info(\"[rh] W 0x%lx 0x%x\\n\", rh_off(p), (u32)(v)); __raw_writel((v),(p)); })\n\nstruct driver_priv {\n\tvoid __iomem *base;\n\tstruct miscdevice misc;\n\tstruct device *dev;\n\tstruct gpio_chip gc;\n\tstruct gpio_irq_chip *girq;\n\tu32 gpio_sdata;\n\tu32 gpio_sdir;\n\tstruct irq_chip irqchip;\n};\n\n#define priv_to_g(p) container_of((p), struct driver_priv, gc)\n#define irqdata_to_priv(d) container_of((d)->chip, struct driver_priv, irqchip)\n\nstatic int ftgpio_gpio_probe__gpio_generic_get(struct driver_priv *priv)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_61 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\treturn ((value & (0x1 << 0)) != 0x0);\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 value;\n\n\t/* REHARNESS_RIS_OP id=op_63 kind=Read status=lowered digest=a2dc39d9a87e4bf7 */\n\tvalue = readl(base + GPIO_DATA_IN);\n\t*bits = ((*bits & (~*mask)) | (value & *mask));\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_67 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_set_multiple(struct driver_priv *priv, unsigned long *bits, unsigned long *mask)\n{\n\tvoid __iomem *base = priv->base;\n\n\tif ((*bits & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=ab8d874dfdeeade8 */\n\t\twritel((*bits & *mask), base + GPIO_DATA_SET);\n\t}\n\tif (((~*bits) & *mask) != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_70 kind=Write status=lowered digest=5f32f4874eb9aabb */\n\t\twritel(((~*bits) & *mask), base + GPIO_DATA_CLR);\n\t}\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_input(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir & (~(0x1 << offset)));\n\t/* REHARNESS_RIS_OP id=op_74 kind=Write status=lowered digest=b949672343e78260 */\n\twritel((__shadow_dir & (~(0x1 << offset))), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_direction_output(struct driver_priv *priv, unsigned int offset, int value)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 __shadow_dir;\n\n\tif (value != 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_76 kind=Write status=lowered digest=b36eb49659ebc50a */\n\t\twritel((0x1 << offset), base + GPIO_DATA_SET);\n\t}\n\tif (value == 0x0) {\n\t\t/* REHARNESS_RIS_OP id=op_77 kind=Write status=lowered digest=3834a18c428720bf */\n\t\twritel((0x1 << offset), base + GPIO_DATA_CLR);\n\t}\n\t__shadow_dir = priv->gpio_sdir;\n\tpriv->gpio_sdir = (__shadow_dir | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=43d76c2e0b3f2385 */\n\twritel((__shadow_dir | (0x1 << offset)), base + GPIO_DIR);\n\treturn 0x0;\n}\n\nstatic int ftgpio_gpio_probe__gpio_generic_get_direction(struct driver_priv *priv, unsigned int offset)\n{\n\tvoid __iomem *base = priv->base;\n\tu32 direction;\n\n\t/* REHARNESS_RIS_OP id=op_82 kind=Read status=lowered digest=9d0c4bdae3641bba */\n\tdirection = readl(base + GPIO_DIR);\n\treturn (((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1);\n}\n\nstatic void ftgpio_gpio_ack_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\n\t/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=5dd3bb35656acca9 */\n\twritel((0x1 << d->hwirq), base + GPIO_INT_CLR);\n}\n\nstatic void ftgpio_gpio_mask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_2 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_3 kind=ReadModifyWrite status=lowered digest=35b8bf6436435508 */\n\twritel((val & (~(0x1 << irqd_to_hwirq(d)))), base + GPIO_INT_EN);\n}\n\nstatic void ftgpio_gpio_unmask_irq(struct irq_data *d)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\t/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=67a27c7ab6f431e2 */\n\tval = readl(base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_5 kind=ReadModifyWrite status=lowered digest=d8ab399a3e165c09 */\n\twritel((val | (0x1 << irqd_to_hwirq(d))), base + GPIO_INT_EN);\n}\n\nstatic int ftgpio_gpio_set_irq_type(struct irq_data *d, unsigned int type)\n{\n\tstruct driver_priv *priv = irq_data_get_irq_chip_data(d);\n\tvoid __iomem *base = priv->base;\n\tu32 reg_type, reg_level, reg_both;\n\tu32 mask = (0x1 << irqd_to_hwirq(d));\n\n\t/* REHARNESS_RIS_OP id=op_6 kind=Read status=lowered digest=b359d00e3d754d3e */\n\treg_type = readl(base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=85db95e4e47b9e4c */\n\treg_level = readl(base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_8 kind=Read status=lowered digest=6642efb8949d9184 */\n\treg_both = readl(base + GPIO_INT_BOTH_EDGE);\n\n\tif (type == IRQ_TYPE_EDGE_BOTH) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both | mask);\n\t} else if (type == IRQ_TYPE_EDGE_RISING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_EDGE_FALLING) {\n\t\tirq_set_handler_locked(d, handle_edge_irq);\n\t\treg_type = (reg_type & (~mask));\n\t\treg_both = (reg_both & (~mask));\n\t\treg_level = (reg_level | mask);\n\t} else if (type == IRQ_TYPE_LEVEL_HIGH) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level & (~mask));\n\t} else if (type == IRQ_TYPE_LEVEL_LOW) {\n\t\tirq_set_handler_locked(d, handle_level_irq);\n\t\treg_type = (reg_type | mask);\n\t\treg_level = (reg_level | mask);\n\t} else {\n\t\tirq_set_handler_locked(d, handle_bad_irq);\n\t\treturn 0;\n\t}\n\n\t/* REHARNESS_RIS_OP id=op_27 kind=ReadModifyWrite status=lowered digest=d1c746cb513851b5 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type))))), base + GPIO_INT_TYPE);\n\t/* REHARNESS_RIS_OP id=op_28 kind=ReadModifyWrite status=lowered digest=26d436ff936be225 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level))))), base + GPIO_INT_LEVEL);\n\t/* REHARNESS_RIS_OP id=op_29 kind=ReadModifyWrite status=lowered digest=64b0966d1739dce7 */\n\twritel(((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both))))), base + GPIO_INT_BOTH_EDGE);\n\treturn 0;\n}\n\nstatic irqreturn_t ftgpio_gpio_irq_handler(int irq, void *dev_id)\n{\n\tstruct gpio_irq_chip *girq = dev_id;\n\tstruct driver_priv *priv = container_of(girq, struct driver_priv, gc.irq);\n\tvoid __iomem *base = priv->base;\n\tu32 stat;\n\tstruct irq_chip *irqchip = girq->chip;\n\n\tif (irqchip->irq_mask_ack == 0x0) {\n\t\tif (irqchip->irq_ack) {\n\t\t\t/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=93a501c95c7a42f2 */\n\t\t\twritel((0x1 << irqd_to_hwirq(&irq_to_desc(irq)->irq_data)), base + GPIO_INT_CLR);\n\t\t}\n\t}\n\t/* REHARNESS_RIS_OP id=op_31 kind=Read status=lowered digest=e74749be940967d5 */\n\tstat = readl(base + GPIO_INT_STAT_RAW);\n\treturn IRQ_HANDLED;\n}\n\nstatic int ftgpio_gpio_set_config(struct gpio_chip *gc, unsigned int offset, unsigned long config)\n{\n\tstruct driver_priv *priv = container_of(gc, struct driver_priv, gc);\n\tvoid __iomem *base = priv->base;\n\tu32 val, deb_div = (u32)(config & 0xffffffff);\n\n\t/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=8eb491b0c0634ba7 */\n\tval = readl(base + GPIO_DEBOUNCE_PRESCALE);\n\tif (val == deb_div) {\n\t\t/* REHARNESS_RIS_OP id=op_33 kind=Read status=lowered digest=48230cd8ed117ec6 */\n\t\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t\tval = (val | (0x1 << offset));\n\t\t/* REHARNESS_RIS_OP id=op_35 kind=ReadModifyWrite status=lowered digest=81000a354c140fe1 */\n\t\twritel(((val == deb_div) ? (val | (0x1 << offset)) : val), base + GPIO_DEBOUNCE_EN);\n\t}\n\t/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=339408230d26d326 */\n\tval = readl(base + GPIO_DEBOUNCE_EN);\n\t/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=a89c06a8b813ae48 */\n\twritel(deb_div, base + GPIO_DEBOUNCE_PRESCALE);\n\tval = (val | (0x1 << offset));\n\t/* REHARNESS_RIS_OP id=op_39 kind=ReadModifyWrite status=lowered digest=a6b3f48cd0fe1e05 */\n\twritel((val | (0x1 << offset)), base + GPIO_DEBOUNCE_EN);\n\treturn 0;\n}\n\nstatic int ftgpio_gpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tstruct gpio_irq_chip *girq;\n\tint ret;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tRH_SET_BASE(g->base);\n\n\t/* REHARNESS_RIS_OP id=op_43 kind=Read status=lowered digest=16d85024e558eaef */\n\tg->gpio_sdata = readl(g->base + GPIO_DATA_IN);\n\t/* REHARNESS_RIS_OP id=op_45 kind=Read status=lowered digest=e9b515951bfad9ea */\n\tg->gpio_sdir = readl(g->base + GPIO_DIR);\n\n\tg->gc.base = -1;\n\tg->gc.parent = dev;\n\tg->gc.owner = THIS_MODULE;\n\tg->gc.label = KBUILD_MODNAME;\n\tg->gc.request = NULL;\n\tg->gc.free = NULL;\n\tg->gc.get = NULL;\n\tg->gc.set = NULL;\n\tg->gc.direction_input = NULL;\n\tg->gc.direction_output = NULL;\n\tg->gc.get_direction = NULL;\n\tg->gc.get_multiple = NULL;\n\tg->gc.set_multiple = NULL;\n\tg->gc.set_config = ftgpio_gpio_set_config;\n\n\tgirq = &g->gc.irq;\n\tgirq->parent_handler = NULL;\n\tgirq->num_parents = 0x1;\n\tgirq->default_type = IRQ_TYPE_NONE;\n\tgirq->handler = handle_bad_irq;\n\n\t/* REHARNESS_RIS_OP id=op_56 kind=Write status=lowered digest=7443390abf8fb623 */\n\twritel(0x0, g->base + GPIO_INT_EN);\n\t/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=015d9e37bb50b02a */\n\twritel(0x0, g->base + GPIO_INT_MASK);\n\t/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=153d39994bb1ba88 */\n\twritel(0xffffffff, g->base + GPIO_INT_CLR);\n\t/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=92b66149c6b53a4a */\n\twritel(0x0, g->base + GPIO_DEBOUNCE_EN);\n\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tftgpio_gpio_ack_irq(NULL);\n\tftgpio_gpio_mask_irq(NULL);\n\tftgpio_gpio_unmask_irq(NULL);\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tftgpio_gpio_irq_handler(0, NULL);\n\n\tg->misc.minor = MISC_DYNAMIC_MINOR;\n\tg->misc.name = KBUILD_MODNAME;\n\tg->misc.fops = NULL;\n\tret = misc_register(&g->misc);\n\tif (ret)\n\t\treturn ret;\n\n\tplatform_set_drvdata(pdev, g);\n\treturn 0;\n}\n\nstatic void ftgpio_remove(struct platform_device *pdev)\n{\n\tstruct driver_priv *g = platform_get_drvdata(pdev);\n\n\tif (g)\n\t\tmisc_deregister(&g->misc);\n}\n\nstatic int ftgpio_open(struct inode *inode, struct file *file)\n{\n\tstruct driver_priv *priv = container_of(file->private_data, struct driver_priv, misc);\n\tfile->private_data = priv;\n\treturn 0;\n}\n\nstatic ssize_t ftgpio_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tval = readl(base + *ppos);\n\tif (copy_to_user(buf, &val, 4))\n\t\treturn -EFAULT;\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic ssize_t ftgpio_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)\n{\n\tstruct driver_priv *priv = file->private_data;\n\tvoid __iomem *base = priv->base;\n\tu32 val;\n\n\tif (((*ppos) & 3) || count < 4)\n\t\treturn -EINVAL;\n\n\tif (copy_from_user(&val, buf, 4))\n\t\treturn -EFAULT;\n\twritel(val, base + *ppos);\n\t*ppos += 4;\n\treturn 4;\n}\n\nstatic const struct file_operations ftgpio_fops = {\n\t.owner = THIS_MODULE,\n\t.open = ftgpio_open,\n\t.read = ftgpio_read,\n\t.write = ftgpio_write,\n\t.llseek = noop_llseek,\n};\n\nstatic int ftgpio_probe(struct platform_device *pdev)\n{\n\tstruct device *dev = &pdev->dev;\n\tstruct driver_priv *g;\n\tint ret;\n\n\tg = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);\n\tif (!g)\n\t\treturn -ENOMEM;\n\n\tg->dev = dev;\n\tg->base = devm_platform_ioremap_resource(pdev, 0);\n\tif (IS_ERR(g->base))\n\t\treturn PTR_ERR(g->base);\n\n\tplatform_set_drvdata(pdev, g);\n\tRH_SET_BASE(g->base);\n\n\tret = misc_register(&g->misc);\n\tif (ret)\n\t\treturn ret;\n\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get(g);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_get_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set\");\n\t(void)ftgpio_gpio_probe__gpio_generic_set(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_set_multiple\");\n\t{\n\t\tunsigned long bits = 0, mask = 0;\n\t\t(void)ftgpio_gpio_probe__gpio_generic_set_multiple(g, &bits, &mask);\n\t}\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_input\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_input(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_direction_output\");\n\t(void)ftgpio_gpio_probe__gpio_generic_direction_output(g, 0, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_probe__gpio_generic_get_direction\");\n\t(void)ftgpio_gpio_probe__gpio_generic_get_direction(g, 0);\n\tRH_TRACE_FN(\"ftgpio_gpio_ack_irq\");\n\tftgpio_gpio_ack_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_mask_irq\");\n\tftgpio_gpio_mask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_unmask_irq\");\n\tftgpio_gpio_unmask_irq(NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_irq_type\");\n\tftgpio_gpio_set_irq_type(NULL, IRQ_TYPE_NONE);\n\tRH_TRACE_FN(\"ftgpio_gpio_irq_handler\");\n\tftgpio_gpio_irq_handler(0, NULL);\n\tRH_TRACE_FN(\"ftgpio_gpio_set_config\");\n\t(void)ftgpio_gpio_set_config(&g->gc, 0, 0);\n\n\treturn 0;\n}\n\nstatic struct platform_driver ftgpio_driver = {\n\t.probe = ftgpio_probe,\n\t.remove = ftgpio_remove,\n\t.driver = {\n\t\t.name = \"gpio-ftgpio010\",\n\t},\n};\n\nmodule_platform_driver(ftgpio_driver);\n\nMODULE_LICENSE(\"GPL\");\nMODULE_DESCRIPTION(\"gpio-ftgpio010 synthesized target implementation\");\n```",
+            "system_fingerprint": null,
+            "token_usage": {
+              "completion_tokens": 5335,
+              "completion_tokens_details": null,
+              "prompt_tokens": 22505,
+              "prompt_tokens_details": null,
+              "total_tokens": 27840
+            }
+          },
+          "scenario": []
+        }
+      },
+      "stage": "repair",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 3,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "result": {
+          "complete": true,
+          "digest_mismatch": [],
+          "duplicate": [],
+          "duplicate_expected_ids": [],
+          "duplicate_transaction_markers": [],
+          "kind_mismatch": [],
+          "missing": [],
+          "missing_transaction_markers": [],
+          "receipts": 36,
+          "rejected": [],
+          "required_ops": 36,
+          "required_transactions": 0,
+          "schema": 1,
+          "transaction_accounting_complete": true,
+          "transaction_marker_mismatch": [],
+          "transaction_markers": 0,
+          "unknown": [],
+          "unknown_transaction_markers": [],
+          "unsupported_transactions": []
+        }
+      },
+      "stage": "contract",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+      "iteration": 3,
+      "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+      "payload": {
+        "feedback": {
+          "details": {
+            "return_code": 2,
+            "stderr": "ftgpio010_gpio.c:323:12: warning: \u2018ftgpio_gpio_probe\u2019 defined but not used [-Wunused-function]\n  323 | static int ftgpio_gpio_probe(struct platform_device *pdev)\n      |            ^~~~~~~~~~~~~~~~~\nERROR: modpost: \"irq_to_desc\" [ftgpio010_gpio.ko] undefined!\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.modpost:147: Module.symvers] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2094: modpost] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+          },
+          "failure_class": "compile",
+          "iteration": 3,
+          "message": "candidate compilation failed",
+          "retryable": true,
+          "stage": "compile"
+        }
+      },
+      "stage": "compile",
+      "status": "failed"
+    }
+  ],
+  "schema": 1,
+  "status": "failed"
+}

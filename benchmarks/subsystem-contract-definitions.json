@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "contracts": [
+    {
+      "contract_id": "gpio-generic",
+      "subsystem": "gpio",
+      "callback_keys": [
+        "gpio_chip.get",
+        "gpio_chip.set",
+        "gpio_chip.direction_input",
+        "gpio_chip.direction_output"
+      ],
+      "resource_keys": ["gpio_chip", "gpio_irq_chip"],
+      "source_tokens": [
+        "struct gpio_chip",
+        "gpiochip_add",
+        "gpiochip_add_data",
+        "devm_gpiochip_add_data",
+        "gpio_generic_chip_init",
+        "gpio_irq_chip_set_chip"
+      ],
+      "required_capabilities": ["static_analysis", "generation_contract"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "summary_groups": ["gpio_generic"],
+      "summary_contracts": ["linux.gpio_generic_chip_config"],
+      "candidate_validator": "linux.gpio-generic"
+    },
+    {
+      "contract_id": "sdhci-generic",
+      "subsystem": "sdhci",
+      "callback_keys": [
+        "sdhci_ops",
+        "sdhci_ops.read_l",
+        "sdhci_ops.write_l"
+      ],
+      "resource_keys": ["sdhci_host", "mmc_host"],
+      "source_tokens": [
+        "struct sdhci_ops",
+        "sdhci_add_host",
+        "sdhci_pltfm_register",
+        "sdhci_read32",
+        "sdhci_write32"
+      ],
+      "required_capabilities": ["static_analysis", "generation_contract"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "summary_groups": ["sdhci_ops"],
+      "summary_contracts": ["linux.sdhci_ops"]
+    },
+    {
+      "contract_id": "clock-generic",
+      "subsystem": "clock",
+      "callback_keys": [
+        "clk_ops",
+        "clk_hw.init",
+        "clk_hw.recalc_rate"
+      ],
+      "resource_keys": ["clk_hw", "clk_onecell_data"],
+      "source_tokens": [
+        "struct clk_ops",
+        "struct clk_hw",
+        "clk_register",
+        "devm_clk_hw_register",
+        "of_clk_add_hw_provider"
+      ],
+      "required_capabilities": ["static_analysis", "generation_contract"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "summary_groups": [],
+      "summary_contracts": []
+    }
+  ]
+}

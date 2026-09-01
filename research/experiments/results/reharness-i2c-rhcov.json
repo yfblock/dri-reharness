@@ -1,0 +1,7 @@
+{
+  "functions": [
+    "reharness_i2c_sensor_probe",
+    "reharness_i2c_sensor_remove"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_i2c_sensor/reharness_i2c_sensor.c"
+}

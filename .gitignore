@@ -1,52 +1,48 @@
-# Generated RIS output
-/artifacts/output/
-/artifacts/initramfs/
-
-# Python bytecode & caches
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-
-# benchmarks/drivers/ is the versioned evaluation corpus.
-# vendor/linux/ is the pinned, initialized Git submodule (see .gitmodules).
 
 # Editor / OS cruft
-*.swp
+# Generated RIS output
+# Isolated Codex/Superpowers worktrees
+# LLM secrets (use .env.example as template)
+# LaTeX intermediates (the source and final PDF remain versioned)
+# Pi SDK dependencies live with the Pi tool
+# Project-level Pi config: models.json is safe to commit, auth.json contains secrets
+# Python bytecode & caches
+# QEMU/build artifacts (regenerable)
+# benchmarks/drivers/ is the versioned evaluation corpus.
+# vendor/linux/ is the pinned, initialized Git submodule (see .gitmodules).
+*$py.class
+*.cmd
+*.ko
+*.mod
+*.mod.c
+*.o
+*.py[cod]
 *.swo
+*.swp
 *~
 .*.un~
 .DS_Store
-
-# QEMU/build artifacts (regenerable)
+.env
+.pytest_cache/
+.reharness/pi/auth.json
+/.worktrees/
+/artifacts/initramfs/
+/artifacts/output/
+/platform/kernel/build/
 /platform/rootfs/
 /qa/native-tests/edu_trace_test
 /qa/native-tests/gpio_trace_test
-/platform/kernel/build/
-*.ko
-*.o
-*.mod
-*.mod.c
-*.cmd
-Module.symvers
-modules.order
-
-# LaTeX intermediates (the source and final PDF remain versioned)
 /research/paper/*.aux
+/research/paper/*.fdb_latexmk
+/research/paper/*.fls
 /research/paper/*.log
 /research/paper/*.out
-/research/paper/*.fls
-/research/paper/*.fdb_latexmk
 /research/paper/comment.cut
-# Pi SDK dependencies live with the Pi tool
 /tools/pi/node_modules/
 /tools/pi/package-lock.json
-
-# LLM secrets (use .env.example as template)
-.env
-
-# Project-level Pi config: models.json is safe to commit, auth.json contains secrets
-.reharness/pi/auth.json
-
-# Isolated Codex/Superpowers worktrees
-/.worktrees/
+Module.symvers
+__pycache__/
+artifacts/intermediates/
+modules.order
+.claude/
+.worktrees/

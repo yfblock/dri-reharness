@@ -1,0 +1,74 @@
+{
+  "schema": 2,
+  "name": "reharness-mdio",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-mdio-sensor.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "mdio-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "transaction", "unload"]
+    },
+    "registration": {
+      "root_table": "mdio_driver",
+      "identity_field": "driver_name"
+    },
+    "fixture": {
+      "kind": "qemu-mdio",
+      "config": {
+        "address": 1,
+        "register": "0x10",
+        "expected_value": "0x5a5a"
+      },
+      "module_sources": [
+        "qa/verification/device-registrar/mdio-registrar.c"
+      ]
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "none",
+      "bus": "mdio",
+      "module": "reharness_mdio_sensor",
+      "timeout_seconds": 90,
+      "launch_device": false,
+      "probe_pattern": "REHARNESS_MDIO_DRIVER_PROBE",
+      "binding": {
+        "bus": "mdio_bus",
+        "device_glob": "*"
+      }
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "mdio",
+      "tests": [
+        {
+          "name": "mdio-transaction",
+          "executable": "qa/native-tests/mdio_transaction_test.c",
+          "args": ["/dev/reharness-mdio-control", "valid"],
+          "success_pattern": "MDIO_TRANSACTION_PASS"
+        },
+        {
+          "name": "mdio-invalid-address",
+          "executable": "qa/native-tests/mdio_transaction_test.c",
+          "args": ["/dev/reharness-mdio-control", "invalid"],
+          "success_pattern": "MDIO_INVALID_ADDRESS_PASS"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

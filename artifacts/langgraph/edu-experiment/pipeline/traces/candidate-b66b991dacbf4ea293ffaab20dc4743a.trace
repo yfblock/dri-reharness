@@ -1,0 +1,29 @@
+=== QEMU run: module=edu_drv bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031474] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031540] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.071301] ftrace: allocating 31573 entries in 124 pages
+[    0.071558] ftrace: allocated 124 pages with 5 groups
+[    0.407141] thermal_sys: Registered thermal governor 'step_wise'
+[    0.411566] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.412989] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.495574] pps_core: LinuxPPS API ver. 1 registered
+[    0.537064] Key type asymmetric registered
+[    0.537139] Asymmetric key parser 'x509' registered
+[    0.537579] io scheduler mq-deadline registered
+[    0.537641] io scheduler kyber registered
+[    0.578760] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod edu_drv ===
+[    0.985424] [rhfn] edu_pci_probe
+[    0.992252] insmod (55) used greatest stack depth: 13096 bytes left
+[    0.985424] [rhfn] edu_pci_probe
+[    0.992252] insmod (55) used greatest stack depth: 13096 bytes left
+TRACE id@0x00 = 0x010000ed OK
+EXERCISER_RC=2
+=== rmmod edu_drv ===
+=== QEMU_RUN_DONE ===
+[    1.568070] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=10 real_oops=0
+  => 失败: exerciser/语义检查未通过

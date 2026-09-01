@@ -1,0 +1,46 @@
+=== QEMU run: module=e1000e bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031296] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031362] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.074480] ftrace: allocating 38351 entries in 152 pages
+[    0.074766] ftrace: allocated 152 pages with 3 groups
+[    0.430713] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.435316] thermal_sys: Registered thermal governor 'step_wise'
+[    0.440526] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.442123] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.531346] ACPI: bus type USB registered
+[    0.531682] usbcore: registered new interface driver usbfs
+[    0.531892] usbcore: registered new interface driver hub
+[    0.532002] usbcore: registered new device driver usb
+[    0.532188] pps_core: LinuxPPS API ver. 1 registered
+[    0.532309] PTP clock support registered
+[    0.568319] NET: Registered PF_INET protocol family
+[    0.583276] Key type asymmetric registered
+[    0.583352] Asymmetric key parser 'x509' registered
+[    0.583793] io scheduler mq-deadline registered
+[    0.583856] io scheduler kyber registered
+[    0.630494] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.632877] usbcore: registered new interface driver usbhid
+[    0.633606] NET: Registered PF_INET6 protocol family
+=== insmod e1000e ===
+[    1.061160] e1000e: [rhcov] e1000_probe
+[    1.061195] e1000e: [rhcov] e1000_probe
+[    1.061221] e1000e: [rhcov] e1000_probe
+[    1.061248] e1000e: [rhcov] e1000_probe
+[    1.061274] e1000e: [rhcov] e1000_probe
+[    1.061302] e1000e: [rhcov] e1000_probe
+[    1.121388] e1000e 0000:00:04.0 0000:00:04.0 (uninitialized): registered PHC clock
+[    1.175954] insmod (61) used greatest stack depth: 13040 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+                               drv probe link
+                               drv probe link
+EXERCISER_RC=0
+=== rmmod e1000e ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.603898] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=23 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: e1000e probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-e1000e-qemu.AI0GzJ

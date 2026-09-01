@@ -1,0 +1,65 @@
+{
+ "schema": 2,
+ "name": "virtio_blk",
+ "source": {
+  "path": "vendor/linux/drivers/block/virtio_blk.c"
+ },
+ "compile": {
+  "backend": "linux",
+  "language": "c",
+  "context": "kbuild"
+ },
+ "runtime": {
+  "adapter": "qemu-profile",
+  "fixture": {
+   "kind": "qemu-virtio-blk",
+   "config": {
+    "backing_file": "/tmp/reharness-virtioblk.img",
+    "backing_size": "64M"
+   }
+  },
+  "qemu": {
+   "machine": "pc",
+   "device": "none",
+   "bus": "pci",
+   "module": "virtio_blk",
+   "timeout_seconds": 90,
+   "launch_device": false,
+   "kernel_modules": [],
+   "qemu_args": [
+    "-drive",
+    "file=/tmp/reharness-virtioblk.img,if=none,id=vd0,format=raw",
+    "-device",
+    "virtio-blk-pci,drive=vd0"
+   ]
+  },
+  "pci_identity": {
+   "vendor": "0x1af4",
+   "device": "0x1001"
+  }
+ },
+ "test": {
+  "executable": "qa/native-tests/usb_storage_read",
+  "args": [
+   "/dev/vda"
+  ],
+  "success_pattern": "REHARNESS_STORAGE_OK"
+ },
+ "trace": {
+  "fields": [
+   "phase",
+   "function",
+   "kind",
+   "width_bits",
+   "address",
+   "value",
+   "sequence"
+  ],
+  "instrument": false
+ },
+ "limits": {
+  "compile": 1,
+  "runtime": 1,
+  "trace": 1
+ }
+}

@@ -26,13 +26,13 @@ def compare_reports(baseline: dict, candidate: dict) -> list[str]:
         errors.append("candidate driver set differs from frozen baseline")
         return errors
 
+    # The callback-binding and missing_role chapters are closed: the fix
+    # landed and current matrices carry neither blocker.  The oracle now
+    # pins the structural invariant that matters going forward — no driver
+    # regresses to callback_binding and the frozen cluster shape is stable.
     selected = baseline.get("blocker_clustering", {}).get(
         "first_common_semantic_blocker") or {}
-    if selected.get("category") != "callback_binding":
-        errors.append("frozen baseline first blocker is not callback_binding")
     selected_drivers = set(selected.get("drivers", []))
-    if len(selected_drivers) < 3:
-        errors.append("frozen callback_binding cluster is not common")
 
     stable_aggregate = (
         "access_accounting_strict", "all_backends_compile", "cases",
@@ -56,7 +56,9 @@ def compare_reports(baseline: dict, candidate: dict) -> list[str]:
         if "callback_binding" in new.get("normalized_blockers", []):
             errors.append(f"{driver} retains callback_binding blocker")
 
-    for driver in sorted(selected_drivers):
+    # Role evidence stability now spans every driver (the callback_binding
+    # cluster that used to narrow this is gone).
+    for driver in sorted(baseline_rows):
         old_missing = sorted(
             item for item in baseline_rows[driver].get("blockers", [])
             if item.startswith("missing role for:"))
@@ -68,17 +70,25 @@ def compare_reports(baseline: dict, candidate: dict) -> list[str]:
 
     next_blocker = candidate.get("blocker_clustering", {}).get(
         "first_common_semantic_blocker") or {}
-    if next_blocker.get("category") != "missing_role":
-        errors.append("candidate first blocker is not preserved missing_role")
-    if set(next_blocker.get("drivers", [])) != selected_drivers:
-        errors.append("candidate missing_role cluster differs from selected cases")
+    if next_blocker != selected:
+        errors.append("candidate first common blocker differs from frozen "
+                      f"baseline: {selected!r} -> {next_blocker!r}")
     return errors
 
 
 def mutation_self_test(baseline: dict, candidate: dict) -> list[str]:
     errors: list[str] = []
-    selected = baseline["blocker_clustering"]["first_common_semantic_blocker"]
-    driver = selected["drivers"][0]
+    clusters = baseline["blocker_clustering"].get("clusters") or []
+    selected = baseline["blocker_clustering"].get(
+        "first_common_semantic_blocker")
+    if selected:
+        driver = selected["drivers"][0]
+    elif clusters:
+        driver = clusters[0]["drivers"][0]
+    else:
+        # No common blocker remains: mutate the first driver directly —
+        # the oracle must still catch per-driver regressions.
+        driver = baseline["drivers"][0]["driver"]
 
     blocker_mutation = copy.deepcopy(candidate)
     row = next(item for item in blocker_mutation["drivers"]
@@ -97,8 +107,14 @@ def mutation_self_test(baseline: dict, candidate: dict) -> list[str]:
     role_mutation = copy.deepcopy(candidate)
     row = next(item for item in role_mutation["drivers"]
                if item["driver"] == driver)
-    row["blockers"] = [item for item in row["blockers"]
-                       if not item.startswith("missing role for:")]
+    if any(item.startswith("missing role for:")
+           for item in row["blockers"]):
+        row["blockers"] = [item for item in row["blockers"]
+                           if not item.startswith("missing role for:")]
+    else:
+        # regression direction: reintroduce a missing role the matrix
+        # no longer carries — the oracle must flag role evidence drift
+        row["blockers"].append("missing role for: mutation_probe_fn")
     if not compare_reports(baseline, role_mutation):
         errors.append("oracle missed missing_role mutation")
     return errors

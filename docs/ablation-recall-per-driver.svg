@@ -1,0 +1,4291 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="854.570781pt" height="386.354002pt" viewBox="0 0 854.570781 386.354002" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-09-01T15:45:37.332887</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.9, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 386.354002 
+L 854.570781 386.354002 
+L 854.570781 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 44.433281 339.870718 
+L 847.370781 339.870718 
+L 847.370781 23.33625 
+L 44.433281 23.33625 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 80.93044 339.870718 
+L 99.162139 339.870718 
+L 99.162139 57.250657 
+L 80.93044 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 148.455249 339.870718 
+L 166.686947 339.870718 
+L 166.686947 117.73135 
+L 148.455249 117.73135 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 215.980058 339.870718 
+L 234.211756 339.870718 
+L 234.211756 57.250657 
+L 215.980058 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 283.504866 339.870718 
+L 301.736565 339.870718 
+L 301.736565 57.250657 
+L 283.504866 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 351.029675 339.870718 
+L 369.261373 339.870718 
+L 369.261373 57.250657 
+L 351.029675 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 418.554484 339.870718 
+L 436.786182 339.870718 
+L 436.786182 57.250657 
+L 418.554484 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 486.079292 339.870718 
+L 504.310991 339.870718 
+L 504.310991 57.250657 
+L 486.079292 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 553.604101 339.870718 
+L 571.835799 339.870718 
+L 571.835799 57.250657 
+L 553.604101 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 621.12891 339.870718 
+L 639.360608 339.870718 
+L 639.360608 57.250657 
+L 621.12891 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 688.653718 339.870718 
+L 706.885417 339.870718 
+L 706.885417 57.250657 
+L 688.653718 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 756.178527 339.870718 
+L 774.410225 339.870718 
+L 774.410225 57.250657 
+L 756.178527 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #8a8f98"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 99.162139 339.870718 
+L 117.393837 339.870718 
+L 117.393837 186.690645 
+L 99.162139 186.690645 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 166.686947 339.870718 
+L 184.918646 339.870718 
+L 184.918646 259.041381 
+L 166.686947 259.041381 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 234.211756 339.870718 
+L 252.443454 339.870718 
+L 252.443454 339.870718 
+L 234.211756 339.870718 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 301.736565 339.870718 
+L 319.968263 339.870718 
+L 319.968263 69.96856 
+L 301.736565 69.96856 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 369.261373 339.870718 
+L 387.493072 339.870718 
+L 387.493072 339.870718 
+L 369.261373 339.870718 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 436.786182 339.870718 
+L 455.01788 339.870718 
+L 455.01788 339.870718 
+L 436.786182 339.870718 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 504.310991 339.870718 
+L 522.542689 339.870718 
+L 522.542689 339.870718 
+L 504.310991 339.870718 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 571.835799 339.870718 
+L 590.067498 339.870718 
+L 590.067498 178.494663 
+L 571.835799 178.494663 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 639.360608 339.870718 
+L 657.592306 339.870718 
+L 657.592306 57.250657 
+L 639.360608 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 706.885417 339.870718 
+L 725.117115 339.870718 
+L 725.117115 57.250657 
+L 706.885417 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_24">
+    <path d="M 774.410225 339.870718 
+L 792.641924 339.870718 
+L 792.641924 170.298682 
+L 774.410225 170.298682 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #4c9be8"/>
+   </g>
+   <g id="patch_25">
+    <path d="M 117.393837 339.870718 
+L 135.625535 339.870718 
+L 135.625535 57.250657 
+L 117.393837 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_26">
+    <path d="M 184.918646 339.870718 
+L 203.150344 339.870718 
+L 203.150344 117.73135 
+L 184.918646 117.73135 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_27">
+    <path d="M 252.443454 339.870718 
+L 270.675153 339.870718 
+L 270.675153 57.250657 
+L 252.443454 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_28">
+    <path d="M 319.968263 339.870718 
+L 338.199961 339.870718 
+L 338.199961 57.250657 
+L 319.968263 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_29">
+    <path d="M 387.493072 339.870718 
+L 405.72477 339.870718 
+L 405.72477 57.250657 
+L 387.493072 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_30">
+    <path d="M 455.01788 339.870718 
+L 473.249579 339.870718 
+L 473.249579 57.250657 
+L 455.01788 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_31">
+    <path d="M 522.542689 339.870718 
+L 540.774387 339.870718 
+L 540.774387 57.250657 
+L 522.542689 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_32">
+    <path d="M 590.067498 339.870718 
+L 608.299196 339.870718 
+L 608.299196 57.250657 
+L 590.067498 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_33">
+    <path d="M 657.592306 339.870718 
+L 675.824005 339.870718 
+L 675.824005 57.250657 
+L 657.592306 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_34">
+    <path d="M 725.117115 339.870718 
+L 743.348813 339.870718 
+L 743.348813 57.250657 
+L 725.117115 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="patch_35">
+    <path d="M 792.641924 339.870718 
+L 810.873622 339.870718 
+L 810.873622 57.250657 
+L 792.641924 57.250657 
+z
+" clip-path="url(#p5cc78f11ef)" style="fill: #e8704c"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="m8324414ab4" d="M 0 0 
+L 0 3.5 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#m8324414ab4" x="108.277988" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <!-- virtio_mmio -->
+      <g transform="translate(65.722078 378.229762) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-76" d="M 650 2700 
+L 1538 475 
+L 1756 475 
+L 2594 2781 
+Q 2650 2919 2950 2919 
+L 2950 3094 
+L 2188 3094 
+L 2188 2919 
+Q 2325 2919 2363 2888 
+Q 2388 2844 2375 2781 
+L 1756 1088 
+L 1144 2700 
+Q 1088 2831 1119 2881 
+Q 1144 2919 1294 2919 
+L 1294 3094 
+L 338 3094 
+L 338 2919 
+Q 569 2925 650 2700 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-69" d="M 1556 4300 
+Q 1388 4300 1288 4206 
+Q 1188 4106 1188 3931 
+Q 1188 3794 1294 3663 
+Q 1375 3563 1556 3556 
+Q 1725 3556 1831 3675 
+Q 1931 3788 1931 3931 
+Q 1931 4106 1819 4200 
+Q 1700 4300 1556 4300 
+z
+M 1769 919 
+L 1769 3094 
+L 1594 3094 
+Q 1256 2731 600 2731 
+L 600 2556 
+Q 1125 2556 1225 2525 
+Q 1325 2500 1325 2431 
+L 1325 919 
+Q 1325 788 1231 725 
+Q 1138 650 963 650 
+L 456 650 
+L 456 475 
+L 2694 475 
+L 2694 650 
+L 2169 650 
+Q 1981 650 1875 713 
+Q 1781 775 1769 919 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-72" d="M 625 2400 
+L 625 963 
+Q 625 844 506 744 
+Q 388 650 188 650 
+L 188 475 
+L 1600 475 
+L 1600 650 
+Q 1338 650 1200 738 
+Q 1069 838 1069 963 
+L 1069 2188 
+Q 1281 2431 1506 2569 
+Q 1750 2725 1931 2706 
+Q 2138 2725 2275 2500 
+Q 2350 2363 2488 2350 
+Q 2588 2350 2675 2419 
+Q 2738 2481 2756 2681 
+Q 2750 2800 2569 2950 
+Q 2356 3088 2100 3094 
+Q 1869 3100 1519 2850 
+Q 1294 2700 1069 2400 
+L 1069 3094 
+L 1000 3094 
+L 306 2731 
+L 306 2594 
+Q 481 2594 556 2544 
+Q 619 2506 625 2400 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-74" d="M 1163 2925 
+L 1163 1113 
+Q 1163 775 1369 594 
+Q 1556 425 1881 413 
+Q 2238 419 2488 600 
+Q 2719 769 2913 1231 
+L 2731 1306 
+Q 2594 981 2413 838 
+Q 2244 706 2031 675 
+Q 1800 681 1713 788 
+Q 1613 919 1606 1113 
+L 1606 2925 
+L 2663 2925 
+L 2731 3100 
+L 1606 3100 
+L 1606 4025 
+L 1444 4025 
+Q 1363 3556 1031 3331 
+Q 650 3100 294 3100 
+L 294 2925 
+L 1163 2925 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-6f" d="M 1581 3088 
+Q 994 3088 631 2625 
+Q 313 2231 313 1688 
+Q 313 1125 675 781 
+Q 1038 425 1581 413 
+Q 2144 431 2544 825 
+Q 2888 1163 2888 1688 
+Q 2888 2256 2556 2681 
+Q 2250 3081 1619 3088 
+L 1619 3094 
+Q 1613 3094 1613 3088 
+Q 1594 3094 1581 3088 
+z
+M 1056 2650 
+Q 1244 2913 1588 2913 
+Q 1913 2913 2119 2631 
+Q 2406 2238 2413 1688 
+Q 2413 1144 2150 825 
+Q 1975 600 1581 588 
+Q 1238 594 1025 825 
+Q 794 1075 788 1688 
+Q 788 2288 1056 2650 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-5f" d="M 144 -375 
+L 144 -775 
+L 3063 -775 
+L 3063 -375 
+L 144 -375 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-6d" d="M 256 2500 
+L 256 800 
+Q 256 744 219 694 
+Q 194 650 81 650 
+L 81 475 
+L 831 475 
+L 831 650 
+Q 731 650 700 688 
+Q 656 744 650 800 
+L 650 2381 
+Q 750 2631 913 2744 
+Q 1050 2844 1188 2850 
+Q 1231 2850 1300 2769 
+Q 1363 2688 1369 2488 
+L 1369 800 
+Q 1369 756 1325 694 
+Q 1300 650 1188 650 
+L 1188 475 
+L 1938 475 
+L 1938 650 
+Q 1838 650 1800 688 
+Q 1763 731 1763 800 
+L 1763 2444 
+Q 1825 2613 1956 2694 
+Q 2150 2850 2294 2850 
+Q 2356 2850 2406 2775 
+Q 2469 2681 2469 2544 
+L 2469 800 
+Q 2469 756 2419 694 
+Q 2381 650 2294 650 
+L 2294 475 
+L 3044 475 
+L 3044 650 
+Q 2950 650 2906 700 
+Q 2863 744 2863 800 
+L 2863 800 
+L 2863 2544 
+Q 2863 2813 2719 2950 
+Q 2581 3088 2381 3094 
+Q 2138 3094 1894 2869 
+Q 1813 2794 1744 2700 
+Q 1719 2838 1656 2925 
+Q 1538 3094 1313 3094 
+Q 1044 3094 813 2881 
+Q 731 2806 650 2700 
+L 650 3094 
+L 563 3094 
+L 81 2725 
+L 81 2550 
+Q 194 2550 225 2538 
+Q 250 2531 256 2500 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-76"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-72" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-74" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6f" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-5f" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6d" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6d" transform="translate(400 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(450 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6f" transform="translate(500 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#m8324414ab4" x="175.802797" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <!-- ahci -->
+      <g transform="translate(160.267424 361.656562) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-61" d="M 2556 806 
+L 2556 2244 
+Q 2556 2619 2256 2856 
+Q 1969 3088 1519 3088 
+L 1519 3094 
+Q 1100 3100 813 2931 
+Q 544 2781 538 2544 
+Q 538 2431 631 2344 
+Q 713 2281 825 2269 
+Q 925 2269 1031 2331 
+Q 1131 2394 1144 2544 
+Q 1119 2756 1263 2838 
+Q 1375 2900 1513 2913 
+Q 1763 2919 1931 2794 
+Q 2106 2663 2113 2413 
+L 2113 1900 
+Q 1869 1981 1631 1981 
+Q 1013 1988 625 1769 
+Q 206 1544 213 1144 
+Q 206 800 481 594 
+Q 694 438 1025 413 
+Q 1513 419 1875 600 
+Q 1994 663 2113 756 
+L 2113 719 
+Q 2113 569 2213 488 
+Q 2288 425 2444 413 
+Q 2731 431 2994 675 
+L 2888 813 
+Q 2769 719 2669 694 
+Q 2556 713 2556 806 
+z
+M 1969 1788 
+L 2113 1769 
+L 2113 1025 
+Q 1981 906 1806 800 
+Q 1556 681 1256 656 
+Q 931 700 781 813 
+Q 631 931 656 1144 
+Q 650 1425 988 1594 
+Q 1350 1769 1969 1788 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-68" d="M 525 3650 
+L 525 869 
+Q 525 656 269 650 
+L 269 475 
+L 1250 475 
+L 1250 650 
+Q 969 650 969 869 
+L 969 2331 
+L 1006 2331 
+Q 1500 2750 1838 2750 
+Q 2181 2750 2188 2425 
+L 2188 931 
+Q 2188 650 1944 650 
+L 1944 475 
+L 2906 475 
+L 2906 650 
+Q 2656 650 2631 931 
+L 2631 2425 
+Q 2631 3031 1838 3031 
+Q 1531 3031 969 2513 
+L 969 4400 
+L 900 4400 
+L 200 4056 
+L 200 3881 
+Q 525 3881 525 3650 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-63" d="M 1731 3088 
+Q 1069 3088 675 2638 
+Q 369 2275 369 1725 
+Q 369 1100 800 731 
+Q 1200 413 1781 413 
+Q 2350 419 2831 975 
+L 2669 1119 
+Q 2269 669 1781 644 
+Q 1406 644 1125 913 
+Q 844 1213 844 1725 
+Q 838 2288 1094 2594 
+Q 1306 2863 1606 2869 
+Q 1950 2831 2069 2619 
+Q 2200 2425 2375 2419 
+Q 2588 2413 2631 2619 
+Q 2656 2756 2475 2894 
+Q 2213 3088 1731 3088 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-61"/>
+       <use xlink:href="#GBZenKai-Medium-68" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-63" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(150 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#m8324414ab4" x="243.327605" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <!-- sd-at91 -->
+      <g transform="translate(216.343583 368.810472) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-73" d="M 2725 2800 
+Q 2106 3181 1625 3181 
+L 1625 3175 
+Q 1175 3175 894 2969 
+Q 606 2756 606 2419 
+Q 600 2213 738 2019 
+Q 894 1844 1444 1669 
+Q 1975 1550 2125 1406 
+Q 2238 1288 2238 1131 
+Q 2238 938 2088 769 
+Q 1931 594 1706 581 
+Q 1425 600 1169 769 
+Q 831 963 656 1394 
+L 519 1294 
+L 606 750 
+Q 1194 425 1788 406 
+Q 2281 413 2525 663 
+Q 2769 894 2769 1206 
+Q 2769 1419 2613 1613 
+Q 2406 1844 1819 1988 
+Q 1269 2119 1163 2244 
+Q 1081 2344 1081 2513 
+Q 1081 2706 1238 2856 
+Q 1394 2994 1719 3000 
+Q 1950 2994 2163 2875 
+Q 2375 2756 2550 2356 
+L 2675 2338 
+L 2725 2800 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-64" d="M 2650 781 
+L 2650 4400 
+L 2581 4400 
+L 1856 4050 
+L 1856 3913 
+Q 2200 3913 2206 3631 
+L 2206 2913 
+Q 2188 2919 2163 2938 
+Q 1913 3031 1650 3031 
+Q 1088 3031 750 2688 
+Q 338 2269 338 1775 
+Q 338 1175 706 750 
+Q 1013 413 1519 413 
+Q 1788 413 2094 606 
+Q 2150 644 2206 681 
+L 2206 413 
+L 2869 506 
+L 2850 631 
+Q 2656 631 2650 781 
+z
+M 2206 869 
+Q 2125 825 2019 763 
+Q 1719 625 1481 625 
+Q 1231 625 1006 900 
+Q 781 1225 781 1775 
+Q 781 2288 1056 2606 
+Q 1269 2856 1650 2856 
+Q 1913 2856 2138 2769 
+Q 2175 2763 2206 2731 
+L 2206 869 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-2d" d="M 144 2619 
+L 144 2250 
+L 3063 2250 
+L 3063 2619 
+L 144 2619 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-39" d="M 2456 963 
+Q 2888 1581 2888 2494 
+Q 2888 3456 2544 3913 
+Q 2181 4388 1581 4394 
+L 1581 4400 
+Q 1575 4400 1575 4394 
+Q 1550 4400 1544 4394 
+Q 1013 4394 675 4050 
+Q 281 3631 281 3094 
+Q 281 2544 606 2175 
+Q 944 1831 1481 1825 
+L 1481 1831 
+Q 1994 1838 2406 2294 
+Q 2363 1463 2063 1025 
+Q 1744 606 1375 588 
+Q 1181 625 1063 706 
+Q 944 781 969 938 
+Q 963 1150 875 1250 
+Q 775 1350 638 1350 
+Q 525 1344 444 1256 
+Q 363 1163 369 1006 
+Q 369 800 669 613 
+Q 956 425 1375 413 
+Q 2075 419 2456 963 
+z
+M 981 3925 
+Q 1194 4213 1550 4219 
+Q 1931 4219 2181 3856 
+Q 2413 3519 2406 2488 
+Q 2256 2331 2119 2219 
+Q 1813 2013 1444 2000 
+Q 1175 2019 975 2269 
+Q 763 2538 756 3094 
+Q 756 3619 981 3925 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-31" d="M 1806 4338 
+L 1738 4338 
+L 681 4069 
+L 681 3931 
+Q 1356 3931 1356 3631 
+L 1356 994 
+Q 1356 650 681 650 
+L 681 475 
+L 2494 475 
+L 2494 650 
+Q 1813 650 1806 994 
+L 1806 4338 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-73"/>
+       <use xlink:href="#GBZenKai-Medium-64" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-61" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-74" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-39" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-31" transform="translate(300 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#m8324414ab4" x="310.852414" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <!-- g-ftgpio010 -->
+      <g transform="translate(268.603526 378.349019) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-67" d="M 1469 -269 
+Q 2188 -263 2500 -75 
+Q 2819 113 2819 431 
+Q 2819 825 2438 1056 
+Q 2100 1244 1625 1244 
+Q 981 1169 969 1263 
+Q 944 1363 1238 1488 
+Q 1300 1481 1394 1475 
+Q 1794 1481 2113 1694 
+Q 2438 1906 2444 2231 
+Q 2444 2556 2181 2788 
+Q 2225 2794 2263 2800 
+Q 2419 2794 2519 2681 
+Q 2600 2563 2738 2563 
+Q 2794 2563 2838 2625 
+Q 2881 2688 2888 2800 
+Q 2888 2919 2738 3038 
+Q 2656 3100 2531 3106 
+Q 2419 3106 2238 3025 
+Q 2144 3000 1981 2931 
+Q 1713 3088 1344 3094 
+L 1344 3100 
+Q 1338 3100 1338 3094 
+Q 1313 3100 1306 3094 
+Q 969 3094 700 2875 
+Q 413 2631 406 2288 
+Q 406 1906 719 1688 
+Q 838 1606 981 1550 
+Q 813 1506 694 1425 
+Q 463 1288 456 1138 
+Q 456 1000 669 881 
+Q 725 856 825 825 
+Q 706 763 613 688 
+Q 331 444 331 194 
+Q 338 -56 688 -175 
+Q 975 -256 1469 -269 
+z
+M 2275 644 
+Q 2450 525 2456 375 
+Q 2456 219 2244 94 
+Q 2050 -19 1719 -25 
+Q 1231 0 1025 81 
+Q 794 163 806 369 
+Q 781 563 988 725 
+Q 1031 763 1094 788 
+Q 1306 769 1625 769 
+Q 2063 769 2275 644 
+z
+M 881 2519 
+Q 881 2675 1019 2794 
+Q 1138 2888 1244 2894 
+Q 1488 2894 1681 2706 
+Q 1969 2425 1969 2038 
+Q 1969 1881 1788 1756 
+Q 1650 1675 1481 1656 
+Q 1250 1675 1063 1875 
+Q 888 2106 881 2519 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-66" d="M 213 475 
+L 2381 475 
+L 2381 650 
+Q 1894 650 1706 738 
+Q 1531 831 1531 1019 
+L 1531 2713 
+L 2381 2713 
+L 2381 2888 
+L 1531 2888 
+L 1531 3494 
+Q 1531 3763 1681 4019 
+Q 1819 4231 2031 4238 
+Q 2188 4238 2294 4156 
+Q 2406 4081 2406 3963 
+Q 2413 3806 2475 3706 
+Q 2538 3613 2719 3619 
+Q 2838 3619 2925 3713 
+Q 2988 3794 2988 3906 
+Q 2988 4081 2694 4244 
+Q 2388 4394 2063 4394 
+L 2063 4400 
+Q 2056 4400 2056 4394 
+Q 2031 4400 2025 4394 
+Q 1538 4394 1319 4119 
+Q 1088 3856 1088 3494 
+L 1088 2888 
+L 213 2888 
+L 213 2713 
+L 1088 2713 
+L 1088 1019 
+Q 1088 831 919 744 
+Q 731 650 213 650 
+L 213 475 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-70" d="M 606 2406 
+L 606 50 
+Q 606 -63 538 -125 
+Q 463 -188 275 -188 
+L 275 -363 
+L 1488 -363 
+L 1488 -188 
+Q 1244 -188 1156 -131 
+Q 1056 -69 1050 50 
+L 1050 594 
+Q 1450 425 1850 419 
+Q 2344 419 2681 813 
+Q 2988 1188 2994 1700 
+Q 2994 2356 2681 2706 
+Q 2356 3088 1875 3094 
+Q 1481 3100 1050 2700 
+L 1050 3094 
+L 963 3094 
+L 206 2731 
+L 206 2594 
+Q 438 2594 531 2556 
+Q 606 2531 606 2406 
+z
+M 1050 2506 
+Q 1413 2813 1713 2813 
+Q 2069 2813 2306 2538 
+Q 2550 2256 2550 1700 
+Q 2550 1225 2294 906 
+Q 2031 588 1700 588 
+Q 1413 594 1050 831 
+L 1050 2506 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-30" d="M 631 3713 
+Q 313 3125 313 2331 
+Q 313 1488 675 963 
+Q 1038 431 1581 413 
+Q 2150 438 2550 1050 
+Q 2894 1575 2894 2394 
+Q 2894 3206 2569 3813 
+Q 2250 4381 1631 4394 
+L 1631 4400 
+Q 1625 4400 1625 4394 
+Q 1619 4400 1594 4394 
+Q 994 4394 631 3713 
+z
+M 1063 3813 
+Q 1256 4213 1600 4219 
+Q 1919 4219 2131 3800 
+Q 2419 3213 2419 2394 
+Q 2419 1506 2156 975 
+Q 1969 613 1581 588 
+Q 1238 613 1025 963 
+Q 794 1363 788 2331 
+Q 788 3250 1063 3813 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-67"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-66" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-74" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-67" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-70" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6f" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-30" transform="translate(400 0)"/>
+       <use xlink:href="#GBZenKai-Medium-31" transform="translate(450 0)"/>
+       <use xlink:href="#GBZenKai-Medium-30" transform="translate(500 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5">
+      <g>
+       <use xlink:href="#m8324414ab4" x="378.377223" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <!-- g-cadence -->
+      <g transform="translate(343.760767 373.579746) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-65" d="M 1625 419 
+Q 2394 419 2875 1244 
+L 2731 1294 
+Q 2506 988 2275 838 
+Q 2025 688 1750 694 
+Q 1313 694 1056 975 
+Q 806 1256 806 1719 
+Q 806 1781 806 1831 
+L 2756 1831 
+L 2756 2006 
+L 2756 2006 
+Q 2713 2456 2513 2694 
+Q 2225 3094 1638 3094 
+Q 994 3094 669 2700 
+Q 331 2288 331 1719 
+Q 331 1169 663 819 
+Q 1025 419 1625 419 
+z
+M 2275 2006 
+L 819 2006 
+Q 863 2344 1013 2569 
+Q 1225 2913 1638 2919 
+Q 1963 2919 2119 2681 
+Q 2250 2469 2275 2006 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-6e" d="M 481 2381 
+L 481 869 
+Q 481 656 200 650 
+L 200 475 
+L 1181 475 
+L 1181 650 
+Q 894 650 894 869 
+L 894 2344 
+Q 1438 2813 1794 2813 
+Q 2225 2813 2225 2425 
+L 2225 931 
+Q 2225 650 1944 650 
+L 1944 475 
+L 3006 475 
+L 3006 650 
+Q 2663 650 2638 931 
+L 2638 2425 
+Q 2638 3088 1794 3094 
+Q 1456 3094 894 2556 
+L 894 3094 
+L 825 3094 
+L 200 2756 
+L 200 2581 
+Q 481 2581 481 2381 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-67"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-63" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-61" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-64" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-65" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6e" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-63" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-65" transform="translate(400 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#m8324414ab4" x="445.902031" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <!-- c-highbank -->
+      <g transform="translate(407.46936 375.964383) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-62" d="M 625 3613 
+L 625 688 
+Q 1075 425 1494 413 
+Q 2175 419 2594 794 
+Q 2975 1138 2981 1813 
+Q 2981 2400 2600 2731 
+Q 2281 3031 1900 3031 
+Q 1563 3031 1069 2688 
+L 1069 4400 
+L 950 4400 
+L 219 4069 
+L 219 3931 
+Q 619 3931 625 3613 
+z
+M 1069 2456 
+Q 1563 2763 1875 2769 
+Q 2125 2769 2306 2513 
+Q 2538 2206 2538 1813 
+Q 2538 1263 2319 950 
+Q 2069 606 1669 588 
+Q 1363 594 1069 806 
+L 1069 2456 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-6b" d="M 488 3675 
+L 488 919 
+Q 488 800 394 725 
+Q 294 650 106 650 
+L 106 475 
+L 1363 475 
+L 1363 650 
+Q 1131 650 1025 738 
+Q 931 800 931 919 
+L 931 1800 
+L 2006 813 
+Q 2106 738 2069 694 
+Q 2025 669 1881 650 
+L 1881 475 
+L 3125 475 
+L 3125 650 
+Q 2806 650 2613 813 
+L 1281 2038 
+L 2200 2738 
+Q 2394 2875 2681 2881 
+L 2681 3056 
+L 1775 3056 
+L 1775 2881 
+Q 1950 2881 2000 2844 
+Q 2044 2806 1956 2738 
+L 931 1956 
+L 931 4400 
+L 856 4400 
+L 81 4063 
+L 81 3888 
+Q 313 3888 406 3844 
+Q 488 3806 488 3675 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-63"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-68" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-67" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-68" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-62" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-61" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6e" transform="translate(400 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6b" transform="translate(450 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_7">
+      <g>
+       <use xlink:href="#m8324414ab4" x="513.42684" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <!-- c-nomadik -->
+      <g transform="translate(478.810385 373.579746) rotate(-32) scale(0.09 -0.09)">
+       <use xlink:href="#GBZenKai-Medium-63"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6e" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6f" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6d" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-61" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-64" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6b" transform="translate(400 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#m8324414ab4" x="580.951649" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <!-- g-sodaville -->
+      <g transform="translate(538.702761 378.349019) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-6c" d="M 1769 4400 
+L 1594 4400 
+Q 1519 4188 1313 4088 
+Q 1063 3975 619 3975 
+L 619 3800 
+Q 1069 3800 1188 3750 
+Q 1288 3713 1294 3613 
+L 1294 938 
+Q 1294 806 1156 725 
+Q 1019 650 438 650 
+L 438 475 
+L 2769 475 
+L 2769 650 
+Q 2125 650 1938 731 
+Q 1769 806 1769 938 
+L 1769 4400 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-67"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-73" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6f" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-64" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-61" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-76" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6c" transform="translate(400 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6c" transform="translate(450 0)"/>
+       <use xlink:href="#GBZenKai-Medium-65" transform="translate(500 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_9">
+      <g>
+       <use xlink:href="#m8324414ab4" x="648.476457" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <!-- g-idt3243x -->
+      <g transform="translate(610.043786 375.964383) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-33" d="M 2875 1463 
+Q 2875 2156 2250 2375 
+Q 2119 2419 2000 2450 
+Q 2075 2494 2175 2544 
+Q 2744 2831 2750 3413 
+Q 2750 3825 2413 4138 
+Q 2144 4388 1625 4394 
+L 1625 4400 
+Q 1619 4400 1625 4394 
+Q 1600 4400 1594 4394 
+Q 1138 4394 831 4125 
+Q 469 3838 463 3450 
+Q 463 3300 563 3194 
+Q 663 3094 781 3094 
+Q 919 3094 1006 3194 
+Q 1088 3294 1094 3450 
+Q 1075 3569 994 3675 
+Q 931 3775 1088 3975 
+Q 1275 4169 1619 4219 
+Q 1863 4219 2056 4031 
+Q 2269 3825 2275 3413 
+Q 2275 2975 2019 2725 
+Q 1813 2531 1688 2500 
+Q 1575 2506 1519 2538 
+Q 1425 2581 1344 2581 
+Q 1169 2581 1163 2413 
+Q 1163 2238 1344 2231 
+Q 1406 2231 1494 2281 
+Q 1569 2325 1656 2325 
+Q 1944 2325 2169 2131 
+Q 2400 1906 2400 1463 
+Q 2400 994 2175 806 
+Q 1906 600 1644 588 
+Q 1300 644 1075 788 
+Q 825 963 844 1069 
+Q 850 1150 900 1213 
+Q 944 1269 956 1344 
+Q 956 1500 863 1594 
+Q 769 1688 663 1688 
+Q 525 1688 425 1594 
+Q 325 1494 325 1344 
+Q 325 1000 663 719 
+Q 1038 431 1644 413 
+Q 2138 419 2494 675 
+Q 2875 981 2875 1463 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-32" d="M 1875 2113 
+Q 2913 2775 2919 3319 
+Q 2919 3750 2556 4088 
+Q 2219 4394 1625 4394 
+L 1625 4400 
+Q 1619 4400 1625 4394 
+Q 1600 4400 1594 4394 
+Q 1081 4394 731 4106 
+Q 331 3788 331 3406 
+Q 331 3250 444 3144 
+Q 544 3050 700 3050 
+Q 819 3050 919 3144 
+Q 1000 3238 1006 3313 
+Q 1000 3481 919 3575 
+Q 856 3656 869 3756 
+Q 875 3894 1100 4038 
+Q 1294 4175 1625 4219 
+Q 1925 4219 2150 4006 
+Q 2438 3725 2444 3319 
+Q 2444 2844 1650 2281 
+Q 856 1694 588 1300 
+Q 319 975 319 475 
+L 2613 475 
+L 2881 1213 
+L 2775 1263 
+Q 2450 775 1794 756 
+L 650 756 
+Q 706 1075 906 1294 
+Q 1169 1638 1875 2113 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-34" d="M 2263 1469 
+L 2263 4338 
+L 2056 4338 
+L 2025 4294 
+L 2025 4194 
+L 206 1513 
+L 206 1294 
+L 1813 1294 
+L 1813 938 
+Q 1813 650 1375 650 
+L 1375 475 
+L 2706 475 
+L 2706 650 
+Q 2269 650 2263 938 
+L 2263 1294 
+L 2994 1294 
+L 2994 1469 
+L 2263 1469 
+z
+M 1813 1469 
+L 413 1469 
+L 1813 3644 
+L 1813 1469 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-78" d="M 2700 775 
+L 1844 1975 
+L 2500 2719 
+Q 2669 2913 2969 2919 
+L 2969 3094 
+L 2144 3094 
+L 2144 2919 
+Q 2444 2919 2269 2719 
+L 1738 2119 
+L 1356 2663 
+Q 1163 2913 1356 2919 
+L 1356 3094 
+L 225 3094 
+L 225 2919 
+Q 681 2919 850 2663 
+L 1500 1744 
+L 750 869 
+Q 556 656 181 650 
+L 181 475 
+L 1100 475 
+L 1100 650 
+Q 819 656 1013 869 
+L 1613 1588 
+L 2194 775 
+Q 2269 656 1888 650 
+L 1888 475 
+L 3019 475 
+L 3019 650 
+Q 2788 650 2700 775 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-67"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-69" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-64" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-74" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-33" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-32" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-34" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-33" transform="translate(400 0)"/>
+       <use xlink:href="#GBZenKai-Medium-78" transform="translate(450 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#m8324414ab4" x="716.001266" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <!-- g-mb86s7x -->
+      <g transform="translate(681.384811 373.579746) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-38" d="M 1644 413 
+Q 2231 419 2613 769 
+Q 2938 1056 2944 1488 
+Q 2944 1738 2750 1981 
+Q 2538 2263 1881 2563 
+Q 2425 2863 2575 3075 
+Q 2725 3281 2725 3500 
+Q 2725 3913 2313 4169 
+Q 2013 4394 1600 4394 
+L 1600 4400 
+Q 1594 4400 1594 4394 
+Q 1569 4400 1563 4394 
+Q 1088 4394 788 4138 
+Q 431 3850 431 3425 
+Q 431 3138 656 2863 
+Q 813 2669 1169 2463 
+Q 600 2194 456 1956 
+Q 263 1669 256 1425 
+Q 256 1006 631 725 
+Q 1044 425 1644 413 
+z
+M 2350 1788 
+Q 2506 1594 2513 1406 
+Q 2513 1031 2244 813 
+Q 1963 600 1644 588 
+Q 1250 594 969 856 
+Q 738 1069 731 1425 
+Q 731 1656 881 1900 
+Q 975 2075 1438 2325 
+Q 1500 2300 1588 2256 
+Q 2175 1994 2350 1788 
+z
+M 994 3094 
+Q 825 3300 825 3531 
+Q 825 3813 1038 4019 
+Q 1263 4213 1569 4219 
+Q 1894 4219 2106 4044 
+Q 2331 3838 2331 3563 
+Q 2331 3313 2163 3081 
+Q 2006 2875 1625 2675 
+Q 1150 2906 994 3094 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-36" d="M 775 3769 
+Q 319 3069 313 2088 
+Q 313 1319 681 881 
+Q 1063 431 1600 413 
+Q 2150 419 2506 738 
+Q 2888 1113 2894 1631 
+Q 2894 2313 2531 2625 
+Q 2225 2894 1825 2900 
+L 1825 2906 
+Q 1825 2906 1825 2900 
+Q 1806 2906 1788 2900 
+Q 1313 2900 794 2469 
+Q 838 3319 1138 3750 
+Q 1425 4206 1819 4219 
+Q 2006 4200 2138 4063 
+Q 2256 3944 2219 3875 
+Q 2175 3813 2163 3706 
+Q 2163 3588 2263 3494 
+Q 2344 3413 2456 3413 
+Q 2538 3413 2650 3481 
+Q 2750 3575 2756 3706 
+Q 2756 3988 2450 4194 
+Q 2163 4388 1850 4394 
+L 1850 4400 
+Q 1844 4400 1844 4394 
+Q 1825 4400 1813 4394 
+Q 1188 4394 775 3769 
+z
+M 788 2088 
+Q 788 2169 788 2250 
+Q 1350 2644 1669 2656 
+Q 2013 2656 2219 2425 
+Q 2413 2181 2419 1631 
+Q 2419 1081 2194 831 
+Q 1963 606 1600 588 
+Q 1256 606 1019 938 
+Q 788 1294 788 2088 
+z
+" transform="scale(0.015625)"/>
+        <path id="GBZenKai-Medium-37" d="M 2888 4275 
+L 663 4275 
+L 313 3063 
+L 456 3019 
+Q 756 3663 1031 3800 
+Q 1350 3956 1919 3963 
+L 2575 3963 
+Q 1713 2869 1381 2150 
+Q 1063 1419 1063 788 
+Q 1063 556 1125 463 
+Q 1200 369 1331 369 
+Q 1450 369 1531 469 
+Q 1606 569 1606 788 
+Q 1606 1788 1863 2456 
+Q 2150 3150 2888 4100 
+L 2888 4275 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-67"/>
+       <use xlink:href="#GBZenKai-Medium-2d" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-6d" transform="translate(100 0)"/>
+       <use xlink:href="#GBZenKai-Medium-62" transform="translate(150 0)"/>
+       <use xlink:href="#GBZenKai-Medium-38" transform="translate(200 0)"/>
+       <use xlink:href="#GBZenKai-Medium-36" transform="translate(250 0)"/>
+       <use xlink:href="#GBZenKai-Medium-73" transform="translate(300 0)"/>
+       <use xlink:href="#GBZenKai-Medium-37" transform="translate(350 0)"/>
+       <use xlink:href="#GBZenKai-Medium-78" transform="translate(400 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_11">
+     <g id="line2d_11">
+      <g>
+       <use xlink:href="#m8324414ab4" x="783.526075" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <!-- edu -->
+      <g transform="translate(771.806918 359.271926) rotate(-32) scale(0.09 -0.09)">
+       <defs>
+        <path id="GBZenKai-Medium-75" d="M 1000 1188 
+L 1000 3094 
+L 294 3094 
+L 294 2919 
+Q 425 2919 494 2869 
+Q 556 2825 556 2713 
+L 556 1188 
+Q 556 750 800 588 
+Q 1044 413 1375 413 
+Q 1738 419 2250 769 
+L 2250 481 
+Q 2613 575 2913 606 
+L 2913 781 
+Q 2738 738 2694 875 
+L 2694 3094 
+L 1994 3094 
+L 1994 2919 
+Q 2113 2919 2181 2869 
+Q 2244 2825 2250 2719 
+L 2250 981 
+Q 2094 881 1969 806 
+Q 1706 688 1525 675 
+Q 1275 675 1131 800 
+Q 1000 931 1000 1188 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-65"/>
+       <use xlink:href="#GBZenKai-Medium-64" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-75" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_12">
+      <defs>
+       <path id="md93ae88a3b" d="M 0 0 
+L -3.5 0 
+" style="stroke: #000000; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#md93ae88a3b" x="44.433281" y="339.870718" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <!-- 0.0 -->
+      <g transform="translate(20.933281 343.651968) scale(0.11 -0.11)">
+       <defs>
+        <path id="GBZenKai-Medium-2e" d="M 1669 1231 
+Q 1475 1231 1344 1094 
+Q 1225 975 1219 769 
+Q 1219 575 1344 444 
+Q 1481 306 1669 306 
+Q 1863 306 1988 431 
+Q 2119 563 2119 769 
+Q 2119 963 1994 1094 
+Q 1863 1231 1669 1231 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#GBZenKai-Medium-30"/>
+       <use xlink:href="#GBZenKai-Medium-2e" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-30" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_13">
+      <g>
+       <use xlink:href="#md93ae88a3b" x="44.433281" y="283.346706" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <!-- 0.2 -->
+      <g transform="translate(20.933281 287.127956) scale(0.11 -0.11)">
+       <use xlink:href="#GBZenKai-Medium-30"/>
+       <use xlink:href="#GBZenKai-Medium-2e" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-32" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#md93ae88a3b" x="44.433281" y="226.822694" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_14">
+      <!-- 0.4 -->
+      <g transform="translate(20.933281 230.603944) scale(0.11 -0.11)">
+       <use xlink:href="#GBZenKai-Medium-30"/>
+       <use xlink:href="#GBZenKai-Medium-2e" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-34" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_15">
+      <g>
+       <use xlink:href="#md93ae88a3b" x="44.433281" y="170.298682" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_15">
+      <!-- 0.6 -->
+      <g transform="translate(20.933281 174.079932) scale(0.11 -0.11)">
+       <use xlink:href="#GBZenKai-Medium-30"/>
+       <use xlink:href="#GBZenKai-Medium-2e" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-36" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#md93ae88a3b" x="44.433281" y="113.774669" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_16">
+      <!-- 0.8 -->
+      <g transform="translate(20.933281 117.555919) scale(0.11 -0.11)">
+       <use xlink:href="#GBZenKai-Medium-30"/>
+       <use xlink:href="#GBZenKai-Medium-2e" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-38" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_17">
+      <g>
+       <use xlink:href="#md93ae88a3b" x="44.433281" y="57.250657" style="stroke: #000000; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_17">
+      <!-- 1.0 -->
+      <g transform="translate(20.933281 61.031907) scale(0.11 -0.11)">
+       <use xlink:href="#GBZenKai-Medium-31"/>
+       <use xlink:href="#GBZenKai-Medium-2e" transform="translate(50 0)"/>
+       <use xlink:href="#GBZenKai-Medium-30" transform="translate(100 0)"/>
+      </g>
+     </g>
+    </g>
+    <g id="text_18">
+     <!-- 源码 MMIO 行召回率 -->
+     <g transform="translate(16.159844 231.103484) rotate(-90) scale(0.11 -0.11)">
+      <defs>
+       <path id="GBZenKai-Medium-6e90" d="M 1469 4544 
+Q 1606 4413 1756 4250 
+Q 1838 4169 1950 4169 
+Q 2013 4169 2056 4256 
+Q 2081 4350 2031 4544 
+Q 2006 4663 1819 4744 
+Q 1381 4913 1300 4869 
+Q 1263 4844 1275 4763 
+Q 1300 4681 1469 4544 
+z
+M 819 3450 
+Q 1063 3131 1288 3038 
+Q 1388 3019 1444 3106 
+Q 1481 3188 1469 3294 
+Q 1394 3556 900 3694 
+Q 800 3719 731 3700 
+Q 694 3694 706 3613 
+Q 713 3538 819 3450 
+z
+M 713 1369 
+Q 638 1350 656 1250 
+Q 731 800 931 706 
+Q 969 663 1031 681 
+Q 1075 688 1081 831 
+Q 1125 1131 1806 2763 
+Q 1850 2856 1844 2888 
+Q 1838 2950 1781 2913 
+Q 1706 2869 975 1650 
+Q 894 1513 713 1369 
+z
+M 2869 4500 
+Q 2788 4581 2650 4650 
+Q 2531 4713 2450 4688 
+Q 2375 4644 2413 4563 
+Q 2544 4375 2500 3900 
+Q 2494 3844 2488 3781 
+Q 2413 2713 2100 1881 
+Q 1838 1238 1294 438 
+Q 1269 394 1250 363 
+Q 1231 300 1300 306 
+Q 1525 350 2050 1144 
+Q 2131 1294 2225 1463 
+Q 2663 2381 2813 3606 
+Q 2869 4138 2944 4344 
+Q 3188 4244 3456 4300 
+Q 4081 4413 4744 4531 
+Q 5044 4594 5088 4631 
+Q 5144 4675 5119 4725 
+Q 5075 4800 4900 4850 
+Q 4750 4888 4019 4681 
+Q 3213 4544 2938 4519 
+Q 2881 4513 2869 4500 
+z
+M 3819 2031 
+Q 3813 2006 3831 1950 
+Q 3913 1744 3913 1106 
+Q 3919 669 3875 556 
+Q 3856 475 3700 488 
+Q 3506 531 3294 569 
+Q 3231 569 3219 531 
+Q 3213 494 3275 444 
+Q 3713 138 3863 -44 
+Q 3963 -125 4038 -106 
+Q 4100 -81 4163 119 
+Q 4256 313 4231 675 
+Q 4213 1331 4225 1563 
+Q 4269 1806 4163 1919 
+Q 4063 2019 3988 2050 
+Q 4219 2094 4450 2113 
+Q 4544 1975 4631 1938 
+Q 4694 1894 4781 2013 
+Q 4863 2150 5019 2875 
+L 5019 2875 
+Q 5063 3050 5200 3194 
+Q 5275 3256 5213 3344 
+Q 5119 3438 4875 3588 
+Q 4781 3625 4369 3531 
+Q 4350 3531 3725 3388 
+Q 3819 3506 3881 3600 
+Q 4106 3938 4194 4025 
+Q 4275 4106 4194 4181 
+Q 4100 4238 3944 4263 
+Q 3806 4288 3750 4250 
+Q 3688 4213 3731 4156 
+Q 3788 4044 3594 3456 
+Q 3575 3413 3563 3350 
+Q 3388 3325 3238 3281 
+Q 3181 3306 3069 3331 
+Q 3006 3350 2981 3325 
+Q 2944 3288 2988 3200 
+Q 3138 2838 3206 2263 
+Q 3213 2088 3313 1969 
+Q 3406 1838 3438 1925 
+Q 3444 1950 3456 1994 
+Q 3494 1988 3550 1994 
+Q 3681 2019 3819 2031 
+z
+M 4419 2313 
+Q 4288 2338 3469 2131 
+Q 3469 2269 3419 2550 
+Q 3456 2544 3525 2556 
+Q 3981 2638 4331 2700 
+Q 4450 2719 4406 2788 
+Q 4350 2863 4219 2881 
+Q 4044 2900 3406 2675 
+Q 3363 2981 3363 3100 
+Q 3438 3175 4456 3344 
+Q 4606 3369 4656 3319 
+Q 4731 3238 4713 3156 
+Q 4581 2369 4488 2288 
+Q 4463 2306 4419 2313 
+z
+M 2950 1469 
+Q 2781 1206 2575 981 
+Q 2438 813 2494 606 
+Q 2519 506 2656 550 
+Q 2963 719 3044 1119 
+Q 3106 1294 3088 1450 
+Q 3063 1494 3031 1513 
+Q 2988 1513 2950 1469 
+z
+M 4675 1369 
+Q 4994 1081 5375 656 
+Q 5469 538 5556 513 
+Q 5613 506 5656 569 
+Q 5731 644 5656 906 
+Q 5581 1231 4681 1550 
+Q 4638 1575 4619 1506 
+Q 4613 1425 4675 1369 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-7801" d="M 4444 2550 
+Q 4594 2775 4713 3831 
+Q 4788 4175 5006 4394 
+Q 5119 4513 5006 4600 
+Q 4875 4700 4538 4844 
+Q 4425 4900 4088 4775 
+Q 3975 4775 3475 4613 
+Q 3206 4531 3038 4500 
+Q 2925 4494 2913 4456 
+Q 2888 4419 3006 4356 
+Q 3231 4256 3369 4306 
+Q 3619 4406 4213 4519 
+Q 4313 4538 4363 4519 
+Q 4463 4463 4431 4163 
+Q 4300 3013 4219 2781 
+Q 4163 2613 4250 2519 
+Q 4000 2494 3631 2400 
+Q 3475 2375 3469 2506 
+Q 3525 3538 3594 3706 
+Q 3638 3806 3588 3888 
+Q 3475 4006 3306 4075 
+Q 3188 4119 3131 4063 
+Q 3088 4038 3144 3956 
+Q 3219 3788 3175 2938 
+Q 3175 2600 3094 2319 
+Q 3056 2181 3156 2088 
+Q 3288 1975 3419 2075 
+Q 3738 2300 4725 2369 
+Q 4931 2375 5013 2294 
+Q 5094 2213 4994 1938 
+Q 4950 1519 4881 1081 
+Q 4838 744 4688 525 
+Q 4631 444 4469 444 
+Q 4238 500 4038 538 
+Q 3938 563 3944 519 
+Q 3944 481 4000 431 
+Q 4381 106 4531 -119 
+Q 4594 -250 4706 -181 
+Q 5106 31 5181 494 
+Q 5300 1100 5375 1763 
+Q 5419 2006 5544 2213 
+Q 5625 2313 5550 2400 
+Q 5438 2538 5194 2675 
+Q 5056 2756 4869 2669 
+Q 4663 2588 4463 2556 
+Q 4456 2556 4444 2550 
+z
+M 3544 1225 
+Q 4206 1356 4656 1331 
+Q 4775 1331 4806 1381 
+Q 4844 1456 4769 1506 
+Q 4600 1625 4363 1706 
+Q 4288 1731 4163 1675 
+Q 2694 1319 2225 1269 
+Q 2150 1263 2156 1200 
+Q 2156 1138 2263 1075 
+Q 2356 1019 2525 975 
+Q 2581 969 2669 1013 
+Q 2819 1106 3544 1225 
+z
+M 1544 1363 
+Q 1850 1463 2475 1575 
+Q 2538 1594 2538 1650 
+Q 2538 1694 2356 1788 
+Q 2450 2294 2588 2456 
+Q 2725 2625 2575 2706 
+Q 2456 2769 2281 2869 
+Q 2150 2944 1906 2763 
+Q 1863 2744 1463 2600 
+Q 1619 2944 1825 3438 
+Q 1906 3681 1913 3688 
+Q 1838 3838 1619 3863 
+Q 2594 4163 2606 4169 
+Q 2663 4225 2625 4275 
+Q 2581 4350 2388 4381 
+Q 2231 4400 1675 4188 
+Q 1219 4056 969 4019 
+Q 738 3963 913 3869 
+Q 1119 3775 1356 3794 
+Q 1413 3738 1406 3494 
+Q 1350 3100 1219 2775 
+Q 1194 2700 1156 2619 
+Q 1138 2625 1113 2631 
+Q 1038 2656 1019 2625 
+Q 975 2588 1025 2494 
+Q 1031 2450 1056 2400 
+Q 788 1894 194 1119 
+Q 150 1081 219 1075 
+Q 594 1206 1144 2013 
+Q 1144 2031 1163 2044 
+Q 1225 1775 1269 1431 
+Q 1275 1238 1381 1100 
+Q 1481 963 1519 1056 
+Q 1563 1169 1544 1363 
+z
+M 1519 1588 
+Q 1438 2231 1425 2400 
+Q 1575 2456 1938 2538 
+Q 2075 2575 2106 2519 
+Q 2163 2481 2119 2250 
+Q 2081 2038 2038 1769 
+Q 1750 1669 1519 1588 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-20" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-4d" d="M 356 3981 
+L 356 906 
+Q 356 769 306 713 
+Q 263 650 119 650 
+L 119 475 
+L 831 475 
+L 831 650 
+Q 675 650 619 706 
+Q 575 763 569 906 
+L 569 3356 
+L 1344 869 
+L 1556 869 
+L 1556 888 
+L 2381 3756 
+L 2381 950 
+Q 2381 775 2325 713 
+Q 2281 650 2100 650 
+L 2100 475 
+L 3131 475 
+L 3131 650 
+Q 2944 650 2900 719 
+Q 2856 781 2856 950 
+L 2856 3956 
+Q 2856 4038 2906 4106 
+Q 2950 4163 3131 4163 
+L 3131 4338 
+L 2338 4338 
+L 1538 1569 
+L 744 4338 
+L 119 4338 
+L 119 4163 
+Q 213 4163 288 4100 
+Q 350 4044 356 3981 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-49" d="M 1813 1056 
+L 1813 3875 
+Q 1813 4063 1919 4113 
+Q 2019 4156 2175 4163 
+L 2538 4163 
+L 2538 4338 
+L 619 4338 
+L 619 4163 
+L 1019 4163 
+Q 1138 4163 1244 4113 
+Q 1338 4069 1338 3875 
+L 1338 1056 
+Q 1338 844 1263 756 
+Q 1181 656 1044 650 
+L 619 650 
+L 619 475 
+L 2538 475 
+L 2538 650 
+L 2213 650 
+Q 2019 650 1919 738 
+Q 1838 819 1813 969 
+Q 1813 1013 1813 1056 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-4f" d="M 650 3819 
+Q 194 3213 194 2331 
+Q 194 1538 631 994 
+Q 1069 444 1581 413 
+Q 2113 438 2563 975 
+Q 3013 1563 3013 2394 
+Q 3013 3275 2556 3875 
+Q 2175 4388 1631 4394 
+L 1631 4400 
+Q 1625 4400 1625 4394 
+Q 1619 4400 1594 4394 
+Q 1081 4394 650 3819 
+z
+M 1006 3669 
+Q 1288 4200 1600 4219 
+Q 1906 4219 2169 3806 
+Q 2531 3219 2538 2394 
+Q 2538 1513 2188 981 
+Q 1906 619 1581 588 
+Q 1313 613 1000 1025 
+Q 675 1500 669 2331 
+Q 669 3044 1006 3669 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-884c" d="M 2013 5063 
+Q 2094 4819 1575 4175 
+Q 1331 3875 1013 3550 
+Q 950 3494 925 3463 
+Q 900 3400 981 3406 
+Q 1281 3406 2144 4350 
+Q 2350 4613 2456 4688 
+Q 2519 4744 2506 4825 
+Q 2488 4906 2344 5056 
+Q 2206 5175 2088 5194 
+Q 1988 5194 2013 5063 
+z
+M 1525 2406 
+Q 1713 2031 1544 950 
+Q 1394 425 1663 150 
+Q 1763 50 1838 213 
+Q 1931 463 1925 744 
+Q 1919 1869 1950 2119 
+Q 1994 2288 1938 2350 
+Q 1731 2575 1706 2588 
+Q 2494 3469 2506 3500 
+Q 2500 3525 2500 3544 
+Q 2494 3625 2338 3781 
+Q 2200 3913 2081 3925 
+Q 1969 3931 2000 3794 
+Q 2056 3619 1969 3475 
+Q 1700 3019 1338 2600 
+Q 981 2200 513 1775 
+Q 450 1731 431 1688 
+Q 406 1625 488 1631 
+Q 694 1631 1338 2238 
+Q 1419 2319 1525 2406 
+z
+M 3431 4194 
+Q 3181 4131 3369 4025 
+Q 3669 3875 4063 3988 
+Q 4463 4088 4881 4194 
+Q 5075 4250 5106 4275 
+Q 5163 4338 5125 4394 
+Q 5069 4475 4863 4513 
+Q 4650 4538 4438 4450 
+Q 4225 4369 3994 4300 
+Q 3731 4238 3431 4194 
+z
+M 3969 381 
+Q 3831 425 3656 475 
+Q 3575 500 3581 450 
+Q 3581 406 3644 331 
+Q 4025 -13 4269 -300 
+Q 4350 -363 4438 -256 
+Q 4681 63 4688 731 
+Q 4625 1669 4681 2525 
+Q 4725 2700 4681 2769 
+Q 4638 2831 4469 2931 
+Q 4975 3013 5713 3038 
+Q 6088 3038 6131 3113 
+Q 6169 3194 6050 3275 
+Q 5694 3519 5438 3450 
+Q 4588 3225 2600 2875 
+Q 2463 2856 2569 2744 
+Q 2794 2556 3044 2638 
+Q 3813 2888 4163 2888 
+Q 4256 2600 4269 2419 
+Q 4269 500 4263 469 
+Q 4244 413 4213 369 
+Q 4138 325 3969 381 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-53ec" d="M 2456 213 
+Q 2519 206 2600 213 
+Q 3225 325 4569 375 
+Q 4650 381 4663 444 
+Q 4669 506 4450 669 
+Q 4425 694 4375 700 
+Q 4581 1338 4838 1544 
+Q 4956 1675 4856 1806 
+Q 4381 2206 4094 2113 
+Q 3300 1831 2188 1725 
+Q 2106 1769 1881 1813 
+Q 1800 1838 1769 1800 
+Q 1725 1756 1781 1638 
+Q 1994 1144 2113 356 
+Q 2131 125 2263 -38 
+Q 2381 -206 2425 -88 
+Q 2469 25 2456 213 
+z
+M 2431 469 
+Q 2300 1263 2275 1506 
+Q 2281 1506 3888 1769 
+Q 4063 1806 4138 1731 
+Q 4213 1656 4188 1506 
+Q 4094 1050 3981 675 
+Q 3119 525 2431 469 
+z
+M 3088 4400 
+Q 3675 4519 4156 4563 
+Q 4350 4581 4388 4519 
+Q 4450 4400 4381 4113 
+Q 4225 3300 4000 2969 
+Q 3881 2775 3706 2813 
+Q 3513 2894 3344 2975 
+Q 3194 3038 3294 2875 
+Q 3594 2569 3731 2331 
+Q 3863 2175 3994 2294 
+Q 4206 2431 4375 2700 
+Q 4569 3006 4738 3981 
+Q 4794 4325 4925 4488 
+Q 5025 4569 4981 4650 
+Q 4919 4731 4563 4919 
+Q 4425 4981 4281 4900 
+Q 4056 4781 3231 4644 
+Q 2400 4488 1694 4475 
+Q 1556 4475 1538 4406 
+Q 1519 4344 1700 4250 
+Q 1875 4119 2038 4169 
+Q 2438 4269 2800 4338 
+Q 2800 3269 1463 2188 
+Q 1031 1888 1094 1844 
+Q 1138 1825 1213 1856 
+Q 1631 2006 1988 2275 
+Q 2625 2725 3094 3763 
+Q 3175 3931 3288 4094 
+Q 3331 4156 3306 4219 
+Q 3269 4281 3088 4400 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-56de" d="M 2756 1988 
+Q 2800 1981 2869 1994 
+Q 3188 2056 3869 2088 
+Q 3931 2094 3944 2150 
+Q 3944 2194 3838 2269 
+Q 3975 2719 4125 2844 
+Q 4281 3013 4138 3113 
+Q 4006 3194 3831 3331 
+Q 3713 3413 3575 3338 
+Q 3275 3188 2600 3094 
+Q 2538 3138 2306 3175 
+Q 2244 3194 2219 3163 
+Q 2181 3125 2231 3031 
+Q 2388 2713 2494 2181 
+Q 2513 2025 2606 1919 
+Q 2706 1788 2738 1881 
+Q 2756 1925 2756 1988 
+z
+M 3469 2338 
+Q 3069 2244 2744 2194 
+Q 2744 2213 2744 2225 
+Q 2663 2700 2638 2894 
+Q 2919 2938 3363 3000 
+Q 3556 3025 3594 2950 
+Q 3638 2913 3594 2731 
+Q 3550 2544 3506 2338 
+Q 3488 2344 3469 2338 
+z
+M 1256 4063 
+Q 1106 4144 956 4188 
+Q 894 4213 856 4169 
+Q 794 4125 869 4031 
+Q 1319 3225 1300 1431 
+Q 1306 963 1600 706 
+Q 1606 706 1625 694 
+Q 1763 650 1775 900 
+Q 1775 919 1775 931 
+Q 1831 925 1900 931 
+Q 2694 1069 4375 1119 
+Q 4450 944 4588 663 
+Q 4650 544 4719 550 
+Q 4831 569 4894 750 
+Q 5200 1375 5231 2219 
+Q 5288 2744 5338 3350 
+Q 5363 3725 5538 3950 
+Q 5669 4106 5569 4206 
+Q 5400 4363 5044 4519 
+Q 4894 4594 4650 4500 
+Q 3913 4275 3075 4163 
+Q 2338 4081 1256 4063 
+z
+M 1706 1463 
+Q 1519 3113 1513 3744 
+Q 1625 3800 4413 4119 
+Q 4731 4163 4850 4013 
+Q 4931 3875 4931 3725 
+Q 4925 2613 4700 1531 
+Q 4675 1338 4600 1325 
+Q 4581 1319 4544 1325 
+Q 4338 1531 3906 1431 
+Q 2719 1244 1756 1188 
+Q 1738 1325 1706 1463 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-7387" d="M 3069 4925 
+Q 3200 4825 3338 4713 
+Q 3431 4650 3519 4656 
+Q 3581 4663 3606 4750 
+Q 3625 4844 3550 5013 
+Q 3475 5150 3000 5206 
+Q 2906 5213 2875 5194 
+Q 2850 5169 2863 5094 
+Q 2888 5031 3069 4925 
+z
+M 1556 3656 
+Q 1875 3281 2031 3275 
+Q 2113 3269 2150 3388 
+Q 2156 3469 2094 3600 
+Q 2031 3694 1888 3731 
+Q 1675 3813 1581 3825 
+Q 1519 3831 1519 3763 
+Q 1513 3706 1556 3656 
+z
+M 1238 2325 
+Q 1175 2306 1181 2219 
+Q 1206 2119 1363 2063 
+Q 1519 1981 1606 1988 
+Q 1663 1994 1694 2125 
+Q 1844 2356 2219 2863 
+Q 2256 2900 2231 2938 
+Q 2206 2956 2169 2925 
+Q 1456 2363 1350 2344 
+Q 1294 2344 1238 2325 
+z
+M 4631 3875 
+Q 4494 3700 4225 3425 
+Q 4188 3388 4219 3344 
+Q 4263 3338 4306 3356 
+Q 4794 3625 5025 3725 
+Q 5125 3744 5113 3806 
+Q 5088 3900 4988 4013 
+Q 4888 4125 4769 4144 
+Q 4688 4150 4681 4038 
+Q 4688 3963 4631 3875 
+z
+M 4263 2894 
+Q 4569 2681 4944 2363 
+Q 5044 2269 5125 2256 
+Q 5169 2256 5200 2313 
+Q 5256 2394 5163 2613 
+Q 5044 2913 4244 3056 
+Q 4200 3081 4194 3013 
+Q 4200 2938 4263 2894 
+z
+M 3119 -213 
+Q 3156 -350 3194 -406 
+Q 3219 -450 3269 -438 
+Q 3344 -381 3388 -44 
+Q 3388 13 3413 1413 
+Q 4181 1488 5256 1469 
+Q 5463 1463 5644 1469 
+Q 5781 1463 5819 1525 
+Q 5856 1606 5744 1700 
+Q 5388 1981 4944 1888 
+Q 4338 1788 3413 1644 
+Q 3413 1688 3438 1844 
+Q 3444 1925 3463 1994 
+Q 3481 2094 3400 2150 
+Q 3269 2231 3181 2269 
+Q 3313 2369 3913 2494 
+Q 4156 2194 4200 2188 
+Q 4244 2181 4288 2231 
+Q 4313 2294 4306 2431 
+Q 4300 2550 4156 2669 
+Q 3781 2913 3725 2888 
+Q 3700 2881 3694 2819 
+Q 3694 2813 3831 2600 
+Q 3413 2538 2931 2419 
+Q 2813 2381 2894 2475 
+Q 3125 2725 3669 3225 
+Q 3863 3419 4025 3531 
+Q 4106 3588 4075 3644 
+Q 4031 3763 3844 3900 
+Q 3763 3963 3700 3956 
+Q 3638 3950 3644 3850 
+Q 3625 3644 3325 3256 
+Q 3056 3263 2831 3263 
+Q 2663 3269 2756 3363 
+Q 2988 3631 3194 3831 
+Q 3275 3913 3263 3956 
+Q 3256 4031 3069 4206 
+Q 3575 4288 4094 4356 
+Q 4456 4419 4506 4463 
+Q 4563 4506 4538 4556 
+Q 4500 4631 4338 4681 
+Q 4200 4719 3488 4538 
+Q 2731 4388 2063 4356 
+Q 1850 4331 2000 4231 
+Q 2188 4081 2644 4150 
+Q 2738 4169 2850 4169 
+Q 2906 3994 2594 3519 
+Q 2531 3419 2413 3325 
+Q 2313 3250 2313 3188 
+Q 2331 3088 2400 2988 
+Q 2444 2925 2519 2963 
+Q 2669 3038 3150 3113 
+Q 3175 3119 3206 3113 
+Q 2550 2419 2425 2363 
+Q 2344 2319 2350 2238 
+Q 2356 2156 2494 2031 
+Q 2550 1956 2644 2019 
+Q 2781 2113 2944 2175 
+Q 3038 1969 3063 1656 
+Q 3056 1638 3063 1600 
+Q 2025 1481 813 1350 
+Q 675 1344 775 1219 
+Q 875 1119 994 1081 
+Q 1144 1044 1250 1075 
+Q 2150 1306 3069 1381 
+Q 3094 -119 3119 -213 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#GBZenKai-Medium-6e90"/>
+      <use xlink:href="#GBZenKai-Medium-7801" transform="translate(100 0)"/>
+      <use xlink:href="#GBZenKai-Medium-20" transform="translate(200 0)"/>
+      <use xlink:href="#GBZenKai-Medium-4d" transform="translate(250 0)"/>
+      <use xlink:href="#GBZenKai-Medium-4d" transform="translate(300 0)"/>
+      <use xlink:href="#GBZenKai-Medium-49" transform="translate(350 0)"/>
+      <use xlink:href="#GBZenKai-Medium-4f" transform="translate(400 0)"/>
+      <use xlink:href="#GBZenKai-Medium-20" transform="translate(450 0)"/>
+      <use xlink:href="#GBZenKai-Medium-884c" transform="translate(500 0)"/>
+      <use xlink:href="#GBZenKai-Medium-53ec" transform="translate(600 0)"/>
+      <use xlink:href="#GBZenKai-Medium-56de" transform="translate(700 0)"/>
+      <use xlink:href="#GBZenKai-Medium-7387" transform="translate(800 0)"/>
+     </g>
+    </g>
+   </g>
+   <g id="line2d_18">
+    <path d="M 44.433281 57.250657 
+L 847.370781 57.250657 
+" clip-path="url(#p5cc78f11ef)" style="fill: none; stroke-dasharray: 2.96,1.28; stroke-dashoffset: 0; stroke: #bbbbbb; stroke-width: 0.8"/>
+   </g>
+   <g id="patch_36">
+    <path d="M 44.433281 339.870718 
+L 44.433281 23.33625 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_37">
+    <path d="M 44.433281 339.870718 
+L 847.370781 339.870718 
+" style="fill: none; stroke: #000000; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_19">
+    <!-- 逐驱动召回：Hybrid 保持 AST 覆盖，IR-only 单独只达 0.45（间接回调不可见） -->
+    <g transform="translate(226.902031 17.33625) scale(0.12 -0.12)">
+     <defs>
+      <path id="GBZenKai-Medium-9010" d="M 4219 2575 
+Q 4675 2313 5219 1906 
+Q 5331 1806 5419 1800 
+Q 5475 1800 5500 1869 
+Q 5556 1950 5438 2188 
+Q 5306 2513 4175 2763 
+Q 4169 2769 4156 2763 
+Q 4113 2900 4044 2981 
+Q 4700 3419 5019 3581 
+Q 5138 3606 5113 3681 
+Q 5075 3781 4963 3913 
+Q 4844 4031 4700 4056 
+Q 4606 4056 4606 3931 
+Q 4613 3775 3969 3075 
+Q 3631 3450 3163 3581 
+Q 3294 3719 3481 3938 
+Q 3575 4038 3581 4075 
+Q 3581 4119 3525 4188 
+Q 3463 4263 3369 4294 
+Q 4594 4613 4650 4656 
+Q 4706 4700 4675 4756 
+Q 4631 4819 4450 4863 
+Q 4275 4888 3738 4681 
+Q 3188 4513 2744 4450 
+Q 2531 4406 2688 4313 
+Q 2913 4219 3169 4244 
+Q 3194 4000 2731 3488 
+Q 2713 3481 2713 3469 
+Q 2575 3331 2238 3056 
+Q 2194 3038 2244 3019 
+Q 2544 3019 3019 3444 
+Q 3025 3463 3050 3475 
+Q 3075 3450 3131 3419 
+Q 3213 3381 3281 3338 
+Q 3181 2981 2231 2356 
+Q 2119 2294 2256 2300 
+Q 2544 2281 3325 2869 
+Q 3344 2913 3600 3113 
+Q 3656 3069 3713 2994 
+Q 3713 2994 3713 2988 
+Q 3350 2275 2325 1563 
+Q 2244 1500 2300 1481 
+Q 2431 1425 2838 1650 
+Q 3219 1856 3681 2381 
+Q 3875 2606 3875 2619 
+Q 3881 2644 3906 2663 
+Q 4019 2269 3894 1706 
+Q 3838 1475 3769 1438 
+Q 3713 1413 3356 1469 
+Q 3038 1544 3025 1500 
+Q 3019 1456 3094 1375 
+Q 3513 1069 3681 850 
+Q 3775 731 3869 763 
+Q 4150 894 4263 1625 
+Q 4325 2150 4250 2450 
+Q 4231 2513 4219 2575 
+z
+M 1450 4500 
+Q 1625 4350 1806 4169 
+Q 1900 4088 2000 4088 
+Q 2075 4094 2106 4181 
+Q 2131 4275 2075 4469 
+Q 2038 4600 1838 4688 
+Q 1369 4863 1275 4819 
+Q 1238 4794 1250 4706 
+Q 1275 4644 1450 4500 
+z
+M 1625 1194 
+Q 1356 1213 1075 1119 
+Q 844 1038 500 1013 
+Q 456 1006 431 956 
+Q 413 913 469 850 
+Q 569 731 725 656 
+Q 788 619 913 706 
+Q 1344 1025 1800 931 
+Q 2213 831 3031 444 
+Q 4419 -219 4950 -88 
+Q 4956 -81 4975 -81 
+Q 5369 38 5700 275 
+Q 5850 369 5700 369 
+Q 4294 369 3388 638 
+Q 2881 794 2256 1050 
+Q 2013 1163 1769 1181 
+Q 1831 1225 1850 1331 
+Q 1875 1575 1625 2006 
+Q 1438 2388 1944 2900 
+Q 2094 3019 1969 3125 
+Q 1838 3225 1625 3313 
+Q 1494 3388 1250 3194 
+Q 725 2894 569 2906 
+Q 525 2913 513 2875 
+Q 506 2850 556 2819 
+Q 800 2719 1325 2944 
+Q 1369 2969 1431 2913 
+Q 1550 2775 1419 2613 
+Q 1131 2331 1388 1894 
+Q 1650 1369 1631 1213 
+Q 1625 1206 1625 1194 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-9a71" d="M 2313 2619 
+Q 2413 2831 2500 3756 
+Q 2563 4081 2763 4281 
+Q 2863 4394 2756 4475 
+Q 2638 4569 2313 4694 
+Q 2219 4731 1888 4613 
+Q 1606 4538 1369 4450 
+Q 1138 4369 981 4331 
+Q 881 4325 869 4288 
+Q 850 4263 956 4200 
+Q 1169 4119 1281 4169 
+Q 1506 4269 2025 4394 
+Q 2119 4413 2150 4394 
+Q 2244 4350 2225 4069 
+Q 2131 3013 2069 2788 
+Q 2031 2694 2106 2538 
+Q 2088 2544 2081 2538 
+Q 1913 2500 1556 2394 
+Q 1419 2356 1394 2475 
+Q 1413 3394 1494 3600 
+Q 1531 3694 1488 3756 
+Q 1394 3856 1250 3913 
+Q 1150 3956 1100 3906 
+Q 1063 3881 1106 3813 
+Q 1219 3531 1113 2469 
+Q 1094 2394 1075 2306 
+Q 1038 2188 1125 2094 
+Q 1219 2019 1375 2088 
+Q 1506 2225 2200 2344 
+Q 2388 2369 2469 2294 
+Q 2544 2231 2469 1969 
+Q 2425 1550 2356 1113 
+Q 2313 769 2156 550 
+Q 2113 488 1981 488 
+Q 1750 569 1550 631 
+Q 1469 656 1469 619 
+Q 1469 594 1513 544 
+Q 1875 219 2006 0 
+Q 2050 -119 2156 -63 
+Q 2475 106 2581 438 
+Q 2656 738 2806 1813 
+Q 2844 2038 2950 2225 
+Q 3031 2325 2956 2400 
+Q 2856 2519 2625 2638 
+Q 2506 2713 2331 2631 
+Q 2325 2625 2313 2619 
+z
+M 350 1244 
+Q 269 1238 263 1169 
+Q 256 1088 313 1038 
+Q 450 938 663 831 
+Q 725 825 800 875 
+Q 919 975 1888 1500 
+Q 2019 1563 2106 1644 
+Q 2188 1688 2188 1750 
+Q 2150 1788 2075 1763 
+Q 644 1256 350 1244 
+z
+M 3500 4169 
+Q 3438 4225 3294 4294 
+Q 3175 4369 3119 4319 
+Q 3075 4275 3125 4188 
+Q 3225 3975 3238 3588 
+Q 3275 2250 3156 1013 
+Q 3131 769 2988 550 
+Q 2925 450 2981 325 
+Q 3025 188 3088 138 
+Q 3150 94 3263 163 
+Q 3863 563 5575 550 
+Q 5731 544 5738 625 
+Q 5738 719 5556 850 
+Q 5456 931 4781 819 
+Q 3913 738 3613 675 
+Q 3475 638 3469 794 
+Q 3513 1981 3538 3475 
+Q 3538 3794 3581 3994 
+Q 3806 3900 4119 3969 
+Q 4594 4063 5081 4163 
+Q 5313 4206 5344 4244 
+Q 5400 4288 5369 4350 
+Q 5325 4425 5138 4469 
+Q 5006 4506 4369 4319 
+Q 3975 4225 3563 4188 
+Q 3519 4181 3500 4169 
+z
+M 4631 2044 
+Q 4881 1763 5150 1431 
+Q 5213 1331 5294 1300 
+Q 5338 1294 5381 1338 
+Q 5444 1400 5400 1625 
+Q 5363 1875 4800 2319 
+Q 4800 2325 4806 2325 
+Q 4981 2625 5131 3131 
+Q 5175 3281 5250 3425 
+Q 5294 3481 5250 3538 
+Q 5213 3594 5031 3675 
+Q 4900 3731 4850 3713 
+Q 4775 3688 4794 3600 
+Q 4894 3094 4581 2513 
+Q 4575 2513 4575 2506 
+Q 4125 2869 3869 3044 
+Q 3825 3069 3813 3006 
+Q 3806 2944 3856 2888 
+Q 4138 2606 4444 2256 
+Q 4088 1769 3688 1375 
+Q 3650 1331 3688 1319 
+Q 3881 1281 4388 1775 
+Q 4525 1906 4631 2044 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-52a8" d="M 1513 4038 
+Q 1263 3994 1444 3875 
+Q 1744 3706 2138 3813 
+Q 2519 3894 2913 3981 
+Q 3088 4025 3119 4050 
+Q 3181 4106 3150 4169 
+Q 3094 4250 2888 4294 
+Q 2675 4338 2463 4244 
+Q 2269 4181 2044 4119 
+Q 1800 4063 1513 4038 
+z
+M 2800 1694 
+Q 2956 1406 3031 1369 
+Q 3088 1363 3131 1406 
+Q 3188 1469 3194 1631 
+Q 3213 1769 3056 1956 
+Q 2881 2113 2681 2269 
+Q 2619 2313 2581 2313 
+Q 2544 2306 2531 2244 
+Q 2531 2206 2744 1800 
+Q 2200 1669 1625 1506 
+Q 1581 1500 1575 1506 
+Q 1556 1525 1594 1575 
+Q 2031 2400 2225 2625 
+Q 2300 2706 2238 2763 
+Q 2200 2788 2144 2806 
+Q 2506 2881 2969 2938 
+Q 3081 2944 3081 3000 
+Q 3088 3081 2975 3144 
+Q 2800 3225 2656 3188 
+Q 1169 2881 688 2850 
+Q 606 2844 581 2794 
+Q 563 2719 656 2650 
+Q 919 2475 1181 2550 
+Q 1500 2650 1769 2719 
+Q 1775 2713 1781 2681 
+Q 1863 2413 1450 1750 
+Q 1331 1556 1075 1363 
+Q 919 1281 925 1219 
+Q 931 1119 1000 1006 
+Q 1075 894 1156 875 
+Q 1200 869 1263 900 
+Q 1569 1181 2788 1688 
+Q 2788 1694 2800 1694 
+z
+M 3906 2831 
+Q 3625 1706 3056 906 
+Q 2888 638 2706 381 
+Q 2669 338 2656 300 
+Q 2631 219 2706 231 
+Q 2931 269 3513 1063 
+Q 3631 1256 3756 1469 
+Q 4038 2019 4300 2944 
+Q 4625 3044 4963 3094 
+Q 5056 3100 5075 3056 
+Q 5119 2963 5100 2700 
+Q 5025 1756 4844 1250 
+Q 4750 944 4644 838 
+Q 4569 756 4406 806 
+Q 4163 881 3950 956 
+Q 3800 1000 3906 863 
+Q 4213 538 4388 288 
+Q 4450 150 4594 188 
+Q 4713 206 4856 363 
+Q 5275 794 5450 2431 
+Q 5488 2794 5625 3006 
+Q 5725 3144 5675 3206 
+Q 5575 3325 5350 3419 
+Q 5194 3500 5025 3419 
+Q 4738 3281 4350 3169 
+Q 4463 4088 4588 4456 
+Q 4588 4494 4606 4525 
+Q 4669 4625 4631 4719 
+Q 4519 4838 4306 4950 
+Q 4175 5031 4088 5000 
+Q 4006 4956 4044 4856 
+Q 4156 4700 4131 4256 
+Q 4113 4144 4106 4006 
+Q 4050 3519 3963 3075 
+Q 3525 2981 3263 2969 
+Q 3144 2975 3144 2913 
+Q 3138 2850 3275 2775 
+Q 3444 2675 3588 2731 
+Q 3738 2788 3906 2831 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-ff1a" d="M 2238 2269 
+Q 2100 2269 2006 2181 
+Q 1925 2100 1919 1950 
+Q 1919 1813 2006 1725 
+Q 2106 1625 2238 1625 
+Q 2375 1625 2469 1719 
+Q 2563 1800 2563 1950 
+Q 2563 2088 2475 2175 
+Q 2375 2269 2238 2269 
+z
+M 2238 713 
+Q 2100 713 2006 625 
+Q 1925 544 1919 394 
+Q 1919 256 2006 169 
+Q 2106 69 2238 69 
+Q 2375 69 2469 163 
+Q 2563 244 2563 394 
+Q 2563 531 2475 619 
+Q 2375 713 2238 713 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-48" d="M 2694 950 
+L 2694 3800 
+Q 2694 4063 2775 4131 
+Q 2869 4194 3088 4200 
+L 3088 4338 
+L 1875 4338 
+L 1875 4200 
+Q 2081 4200 2169 4131 
+Q 2263 4050 2263 3800 
+L 2263 2525 
+L 931 2525 
+L 931 3800 
+Q 931 4031 994 4106 
+Q 1069 4200 1319 4200 
+L 1319 4338 
+L 106 4338 
+L 106 4200 
+Q 300 4200 400 4106 
+Q 500 4025 500 3800 
+L 500 950 
+Q 500 831 431 725 
+Q 350 625 106 619 
+L 106 475 
+L 1319 475 
+L 1319 619 
+Q 1106 619 1025 719 
+Q 931 831 931 950 
+L 931 2350 
+L 2263 2350 
+L 2263 950 
+Q 2263 813 2163 713 
+Q 2063 619 1875 619 
+L 1875 475 
+L 3088 475 
+L 3088 619 
+Q 2875 619 2781 719 
+Q 2700 813 2694 950 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-79" d="M 1556 0 
+L 2650 2763 
+Q 2706 2919 2913 2919 
+L 2913 3094 
+L 2300 3094 
+L 2300 2919 
+Q 2400 2919 2438 2881 
+Q 2463 2856 2438 2763 
+L 1788 1113 
+L 1169 2750 
+Q 1144 2831 1175 2875 
+Q 1213 2919 1381 2919 
+L 1381 3094 
+L 288 3094 
+L 288 2919 
+Q 650 2919 725 2750 
+L 1600 631 
+L 1363 25 
+L 1363 25 
+Q 1281 -113 1213 -119 
+Q 1175 -113 1194 88 
+Q 1188 169 1119 256 
+Q 1056 338 919 338 
+Q 788 338 694 250 
+Q 594 169 588 -38 
+Q 588 -156 700 -256 
+Q 800 -356 1038 -363 
+Q 1381 -356 1556 0 
+L 1556 0 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-4fdd" d="M 1444 3100 
+Q 1575 2706 1581 2669 
+Q 1575 2663 1581 2644 
+Q 1581 1500 1381 744 
+Q 1288 438 1519 138 
+Q 1525 119 1550 100 
+Q 1669 0 1744 175 
+Q 1838 438 1838 738 
+Q 1856 2425 1913 2806 
+Q 1956 2994 1794 3169 
+Q 1756 3206 1638 3331 
+Q 1869 3638 2131 4019 
+Q 2300 4300 2444 4431 
+Q 2506 4506 2475 4600 
+Q 2450 4681 2256 4850 
+Q 2069 4981 1944 4981 
+Q 1813 4975 1869 4813 
+Q 1950 4625 1875 4469 
+Q 1663 3938 1319 3438 
+Q 994 2963 550 2438 
+Q 475 2363 463 2325 
+Q 438 2244 538 2263 
+Q 781 2281 1406 3050 
+Q 1425 3075 1444 3100 
+z
+M 3994 2269 
+Q 4406 1663 4931 1000 
+Q 5044 881 5231 881 
+Q 5875 900 6081 938 
+Q 6144 944 6150 981 
+Q 6156 1006 6069 1063 
+Q 5150 1438 4656 1906 
+Q 4338 2188 4006 2531 
+Q 4538 2613 5338 2638 
+Q 5713 2638 5756 2700 
+Q 5781 2781 5675 2863 
+Q 5319 3106 4931 2988 
+Q 4538 2906 3994 2788 
+Q 3988 3188 4000 3238 
+Q 4019 3313 3963 3356 
+Q 3900 3413 3769 3475 
+Q 4113 3531 4694 3563 
+Q 4756 3569 4769 3619 
+Q 4769 3663 4656 3750 
+Q 4869 4281 5081 4419 
+Q 5200 4538 5106 4663 
+Q 4600 5081 4244 4881 
+Q 3756 4731 2981 4600 
+Q 2906 4625 2750 4650 
+Q 2675 4669 2656 4638 
+Q 2613 4594 2669 4500 
+Q 2856 4144 2969 3563 
+Q 2994 3388 3100 3269 
+Q 3213 3131 3244 3231 
+Q 3263 3306 3263 3419 
+Q 3325 3400 3419 3419 
+Q 3494 3438 3594 3450 
+Q 3594 3431 3613 3406 
+Q 3650 3331 3681 2725 
+Q 3019 2625 2250 2494 
+Q 2119 2475 2219 2369 
+Q 2313 2288 2425 2256 
+Q 2556 2231 2656 2263 
+Q 3013 2381 3431 2444 
+Q 3225 1788 2056 900 
+Q 1956 819 2056 813 
+Q 2231 794 2794 1169 
+Q 3325 1713 3363 1744 
+Q 3556 1994 3675 2213 
+Q 3675 2219 3681 2225 
+Q 3638 63 3644 19 
+Q 3681 -131 3769 -231 
+Q 3850 -325 3906 -213 
+Q 4019 19 4025 456 
+Q 4025 519 3994 2269 
+z
+M 4294 3813 
+Q 3706 3675 3238 3619 
+Q 3138 4188 3106 4381 
+Q 3163 4400 4269 4606 
+Q 4406 4631 4456 4581 
+Q 4513 4525 4488 4413 
+Q 4413 4088 4319 3813 
+Q 4313 3819 4294 3813 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-6301" d="M 1763 2363 
+Q 1194 2056 700 1756 
+Q 494 1638 356 1594 
+Q 281 1556 269 1513 
+Q 263 1456 350 1375 
+Q 469 1281 606 1231 
+Q 700 1206 763 1281 
+Q 1106 1656 1756 2144 
+Q 1750 1594 1744 900 
+Q 1738 763 1663 700 
+Q 1656 700 1325 750 
+Q 1131 850 1138 781 
+Q 1144 738 1263 631 
+Q 1581 306 1650 131 
+Q 1731 -75 1813 -88 
+Q 1906 -94 2006 113 
+Q 2125 400 2138 863 
+Q 2094 1619 2081 2388 
+Q 2175 2450 2231 2525 
+Q 2269 2606 2200 2600 
+Q 2156 2594 2081 2544 
+Q 2075 2888 2088 3225 
+Q 2238 3269 2413 3306 
+Q 2625 3363 2650 3394 
+Q 2706 3450 2675 3500 
+Q 2631 3575 2438 3613 
+Q 2250 3638 2094 3563 
+Q 2169 4450 2219 4606 
+Q 2319 4794 1975 4931 
+Q 1763 5050 1644 5006 
+Q 1531 4963 1631 4825 
+Q 1769 4650 1775 4438 
+Q 1781 4338 1775 3450 
+Q 1131 3300 950 3263 
+Q 719 3219 888 3119 
+Q 1169 2969 1538 3088 
+Q 1638 3125 1775 3144 
+Q 1769 2800 1763 2363 
+z
+M 4169 2825 
+Q 4375 2844 4575 2875 
+Q 5138 2950 5644 2925 
+Q 5763 2919 5794 2969 
+Q 5831 3031 5763 3094 
+Q 5606 3231 5369 3319 
+Q 5294 3344 5163 3294 
+Q 4956 3238 4119 3075 
+Q 4144 3419 4175 3744 
+Q 4419 3819 4694 3875 
+Q 4919 3938 4950 3969 
+Q 5006 4025 4975 4075 
+Q 4931 4150 4738 4188 
+Q 4569 4206 4194 4069 
+Q 4200 4519 4325 4975 
+Q 4350 5050 4219 5144 
+Q 3988 5263 3831 5294 
+Q 3731 5319 3675 5263 
+Q 3631 5219 3681 5113 
+Q 3813 4938 3813 4806 
+Q 3838 4394 3844 3950 
+Q 3825 3956 3819 3950 
+Q 3513 3869 3150 3813 
+Q 2919 3769 3088 3669 
+Q 3369 3519 3731 3631 
+Q 3775 3650 3850 3656 
+Q 3850 3356 3838 3031 
+Q 2613 2863 2588 2850 
+Q 2513 2844 2513 2788 
+Q 2513 2725 2613 2650 
+Q 2706 2594 2869 2544 
+Q 2931 2525 3019 2575 
+Q 3081 2600 3363 2663 
+Q 3719 2763 4169 2825 
+z
+M 4144 244 
+Q 3913 288 3688 344 
+Q 3613 363 3619 313 
+Q 3625 269 3688 225 
+Q 4163 -169 4338 -413 
+Q 4419 -513 4525 -425 
+Q 4750 -219 4738 231 
+Q 4694 569 4694 1956 
+Q 4944 1981 5269 1994 
+Q 5588 1994 5631 2063 
+Q 5656 2138 5556 2213 
+Q 5194 2475 4775 2300 
+Q 4756 2300 4756 2294 
+Q 4763 2313 4769 2319 
+Q 4825 2438 4719 2519 
+Q 4563 2656 4375 2713 
+Q 4256 2756 4206 2706 
+Q 4169 2663 4238 2569 
+Q 4338 2394 4356 2200 
+Q 4150 2163 3944 2113 
+Q 3356 1994 2644 1863 
+Q 2513 1844 2619 1744 
+Q 2700 1669 2819 1644 
+Q 2938 1619 3038 1650 
+Q 3750 1875 4369 1919 
+Q 4425 363 4281 256 
+Q 4225 213 4144 244 
+z
+M 3138 1238 
+Q 3325 938 3500 838 
+Q 3581 813 3644 881 
+Q 3688 944 3688 1050 
+Q 3625 1350 3263 1438 
+Q 3244 1444 3238 1450 
+Q 3144 1488 3088 1469 
+Q 3050 1469 3056 1394 
+Q 3056 1331 3138 1238 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-41" d="M 2781 925 
+L 1731 4338 
+L 1319 4163 
+L 394 819 
+Q 350 688 75 688 
+L 75 475 
+L 769 475 
+L 769 688 
+Q 688 688 663 713 
+Q 638 738 656 819 
+L 894 1725 
+L 2050 1725 
+L 2306 925 
+Q 2350 788 2306 738 
+Q 2263 694 2156 688 
+L 2156 475 
+L 3144 475 
+L 3144 688 
+Q 2875 688 2781 925 
+z
+M 1438 3713 
+L 1963 2006 
+L 969 2006 
+L 1438 3713 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-53" d="M 356 3406 
+Q 350 2669 1600 2344 
+Q 2488 2150 2494 1513 
+Q 2494 1156 2256 894 
+Q 2006 631 1650 619 
+Q 1250 625 963 869 
+Q 663 1119 381 1738 
+L 231 1700 
+L 400 969 
+Q 838 419 1650 406 
+Q 2200 413 2544 750 
+Q 2888 1088 2894 1531 
+Q 2888 2419 1875 2656 
+Q 875 2925 881 3475 
+Q 881 3838 1081 4088 
+Q 1288 4338 1675 4338 
+Q 1981 4338 2275 4075 
+Q 2544 3825 2663 3413 
+L 2781 3413 
+L 2831 4075 
+Q 2225 4531 1638 4531 
+L 1638 4525 
+Q 1000 4525 688 4206 
+Q 363 3881 356 3406 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-54" d="M 2775 4338 
+L 431 4338 
+L 169 3544 
+L 338 3475 
+Q 681 4156 1038 4163 
+L 1363 4163 
+L 1363 956 
+Q 1363 650 738 650 
+L 738 475 
+L 2419 475 
+L 2419 650 
+Q 1794 650 1794 956 
+L 1794 956 
+L 1794 4163 
+L 2175 4163 
+Q 2538 4163 2863 3475 
+L 3038 3544 
+L 2775 4338 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-8986" d="M 1719 3106 
+Q 1763 2956 1413 2531 
+Q 1256 2338 1031 2131 
+Q 975 2094 963 2069 
+Q 938 2025 1000 2025 
+Q 1263 2025 1888 2644 
+Q 1981 2744 2056 2788 
+Q 2100 2831 2094 2894 
+Q 2088 2956 1975 3081 
+Q 1875 3181 1788 3200 
+Q 1706 3206 1719 3106 
+z
+M 1600 1400 
+Q 1738 1063 1556 250 
+Q 1494 6 1675 -219 
+Q 1675 -225 1688 -238 
+Q 1769 -319 1831 -188 
+Q 1906 19 1900 250 
+Q 1919 1006 1944 1175 
+Q 1981 1325 1775 1538 
+Q 1769 1544 1756 1550 
+Q 2063 1894 2225 1994 
+Q 2288 2038 2275 2113 
+Q 2269 2188 2144 2331 
+Q 2025 2450 1931 2475 
+Q 1831 2481 1850 2363 
+Q 1944 1963 569 800 
+Q 506 756 488 731 
+Q 463 675 531 675 
+Q 781 675 1600 1400 
+z
+M 3063 2981 
+Q 3144 2938 3269 2900 
+Q 3400 2881 4463 3100 
+Q 4656 3144 4694 3175 
+Q 4738 3219 4719 3263 
+Q 4675 3325 4519 3363 
+Q 4363 3400 4200 3331 
+Q 3969 3250 3719 3194 
+Q 3456 3138 3163 3100 
+Q 3244 3200 3306 3256 
+Q 3350 3300 3338 3363 
+Q 3300 3456 3144 3569 
+Q 3750 3663 4275 3706 
+Q 4350 3569 4425 3513 
+Q 4481 3469 4575 3569 
+Q 4619 3606 4750 3813 
+L 4750 3813 
+Q 4813 4000 4956 4138 
+Q 5038 4200 4975 4294 
+Q 4894 4406 4644 4575 
+Q 4525 4638 4438 4606 
+Q 4175 4550 3806 4500 
+Q 3825 4544 3838 4581 
+Q 3863 4625 3881 4663 
+Q 3906 4706 3831 4800 
+Q 3769 4844 3713 4881 
+Q 3844 4906 3994 4919 
+Q 4375 4981 4431 5025 
+Q 4475 5063 4463 5113 
+Q 4425 5175 4275 5231 
+Q 4119 5275 3950 5225 
+Q 3519 5113 3050 5031 
+Q 2538 4950 1938 4944 
+Q 1744 4925 1875 4825 
+Q 2044 4706 2356 4713 
+Q 2431 4638 2513 4338 
+Q 2131 4294 1806 4250 
+Q 1800 4294 1775 4313 
+Q 1700 4350 1481 4369 
+Q 1406 4388 1394 4350 
+Q 1356 4313 1413 4219 
+Q 1569 3969 1688 3544 
+Q 1713 3413 1800 3338 
+Q 1919 3219 1938 3313 
+Q 1944 3356 1950 3425 
+Q 2013 3425 2950 3538 
+Q 3031 3294 2388 2506 
+Q 2344 2469 2331 2444 
+Q 2306 2400 2375 2400 
+Q 2544 2438 3063 2981 
+z
+M 4275 3888 
+Q 4138 3925 3600 3813 
+Q 3663 4063 3738 4300 
+Q 4338 4375 4450 4256 
+Q 4469 4231 4463 4200 
+Q 4406 3900 4331 3863 
+Q 4313 3881 4275 3888 
+z
+M 2825 3700 
+Q 2800 3988 2800 4175 
+Q 3088 4231 3450 4263 
+Q 3425 4031 3381 3781 
+Q 3094 3744 2825 3700 
+z
+M 1931 3588 
+Q 1875 3850 1850 4000 
+Q 1888 4038 2550 4138 
+Q 2575 3963 2625 3675 
+Q 2263 3638 1931 3588 
+z
+M 3444 4844 
+Q 3488 4750 3475 4469 
+Q 3156 4431 2794 4375 
+Q 2794 4625 2744 4669 
+Q 2681 4713 2619 4744 
+Q 3013 4800 3438 4850 
+Q 3438 4850 3444 4844 
+z
+M 3813 219 
+Q 4413 -344 4738 -344 
+Q 5131 -300 5450 -213 
+Q 5625 -169 5613 -119 
+Q 5606 -94 5419 -56 
+Q 4481 119 4006 381 
+Q 4181 569 4356 825 
+Q 4456 963 4581 1050 
+Q 4700 1113 4638 1206 
+Q 4575 1288 4419 1375 
+Q 4300 1438 4138 1388 
+Q 3988 1344 3794 1288 
+Q 3625 1250 3369 1219 
+Q 3394 1256 3425 1263 
+Q 3463 1288 3463 1331 
+Q 3463 1375 3413 1444 
+Q 3313 1563 3169 1594 
+Q 3175 1619 3181 1644 
+Q 3219 1638 3294 1644 
+Q 3825 1725 4250 1775 
+Q 4250 1731 4269 1688 
+Q 4294 1606 4369 1606 
+Q 4463 1613 4631 1931 
+Q 4725 2219 4931 2388 
+Q 5031 2481 4950 2569 
+Q 4850 2663 4569 2813 
+Q 4494 2856 4106 2775 
+Q 3750 2719 3450 2650 
+Q 3225 2606 3069 2575 
+Q 3013 2613 2825 2650 
+Q 2763 2669 2738 2644 
+Q 2713 2619 2750 2525 
+Q 2881 2256 2950 1813 
+Q 2956 1625 3094 1531 
+Q 3094 1231 2563 756 
+Q 2450 656 2013 350 
+Q 1969 331 2019 313 
+Q 2394 313 3006 856 
+Q 3163 781 3619 394 
+Q 3188 50 2288 -113 
+Q 2206 -119 2263 -181 
+Q 2300 -200 2563 -194 
+Q 2906 -175 3300 -38 
+Q 3588 63 3813 219 
+z
+M 3406 819 
+Q 3250 950 3113 963 
+Q 3175 1025 3250 1094 
+Q 3438 1013 3713 1075 
+Q 3975 1156 4025 1163 
+Q 4106 1138 4063 1044 
+Q 3950 756 3769 538 
+Q 3594 669 3406 819 
+z
+M 4206 1931 
+Q 4106 1950 3938 1913 
+Q 3538 1831 3181 1756 
+Q 3163 1850 3144 2019 
+Q 3169 2019 3213 2019 
+Q 3706 2100 4075 2150 
+Q 4194 2169 4156 2238 
+Q 4100 2313 3969 2338 
+Q 3850 2356 3131 2156 
+Q 3106 2313 3106 2388 
+Q 3169 2381 3225 2394 
+Q 3525 2494 4213 2588 
+Q 4331 2594 4375 2575 
+Q 4419 2550 4394 2431 
+Q 4331 2019 4288 1900 
+Q 4250 1925 4206 1931 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-76d6" d="M 2150 4750 
+Q 2419 4394 2619 4281 
+Q 2700 4256 2769 4331 
+Q 2813 4406 2806 4506 
+Q 2750 4825 2250 4969 
+Q 2244 4975 2244 4975 
+Q 2144 5019 2088 5000 
+Q 2044 4994 2056 4919 
+Q 2063 4844 2150 4750 
+z
+M 3819 5044 
+Q 3738 4875 3338 4344 
+Q 3275 4231 3388 4256 
+Q 3744 4481 4113 4763 
+Q 4231 4875 4381 4944 
+Q 4519 5019 4444 5131 
+Q 4350 5231 4181 5325 
+Q 4025 5406 3938 5388 
+Q 3856 5381 3881 5288 
+Q 3906 5169 3819 5044 
+z
+M 3263 2494 
+Q 3269 2800 3288 3063 
+Q 3438 3100 4213 3181 
+Q 4275 3175 4325 3244 
+Q 4331 3306 4200 3375 
+Q 4025 3513 3444 3356 
+Q 3369 3350 3300 3325 
+Q 3338 3719 3263 3800 
+Q 3225 3825 3200 3850 
+Q 3600 3913 4038 3975 
+Q 4381 4038 4431 4081 
+Q 4488 4125 4463 4175 
+Q 4425 4256 4250 4306 
+Q 4081 4350 3463 4181 
+Q 2563 4013 2069 3994 
+Q 1844 3969 2000 3856 
+Q 2244 3719 2688 3781 
+Q 2788 3800 2919 3806 
+Q 2956 3769 2975 3263 
+Q 2781 3238 2600 3213 
+Q 2375 3194 2131 3169 
+Q 1956 3150 2088 3044 
+Q 2256 2906 2544 2944 
+Q 2738 2981 2981 3019 
+Q 2981 2794 2994 2456 
+Q 2206 2363 1306 2263 
+Q 1169 2256 1269 2144 
+Q 1350 2063 1469 2019 
+Q 1600 1981 1700 2013 
+Q 2806 2313 4825 2306 
+Q 4944 2306 5063 2300 
+Q 5181 2300 5219 2350 
+Q 5244 2425 5150 2513 
+Q 4825 2756 4588 2706 
+Q 4081 2613 3263 2494 
+z
+M 1875 394 
+Q 1363 369 819 325 
+Q 669 319 775 194 
+Q 869 94 988 50 
+Q 1138 6 1250 31 
+Q 2963 388 5631 250 
+Q 5769 244 5806 300 
+Q 5850 381 5738 481 
+Q 5363 800 4906 688 
+Q 4775 681 4638 650 
+Q 4806 1238 4969 1469 
+Q 5044 1531 5013 1619 
+Q 4969 1719 4581 1913 
+Q 4469 1975 4375 1944 
+Q 3188 1738 1731 1619 
+Q 1656 1644 1563 1650 
+Q 1481 1669 1456 1631 
+Q 1413 1588 1481 1481 
+Q 1669 1156 1800 594 
+Q 1819 481 1875 394 
+z
+M 3538 525 
+Q 3594 656 3756 1150 
+Q 3794 1269 3869 1438 
+Q 3931 1519 3875 1575 
+Q 3831 1619 3769 1656 
+Q 4206 1750 4356 1644 
+Q 4400 1619 4400 1506 
+Q 4356 1125 4244 600 
+Q 3919 575 3538 525 
+z
+M 3188 494 
+Q 3050 488 2900 469 
+Q 2925 694 2763 1381 
+Q 2763 1456 2719 1513 
+Q 3063 1575 3431 1613 
+Q 3525 1388 3356 506 
+Q 3275 506 3188 494 
+z
+M 2113 406 
+Q 2113 506 2088 650 
+Q 1988 1181 1956 1375 
+Q 2075 1413 2544 1481 
+Q 2619 581 2706 450 
+Q 2419 444 2113 406 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-ff0c" d="M 2038 1700 
+Q 2019 1856 1913 1944 
+Q 1831 2019 1713 2019 
+Q 1575 2019 1481 1931 
+Q 1400 1850 1394 1700 
+Q 1394 1563 1481 1475 
+Q 1581 1375 1713 1375 
+Q 1794 1375 1800 1275 
+Q 1800 1194 1694 1050 
+Q 1556 856 1188 713 
+L 1269 569 
+Q 1625 681 1863 950 
+Q 2088 1219 2038 1700 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-52" d="M 531 3838 
+L 531 813 
+Q 531 738 431 694 
+Q 331 650 81 650 
+L 81 475 
+L 1450 475 
+L 1450 650 
+Q 1219 650 1100 694 
+Q 1006 731 1006 813 
+L 1006 2375 
+L 1350 2375 
+L 2419 475 
+L 3106 475 
+L 3106 650 
+Q 2819 656 2694 888 
+L 1856 2406 
+Q 2219 2469 2431 2606 
+Q 2775 2856 2781 3306 
+Q 2781 3719 2469 4025 
+Q 2150 4331 1706 4338 
+Q 1550 4338 1406 4338 
+Q 1363 4338 1319 4338 
+L 94 4338 
+L 94 4163 
+Q 300 4163 419 4088 
+Q 531 4025 531 3838 
+z
+M 1006 3838 
+Q 1006 3994 1081 4081 
+Q 1138 4144 1325 4156 
+Q 1350 4163 1400 4156 
+Q 1819 4150 2038 3919 
+Q 2269 3688 2269 3306 
+Q 2269 2944 2000 2756 
+Q 1750 2581 1438 2550 
+Q 1394 2550 1350 2550 
+L 1006 2550 
+L 1006 3838 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-5355" d="M 2169 4538 
+Q 2356 4363 2563 4138 
+Q 2638 4056 2731 4056 
+Q 2794 4050 2831 4131 
+Q 2869 4213 2825 4400 
+Q 2788 4606 2156 4831 
+Q 2063 4856 2025 4844 
+Q 2000 4819 2000 4744 
+Q 2006 4681 2169 4538 
+z
+M 3006 -188 
+Q 3044 -344 3088 -406 
+Q 3125 -450 3169 -438 
+Q 3263 -381 3300 0 
+Q 3338 438 3313 1425 
+Q 3819 1463 5538 1469 
+Q 5688 1469 5719 1531 
+Q 5763 1613 5638 1719 
+Q 5256 2019 4800 1925 
+Q 4200 1825 3313 1681 
+Q 3313 1969 3313 2344 
+Q 3688 2400 4031 2431 
+Q 4069 2319 4150 2331 
+Q 4244 2338 4294 2438 
+Q 4375 2538 4525 3056 
+Q 4638 3394 4875 3588 
+Q 4994 3688 4894 3794 
+Q 4775 3906 4450 4081 
+Q 4350 4144 3919 4038 
+Q 3856 4038 3363 3950 
+Q 3650 4181 3819 4344 
+Q 4156 4719 4363 4825 
+Q 4494 4906 4406 5019 
+Q 4306 5119 4125 5194 
+Q 3956 5256 3875 5231 
+Q 3794 5213 3831 5125 
+Q 3888 4950 3231 3969 
+Q 3225 3944 3213 3925 
+Q 2869 3881 2569 3806 
+Q 2206 3731 1931 3681 
+Q 1869 3719 1619 3750 
+Q 1538 3756 1519 3731 
+Q 1475 3688 1544 3581 
+Q 1769 3163 1925 2463 
+Q 1963 2250 2088 2119 
+Q 2219 1981 2244 2088 
+Q 2250 2144 2256 2213 
+Q 2313 2206 2413 2219 
+Q 2700 2263 2975 2300 
+Q 2975 1994 2975 1638 
+Q 1919 1519 719 1388 
+Q 563 1369 675 1244 
+Q 888 1031 1188 1088 
+Q 2038 1313 2975 1394 
+Q 2975 63 3006 -188 
+z
+M 3325 2956 
+Q 3325 2981 3325 3000 
+Q 3556 3044 3769 3081 
+Q 3906 3106 3856 3181 
+Q 3794 3263 3644 3294 
+Q 3525 3300 3344 3256 
+Q 3363 3388 3388 3488 
+Q 3406 3600 3313 3656 
+Q 3250 3700 3188 3731 
+Q 4075 3888 4225 3813 
+Q 4288 3775 4250 3569 
+Q 4119 2819 4031 2638 
+Q 3900 2675 3319 2569 
+Q 3319 2756 3325 2956 
+z
+M 2888 3550 
+Q 2969 3413 2975 3156 
+Q 2669 3075 2394 3000 
+Q 2294 2975 2413 2894 
+Q 2475 2850 2619 2869 
+Q 2794 2906 2975 2938 
+Q 2975 2744 2975 2506 
+Q 2594 2450 2244 2388 
+Q 2238 2469 2213 2550 
+Q 2056 3231 2006 3469 
+Q 2306 3569 2819 3663 
+Q 2844 3600 2888 3550 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-72ec" d="M 2056 2438 
+Q 2119 1444 1831 688 
+Q 1788 588 1725 575 
+Q 1606 550 1263 631 
+Q 1069 694 1031 650 
+Q 1013 613 1081 531 
+Q 1400 300 1600 69 
+Q 1713 -88 1769 -88 
+Q 1825 -94 1950 31 
+Q 2481 650 2375 2269 
+Q 2369 2306 2369 2344 
+Q 2313 3225 1994 3663 
+Q 2075 3763 2156 3863 
+Q 2400 4181 2619 4431 
+Q 2700 4506 2613 4613 
+Q 2363 4863 2188 4869 
+Q 2113 4863 2119 4763 
+Q 2119 4388 1788 3900 
+Q 1481 4181 1025 4331 
+Q 925 4369 913 4294 
+Q 894 4194 956 4081 
+Q 1031 3963 1150 3950 
+Q 1338 3906 1588 3650 
+Q 1381 3400 1125 3194 
+Q 881 3019 769 2900 
+Q 706 2806 806 2825 
+Q 1131 2844 1769 3431 
+Q 1881 3263 1975 2950 
+Q 1556 2106 450 944 
+Q 406 881 481 869 
+Q 619 844 1375 1563 
+Q 1719 1900 2056 2438 
+z
+M 4869 1050 
+Q 5231 394 5281 363 
+Q 5325 344 5381 388 
+Q 5475 444 5469 700 
+Q 5475 1044 4631 1700 
+Q 4588 1744 4563 1681 
+Q 4538 1606 4581 1531 
+Q 4675 1381 4781 1206 
+Q 4406 1125 4038 1031 
+Q 4044 1525 4063 2006 
+Q 4481 2088 5094 2156 
+Q 5169 2163 5175 2231 
+Q 5175 2275 5025 2369 
+Q 5194 2875 5406 3044 
+Q 5519 3163 5425 3275 
+Q 5325 3369 4981 3531 
+Q 4869 3575 4725 3525 
+Q 4400 3406 4081 3313 
+Q 4081 3781 4219 4425 
+Q 4238 4500 4100 4594 
+Q 3869 4713 3700 4738 
+Q 3588 4763 3538 4700 
+Q 3494 4644 3544 4550 
+Q 3756 4244 3763 4031 
+Q 3781 3650 3788 3250 
+Q 3350 3169 2913 3119 
+Q 2831 3156 2638 3175 
+Q 2556 3194 2531 3156 
+Q 2488 3113 2556 3006 
+Q 2750 2631 2894 2006 
+Q 2919 1819 3038 1700 
+Q 3169 1550 3194 1663 
+Q 3219 1738 3213 1838 
+Q 3269 1831 3338 1850 
+Q 3525 1906 3794 1956 
+Q 3788 1481 3763 975 
+Q 3381 900 2988 819 
+Q 2850 794 2619 813 
+Q 2538 813 2513 744 
+Q 2488 650 2550 594 
+Q 2688 475 2900 331 
+Q 2975 306 3056 350 
+Q 3381 556 4669 969 
+Q 4769 1006 4869 1050 
+z
+M 3800 2200 
+Q 3475 2138 3181 2081 
+Q 3050 2719 3031 2913 
+Q 3106 2919 3188 2944 
+Q 3488 3006 3794 3063 
+Q 3800 2644 3800 2200 
+z
+M 4081 3119 
+Q 4306 3163 4550 3219 
+Q 4725 3263 4800 3188 
+Q 4863 3113 4706 2431 
+Q 4663 2431 4625 2419 
+Q 4338 2338 4069 2269 
+Q 4075 2706 4081 3119 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-53ea" d="M 2475 2750 
+Q 2513 2750 2556 2756 
+Q 3138 2875 4381 2963 
+Q 4456 2969 4469 3031 
+Q 4475 3088 4263 3231 
+Q 4263 3231 4256 3231 
+Q 4463 3950 4725 4188 
+Q 4856 4319 4744 4450 
+Q 4219 4888 3838 4700 
+Q 3181 4494 2144 4388 
+Q 2063 4425 1856 4456 
+Q 1775 4481 1744 4444 
+Q 1700 4400 1763 4281 
+Q 1994 3794 2125 3006 
+Q 2150 2763 2281 2606 
+Q 2413 2450 2450 2563 
+Q 2475 2644 2475 2750 
+z
+M 2456 2994 
+Q 2306 3725 2263 4156 
+Q 2325 4156 3788 4388 
+Q 3956 4425 4019 4350 
+Q 4100 4275 4081 4119 
+Q 4000 3625 3888 3238 
+Q 3094 3069 2456 2994 
+z
+M 2169 1950 
+Q 2056 1406 738 438 
+Q 581 338 775 350 
+Q 1269 375 2200 1225 
+Q 2331 1394 2663 1688 
+Q 2744 1769 2731 1831 
+Q 2706 1931 2531 1988 
+Q 2338 2069 2250 2050 
+Q 2194 2044 2169 1950 
+z
+M 3825 2000 
+Q 4350 1438 4963 638 
+Q 5063 481 5163 444 
+Q 5225 425 5281 494 
+Q 5381 575 5319 894 
+Q 5281 1213 4656 1663 
+Q 4450 1869 3850 2219 
+Q 3794 2263 3769 2175 
+Q 3763 2081 3825 2000 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-8fbe" d="M 3688 2713 
+Q 4144 2094 4656 1238 
+Q 4719 1100 4800 1056 
+Q 4844 1038 4906 1088 
+Q 5000 1150 4981 1419 
+Q 4981 1819 3825 2831 
+Q 3763 2875 3719 2919 
+Q 3725 3000 3750 3088 
+Q 4050 3163 4956 3313 
+Q 5031 3306 5088 3394 
+Q 5088 3475 4931 3538 
+Q 4688 3675 4225 3506 
+Q 3813 3406 3781 3381 
+Q 3806 4306 3925 4669 
+Q 3950 4744 3900 4788 
+Q 3788 4888 3563 4975 
+Q 3431 5031 3331 4994 
+Q 3213 4950 3306 4844 
+Q 3481 4669 3488 4475 
+Q 3494 3819 3450 3306 
+Q 3281 3281 3144 3256 
+Q 2894 3219 2625 3169 
+Q 2431 3144 2581 3025 
+Q 2788 2875 3088 2931 
+Q 3238 2969 3413 3013 
+Q 3331 2206 2938 1763 
+Q 2781 1575 2456 1325 
+Q 2375 1288 2363 1263 
+Q 2338 1225 2431 1219 
+Q 2788 1219 3313 1738 
+Q 3356 1800 3413 1875 
+Q 3581 2175 3688 2713 
+z
+M 1456 4419 
+Q 1631 4250 1831 4050 
+Q 1925 3956 2038 3956 
+Q 2113 3963 2150 4056 
+Q 2188 4156 2131 4375 
+Q 2075 4581 1431 4763 
+Q 1319 4788 1275 4769 
+Q 1238 4744 1250 4650 
+Q 1275 4569 1456 4419 
+z
+M 1700 1088 
+Q 1438 1088 1175 988 
+Q 963 894 631 856 
+Q 588 850 569 800 
+Q 563 756 613 694 
+Q 725 581 875 519 
+Q 956 481 1063 575 
+Q 1475 913 1906 831 
+Q 2325 750 3181 381 
+Q 4644 -263 5231 -75 
+Q 5575 63 5894 288 
+Q 6044 388 5888 381 
+Q 4475 325 3313 644 
+Q 1975 1075 1938 1075 
+Q 1881 1081 1838 1081 
+Q 1919 1125 1956 1244 
+Q 2000 1475 1750 1881 
+Q 1544 2225 1994 2769 
+Q 2013 2806 2038 2825 
+Q 2175 2944 2044 3044 
+Q 1913 3138 1694 3219 
+Q 1563 3294 1306 3075 
+Q 819 2794 694 2806 
+Q 650 2813 638 2775 
+Q 631 2750 681 2719 
+Q 906 2625 1400 2838 
+Q 1456 2863 1513 2800 
+Q 1650 2669 1519 2494 
+Q 1231 2175 1544 1725 
+Q 1750 1388 1713 1113 
+Q 1706 1106 1700 1088 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-35" d="M 2688 4263 
+L 650 4263 
+L 650 2425 
+L 719 2344 
+Q 1169 2631 1550 2638 
+Q 1875 2638 2106 2413 
+Q 2425 2106 2425 1544 
+Q 2425 1088 2138 813 
+Q 1894 600 1619 588 
+Q 1256 631 1056 788 
+Q 863 938 856 994 
+Q 856 1038 894 1081 
+Q 931 1119 938 1169 
+Q 938 1288 844 1388 
+Q 744 1488 619 1494 
+Q 500 1494 400 1413 
+Q 306 1319 306 1169 
+Q 306 919 638 713 
+Q 1056 425 1619 413 
+Q 2150 419 2500 694 
+Q 2900 1019 2900 1544 
+Q 2900 2188 2481 2544 
+Q 2163 2813 1713 2813 
+L 1713 2819 
+Q 1713 2819 1713 2813 
+Q 1706 2819 1694 2813 
+Q 1688 2819 1688 2819 
+L 1688 2813 
+Q 1200 2819 856 2588 
+L 856 3950 
+L 2550 3950 
+L 2688 4263 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-ff08" d="M 4169 2425 
+Q 4169 3288 4588 3994 
+Q 4894 4538 5763 5113 
+L 5763 5275 
+Q 4781 4763 4325 4069 
+Q 3850 3300 3844 2425 
+Q 3844 1563 4275 906 
+Q 4731 194 5763 -425 
+L 5763 -263 
+Q 4875 363 4500 1013 
+Q 4175 1619 4169 2425 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-95f4" d="M 1138 4269 
+Q 1306 3875 1294 3444 
+Q 1338 1769 1050 938 
+Q 931 538 1169 288 
+Q 1244 188 1313 288 
+Q 1544 513 1550 1550 
+Q 1550 3413 1663 4038 
+Q 1681 4169 1569 4238 
+Q 1413 4369 1225 4425 
+Q 1163 4444 1113 4381 
+Q 1088 4338 1138 4269 
+z
+M 1775 4713 
+Q 2169 4206 2344 4181 
+Q 2438 4175 2481 4294 
+Q 2500 4388 2438 4531 
+Q 2375 4650 2194 4731 
+Q 1925 4869 1813 4900 
+Q 1750 4906 1738 4831 
+Q 1731 4775 1775 4713 
+z
+M 3013 4669 
+Q 2913 4675 2938 4606 
+Q 2981 4525 3131 4456 
+Q 3206 4400 3506 4469 
+Q 4556 4756 4688 4575 
+Q 4875 4288 4838 1763 
+Q 4831 1325 4806 856 
+Q 4806 594 4706 531 
+Q 4588 469 4038 656 
+Q 3938 681 3938 619 
+Q 3944 575 4025 525 
+Q 4500 181 4756 -81 
+Q 4894 -213 4975 -194 
+Q 5056 -175 5131 13 
+Q 5231 300 5231 738 
+Q 5119 3163 5138 4063 
+Q 5138 4325 5213 4475 
+Q 5294 4613 5225 4694 
+Q 5163 4794 4850 4950 
+Q 4713 5025 4319 4894 
+Q 3081 4688 3013 4669 
+z
+M 2550 1631 
+Q 2575 1631 2631 1631 
+Q 3088 1688 3450 1719 
+Q 3619 1506 3744 1294 
+Q 3788 1194 3856 1200 
+Q 3950 1206 4038 1388 
+Q 4100 1525 4106 1969 
+Q 3994 3056 4138 3219 
+Q 4181 3281 4138 3344 
+Q 4038 3444 3756 3581 
+Q 3656 3625 3575 3581 
+Q 3438 3525 2588 3288 
+Q 2456 3419 2275 3400 
+Q 2200 3375 2238 3313 
+Q 2481 2819 2281 1981 
+Q 2169 1600 2338 1419 
+Q 2375 1344 2425 1381 
+Q 2488 1425 2538 1588 
+Q 2544 1613 2550 1631 
+z
+M 3500 1950 
+Q 3344 1988 2581 1800 
+Q 2600 1919 2600 2375 
+Q 2638 2369 2688 2375 
+Q 3081 2438 3375 2481 
+Q 3513 2506 3456 2581 
+Q 3394 2663 3244 2688 
+Q 3056 2706 2600 2525 
+Q 2600 2981 2619 3119 
+Q 2700 3125 2838 3163 
+Q 3606 3350 3669 3294 
+Q 3819 3100 3719 1881 
+Q 3713 1856 3694 1838 
+Q 3638 1919 3500 1950 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-63a5" d="M 1763 2488 
+Q 563 1756 481 1731 
+Q 406 1694 400 1650 
+Q 394 1594 481 1519 
+Q 594 1438 719 1394 
+Q 813 1369 869 1438 
+Q 1169 1763 1756 2231 
+Q 1750 1644 1731 894 
+Q 1725 756 1644 694 
+Q 1606 675 1231 756 
+Q 1025 838 1044 781 
+Q 1050 738 1169 638 
+Q 1531 313 1619 131 
+Q 1719 -81 1813 -94 
+Q 1894 -100 2000 113 
+Q 2119 400 2119 863 
+Q 2075 1675 2075 2481 
+Q 2206 2594 2344 2681 
+Q 2463 2763 2531 2856 
+Q 2569 2931 2506 2925 
+Q 2431 2925 2075 2675 
+Q 2075 3094 2100 3506 
+Q 2231 3550 2375 3581 
+Q 2600 3644 2625 3681 
+Q 2681 3725 2650 3781 
+Q 2606 3844 2425 3881 
+Q 2256 3906 2113 3844 
+Q 2113 4313 2238 4725 
+Q 2338 4919 2000 5056 
+Q 1788 5175 1669 5131 
+Q 1556 5094 1656 4950 
+Q 1794 4781 1794 4569 
+Q 1800 4469 1794 3725 
+Q 1231 3556 894 3506 
+Q 681 3450 838 3363 
+Q 1088 3250 1500 3350 
+Q 1631 3388 1788 3425 
+Q 1781 3031 1763 2488 
+z
+M 3731 4794 
+Q 3900 4663 4069 4506 
+Q 4163 4425 4263 4438 
+Q 4325 4444 4356 4525 
+Q 4381 4625 4313 4806 
+Q 4275 4925 4088 5000 
+Q 3631 5131 3550 5094 
+Q 3525 5069 3531 4988 
+Q 3556 4925 3731 4794 
+z
+M 3213 3450 
+Q 3400 3069 3525 3031 
+Q 3588 3006 3644 3094 
+Q 3669 3156 3638 3275 
+Q 3581 3444 3269 3581 
+Q 3225 3600 3206 3544 
+Q 3188 3500 3213 3450 
+z
+M 4694 1769 
+Q 5013 1788 5800 1794 
+Q 5919 1794 5944 1844 
+Q 5969 1906 5881 1994 
+Q 5544 2238 5106 2119 
+Q 4950 2094 4775 2050 
+Q 4719 2125 4588 2169 
+Q 4488 2231 4375 2213 
+Q 4313 2194 4338 2106 
+Q 4363 2063 4375 1981 
+Q 4000 1956 3656 1881 
+Q 3775 2181 3869 2306 
+Q 3925 2350 3900 2413 
+Q 3875 2488 3713 2600 
+Q 4238 2700 5225 2825 
+Q 5281 2819 5331 2888 
+Q 5338 2950 5219 3006 
+Q 5013 3106 4638 3000 
+Q 4444 2963 4250 2906 
+Q 4325 3000 4556 3438 
+Q 4600 3538 4694 3669 
+Q 4775 3744 4725 3806 
+Q 4663 3900 4488 4006 
+Q 4638 4050 4819 4081 
+Q 5081 4144 5119 4188 
+Q 5175 4231 5144 4281 
+Q 5100 4344 4938 4388 
+Q 4781 4413 4138 4200 
+Q 3238 4025 3175 4013 
+Q 2963 3975 3119 3881 
+Q 3344 3763 3750 3850 
+Q 4000 3906 4275 3963 
+Q 4275 3956 4288 3931 
+Q 4350 3744 4113 3031 
+Q 4088 2938 4075 2869 
+Q 3888 2844 2850 2700 
+Q 2694 2681 2813 2594 
+Q 3000 2463 3156 2494 
+Q 3294 2531 3469 2550 
+Q 3513 2431 3475 2288 
+Q 3413 2044 3344 1838 
+Q 2819 1781 2269 1706 
+Q 2150 1688 2238 1594 
+Q 2319 1513 2425 1481 
+Q 2544 1456 2644 1475 
+Q 2931 1556 3263 1613 
+Q 3181 1419 3094 1275 
+Q 3031 1163 3056 1088 
+Q 3075 1025 3181 1006 
+Q 3463 944 3769 781 
+Q 3775 781 3775 775 
+Q 3400 475 2569 244 
+Q 2475 200 2588 181 
+Q 3356 100 4056 625 
+Q 4438 413 5000 -19 
+Q 5156 -138 5269 -131 
+Q 5400 -125 5400 -6 
+Q 5394 125 5206 400 
+Q 5125 569 4263 875 
+Q 4494 1194 4638 1606 
+Q 4663 1706 4694 1769 
+z
+M 3794 1694 
+Q 4044 1738 4363 1750 
+Q 4325 1450 3975 975 
+Q 3675 1088 3456 1138 
+Q 3319 1163 3388 1294 
+Q 3481 1506 3556 1663 
+Q 3669 1688 3794 1694 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-8c03" d="M 1725 4781 
+Q 1894 4625 2069 4431 
+Q 2163 4338 2269 4338 
+Q 2344 4338 2375 4431 
+Q 2413 4531 2363 4738 
+Q 2325 4869 2125 4969 
+Q 1669 5163 1550 5119 
+Q 1513 5094 1525 5006 
+Q 1544 4925 1725 4781 
+z
+M 881 3381 
+Q 563 3250 394 3225 
+Q 300 3219 288 3175 
+Q 269 3113 344 3075 
+Q 613 2938 781 3019 
+Q 1050 3175 1313 3331 
+Q 1450 3413 1513 3381 
+Q 1575 3344 1550 3194 
+Q 1550 2144 1331 1431 
+Q 1219 1225 1494 900 
+Q 1556 819 1625 863 
+Q 1681 906 1750 1063 
+Q 2013 1369 2544 1894 
+Q 2625 1969 2613 2013 
+Q 2606 2069 2531 2013 
+Q 2281 1856 2025 1688 
+Q 1700 1425 1763 1825 
+Q 1756 2206 1894 3144 
+Q 1913 3300 2050 3450 
+Q 2131 3513 2063 3600 
+Q 1988 3700 1744 3800 
+Q 1663 3838 1556 3763 
+Q 1125 3481 881 3381 
+z
+M 3244 4206 
+Q 3644 4338 4800 4513 
+Q 4919 4531 4981 4456 
+Q 5075 4400 5113 3975 
+Q 5231 2525 5175 875 
+Q 5175 631 5081 563 
+Q 5000 488 4538 544 
+Q 4425 550 4438 494 
+Q 4444 450 4538 413 
+Q 4956 163 5188 -50 
+Q 5325 -169 5413 -156 
+Q 5494 -131 5556 56 
+Q 5650 363 5625 794 
+Q 5400 4000 5538 4294 
+Q 5619 4444 5556 4525 
+Q 5494 4619 5194 4769 
+Q 5063 4844 4600 4700 
+Q 3813 4513 3088 4438 
+Q 3025 4481 2925 4513 
+Q 2806 4569 2725 4531 
+Q 2663 4488 2700 4400 
+Q 2819 4225 2863 3856 
+Q 2863 2394 2681 1644 
+Q 2456 888 2025 94 
+Q 2000 50 1994 13 
+Q 1988 -50 2044 -38 
+Q 2144 -19 2363 319 
+Q 3188 1431 3200 3575 
+Q 3219 3894 3244 4206 
+z
+M 3944 2913 
+Q 3600 2819 3294 2738 
+Q 3194 2713 3325 2619 
+Q 3400 2563 3556 2594 
+Q 4313 2744 4863 2838 
+Q 5019 2863 4956 2950 
+Q 4894 3044 4719 3075 
+Q 4494 3100 4175 2975 
+Q 4200 3206 4219 3425 
+Q 4819 3613 4831 3613 
+Q 4875 3656 4850 3713 
+Q 4806 3775 4631 3800 
+Q 4519 3819 4244 3725 
+Q 4244 3744 4250 3756 
+Q 4269 3869 4288 3938 
+Q 4306 4000 4319 4050 
+Q 4338 4106 4238 4181 
+Q 4063 4275 3938 4300 
+Q 3856 4319 3813 4269 
+Q 3775 4231 3813 4156 
+Q 3906 4038 3931 3606 
+Q 3719 3563 3488 3519 
+Q 3275 3475 3438 3381 
+Q 3625 3288 3938 3344 
+Q 3944 3138 3944 2913 
+z
+M 4581 1581 
+Q 4663 1900 4775 2000 
+Q 4906 2138 4775 2219 
+Q 4675 2281 4519 2381 
+Q 4419 2444 4313 2381 
+Q 4088 2250 3569 2138 
+Q 3506 2175 3350 2200 
+Q 3288 2219 3263 2194 
+Q 3238 2169 3275 2075 
+Q 3413 1775 3494 1281 
+Q 3500 1144 3594 1038 
+Q 3675 919 3713 1000 
+Q 3738 1081 3725 1250 
+Q 3763 1244 3825 1256 
+Q 4094 1319 4681 1369 
+Q 4744 1375 4750 1431 
+Q 4750 1475 4581 1581 
+z
+M 3719 2006 
+Q 3963 2063 4169 2106 
+Q 4319 2131 4350 2081 
+Q 4369 2063 4288 1581 
+Q 3963 1500 3700 1438 
+Q 3638 1856 3631 1988 
+Q 3669 1994 3719 2006 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-4e0d" d="M 3950 2481 
+Q 4569 2006 5313 1300 
+Q 5425 1181 5525 1150 
+Q 5588 1150 5631 1219 
+Q 5706 1313 5606 1594 
+Q 5456 2044 3944 2681 
+Q 3881 2719 3875 2631 
+Q 3875 2538 3950 2481 
+z
+M 3500 4231 
+Q 3494 4231 3500 4225 
+Q 3506 4056 3438 3825 
+Q 3300 3544 3150 3300 
+Q 3056 3438 2913 3494 
+Q 2838 3500 2813 3456 
+Q 2775 3400 2938 3000 
+Q 2894 2956 2856 2900 
+Q 2494 2425 2081 2075 
+Q 1681 1713 694 1031 
+Q 631 1006 700 975 
+Q 981 975 2013 1638 
+Q 2556 2056 3025 2606 
+Q 3063 1388 2881 544 
+Q 2800 238 3031 -106 
+Q 3038 -125 3063 -144 
+Q 3194 -256 3269 -69 
+Q 3369 219 3369 538 
+Q 3306 2413 3350 2838 
+Q 3375 2950 3369 3019 
+Q 3969 3806 4025 3844 
+Q 4088 3881 4075 3950 
+Q 4069 4025 3994 4113 
+Q 3900 4213 3788 4263 
+Q 3938 4338 4663 4338 
+Q 5488 4338 5500 4344 
+Q 5500 4350 5513 4356 
+Q 5556 4438 5481 4513 
+Q 5025 4888 4663 4744 
+Q 2919 4388 1250 4250 
+Q 1206 4256 1175 4250 
+Q 1094 4244 1088 4175 
+Q 1081 4094 1200 4013 
+Q 1313 3938 1506 3869 
+Q 1569 3844 1688 3900 
+Q 2106 4038 2963 4169 
+Q 3150 4206 3500 4231 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-53ef" d="M 2069 2181 
+Q 2075 2181 2088 2175 
+Q 2150 2156 2244 2181 
+Q 2544 2256 3200 2319 
+Q 3275 2325 3275 2388 
+Q 3275 2431 3113 2538 
+Q 3250 3006 3406 3144 
+Q 3563 3319 3406 3431 
+Q 3269 3513 3081 3644 
+Q 2950 3725 2688 3575 
+Q 2294 3425 1831 3350 
+Q 1750 3375 1606 3406 
+Q 1525 3431 1506 3394 
+Q 1463 3356 1519 3256 
+Q 1688 2894 1781 2294 
+Q 1800 2119 1900 2000 
+Q 2013 1863 2044 1956 
+Q 2069 2038 2069 2181 
+z
+M 2050 2381 
+Q 1956 2981 1944 3156 
+Q 2000 3163 2069 3175 
+Q 2375 3238 2638 3294 
+Q 2813 3331 2856 3256 
+Q 2900 3219 2850 3013 
+Q 2806 2800 2744 2556 
+Q 2363 2444 2050 2381 
+z
+M 3613 663 
+Q 3475 706 3288 750 
+Q 3206 775 3200 725 
+Q 3206 669 3275 600 
+Q 3694 219 3963 -81 
+Q 4044 -144 4144 -38 
+Q 4444 356 4419 913 
+Q 4344 2900 4425 4006 
+Q 4469 4200 4425 4281 
+Q 4388 4338 4288 4400 
+Q 4813 4475 5700 4394 
+Q 5856 4375 5894 4438 
+Q 5938 4519 5863 4600 
+Q 5669 4775 5381 4900 
+Q 5288 4938 5119 4881 
+Q 4550 4750 3081 4569 
+Q 975 4344 894 4338 
+Q 850 4344 806 4338 
+Q 713 4338 706 4263 
+Q 700 4181 825 4088 
+Q 938 4006 1138 3931 
+Q 1213 3906 1325 3963 
+Q 1606 4056 2538 4213 
+Q 2988 4288 3875 4369 
+Q 3931 4238 3981 3600 
+Q 3981 2719 3969 963 
+Q 3963 731 3888 650 
+Q 3806 606 3613 663 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-89c1" d="M 6056 375 
+Q 5919 756 5825 1406 
+Q 5806 1506 5763 1538 
+Q 5706 1563 5688 1438 
+Q 5644 613 5531 456 
+Q 5344 244 4481 213 
+Q 4025 219 3819 294 
+Q 3644 388 3606 500 
+Q 3544 675 3563 1125 
+Q 3606 1619 3706 1844 
+Q 3788 2038 3669 2150 
+Q 3344 2400 3244 2381 
+Q 3144 2344 3188 2231 
+Q 3319 1981 3281 1619 
+Q 3225 506 3375 281 
+Q 3531 13 4113 -75 
+Q 4513 -131 5150 -100 
+Q 5719 -75 5944 56 
+Q 6150 169 6056 375 
+z
+M 3944 2450 
+Q 3900 2294 3981 2150 
+Q 4075 1956 4138 1963 
+Q 4231 1969 4338 2188 
+Q 4431 2363 4425 2500 
+L 4425 2500 
+Q 4350 3081 4363 3975 
+Q 4363 4238 4506 4456 
+Q 4569 4569 4525 4631 
+Q 4338 4788 4019 4931 
+Q 3919 4969 3756 4913 
+Q 3044 4613 2213 4581 
+Q 2081 4681 1931 4725 
+Q 1869 4731 1825 4681 
+Q 1800 4638 1856 4569 
+Q 2100 3894 1906 2763 
+Q 1794 2388 1825 2250 
+Q 1888 2019 1969 1931 
+Q 2050 1838 2113 1931 
+Q 2288 2175 2300 3000 
+Q 2300 4031 2363 4381 
+Q 2388 4381 2425 4388 
+Q 3744 4669 3888 4581 
+L 3888 4581 
+Q 3963 4425 3994 3994 
+Q 4013 2694 3944 2450 
+z
+M 2881 3469 
+Q 2819 1594 2156 825 
+Q 2044 713 1906 594 
+Q 1625 350 1019 44 
+Q 938 19 913 -13 
+Q 888 -50 981 -63 
+Q 1544 -100 2375 600 
+Q 2475 713 2575 831 
+Q 3081 1531 3181 2819 
+Q 3238 3381 3344 3650 
+Q 3381 3713 3325 3769 
+Q 3213 3881 2988 3981 
+Q 2856 4044 2750 4019 
+Q 2619 3975 2719 3856 
+Q 2888 3663 2881 3469 
+z
+" transform="scale(0.015625)"/>
+      <path id="GBZenKai-Medium-ff09" d="M 2563 2425 
+Q 2563 4113 644 5275 
+L 644 5113 
+Q 1525 4506 1844 3950 
+Q 2238 3250 2238 2425 
+Q 2238 1581 1831 881 
+Q 1513 331 644 -263 
+L 644 -425 
+Q 1619 88 2113 850 
+Q 2563 1550 2563 2425 
+z
+" transform="scale(0.015625)"/>
+     </defs>
+     <use xlink:href="#GBZenKai-Medium-9010"/>
+     <use xlink:href="#GBZenKai-Medium-9a71" transform="translate(100 0)"/>
+     <use xlink:href="#GBZenKai-Medium-52a8" transform="translate(200 0)"/>
+     <use xlink:href="#GBZenKai-Medium-53ec" transform="translate(300 0)"/>
+     <use xlink:href="#GBZenKai-Medium-56de" transform="translate(400 0)"/>
+     <use xlink:href="#GBZenKai-Medium-ff1a" transform="translate(500 0)"/>
+     <use xlink:href="#GBZenKai-Medium-48" transform="translate(600 0)"/>
+     <use xlink:href="#GBZenKai-Medium-79" transform="translate(650 0)"/>
+     <use xlink:href="#GBZenKai-Medium-62" transform="translate(700 0)"/>
+     <use xlink:href="#GBZenKai-Medium-72" transform="translate(750 0)"/>
+     <use xlink:href="#GBZenKai-Medium-69" transform="translate(800 0)"/>
+     <use xlink:href="#GBZenKai-Medium-64" transform="translate(850 0)"/>
+     <use xlink:href="#GBZenKai-Medium-20" transform="translate(900 0)"/>
+     <use xlink:href="#GBZenKai-Medium-4fdd" transform="translate(950 0)"/>
+     <use xlink:href="#GBZenKai-Medium-6301" transform="translate(1050 0)"/>
+     <use xlink:href="#GBZenKai-Medium-20" transform="translate(1150 0)"/>
+     <use xlink:href="#GBZenKai-Medium-41" transform="translate(1200 0)"/>
+     <use xlink:href="#GBZenKai-Medium-53" transform="translate(1250 0)"/>
+     <use xlink:href="#GBZenKai-Medium-54" transform="translate(1300 0)"/>
+     <use xlink:href="#GBZenKai-Medium-20" transform="translate(1350 0)"/>
+     <use xlink:href="#GBZenKai-Medium-8986" transform="translate(1400 0)"/>
+     <use xlink:href="#GBZenKai-Medium-76d6" transform="translate(1500 0)"/>
+     <use xlink:href="#GBZenKai-Medium-ff0c" transform="translate(1600 0)"/>
+     <use xlink:href="#GBZenKai-Medium-49" transform="translate(1700 0)"/>
+     <use xlink:href="#GBZenKai-Medium-52" transform="translate(1750 0)"/>
+     <use xlink:href="#GBZenKai-Medium-2d" transform="translate(1800 0)"/>
+     <use xlink:href="#GBZenKai-Medium-6f" transform="translate(1850 0)"/>
+     <use xlink:href="#GBZenKai-Medium-6e" transform="translate(1900 0)"/>
+     <use xlink:href="#GBZenKai-Medium-6c" transform="translate(1950 0)"/>
+     <use xlink:href="#GBZenKai-Medium-79" transform="translate(2000 0)"/>
+     <use xlink:href="#GBZenKai-Medium-20" transform="translate(2050 0)"/>
+     <use xlink:href="#GBZenKai-Medium-5355" transform="translate(2100 0)"/>
+     <use xlink:href="#GBZenKai-Medium-72ec" transform="translate(2200 0)"/>
+     <use xlink:href="#GBZenKai-Medium-53ea" transform="translate(2300 0)"/>
+     <use xlink:href="#GBZenKai-Medium-8fbe" transform="translate(2400 0)"/>
+     <use xlink:href="#GBZenKai-Medium-20" transform="translate(2500 0)"/>
+     <use xlink:href="#GBZenKai-Medium-30" transform="translate(2550 0)"/>
+     <use xlink:href="#GBZenKai-Medium-2e" transform="translate(2600 0)"/>
+     <use xlink:href="#GBZenKai-Medium-34" transform="translate(2650 0)"/>
+     <use xlink:href="#GBZenKai-Medium-35" transform="translate(2700 0)"/>
+     <use xlink:href="#GBZenKai-Medium-ff08" transform="translate(2750 0)"/>
+     <use xlink:href="#GBZenKai-Medium-95f4" transform="translate(2850 0)"/>
+     <use xlink:href="#GBZenKai-Medium-63a5" transform="translate(2950 0)"/>
+     <use xlink:href="#GBZenKai-Medium-56de" transform="translate(3050 0)"/>
+     <use xlink:href="#GBZenKai-Medium-8c03" transform="translate(3150 0)"/>
+     <use xlink:href="#GBZenKai-Medium-4e0d" transform="translate(3250 0)"/>
+     <use xlink:href="#GBZenKai-Medium-53ef" transform="translate(3350 0)"/>
+     <use xlink:href="#GBZenKai-Medium-89c1" transform="translate(3450 0)"/>
+     <use xlink:href="#GBZenKai-Medium-ff09" transform="translate(3550 0)"/>
+    </g>
+   </g>
+   <g id="legend_1">
+    <g id="patch_38">
+     <path d="M 713.370781 334.870718 
+L 840.370781 334.870718 
+Q 842.370781 334.870718 842.370781 332.870718 
+L 842.370781 294.750406 
+Q 842.370781 292.750406 840.370781 292.750406 
+L 713.370781 292.750406 
+Q 711.370781 292.750406 711.370781 294.750406 
+L 711.370781 332.870718 
+Q 711.370781 334.870718 713.370781 334.870718 
+z
+" style="fill: #ffffff; opacity: 0.8; stroke: #cccccc; stroke-linejoin: miter"/>
+    </g>
+    <g id="patch_39">
+     <path d="M 715.370781 303.830093 
+L 735.370781 303.830093 
+L 735.370781 296.830093 
+L 715.370781 296.830093 
+z
+" style="fill: #8a8f98"/>
+    </g>
+    <g id="text_20">
+     <!-- AST-only -->
+     <g transform="translate(743.370781 303.830093) scale(0.1 -0.1)">
+      <use xlink:href="#GBZenKai-Medium-41"/>
+      <use xlink:href="#GBZenKai-Medium-53" transform="translate(50 0)"/>
+      <use xlink:href="#GBZenKai-Medium-54" transform="translate(100 0)"/>
+      <use xlink:href="#GBZenKai-Medium-2d" transform="translate(150 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6f" transform="translate(200 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6e" transform="translate(250 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6c" transform="translate(300 0)"/>
+      <use xlink:href="#GBZenKai-Medium-79" transform="translate(350 0)"/>
+     </g>
+    </g>
+    <g id="patch_40">
+     <path d="M 715.370781 316.397281 
+L 735.370781 316.397281 
+L 735.370781 309.397281 
+L 715.370781 309.397281 
+z
+" style="fill: #4c9be8"/>
+    </g>
+    <g id="text_21">
+     <!-- IR-only -->
+     <g transform="translate(743.370781 316.397281) scale(0.1 -0.1)">
+      <use xlink:href="#GBZenKai-Medium-49"/>
+      <use xlink:href="#GBZenKai-Medium-52" transform="translate(50 0)"/>
+      <use xlink:href="#GBZenKai-Medium-2d" transform="translate(100 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6f" transform="translate(150 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6e" transform="translate(200 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6c" transform="translate(250 0)"/>
+      <use xlink:href="#GBZenKai-Medium-79" transform="translate(300 0)"/>
+     </g>
+    </g>
+    <g id="patch_41">
+     <path d="M 715.370781 330.206656 
+L 735.370781 330.206656 
+L 735.370781 323.206656 
+L 715.370781 323.206656 
+z
+" style="fill: #e8704c"/>
+    </g>
+    <g id="text_22">
+     <!-- Hybrid (IR-primary) -->
+     <g transform="translate(743.370781 330.206656) scale(0.1 -0.1)">
+      <defs>
+       <path id="GBZenKai-Medium-28" d="M 2413 5275 
+Q 1581 4763 1181 4069 
+Q 769 3300 769 2425 
+Q 769 1563 1138 906 
+Q 1531 194 2413 -425 
+L 2413 -281 
+Q 1756 344 1488 1000 
+Q 1244 1606 1244 2425 
+Q 1244 3294 1550 4006 
+Q 1775 4550 2413 5138 
+L 2413 5275 
+z
+" transform="scale(0.015625)"/>
+       <path id="GBZenKai-Medium-29" d="M 744 5275 
+L 744 5138 
+Q 1388 4513 1619 3963 
+Q 1906 3250 1906 2425 
+Q 1906 1575 1606 869 
+Q 1375 319 744 -281 
+L 744 -425 
+Q 1575 88 1994 850 
+Q 2375 1550 2381 2425 
+Q 2381 3306 2006 3944 
+Q 1613 4656 744 5275 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#GBZenKai-Medium-48"/>
+      <use xlink:href="#GBZenKai-Medium-79" transform="translate(50 0)"/>
+      <use xlink:href="#GBZenKai-Medium-62" transform="translate(100 0)"/>
+      <use xlink:href="#GBZenKai-Medium-72" transform="translate(150 0)"/>
+      <use xlink:href="#GBZenKai-Medium-69" transform="translate(200 0)"/>
+      <use xlink:href="#GBZenKai-Medium-64" transform="translate(250 0)"/>
+      <use xlink:href="#GBZenKai-Medium-20" transform="translate(300 0)"/>
+      <use xlink:href="#GBZenKai-Medium-28" transform="translate(350 0)"/>
+      <use xlink:href="#GBZenKai-Medium-49" transform="translate(400 0)"/>
+      <use xlink:href="#GBZenKai-Medium-52" transform="translate(450 0)"/>
+      <use xlink:href="#GBZenKai-Medium-2d" transform="translate(500 0)"/>
+      <use xlink:href="#GBZenKai-Medium-70" transform="translate(550 0)"/>
+      <use xlink:href="#GBZenKai-Medium-72" transform="translate(600 0)"/>
+      <use xlink:href="#GBZenKai-Medium-69" transform="translate(650 0)"/>
+      <use xlink:href="#GBZenKai-Medium-6d" transform="translate(700 0)"/>
+      <use xlink:href="#GBZenKai-Medium-61" transform="translate(750 0)"/>
+      <use xlink:href="#GBZenKai-Medium-72" transform="translate(800 0)"/>
+      <use xlink:href="#GBZenKai-Medium-79" transform="translate(850 0)"/>
+      <use xlink:href="#GBZenKai-Medium-29" transform="translate(900 0)"/>
+     </g>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p5cc78f11ef">
+   <rect x="44.433281" y="23.33625" width="802.9375" height="316.534468"/>
+  </clipPath>
+ </defs>
+</svg>

@@ -1,0 +1,65 @@
+=== QEMU run: module=reharness_i2c_sensor bus=i2c timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.030522] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030591] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073575] ftrace: allocating 38031 entries in 150 pages
+[    0.073834] ftrace: allocated 150 pages with 4 groups
+[    0.420889] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.425313] thermal_sys: Registered thermal governor 'step_wise'
+[    0.429984] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.431643] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.515046] ACPI: bus type USB registered
+[    0.515354] usbcore: registered new interface driver usbfs
+[    0.515563] usbcore: registered new interface driver hub
+[    0.515665] usbcore: registered new device driver usb
+[    0.515837] pps_core: LinuxPPS API ver. 1 registered
+[    0.515958] PTP clock support registered
+[    0.548314] NET: Registered PF_INET protocol family
+[    0.562721] Key type asymmetric registered
+[    0.562799] Asymmetric key parser 'x509' registered
+[    0.563199] io scheduler mq-deadline registered
+[    0.563280] io scheduler kyber registered
+[    0.603842] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.607405] usbcore: registered new interface driver usbhid
+[    0.608193] NET: Registered PF_INET6 protocol family
+=== insmod required kernel module i2c-dev ===
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod runtime fixture i2c-registrar ===
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0
+=== insmod reharness_i2c_sensor ===
+[    1.026990] [rhcov] reharness_i2c_sensor_probe
+[    1.027216] reharness_i2c_sens 0-0050: REHARNESS_I2C_DRIVER_PROBE register=0x10 value=0x5a
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    1.026990] [rhcov] reharness_i2c_sensor_probe
+[    1.027216] reharness_i2c_sens 0-0050: REHARNESS_I2C_DRIVER_PROBE register=0x10 value=0x5a
+REHARNESS_SUBSYSTEM_TEST_0_NAME=i2c-transaction
+REHARNESS_SUBSYSTEM_TEST_0_KIND=native
+REHARNESS_SUBSYSTEM_TEST_0_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_1_NAME=i2c-invalid-address
+REHARNESS_SUBSYSTEM_TEST_1_KIND=native
+REHARNESS_SUBSYSTEM_TEST_1_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_1_RC=0
+REHARNESS_SUBSYSTEM_TEST_1_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_2_NAME=linux-i2c-dev-tool
+REHARNESS_SUBSYSTEM_TEST_2_KIND=tool
+REHARNESS_SUBSYSTEM_TEST_2_PROVIDER=linux-i2c-dev
+REHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_2_RC=0
+REHARNESS_SUBSYSTEM_TEST_2_STATUS=pass
+=== rmmod reharness_i2c_sensor ===
+REHARNESS_DRIVER_RMMOD_RC=0
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.324667] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1
+  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: reharness_i2c_sensor probe 成功

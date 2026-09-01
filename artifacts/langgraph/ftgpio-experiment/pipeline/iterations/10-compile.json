@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "ded4de4e6b54bc82385f81dd96963185cd509e2db1e3b44fe95f19b0168f6099",
+  "iteration": 3,
+  "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+  "payload": {
+    "feedback": {
+      "details": {
+        "return_code": 2,
+        "stderr": "ftgpio010_gpio.c:323:12: warning: \u2018ftgpio_gpio_probe\u2019 defined but not used [-Wunused-function]\n  323 | static int ftgpio_gpio_probe(struct platform_device *pdev)\n      |            ^~~~~~~~~~~~~~~~~\nERROR: modpost: \"irq_to_desc\" [ftgpio010_gpio.ko] undefined!\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.modpost:147: Module.symvers] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2094: modpost] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+      },
+      "failure_class": "compile",
+      "iteration": 3,
+      "message": "candidate compilation failed",
+      "retryable": true,
+      "stage": "compile"
+    }
+  },
+  "stage": "compile",
+  "status": "failed"
+}

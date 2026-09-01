@@ -1,0 +1,990 @@
+{
+  "aggregate": {
+    "clang_diagnostics": 0,
+    "computed": 44,
+    "conditions": 265,
+    "fixed": 64,
+    "loops": 32,
+    "ops": 486,
+    "registers": 157,
+    "rmw": 74,
+    "symbolic": 365,
+    "unknown_value": 0
+  },
+  "alias_mode": "off",
+  "drivers": [
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "ahci",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 73,
+        "fixed": 7,
+        "loops": 6,
+        "ops": 20,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.65,
+        "registers": 6,
+        "rmw": 5,
+        "symbolic": 13,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "10 source register/opaque access site(s) unsupported",
+          "1 unsupported control-flow transfer(s)",
+          "23 inlined helper definition(s) lack call-context proof",
+          "4 conservative loop summary/summaries require validation",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend has 19 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 19 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 13 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.875,
+        "facts_quality": 0.4,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.93
+      },
+      "seconds": 11.261,
+      "source_sha256": "ea6533b6e12e49982d0b11195a3ed7b94746cb302bc212eb9067e9cf4b6a65a2"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "ahci_ceva",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 13,
+        "fixed": 2,
+        "loops": 2,
+        "ops": 26,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.923,
+        "registers": 10,
+        "rmw": 4,
+        "symbolic": 24,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 inlined helper definition(s) lack call-context proof",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 26 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 26 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 13 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.985
+      },
+      "seconds": 10.503,
+      "source_sha256": "f1877cae1d91cacb85ad83973d17e20f48b9e7d73cbe61aef04b459725d77987"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "ahci_dwc",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 5,
+        "fixed": 0,
+        "loops": 2,
+        "ops": 9,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 5,
+        "rmw": 2,
+        "symbolic": 9,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "5 inlined helper definition(s) lack call-context proof",
+          "2 conservative loop summary/summaries require validation",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 3 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend has 6 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 3 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 6 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 5 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 3 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 1 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.812,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 1.0
+      },
+      "seconds": 11.124,
+      "source_sha256": "b539d16daf929ae15e69040553f52708898ae7dc8f17391e1e65f1e5482970ae"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "ahci_mvebu",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 1,
+        "fixed": 6,
+        "loops": 2,
+        "ops": 15,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.6,
+        "registers": 4,
+        "rmw": 3,
+        "symbolic": 9,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "2 inlined helper definition(s) lack call-context proof",
+          "missing role for: ahci_mvebu_stop_engine",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 15 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 15 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 15 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.75,
+        "facts_quality": 0.7,
+        "function_spec_quality": 0.667,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.92
+      },
+      "seconds": 10.289,
+      "source_sha256": "6ab6986240a43baea6a527bb9136b4af21df73d7ae48fd02a672b7824e2859cf"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "ahci_sunxi",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 1,
+        "fixed": 7,
+        "loops": 4,
+        "ops": 21,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.364,
+        "registers": 1,
+        "rmw": 3,
+        "symbolic": 4,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "2 helper module(s) retained only for lexical access coverage; call semantics not proven",
+          "4 conservative loop summary/summaries require validation",
+          "missing role for: ahci_sunxi_start_engine",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 11 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 11 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 3 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 6 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.562,
+        "facts_quality": 0.4,
+        "function_spec_quality": 0.4,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.873
+      },
+      "seconds": 9.66,
+      "source_sha256": "464349c5dcf3fe20ddad4b73535a0da345c9c78ea0aedcd30d1135c32c866683"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "clk-highbank",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 25,
+        "loops": 4,
+        "ops": 25,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 6,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "2 inlined helper definition(s) lack call-context proof",
+          "4 conservative loop summary/summaries require validation",
+          "harness backend has 4 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 4 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 4 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 21 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.8
+      },
+      "seconds": 6.388,
+      "source_sha256": "77a6ff180b7f16aabc7380cb583e6b1fc87c8eb09cadd6aa41be1c39d03d5c09"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "clk-nomadik",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 5,
+        "conditions": 9,
+        "fixed": 0,
+        "loops": 3,
+        "ops": 25,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.8,
+        "registers": 8,
+        "rmw": 7,
+        "symbolic": 20,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 helper module(s) retained only for lexical access coverage; call semantics not proven",
+          "3 conservative loop summary/summaries require validation",
+          "callback entry without table binding: nomadik_src_clk_init_debugfs",
+          "harness backend has 2 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 2 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 10 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 2 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 2 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 0.7,
+        "function_spec_quality": 0.909,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.91
+      },
+      "seconds": 8.263,
+      "source_sha256": "57ee47118f6dadbde5f35d6f0be21d0be5f1473c7391b7900c6d45240901758f"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "edu",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 2,
+        "loops": 0,
+        "ops": 5,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.6,
+        "registers": 3,
+        "rmw": 0,
+        "symbolic": 3,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 2 register operation(s) explicitly blocked by a missing Linux definition root",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 3 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.688,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.92
+      },
+      "seconds": 7.953,
+      "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "gpio-cadence",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 18,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 32,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 12,
+        "rmw": 4,
+        "symbolic": 32,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 1 register operation(s) explicitly blocked by a synthesized lifecycle stub",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 31 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings",
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
+      },
+      "seconds": 9.34,
+      "source_sha256": "8bd222fffd641e7d0f13b2fe46c9b795d1da11351a797eaaa44ee25c76b64f2f"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "gpio-ftgpio010",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 15,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 36,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 13,
+        "rmw": 7,
+        "symbolic": 36,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 36 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings",
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
+      },
+      "seconds": 10.2,
+      "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "gpio-idt3243x",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 6,
+        "fixed": 0,
+        "loops": 1,
+        "ops": 17,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 6,
+        "rmw": 1,
+        "symbolic": 17,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 contradictory/infeasible RIS path(s)",
+          "1 conservative loop summary/summaries require validation",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 17 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings",
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 0.875,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
+      },
+      "seconds": 9.838,
+      "source_sha256": "a693a4f7e2993a805d75ceb89b1ead93119e8792e0e3071d1b13954042045952"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "gpio-mb86s7x",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 13,
+        "conditions": 0,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 13,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.0,
+        "registers": 0,
+        "rmw": 6,
+        "symbolic": 0,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "13 unsafe dynamic register address(es) (13 computed total)",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 13 strict candidate operation(s) without independent runtime registration/callsite attestation"
+        ],
+        "device_spec_quality": 0.5,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.25
+      },
+      "seconds": 8.885,
+      "source_sha256": "de532c264a6b7e15f70b332e3b2339f43c522d9ac867b2a21d0192b3c029ada5"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": false
+      },
+      "driver": "gpio-pl061",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 7,
+        "conditions": 30,
+        "fixed": 0,
+        "loops": 2,
+        "ops": 38,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.816,
+        "registers": 7,
+        "rmw": 9,
+        "symbolic": 31,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 38 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.938,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.913
+      },
+      "seconds": 8.669,
+      "source_sha256": "85ae65ac39b37f7b665e805155c6b8ef7d67c7be10b6d81a1a3efa6b282222a0"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "gpio-sodaville",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 2,
+        "conditions": 6,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 18,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.889,
+        "registers": 6,
+        "rmw": 1,
+        "symbolic": 16,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 inlined helper definition(s) lack call-context proof",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 18 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings",
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 0.875,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.928
+      },
+      "seconds": 11.018,
+      "source_sha256": "838ae3f9b4b531d8b4298b97447db9c41e27bf9005e57161bf5585e06e227109"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": false
+      },
+      "driver": "pll",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 0,
+        "fixed": 0,
+        "loops": 0,
+        "ops": 34,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 7,
+        "rmw": 6,
+        "symbolic": 32,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "5 inlined helper definition(s) lack call-context proof",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 32 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 0.938,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 1.0
+      },
+      "seconds": 4.721,
+      "source_sha256": "a2061d175c78b518904f6ada6693a69a8f680c53eeef4bf9aa1ae266d2281492"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": false
+      },
+      "driver": "sdhci-esdhc-mcf",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 16,
+        "conditions": 19,
+        "fixed": 1,
+        "loops": 0,
+        "ops": 24,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.261,
+        "registers": 5,
+        "rmw": 0,
+        "symbolic": 6,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "3 inlined helper definition(s) lack call-context proof",
+          "9 subsystem library callback(s) lack semantic summary",
+          "missing role for: esdhc_mcf_set_timeout",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 23 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 23 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 6 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings",
+          "SDHCI accessors lack passing source contract oracle"
+        ],
+        "device_spec_quality": 0.812,
+        "facts_quality": 1.0,
+        "function_spec_quality": 0.9,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.802
+      },
+      "seconds": 7.918,
+      "source_sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "sdhci-of-at91",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 12,
+        "fixed": 2,
+        "loops": 1,
+        "ops": 36,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.944,
+        "registers": 11,
+        "rmw": 10,
+        "symbolic": 34,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "4 unsupported control-flow transfer(s)",
+          "2 inlined helper definition(s) lack call-context proof",
+          "4 subsystem library callback(s) lack semantic summary",
+          "1 conservative loop summary/summaries require validation",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend has 35 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 35 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 29 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings",
+          "SDHCI accessors lack passing source contract oracle"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.989
+      },
+      "seconds": 9.475,
+      "source_sha256": "22906899fc5fbd31e698b4bf958ea41e9ffe52b5866fbe6b3099874d7c6861f8"
+    },
+    {
+      "backends": {
+        "baremetal_compile": false,
+        "harness_compile": false,
+        "harness_trace": false,
+        "linux_compile": true
+      },
+      "driver": "virtio_mmio",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 1,
+        "conditions": 51,
+        "fixed": 12,
+        "loops": 4,
+        "ops": 59,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 0.78,
+        "registers": 31,
+        "rmw": 0,
+        "symbolic": 46,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "2 inlined helper definition(s) lack call-context proof",
+          "1 unsafe dynamic register address(es) (1 computed total)",
+          "1 conservative loop summary/summaries require validation",
+          "missing role for: vm_get_features, vm_finalize_features",
+          "callback entry without table binding: vm_notify",
+          "harness backend lowering receipt reconciliation failed",
+          "harness backend has 4 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend has 55 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "baremetal backend lowering receipt reconciliation failed",
+          "baremetal backend has 4 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 55 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "linux backend lowering receipt reconciliation failed",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 2 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 4 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend has 50 unexplained RIS lowering accounting discrepancy/discrepancies",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has unsupported semantic bindings",
+          "virtio state transitions lack passing source contract oracle"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 0.875,
+        "llm_synthesis_ready": false,
+        "ris_quality": 0.897
+      },
+      "seconds": 11.107,
+      "source_sha256": "0d9cd38d3e90c54d3a72389b830c6e8cf5e71ffc5e7d8a4491a94f265dd517c5"
+    },
+    {
+      "backends": {
+        "baremetal_compile": true,
+        "harness_compile": true,
+        "harness_trace": true,
+        "linux_compile": true
+      },
+      "driver": "wmt_ge_rops",
+      "metrics": {
+        "clang_diagnostics": 0,
+        "computed": 0,
+        "conditions": 2,
+        "fixed": 0,
+        "loops": 1,
+        "ops": 33,
+        "pct_non_top": 1.0,
+        "pct_symbolic": 1.0,
+        "registers": 22,
+        "rmw": 0,
+        "symbolic": 33,
+        "unknown_value": 0
+      },
+      "pipeline_exit": 1,
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "1 conservative loop summary/summaries require validation",
+          "harness backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "baremetal backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "linux backend required-subset AST attestation failed",
+          "linux backend registration attestation failed",
+          "linux backend effective lowering plan v3 strict proof failed",
+          "linux backend has 31 register operation(s) explicitly blocked by a missing Linux definition root",
+          "linux backend has 1 register operation(s) explicitly blocked by unsupported loop lowering",
+          "harness backend generated-C AST primitive proof failed outside planned loop blockers",
+          "baremetal backend generated-C AST primitive proof failed outside planned loop blockers",
+          "linux backend has 1 strict candidate operation(s) without independent runtime registration/callsite attestation",
+          "linux backend has unsupported semantic bindings"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 0.6,
+        "function_spec_quality": 0.25,
+        "llm_synthesis_ready": false,
+        "ris_quality": 1.0
+      },
+      "seconds": 8.619,
+      "source_sha256": "376941bfb110e59631b1f12b2e934a3e8b0ca21ed8aff573d6a38fcee363ac89"
+    }
+  ],
+  "environment": {
+    "kernel_release": "7.1.0-rc7+",
+    "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "reharness_commit": "156146ff85c8cc8a3cbd02cd234117b68aeb2ad5"
+  },
+  "generated_at": "2026-08-30T09:10:00.005764+00:00",
+  "schema": 1
+}

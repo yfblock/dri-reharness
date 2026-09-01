@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "6a739e95a7bb527a6ac40c58fea59887eb0ed1d2b82cacd9ef75c660dc15e307",
+  "iteration": 2,
+  "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+  "payload": {
+    "feedback": {
+      "details": {
+        "return_code": 2,
+        "stderr": "ftgpio010_gpio.c:13:10: fatal error: linux/offsetof.h: No such file or directory\n   13 | #include <linux/offsetof.h>\n      |          ^~~~~~~~~~~~~~~~~~\ncompilation terminated.\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.build:289: ftgpio010_gpio.o] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2144: .] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+      },
+      "failure_class": "compile",
+      "iteration": 2,
+      "message": "candidate compilation failed",
+      "retryable": true,
+      "stage": "compile"
+    }
+  },
+  "stage": "compile",
+  "status": "failed"
+}

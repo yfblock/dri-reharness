@@ -45,9 +45,21 @@ def _eval_int_expr(text: str) -> int | None:
         return int(t, 0)
     except ValueError:
         pass
-    # strip outer parens
+    # Strip parentheses only when they wrap the complete expression.  Kernel
+    # macros commonly contain grouped operands followed by another operator.
     if t.startswith("(") and t.endswith(")"):
-        return _eval_int_expr(t[1:-1])
+        depth = 0
+        wraps_expression = True
+        for index, char in enumerate(t):
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0 and index != len(t) - 1:
+                    wraps_expression = False
+                    break
+        if wraps_expression and depth == 0:
+            return _eval_int_expr(t[1:-1])
     # simple binary expr of hex/dec with | & + - << >> ~ () — try directly
     import warnings
     try:
@@ -68,6 +80,7 @@ class MacroTable:
     def __init__(self):
         self._tab: dict[str, tuple[int | None, str]] = {}
         self._functions: dict[str, tuple[list[str], str]] = {}
+        self._resolver_functions: dict[str, tuple[list[str], str]] = {}
 
     def add(self, name: str, raw_expr: str):
         if not name or name in self._tab:
@@ -77,7 +90,9 @@ class MacroTable:
 
     def offset(self, name: str) -> int | None:
         e = self._tab.get(name)
-        return e[0] if e else None
+        if e is None:
+            return None
+        return e[0] if e[0] is not None else self.resolve(name)
 
     def raw(self, name: str) -> str | None:
         e = self._tab.get(name)
@@ -102,6 +117,60 @@ class MacroTable:
             for name, (params, body) in self._functions.items()
         }
 
+    def add_resolver_function(self, name: str, params: list[str],
+                              raw_expr: str):
+        if name and name not in self._resolver_functions:
+            self._resolver_functions[name] = (list(params), raw_expr.strip())
+
+    def _function(self, name: str):
+        return self._functions.get(name) or self._resolver_functions.get(name)
+
+    def resolve(self, name: str, _stack: set[str] | None = None) -> int | None:
+        """Resolve an object-like macro through numeric macro composition."""
+        stack = set(_stack or ())
+        if name in stack:
+            return None
+        entry = self._tab.get(name)
+        if entry is None:
+            return None
+        if entry[0] is not None:
+            return entry[0]
+        stack.add(name)
+        return self._resolve_text(entry[1], stack)
+
+    def _resolve_text(self, text: str, stack: set[str]) -> int | None:
+        value = _eval_int_expr(text)
+        if value is not None:
+            return value
+        call = re.fullmatch(r"([A-Za-z_]\w*)\s*\((.*)\)", text.strip())
+        if call:
+            definition = self._function(call.group(1))
+            if definition is not None:
+                params, body = definition
+                arguments = [item.strip() for item in
+                             re.split(r"\s*,\s*", call.group(2))]
+                if len(arguments) == len(params):
+                    expanded = body
+                    for parameter, argument in zip(params, arguments):
+                        replacement = argument
+                        resolved = self._resolve_text(argument, stack)
+                        if resolved is not None:
+                            replacement = str(resolved)
+                        expanded = re.sub(
+                            rf"\b{re.escape(parameter)}\b",
+                            f"({replacement})", expanded)
+                    return self._resolve_text(expanded, stack)
+
+        def replace_identifier(match):
+            token = match.group(0)
+            resolved = self.resolve(token, stack)
+            return str(resolved) if resolved is not None else token
+
+        expanded = re.sub(r"\b[A-Za-z_]\w*\b", replace_identifier, text)
+        if expanded == text:
+            return None
+        return _eval_int_expr(expanded)
+
     def merge(self, other: "MacroTable") -> list[str]:
         """Merge another translation unit's integer macros.
 
@@ -123,6 +192,10 @@ class MacroTable:
                 conflicts.append(name)
                 continue
             self.add_function(name, *incoming)
+        for name, definition in other._resolver_functions.items():
+            if name not in self._resolver_functions:
+                self._resolver_functions[name] = (
+                    list(definition[0]), definition[1])
         return conflicts
 
 
@@ -147,7 +220,9 @@ def collect_from_source(source_text: str) -> MacroTable:
         m = _DEFINE_RE.match(line)
         if m:
             name, expr = m.group(1), m.group(2)
-            # only keep ones that evaluate to an int (register offsets / masks)
+            # The regex fallback is source-local and intentionally remains
+            # strict; unresolved header composition is handled by Clang TU
+            # collection below.
             if _eval_int_expr(expr) is not None:
                 tab.add(name, expr)
     return tab
@@ -165,6 +240,14 @@ def collect_from_tu(tu, target_file: str | None = None) -> MacroTable:
     line_cache: dict[str, list[str]] = {}
     tgt = os.path.abspath(target_file) if target_file else None
     for c in tu.cursor.walk_preorder():
+        if c.kind == cx.CursorKind.ENUM_CONSTANT_DECL:
+            try:
+                value = c.enum_value
+            except (AttributeError, TypeError, ValueError):
+                value = None
+            if c.spelling and value is not None:
+                tab.add(c.spelling, str(value))
+            continue
         if c.kind != cx.CursorKind.MACRO_DEFINITION:
             continue
         toks = [t.spelling for t in c.get_tokens()]
@@ -191,10 +274,7 @@ def collect_from_tu(tu, target_file: str | None = None) -> MacroTable:
             except (OSError, IndexError):
                 pass
         if function_like:
-            source_dir = os.path.dirname(tgt) if tgt else None
             macro_file = os.path.abspath(loc_file.name) if loc_file else ""
-            if source_dir and os.path.dirname(macro_file) != source_dir:
-                continue
             if len(toks) < 5 or toks[1] != "(":
                 continue
             depth = 0
@@ -211,12 +291,12 @@ def collect_from_tu(tu, target_file: str | None = None) -> MacroTable:
                 continue
             params = [token for token in toks[2:close] if token != ","]
             body = " ".join(toks[close + 1:])
-            tab.add_function(name, params, body)
+            if tgt and os.path.dirname(macro_file) == os.path.dirname(tgt):
+                tab.add_function(name, params, body)
+            else:
+                tab.add_resolver_function(name, params, body)
             continue
         expr = " ".join(expr_toks)
-        # only keep if it evaluates to an int (filter config/feature flags noise too)
-        if _eval_int_expr(expr) is None:
-            continue
         tab.add(name, expr)
     return tab
 

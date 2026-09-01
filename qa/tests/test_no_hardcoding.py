@@ -7,10 +7,9 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_generic_runner_and_pi_bridge_have_no_target_literals_or_branches():
+def test_generic_runner_and_llm_bridge_have_no_target_literals_or_branches():
     synthesis_module = next(ROOT.glob("src/synth*.py"))
-    paths = [ROOT / "src" / "experiment_runner.py", synthesis_module,
-             ROOT / "tools" / "pi" / "synth.mjs", ROOT / "tools" / "pi" / "pi_synth.sh"]
+    paths = [synthesis_module]
     forbidden = ("gpio-ftgpio010", "0x1234", "0x11e8", "IO_DMA_CMD", "detect_subsystem")
     text = "\n".join(path.read_text(encoding="utf-8") for path in paths)
     assert not any(token in text for token in forbidden)
@@ -18,8 +17,8 @@ def test_generic_runner_and_pi_bridge_have_no_target_literals_or_branches():
 
 
 def test_generator_and_sanitizer_consume_policy_without_private_constants():
-    linux_dir = ROOT / "src" / "generator" / "linux"
-    linux_paths = sorted(linux_dir.glob("*.py")) if linux_dir.is_dir() else [ROOT / "src" / "generator" / "linux.py"]
+    linux_dir = ROOT / "src" / "backends" / "linux"
+    linux_paths = sorted(linux_dir.glob("*.py")) if linux_dir.is_dir() else [ROOT / "src" / "backends" / "linux.py"]
     paths = linux_paths + [ROOT / "tools" / "source" / "sanitize.py"]
     text = "\n".join(path.read_text(encoding="utf-8") for path in paths)
     assert "device_spec.name == \"edu\"" not in text
@@ -27,51 +26,25 @@ def test_generator_and_sanitizer_consume_policy_without_private_constants():
     assert "DMA_IRQ" not in text
 
 
-def test_e2e_entrypoint_is_manifest_only_compatibility_dispatch():
-    entrypoint = next(path for path in (ROOT / "scripts" / "e2e").glob("run_*.sh")
-                      if "manifest_for_source" in path.read_text(encoding="utf-8"))
-    text = entrypoint.read_text(encoding="utf-8")
-    forbidden = (
-        "detect_subsystem", "QEMU_DEVICE", "REGISTRAR_TARGET", "EXERCISER",
-        "TRACE_EXERCISED", "0x1234", "0x11e8", "IO_DMA_CMD",
-    )
-    assert not any(token in text for token in forbidden)
-    assert "manifest_for_source" in text
-    assert 'exec "$ROOT/run.sh" experiment "$manifest" "$@"' in text
+def _qemu_runner_source() -> str:
+    return (ROOT / "qa" / "verification" / "qemu_run.py").read_text(
+        encoding="utf-8")
 
 
-def test_generic_qemu_runner_does_not_infer_success_from_exerciser_name():
-    qemu_runner = next((ROOT / "scripts" / "qemu").glob("qemu_r*.sh"))
-    text = qemu_runner.read_text(encoding="utf-8")
-    assert "edu_trace_test" not in text
-    assert "gpiochip|clk|ahci|mmc" not in text
-    assert "SUCCESS_PATTERN" in text
-    assert "--success-pattern" in text
+def test_qemu_runner_uses_manifest_device_and_binding_protocols():
+    source = _qemu_runner_source()
+    assert "spec.device" in source and "launch_device" in source
+    assert "binding_bus" in source and "binding_required" in source
+    assert "success_pattern" in source
 
 
 def test_qemu_runner_accepts_invocation_local_module_artifact_root():
-    qemu_runner = next((ROOT / "scripts" / "qemu").glob("qemu_r*.sh"))
-    text = qemu_runner.read_text(encoding="utf-8")
-    assert "RH_QEMU_MODULE_OUTPUT_ROOT" in text
-    assert 'MODULE_OUTPUT_ROOT="${RH_QEMU_MODULE_OUTPUT_ROOT:-' in text
-    assert 'OUTPUT_DIR="$MODULE_OUTPUT_ROOT/$MODULE_NAME"' in text
+    source = _qemu_runner_source()
+    assert "RH_QEMU_MODULE_OUTPUT_ROOT" in source
 
 
-def test_qemu_suite_builds_into_isolated_artifact_root():
-    suite = ROOT / "qa" / "verification" / "run_qemu_experiments.sh"
-    text = suite.read_text(encoding="utf-8")
-    assert "RH_QEMU_ARTIFACT_ROOT" in text
-    assert "RH_QEMU_MODULE_OUTPUT_ROOT" in text
-    assert 'out_dir="$ROOT/artifacts/output/$MODULE"' not in text
-    assert 'spec_dir="$ROOT/artifacts/output/manifest-$MANIFEST_NAME"' not in text
-    assert 'RH_QEMU_MODULE_OUTPUT_ROOT="$MODULE_OUTPUT_ROOT"' in text
-
-
-def test_e2e_source_form_resolves_manifest_before_delegating():
-    entrypoint = next(path for path in (ROOT / "scripts" / "e2e").glob("run_*.sh")
-                      if "manifest_for_source" in path.read_text(encoding="utf-8"))
-    source = "benchmarks/drivers/baseline/edu.c"
-    result = subprocess.run([str(entrypoint), source, "--help"], cwd=ROOT,
-                            capture_output=True, text=True, check=False)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "manifest" in (result.stdout + result.stderr).lower()
+def test_qemu_runner_does_not_infer_success_from_exerciser_name():
+    source = _qemu_runner_source()
+    # 成功只由 manifest 的 success_pattern / 协议标记决定, 不看名字
+    assert "success_pattern" in source
+    assert "exerciser.endswith" not in source

@@ -1,0 +1,13 @@
+{
+  "evidence_digest": "c1151da0a721ae2ebd79d25e781708756288b3587a960bcde780d0d0f618cdad",
+  "iteration": 5,
+  "manifest_digest": "8430c3990f0e0fa0783b3e606d513fffcbf6ddb4ab17d00056022d00ecb9ccba",
+  "payload": {
+    "result": {
+      "role": "baseline",
+      "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu-experiment/pipeline/traces/baseline-cb55cbffc8ac4e7f8b953a07bfa82f99.trace"
+    }
+  },
+  "stage": "baseline",
+  "status": "passed"
+}

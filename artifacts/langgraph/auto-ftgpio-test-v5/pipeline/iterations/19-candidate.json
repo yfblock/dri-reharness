@@ -1,0 +1,56 @@
+{
+  "evidence_digest": "14b85fd697964c5459879fed2c05b4441c32e33a998494c53d358fe8cb914fd6",
+  "iteration": 4,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "feedback": {
+      "details": {
+        "driver_insmod_rc": 0,
+        "excerpt": "=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.031294] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.031369] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071810] ftrace: allocating 31848 entries in 126 pages\n[    0.072070] ftrace: allocated 126 pages with 6 groups\n[    0.405643] thermal_sys: Registered thermal governor 'step_wise'\n[    0.410182] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.416385] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.498123] pps_core: LinuxPPS API ver. 1 registered\n[    0.539044] Key type asymmetric registered\n[    0.539117] Asymmetric key parser 'x509' registered\n[    0.539530] io scheduler mq-deadline registered\n[    0.539590] io scheduler kyber registered\n[    0.583019] rtc_cmos PNP0B00:00: registered as rtc0\n=== insmod device-registrar target=ftgpio010-gpio ===\nREHARNESS_REGISTRAR_INSMOD_RC=0\n=== insmod ftgpio010_gpio ===\nREHARNESS_DRIVER_INSMOD_RC=0\n[    0.031294] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.031369] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.405643] thermal_sys: Registered thermal governor 'step_wise'\n[    0.416385] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.498123] pps_core: LinuxPPS API ver. 1 registered\n[    0.539044] Key type asymmetric registered\n[    0.539117] Asymmetric key parser 'x509' registered\n[    0.539530] io scheduler mq-deadline registered\n[    0.539590] io scheduler kyber registered\n[    0.583019] rtc_cmos PNP0B00:00: registered as rtc0\nGPIO_TRACE_FAIL:open /dev/gpiochip0\nREHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api\nREHARNESS_SUBSYSTEM_TEST_0_RC=2\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\n=== rmmod ftgpio010_gpio ===\n=== QEMU_RUN_DONE ===\n[    1.880937] Call Trace:\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=0\ndone=1 probe=15 real_oops=0\n=> \u5931\u8d25: exerciser/subsystem semantic test failed",
+        "observations": {
+          "done": true,
+          "driver_insmod_rc": 0,
+          "exerciser": false,
+          "failed_kernel_modules": [],
+          "oops": false,
+          "probe": true,
+          "probe_required": true,
+          "registrar_insmod_rc": 0,
+          "subsystem_tests": [
+            {
+              "index": 0,
+              "name": "ftgpio010-gpio-api",
+              "return_code": 2,
+              "status": "pass",
+              "success": false
+            }
+          ],
+          "success_pattern": null,
+          "unavailable_kernel_modules": []
+        },
+        "qemu_exit_code": 0,
+        "reason": "subsystem_test_failure",
+        "registrar_insmod_rc": 0,
+        "return_code": 3,
+        "role": "candidate",
+        "subsystem_tests": [
+          {
+            "index": 0,
+            "name": "ftgpio010-gpio-api",
+            "return_code": 2,
+            "status": "pass",
+            "success": false
+          }
+        ],
+        "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v5/pipeline/traces/candidate-37e757b3eed54836838b7488de59a4ea.trace"
+      },
+      "failure_class": "runtime",
+      "iteration": 4,
+      "message": "runtime adapter failed: subsystem_test_failure",
+      "retryable": true,
+      "stage": "candidate"
+    }
+  },
+  "stage": "candidate",
+  "status": "failed"
+}

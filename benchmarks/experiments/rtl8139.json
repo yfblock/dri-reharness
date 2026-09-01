@@ -1,0 +1,56 @@
+{
+ "schema": 2,
+ "name": "rtl8139",
+ "source": {
+  "path": "vendor/linux/drivers/net/ethernet/realtek/8139cp.c"
+ },
+ "compile": {
+  "backend": "linux",
+  "language": "c",
+  "context": "kbuild"
+ },
+ "runtime": {
+  "adapter": "qemu-profile",
+  "qemu": {
+   "machine": "pc",
+   "device": "rtl8139",
+   "bus": "pci",
+   "module": "8139cp",
+   "timeout_seconds": 90,
+   "launch_device": true,
+   "kernel_modules": [
+    "mii"
+   ],
+   "qemu_args": []
+  },
+  "pci_identity": {
+   "vendor": "0x10ec",
+   "device": "0x8139"
+  }
+ },
+ "test": {
+  "executable": "qa/native-tests/nic_bind_test",
+  "args": [
+   "eth0",
+   "8139cp"
+  ],
+  "success_pattern": "REHARNESS_NIC_OK driver=8139cp"
+ },
+ "trace": {
+  "fields": [
+   "phase",
+   "function",
+   "kind",
+   "width_bits",
+   "address",
+   "value",
+   "sequence"
+  ],
+  "instrument": false
+ },
+ "limits": {
+  "compile": 1,
+  "runtime": 1,
+  "trace": 1
+ }
+}

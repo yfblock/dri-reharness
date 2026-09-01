@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "3d9f93e6f4fd05ed851889fa622c92c042c6f45b35476bf127163921dbf8f134",
+  "iteration": 1,
+  "manifest_digest": "835470748b7572c22ecea869ceb1f50ebae43e2333529cebcd5ed0a1bce7a066",
+  "payload": {
+    "result": {
+      "headers": [],
+      "kbuild_cmd": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/pipeline/candidate/.edu_drv.o.cmd",
+      "module": "edu_drv",
+      "path": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/pipeline/candidate/edu_drv.ko",
+      "safety_receipt": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/pipeline/candidate/edu_drv.c.safety.json",
+      "source": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/pipeline/candidate/edu_drv.c",
+      "sources": [
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/pipeline/candidate/edu_drv.c"
+      ]
+    }
+  },
+  "stage": "compile",
+  "status": "passed"
+}

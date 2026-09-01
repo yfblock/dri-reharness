@@ -1,11 +1,11 @@
-[trace_match] 7 个精确调用 / 6 个模块 (7 call pass, 0 call fail), traced=57 ops
-  ✓ call#1 ftgpio_gpio_probe => gpio_ftgpio010_probe: 6 ops [('R', 4), ('R', 8), ('W', 32), ('W', 44), ('W', 48), ('W', 64)]
-  ✓ call#2 ftgpio_gpio_probe__gpio_generic_get_direction => ftgpio_gpio_probe__gpio_generic_get_direction: 1 ops [('R', 8)]
-  ✓ call#3 ftgpio_gpio_probe__gpio_generic_direction_output => ftgpio_gpio_probe__gpio_generic_direction_output: 2 ops [('W', 20), ('W', 8)]
-  ✓ call#4 ftgpio_gpio_probe__gpio_generic_get_multiple => ftgpio_gpio_probe__gpio_generic_get_multiple: 1 ops [('R', 4)]
-  ✓ call#5 ftgpio_gpio_probe__gpio_generic_set_multiple => ftgpio_gpio_probe__gpio_generic_set_multiple: 1 ops [('W', 16)]
-  ✓ call#6 ftgpio_gpio_probe__gpio_generic_set_multiple => ftgpio_gpio_probe__gpio_generic_set_multiple: 1 ops [('W', 20)]
-  ✓ call#7 ftgpio_gpio_probe__gpio_generic_direction_input => ftgpio_gpio_probe__gpio_generic_direction_input: 1 ops [('W', 8)]
+[trace_match] 7 个精确调用 / 6 个模块 (7 call pass, 0 call fail), traced=118 ops
+  ✓ call#1 ftgpio_gpio_probe => ftgpio_gpio_probe: 6 ops [{'kind': 'R', 'address': 4}, {'kind': 'R', 'address': 8}, {'kind': 'W', 'address': 32}, {'kind': 'W', 'address': 44}, {'kind': 'W', 'address': 48}, {'kind': 'W', 'address': 64}]
+  ✓ call#2 ftgpio_gpio_probe__gpio_generic_get_direction => ftgpio_gpio_probe__gpio_generic_get_direction: 1 ops [{'kind': 'R', 'address': 8}]
+  ✓ call#3 ftgpio_gpio_probe__gpio_generic_direction_output => ftgpio_gpio_probe__gpio_generic_direction_output: 2 ops [{'kind': 'W', 'address': 20}, {'kind': 'W', 'address': 8}]
+  ✓ call#4 ftgpio_gpio_probe__gpio_generic_get_multiple => ftgpio_gpio_probe__gpio_generic_get_multiple: 1 ops [{'kind': 'R', 'address': 4}]
+  ✓ call#5 ftgpio_gpio_probe__gpio_generic_set_multiple => ftgpio_gpio_probe__gpio_generic_set_multiple: 1 ops [{'kind': 'W', 'address': 16}]
+  ✓ call#6 ftgpio_gpio_probe__gpio_generic_set_multiple => ftgpio_gpio_probe__gpio_generic_set_multiple: 1 ops [{'kind': 'W', 'address': 20}]
+  ✓ call#7 ftgpio_gpio_probe__gpio_generic_direction_input => ftgpio_gpio_probe__gpio_generic_direction_input: 1 ops [{'kind': 'W', 'address': 8}]
 
 [coverage] 模块覆盖: 6/6 精确模块通过
 [coverage] 调用覆盖: 7/7 预期调用通过

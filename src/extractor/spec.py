@@ -38,6 +38,7 @@ PUBLIC_CALLBACK_TYPES = {
     "clk_ops", "dev_pm_ops", "file_operations", "input_dev",
     "usb_ep_ops", "usb_gadget_ops", "hc_driver",
     "sdhci_ops", "mmc_host_ops",
+    "spi_controller", "spi_controller_mem_ops",
 }
 
 # abstract types (backend-independent; .bind maps them to concrete types)
@@ -599,7 +600,7 @@ def default_bind(device_spec, backend: str) -> BindSpec:
             break
 
     try:
-        from generator.registry import get_backend
+        from backends.registry import get_backend
         mod = get_backend(backend)
         if hasattr(mod, "make_bind"):
             mod.make_bind(device_spec, b, priv, base_expr)
@@ -609,7 +610,7 @@ def default_bind(device_spec, backend: str) -> BindSpec:
 
     raise ValueError(
         f"Unknown backend {backend!r}. Ensure the backend module is in "
-        f"src/generator/ and defines NAME + make_bind().")
+        f"src/backends/ and defines NAME + make_bind().")
 
 _ROLE_FIELD = {
     "interrupt_ack": "irq_ack", "interrupt_mask": "irq_mask",
@@ -685,6 +686,8 @@ class ResourceFact:
     name: str                 # mmio0, clk0, irq0
     acquisition: str          # e.g. "devm_platform_ioremap_resource(pdev, 0)"
     binds_to: Optional[str] = None   # e.g. "g->base"
+    required: bool = True
+    failure_policy: Optional[str] = None
 
 
 @dataclass
@@ -694,6 +697,9 @@ class FactsSpec:
     structs: list[StructDef] = field(default_factory=list)
     constants: dict = field(default_factory=dict)   # name -> int value
     callbacks: dict = field(default_factory=dict)   # "irq_chip.irq_ack" -> fn
+    callback_signatures: dict = field(default_factory=dict)
+    # "gpio_chip.get" -> {type, return_type, params, variadic}; these are
+    # source/header-derived C ABI facts, not abstract DeviceSpec signatures.
     resources: list[ResourceFact] = field(default_factory=list)
     error_paths: list[str] = field(default_factory=list)      # e.g. "return -ENOMEM"
     helper_calls: list[str] = field(default_factory=list)     # notable subsystem calls
@@ -720,6 +726,17 @@ class FactsSpec:
             lines.append("callbacks:")
             for k, v in self.callbacks.items():
                 lines.append(f"  {k}: {v}")
+        if self.callback_signatures:
+            lines.append("callback_signatures:")
+            for key, signature in self.callback_signatures.items():
+                lines.append(f"  {key}:")
+                lines.append(f"    type: \"{signature['type']}\"")
+                lines.append(
+                    f"    return_type: \"{signature['return_type']}\"")
+                lines.append("    params:")
+                for param in signature["params"]:
+                    lines.append(f"      - \"{param['type']}\"")
+                lines.append(f"    variadic: {str(signature['variadic']).lower()}")
         if self.resources:
             lines.append("resources:")
             for r in self.resources:
@@ -727,6 +744,11 @@ class FactsSpec:
                 lines.append(f"    acquisition: \"{r.acquisition}\"")
                 if r.binds_to:
                     lines.append(f"    binds_to: \"{r.binds_to}\"")
+                if not r.required:
+                    lines.append("    required: false")
+                if r.failure_policy:
+                    lines.append(
+                        f"    failure_policy: \"{r.failure_policy}\"")
         if self.error_paths:
             lines.append("error_paths:")
             for e in self.error_paths:

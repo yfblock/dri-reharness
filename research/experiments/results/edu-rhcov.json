@@ -1,0 +1,9 @@
+{
+  "functions": [
+    "edu_open",
+    "edu_read",
+    "edu_write",
+    "edu_probe",
+    "edu_remove"
+  ]
+}

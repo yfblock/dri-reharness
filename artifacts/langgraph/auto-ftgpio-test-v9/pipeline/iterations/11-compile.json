@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "e1fa75bd04ba65addce70bdf119713cb6b98ee7784c2a3bdc57035d5600c0759",
+  "iteration": 4,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "feedback": {
+      "details": {
+        "return_code": 2,
+        "stderr": "ftgpio010_gpio.c: In function \u2018ftgpio_gpio_probe\u2019:\nftgpio010_gpio.c:471:38: error: passing argument 1 of \u2018gpio_generic_chip_init\u2019 from incompatible pointer type [-Werror=incompatible-pointer-types]\n  471 |         ret = gpio_generic_chip_init(&priv->gc, &config);\n      |                                      ^~~~~~~~~\n      |                                      |\n      |                                      struct gpio_chip *\nIn file included from ftgpio010_gpio.c:8:\n/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/gpio/generic.h:115:54: note: expected \u2018struct gpio_generic_chip *\u2019 but argument is of type \u2018struct gpio_chip *\u2019\n  115 | int gpio_generic_chip_init(struct gpio_generic_chip *chip,\n      |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~\ncc1: some warnings being treated as errors\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.build:289: ftgpio010_gpio.o] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2144: .] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+      },
+      "failure_class": "compile",
+      "iteration": 4,
+      "message": "candidate compilation failed",
+      "retryable": true,
+      "stage": "compile"
+    }
+  },
+  "stage": "compile",
+  "status": "failed"
+}

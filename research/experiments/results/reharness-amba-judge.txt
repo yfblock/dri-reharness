@@ -1,0 +1,49 @@
+=== QEMU run: module=reharness_amba_sensor bus=amba timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.030365] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030430] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073135] ftrace: allocating 38031 entries in 150 pages
+[    0.073394] ftrace: allocated 150 pages with 4 groups
+[    0.429307] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.433603] thermal_sys: Registered thermal governor 'step_wise'
+[    0.438217] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.440174] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.530001] ACPI: bus type USB registered
+[    0.530604] usbcore: registered new interface driver usbfs
+[    0.530806] usbcore: registered new interface driver hub
+[    0.530903] usbcore: registered new device driver usb
+[    0.531071] pps_core: LinuxPPS API ver. 1 registered
+[    0.531186] PTP clock support registered
+[    0.562739] NET: Registered PF_INET protocol family
+[    0.578851] Key type asymmetric registered
+[    0.578947] Asymmetric key parser 'x509' registered
+[    0.579363] io scheduler mq-deadline registered
+[    0.579424] io scheduler kyber registered
+[    0.620716] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.624363] usbcore: registered new interface driver usbhid
+[    0.625122] NET: Registered PF_INET6 protocol family
+=== insmod runtime fixture amba-registrar ===
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0
+=== insmod reharness_amba_sensor ===
+[    1.035651] [rhcov] reharness_amba_sensor_probe
+[    1.035723] reharness_amba_sensor reharness-amba: REHARNESS_AMBA_DRIVER_PROBE periphid=0x00100001 resource=0x1000
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    1.035651] [rhcov] reharness_amba_sensor_probe
+[    1.035723] reharness_amba_sensor reharness-amba: REHARNESS_AMBA_DRIVER_PROBE periphid=0x00100001 resource=0x1000
+REHARNESS_SUBSYSTEM_TEST_0_NAME=amba-device-lifecycle
+REHARNESS_SUBSYSTEM_TEST_0_KIND=native
+REHARNESS_SUBSYSTEM_TEST_0_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+=== rmmod reharness_amba_sensor ===
+REHARNESS_DRIVER_RMMOD_RC=0
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.313305] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: reharness_amba_sensor probe 成功

@@ -1,0 +1,54 @@
+{
+ "schema": 2,
+ "name": "e1000e",
+ "source": {
+  "path": "vendor/linux/drivers/net/ethernet/intel/e1000e/netdev.c"
+ },
+ "compile": {
+  "backend": "linux",
+  "language": "c",
+  "context": "kbuild"
+ },
+ "runtime": {
+  "adapter": "qemu-profile",
+  "qemu": {
+   "machine": "pc",
+   "device": "e1000e",
+   "bus": "pci",
+   "module": "e1000e",
+   "timeout_seconds": 90,
+   "launch_device": true,
+   "kernel_modules": [],
+   "qemu_args": []
+  },
+  "pci_identity": {
+   "vendor": "0x8086",
+   "device": "0x1533"
+  }
+ },
+ "test": {
+  "executable": "qa/native-tests/nic_bind_test",
+  "args": [
+   "eth0",
+   "e1000e"
+  ],
+  "success_pattern": "REHARNESS_NIC_OK driver=e1000e"
+ },
+ "trace": {
+  "fields": [
+   "phase",
+   "function",
+   "kind",
+   "width_bits",
+   "address",
+   "value",
+   "sequence"
+  ],
+  "instrument": false
+ },
+ "limits": {
+  "compile": 1,
+  "runtime": 1,
+  "trace": 1
+ }
+}

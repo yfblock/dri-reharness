@@ -94,6 +94,35 @@ def test_proven_mmio_read_wrapper_chain_still_binds_caller_lhs():
     assert "value" in rendered and "mask" in rendered
 
 
+def test_single_source_wrapper_closure_matches_transitive_return_provenance():
+    formal = _extract("""
+        #define STATUS 0x24
+        typedef unsigned int u32;
+        extern u32 readl(void *addr);
+
+        static u32 read_status(void *base)
+        {
+            return readl(base + STATUS);
+        }
+
+        static u32 read_status_wrapper(void *base)
+        {
+            u32 result = read_status(base);
+            return result;
+        }
+
+        u32 consume_status(void *base)
+        {
+            u32 status = read_status_wrapper(base);
+            return status;
+        }
+    """)
+    leaves = _leaves(formal, "consume_status")
+    read = next(op["Read"] for op in leaves if "Read" in op)
+
+    assert read["var"] == "status"
+
+
 def _run_standalone() -> int:
     import traceback
 

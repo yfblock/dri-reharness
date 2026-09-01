@@ -1,0 +1,464 @@
+{
+  "evidence_digest": "3d9f93e6f4fd05ed851889fa622c92c042c6f45b35476bf127163921dbf8f134",
+  "iteration": 1,
+  "manifest_digest": "835470748b7572c22ecea869ceb1f50ebae43e2333529cebcd5ed0a1bce7a066",
+  "payload": {
+    "result": {
+      "bind": {
+        "callbacks": {
+          "file_operations.read": "edu_read",
+          "file_operations.write": "edu_write",
+          "pci_driver.probe": "edu_pci_probe"
+        },
+        "includes": [
+          "<linux/io.h>",
+          "<linux/platform_device.h>"
+        ],
+        "primitives": {
+          "MmioRead(B1)": "readb",
+          "MmioRead(B2)": "readw",
+          "MmioRead(B4)": "readl",
+          "MmioReadBE(B2)": "ioread16be",
+          "MmioReadBE(B4)": "ioread32be",
+          "MmioWrite(B1)": "writeb",
+          "MmioWrite(B2)": "writew",
+          "MmioWrite(B4)": "writel",
+          "MmioWriteBE(B2)": "iowrite16be",
+          "MmioWriteBE(B4)": "iowrite32be",
+          "MmioWriteW1C(B1)": "writeb",
+          "MmioWriteW1C(B2)": "writew",
+          "MmioWriteW1C(B4)": "writel"
+        },
+        "state": {
+          "dev.base": "priv->mmio"
+        },
+        "types": {
+          "DeviceState": "struct edu_priv",
+          "LogicalIRQ": "struct irq_data *",
+          "MmioBase": "void __iomem *",
+          "UInt": "u32",
+          "UIntPtr": "unsigned long *"
+        }
+      },
+      "bundle": {
+        "digest": "3d9f93e6f4fd05ed851889fa622c92c042c6f45b35476bf127163921dbf8f134",
+        "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/evidence"
+      },
+      "constants": {
+        "DMA_BASE": 262144,
+        "DMA_CMD": 1,
+        "DMA_IRQ": 4,
+        "EDU_DEVICE_ID": 4584,
+        "EDU_VENDOR_ID": 4660,
+        "IO_APIC_DEFAULT_PHYS_BASE": 4273995776,
+        "IO_APIC_SLOT_SIZE": 1024,
+        "IO_APIC_VECTOR_LIMIT": 4096,
+        "IO_BITMAP_BITS": 65536,
+        "IO_DMA_CMD": 152,
+        "IO_DMA_CNT": 144,
+        "IO_DMA_DST": 136,
+        "IO_DMA_SRC": 128,
+        "IO_INTEGRITY_CHK_APPTAG": 4,
+        "IO_INTEGRITY_CHK_GUARD": 1,
+        "IO_INTEGRITY_CHK_REFTAG": 2,
+        "IO_INTEGRITY_VALID_FLAGS": 7,
+        "IO_SPACE_LIMIT": 65535
+      },
+      "device_class": "generic_mmio",
+      "digest": "3d9f93e6f4fd05ed851889fa622c92c042c6f45b35476bf127163921dbf8f134",
+      "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-edu-test/evidence",
+      "driver": "edu",
+      "framework": {
+        "callback_signatures": {
+          "file_operations.open": {
+            "params": [
+              {
+                "type": "struct inode *"
+              },
+              {
+                "type": "struct file *"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct inode *, struct file *)",
+            "variadic": false
+          },
+          "file_operations.read": {
+            "params": [
+              {
+                "type": "struct file *"
+              },
+              {
+                "type": "char *"
+              },
+              {
+                "type": "unsigned long"
+              },
+              {
+                "type": "long long *"
+              }
+            ],
+            "return_type": "long",
+            "type": "long (*)(struct file *, char *, unsigned long, long long *)",
+            "variadic": false
+          },
+          "file_operations.write": {
+            "params": [
+              {
+                "type": "struct file *"
+              },
+              {
+                "type": "const char *"
+              },
+              {
+                "type": "unsigned long"
+              },
+              {
+                "type": "long long *"
+              }
+            ],
+            "return_type": "long",
+            "type": "long (*)(struct file *, const char *, unsigned long, long long *)",
+            "variadic": false
+          },
+          "pci_driver.probe": {
+            "params": [
+              {
+                "type": "struct pci_dev *"
+              },
+              {
+                "type": "const struct pci_device_id *"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct pci_dev *, const struct pci_device_id *)",
+            "variadic": false
+          },
+          "pci_driver.remove": {
+            "params": [
+              {
+                "type": "struct pci_dev *"
+              }
+            ],
+            "return_type": "void",
+            "type": "void (*)(struct pci_dev *)",
+            "variadic": false
+          }
+        },
+        "callbacks": {
+          "file_operations.open": "edu_open",
+          "file_operations.read": "edu_read",
+          "file_operations.write": "edu_write",
+          "pci_driver.probe": "edu_pci_probe",
+          "pci_driver.remove": "edu_pci_remove"
+        },
+        "error_paths": [
+          "return -EFAULT",
+          "return -EINVAL",
+          "return -ENOMEM"
+        ],
+        "helper_calls": [],
+        "source_snippets": {}
+      },
+      "functions": [
+        {
+          "callback_table": null,
+          "context": "irq",
+          "is_callback_entry": false,
+          "name": "edu_irq_handler",
+          "ris_ref": "edu_irq_handler",
+          "role": "interrupt_handler",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "irq",
+                "type": "UInt"
+              },
+              {
+                "from_expr": null,
+                "name": "data",
+                "type": "DeviceState"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "edu.c:66"
+        },
+        {
+          "callback_table": "file_operations.read",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "edu_read",
+          "ris_ref": "edu_read",
+          "role": "read_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "filp",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "buf",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "len",
+                "type": "UInt"
+              },
+              {
+                "from_expr": null,
+                "name": "off",
+                "type": "DeviceState"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "edu.c:90"
+        },
+        {
+          "callback_table": "file_operations.write",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "edu_write",
+          "ris_ref": "edu_write",
+          "role": "write_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "filp",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "buf",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "len",
+                "type": "UInt"
+              },
+              {
+                "from_expr": null,
+                "name": "off",
+                "type": "DeviceState"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "edu.c:108"
+        },
+        {
+          "callback_table": "pci_driver.probe",
+          "context": "boot",
+          "is_callback_entry": true,
+          "name": "edu_pci_probe",
+          "ris_ref": "edu_pci_probe",
+          "role": "probe",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "pdev",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "id",
+                "type": "DeviceState"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "edu.c:135"
+        }
+      ],
+      "modules": [
+        {
+          "name": "edu_irq_handler",
+          "ops": [
+            {
+              "kind": "value_bind",
+              "op_id": "op_1",
+              "value": "data",
+              "var": "priv"
+            },
+            {
+              "addr": "base + IO_IRQ_STATUS",
+              "digest": "58c605e506ad0c2b",
+              "kind": "read",
+              "op_id": "op_2",
+              "var": "status",
+              "width": "B4"
+            },
+            {
+              "addr": "base + IO_IRQ_ACK",
+              "digest": "f479e9c3cf35a289",
+              "kind": "write",
+              "op_id": "op_3",
+              "value": "status"
+            }
+          ]
+        },
+        {
+          "name": "edu_read",
+          "ops": [
+            {
+              "kind": "value_bind",
+              "op_id": "op_4",
+              "value": "filp->private_data",
+              "var": "priv"
+            },
+            {
+              "addr": "priv->mmio + *off",
+              "digest": "dbf046aef312a382",
+              "kind": "read",
+              "op_id": "op_5",
+              "var": "val",
+              "width": "B4"
+            },
+            {
+              "kind": "output_write",
+              "op_id": "op_6",
+              "target": "*off +",
+              "value": "0x4"
+            }
+          ]
+        },
+        {
+          "name": "edu_write",
+          "ops": [
+            {
+              "kind": "value_bind",
+              "op_id": "op_7",
+              "value": "filp->private_data",
+              "var": "priv"
+            },
+            {
+              "addr": "priv->mmio + *off",
+              "digest": "a145d50fd28e9830",
+              "kind": "write",
+              "op_id": "op_8",
+              "value": "val"
+            },
+            {
+              "kind": "output_write",
+              "op_id": "op_9",
+              "target": "*off +",
+              "value": "0x4"
+            }
+          ]
+        },
+        {
+          "name": "edu_pci_probe",
+          "ops": [
+            {
+              "field": "priv->pdev",
+              "kind": "state_write",
+              "op_id": "op_10",
+              "value": "pdev",
+              "width": "B4"
+            },
+            {
+              "else": [],
+              "guard": "((priv->mmio == 0x0) == 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "else": [],
+                  "guard": "(ret == 0x0)",
+                  "kind": "cond",
+                  "then": [
+                    {
+                      "addr": "base + IO_ID",
+                      "digest": "4b8a9ab4cb9122ff",
+                      "kind": "read",
+                      "op_id": "op_11",
+                      "var": "dev_id",
+                      "width": "B4"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "field": "priv->irq",
+              "kind": "state_write",
+              "op_id": "op_12",
+              "value": "pdev->irq",
+              "width": "B4"
+            },
+            {
+              "field": "priv->mdev.minor",
+              "kind": "state_write",
+              "op_id": "op_13",
+              "value": "MISC_DYNAMIC_MINOR",
+              "width": "B4"
+            },
+            {
+              "field": "priv->mdev.name",
+              "kind": "state_write",
+              "op_id": "op_14",
+              "value": "KBUILD_MODNAME",
+              "width": "B4"
+            },
+            {
+              "field": "priv->mdev.fops",
+              "kind": "state_write",
+              "op_id": "op_15",
+              "value": "&edu_fops",
+              "width": "B4"
+            }
+          ]
+        }
+      ],
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "generated backend compile/lowering/attestation results unavailable"
+        ],
+        "device_spec_quality": 0.688,
+        "facts_quality": 0.7,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 0.92
+      },
+      "registers": {
+        "IO_ID": {
+          "offset": 0,
+          "width": "B4"
+        },
+        "IO_IRQ_ACK": {
+          "offset": 100,
+          "width": "B4"
+        },
+        "IO_IRQ_STATUS": {
+          "offset": 36,
+          "width": "B4"
+        }
+      },
+      "resources": [],
+      "source_digest": "eabe877adde5438747c6714698ead437d360d5c5a4e4b727123df7d8d35064b5",
+      "source_files": [
+        "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c"
+      ],
+      "structs": {
+        "edu_priv": {
+          "irq": "int",
+          "mdev": "struct miscdevice",
+          "mmio": "void *",
+          "pdev": "struct pci_dev *"
+        }
+      }
+    }
+  },
+  "stage": "extract",
+  "status": "passed"
+}

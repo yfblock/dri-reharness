@@ -1,0 +1,108 @@
+device sdhci-esdhc-mcf {
+  class sdhci
+  source "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c"
+  state {
+    base: MmioBase
+    clk: Clock
+    mcf_data->aside: UInt
+    host->mmc->actual_clock: UInt
+    mcf_data->current_bus_width: UInt
+  }
+  resource mmio0: MmioResource { required true bind base }
+  resource clk0: ClockResource { required true bind clk }
+  register SDHCI_TRANSFER_MODE: B4 at base + 0xc
+  register SDHCI_HOST_CONTROL: B1 at base + 0x28
+  register SDHCI_INT_ENABLE: B4 at base + 0x34
+  register SDHCI_SIGNAL_ENABLE: B4 at base + 0x38
+  register MCF_PLL_DR: B4 at base + 0xfc0c0004
+  function esdhc_mcf_writeb_be(host: DeviceState, val: UInt, reg: UInt) -> Void {
+    role write_config
+    source "sdhci-esdhc-mcf.c:65"
+    context thread
+    callback sdhci_ops.write_b
+    bind dev: DeviceState from host
+    bind base: MmioBase from host->ioaddr
+    ris esdhc_mcf_writeb_be
+    effect writes_register(SDHCI_HOST_CONTROL)
+    effect writes_config(offset)
+  }
+  function esdhc_mcf_writew_be(host: DeviceState, val: UInt, reg: UInt) -> Void {
+    role write_config
+    source "sdhci-esdhc-mcf.c:93"
+    context thread
+    callback sdhci_ops.write_w
+    bind dev: DeviceState from host
+    bind base: MmioBase from host->ioaddr
+    ris esdhc_mcf_writew_be
+    effect writes_register(SDHCI_TRANSFER_MODE)
+    effect writes_config(offset)
+  }
+  function esdhc_mcf_writel_be(host: DeviceState, val: UInt, reg: UInt) -> Void {
+    role write_config
+    source "sdhci-esdhc-mcf.c:121"
+    context thread
+    callback sdhci_ops.write_l
+    ris esdhc_mcf_writel_be
+    effect writes_config(offset)
+  }
+  function esdhc_mcf_readb_be(host: DeviceState, reg: UInt) -> UInt {
+    role read_config
+    source "sdhci-esdhc-mcf.c:126"
+    context thread
+    callback sdhci_ops.read_b
+    ris esdhc_mcf_readb_be
+    effect reads_config(offset)
+  }
+  function esdhc_mcf_readw_be(host: DeviceState, reg: UInt) -> UInt {
+    role read_config
+    source "sdhci-esdhc-mcf.c:143"
+    context thread
+    callback sdhci_ops.read_w
+    ris esdhc_mcf_readw_be
+    effect reads_config(offset)
+  }
+  function esdhc_mcf_readl_be(host: DeviceState, reg: UInt) -> UInt {
+    role read_config
+    source "sdhci-esdhc-mcf.c:155"
+    context thread
+    callback sdhci_ops.read_l
+    ris esdhc_mcf_readl_be
+    effect reads_config(offset)
+  }
+  function esdhc_mcf_set_timeout(host: DeviceState, cmd: DeviceState) -> Void {
+    role unknown
+    source "sdhci-esdhc-mcf.c:183"
+    context thread
+    callback sdhci_ops.set_timeout
+    ris esdhc_mcf_set_timeout
+  }
+  function esdhc_mcf_reset(host: DeviceState, mask: UInt) -> Void {
+    role reset
+    source "sdhci-esdhc-mcf.c:191"
+    context thread
+    callback sdhci_ops.reset
+    bind dev: DeviceState from host
+    bind base: MmioBase from host->ioaddr
+    ris esdhc_mcf_reset
+    effect writes_register(SDHCI_INT_ENABLE)
+    effect writes_register(SDHCI_SIGNAL_ENABLE)
+    effect resets_device()
+    ensure device_state == RESET
+  }
+  function esdhc_mcf_pltfm_set_clock(host: DeviceState, clock: UInt) -> Void {
+    role write_config
+    source "sdhci-esdhc-mcf.c:219"
+    context thread
+    callback sdhci_ops.set_clock
+    ris esdhc_mcf_pltfm_set_clock
+    effect writes_config(offset)
+  }
+  function esdhc_mcf_pltfm_set_bus_width(host: DeviceState, width: UInt) -> Void {
+    role write_config
+    source "sdhci-esdhc-mcf.c:281"
+    context thread
+    callback sdhci_ops.set_bus_width
+    ris esdhc_mcf_pltfm_set_bus_width
+    effect writes_config(offset)
+  }
+}

@@ -1,0 +1,494 @@
+{
+  "class": "sdhci",
+  "functions": [
+    {
+      "binds": [
+        {
+          "from_expr": "host",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "host->ioaddr",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "sdhci_ops.write_b",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "SDHCI_HOST_CONTROL"
+          },
+          "kind": "reg",
+          "text": "writes_register(SDHCI_HOST_CONTROL)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_writeb_be",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_writeb_be",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "val",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "reg",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:65"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "host",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "host->ioaddr",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "sdhci_ops.write_w",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "SDHCI_TRANSFER_MODE"
+          },
+          "kind": "reg",
+          "text": "writes_register(SDHCI_TRANSFER_MODE)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_writew_be",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_writew_be",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "val",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "reg",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:93"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.write_l",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_writel_be",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_writel_be",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "val",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "reg",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:121"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.read_b",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_readb_be",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_readb_be",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "reg",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "sdhci-esdhc-mcf.c:126"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.read_w",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_readw_be",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_readw_be",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "reg",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "sdhci-esdhc-mcf.c:143"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.read_l",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_readl_be",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_readl_be",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "reg",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "sdhci-esdhc-mcf.c:155"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.set_timeout",
+      "context": "thread",
+      "effects": [],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_set_timeout",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_set_timeout",
+      "role": "unknown",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "cmd",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:183"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "host",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "host->ioaddr",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "sdhci_ops.reset",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "SDHCI_INT_ENABLE"
+          },
+          "kind": "reg",
+          "text": "writes_register(SDHCI_INT_ENABLE)"
+        },
+        {
+          "detail": {
+            "register": "SDHCI_SIGNAL_ENABLE"
+          },
+          "kind": "reg",
+          "text": "writes_register(SDHCI_SIGNAL_ENABLE)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "resets_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == RESET"
+      ],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_reset",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_reset",
+      "role": "reset",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "mask",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:191"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.set_clock",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_pltfm_set_clock",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_pltfm_set_clock",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "clock",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:219"
+    },
+    {
+      "binds": [],
+      "callback_table": "sdhci_ops.set_bus_width",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "esdhc_mcf_pltfm_set_bus_width",
+      "requires": [],
+      "ris_ref": "esdhc_mcf_pltfm_set_bus_width",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "host",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "width",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "sdhci-esdhc-mcf.c:281"
+    }
+  ],
+  "invariants": [],
+  "name": "sdhci-esdhc-mcf",
+  "registers": [
+    {
+      "base": "base",
+      "name": "SDHCI_TRANSFER_MODE",
+      "offset": 12,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "SDHCI_HOST_CONTROL",
+      "offset": 40,
+      "width": "B1"
+    },
+    {
+      "base": "base",
+      "name": "SDHCI_INT_ENABLE",
+      "offset": 52,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "SDHCI_SIGNAL_ENABLE",
+      "offset": 56,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "MCF_PLL_DR",
+      "offset": 4228644868,
+      "width": "B4"
+    }
+  ],
+  "resources": [
+    {
+      "bind": "base",
+      "name": "mmio0",
+      "required": true,
+      "type": "MmioResource"
+    },
+    {
+      "bind": "clk",
+      "name": "clk0",
+      "required": true,
+      "type": "ClockResource"
+    }
+  ],
+  "schema": 1,
+  "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+  "state": [
+    {
+      "bind": null,
+      "name": "base",
+      "type": "MmioBase"
+    },
+    {
+      "bind": null,
+      "name": "clk",
+      "type": "Clock"
+    },
+    {
+      "bind": null,
+      "name": "mcf_data->aside",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "host->mmc->actual_clock",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "mcf_data->current_bus_width",
+      "type": "UInt"
+    }
+  ]
+}

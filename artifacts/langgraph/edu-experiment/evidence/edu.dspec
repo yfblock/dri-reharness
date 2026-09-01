@@ -1,0 +1,68 @@
+device edu {
+  class generic_mmio
+  source "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c"
+  state {
+    base: MmioBase
+    num_irqs: UInt
+    filp->private_data: UInt
+    priv->pdev: UInt
+    priv->irq: UInt
+    priv->mdev.minor: UInt
+    priv->mdev.name: UInt
+    priv->mdev.fops: UInt
+  }
+  resource mmio0: MmioResource { required true bind base }
+  resource irq0: IrqResource { required true }
+  register IO_ID: B4 at base + 0x0
+  register IO_IRQ_STATUS: B4 at base + 0x24
+  register IO_IRQ_ACK: B4 at base + 0x64
+  invariant forall line: UInt. line < num_irqs -> valid_interrupt_line(line)
+  function edu_irq_handler(irq: UInt, data: DeviceState) -> UInt {
+    role interrupt_handler
+    source "edu.c:66"
+    context irq
+    bind dev: DeviceState from priv
+    bind base: MmioBase from priv->mmio
+    ris edu_irq_handler
+    effect writes_register(IO_IRQ_ACK)
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function edu_open(inode: DeviceState, filp: DeviceState) -> UInt {
+    role init
+    source "edu.c:81"
+    context thread
+    callback file_operations.open
+    ris edu_open
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function edu_read(filp: DeviceState, buf: DeviceState, len: UInt, off: DeviceState) -> UInt {
+    role read_config
+    source "edu.c:90"
+    context thread
+    callback file_operations.read
+    ris edu_read
+    effect reads_config(offset)
+  }
+  function edu_write(filp: DeviceState, buf: DeviceState, len: UInt, off: DeviceState) -> UInt {
+    role write_config
+    source "edu.c:108"
+    context thread
+    callback file_operations.write
+    ris edu_write
+    effect writes_config(offset)
+  }
+  function edu_pci_probe(pdev: DeviceState, id: DeviceState) -> UInt {
+    role probe
+    source "edu.c:135"
+    context boot
+    callback pci_driver.probe
+    bind dev: DeviceState from priv
+    bind base: MmioBase from priv->mmio
+    require resources_available
+    ris edu_pci_probe
+    effect initializes_device()
+    ensure device_state == READY
+  }
+}

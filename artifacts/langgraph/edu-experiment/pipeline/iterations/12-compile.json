@@ -1,0 +1,15 @@
+{
+  "evidence_digest": "c1151da0a721ae2ebd79d25e781708756288b3587a960bcde780d0d0f618cdad",
+  "iteration": 3,
+  "manifest_digest": "8430c3990f0e0fa0783b3e606d513fffcbf6ddb4ab17d00056022d00ecb9ccba",
+  "payload": {
+    "result": {
+      "module": "edu_drv",
+      "path": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu-experiment/pipeline/candidate/edu_drv.ko",
+      "safety_receipt": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu-experiment/pipeline/candidate/edu_drv.safety.json",
+      "source": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu-experiment/pipeline/candidate/edu_drv.c"
+    }
+  },
+  "stage": "compile",
+  "status": "passed"
+}

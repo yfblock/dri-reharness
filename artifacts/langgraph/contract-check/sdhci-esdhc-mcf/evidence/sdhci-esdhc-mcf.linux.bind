@@ -1,0 +1,32 @@
+backend linux for device sdhci-esdhc-mcf {
+  include <linux/io.h>
+  include <linux/platform_device.h>
+  type DeviceState -> "struct sdhci_esdhc_mcf_priv"
+  type MmioBase -> "void __iomem *"
+  type LogicalIRQ -> "struct irq_data *"
+  type UInt -> "u32"
+  type UIntPtr -> "unsigned long *"
+  callback sdhci_ops.write_b = esdhc_mcf_writeb_be
+  callback sdhci_ops.write_w = esdhc_mcf_writew_be
+  callback sdhci_ops.write_l = esdhc_mcf_writel_be
+  callback sdhci_ops.read_b = esdhc_mcf_readb_be
+  callback sdhci_ops.read_w = esdhc_mcf_readw_be
+  callback sdhci_ops.read_l = esdhc_mcf_readl_be
+  callback sdhci_ops.reset = esdhc_mcf_reset
+  callback sdhci_ops.set_clock = esdhc_mcf_pltfm_set_clock
+  callback sdhci_ops.set_bus_width = esdhc_mcf_pltfm_set_bus_width
+  map dev.base -> "host->ioaddr"
+  map MmioRead(B4) -> "readl"
+  map MmioWrite(B4) -> "writel"
+  map MmioRead(B2) -> "readw"
+  map MmioWrite(B2) -> "writew"
+  map MmioRead(B1) -> "readb"
+  map MmioWrite(B1) -> "writeb"
+  map MmioWriteW1C(B4) -> "writel"
+  map MmioWriteW1C(B2) -> "writew"
+  map MmioWriteW1C(B1) -> "writeb"
+  map MmioReadBE(B2) -> "ioread16be"
+  map MmioWriteBE(B2) -> "iowrite16be"
+  map MmioReadBE(B4) -> "ioread32be"
+  map MmioWriteBE(B4) -> "iowrite32be"
+}

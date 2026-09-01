@@ -1,0 +1,105 @@
+=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    1.335910] [rh] R 0x8 0x0
+[    1.335926] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.335976] [rh] R 0x8 0x0
+[    1.335993] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336042] [rh] R 0x8 0x0
+[    1.336059] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336108] [rh] R 0x8 0x0
+[    1.336125] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336175] [rh] R 0x8 0x0
+[    1.336191] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336241] [rh] R 0x8 0x0
+[    1.336257] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336307] [rh] R 0x8 0x0
+[    1.336323] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336373] [rh] R 0x8 0x0
+[    1.336389] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336439] [rh] R 0x8 0x0
+[    1.336455] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336505] [rh] R 0x8 0x0
+[    1.336528] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336624] [rh] R 0x8 0x0
+[    1.336640] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336690] [rh] R 0x8 0x0
+[    1.336707] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336760] [rh] R 0x8 0x0
+[    1.336776] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336829] [rh] R 0x8 0x0
+[    1.336846] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336895] [rh] R 0x8 0x0
+[    1.336912] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.336962] [rh] R 0x8 0x0
+[    1.336978] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337028] [rh] R 0x8 0x0
+[    1.337044] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337094] [rh] R 0x8 0x0
+[    1.337111] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337160] [rh] R 0x8 0x0
+[    1.337177] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337226] [rh] R 0x8 0x0
+[    1.337243] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337292] [rh] R 0x8 0x0
+[    1.337309] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337358] [rh] R 0x8 0x0
+[    1.337375] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337425] [rh] R 0x8 0x0
+[    1.337441] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337491] [rh] R 0x8 0x0
+[    1.337507] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337569] [rh] R 0x8 0x0
+[    1.337586] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337636] [rh] R 0x8 0x0
+[    1.337653] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.337703] [rh] R 0x8 0x0
+[    1.339028] CPU: 0 UID: 0 PID: 58 Comm: insmod Tainted: G           O        7.1.0-rc7-gacb7500801e9 #6 PREEMPT(lazy) 
+[    1.340031] Call Trace:
+[    1.340646]  ftgpio_gpio_probe+0x25f/0x280 [ftgpio010_gpio]
+[    1.340739]  platform_probe+0x3c/0x70
+[    1.340766]  really_probe+0xc3/0x2c0
+[    1.340818]  __driver_probe_device+0x82/0x160
+[    1.340846]  driver_probe_device+0x1f/0xe0
+[    1.342270] ---[ end trace 0000000000000000 ]---
+[    1.343213] note: insmod[58] exited with irqs disabled
+[    1.343689] insmod (58) used greatest stack depth: 12648 bytes left
+REHARNESS_DRIVER_INSMOD_RC=137
+[    0.031615] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031680] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.411632] thermal_sys: Registered thermal governor 'step_wise'
+[    0.417663] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.498025] pps_core: LinuxPPS API ver. 1 registered
+[    0.541784] Key type asymmetric registered
+[    0.541871] Asymmetric key parser 'x509' registered
+[    0.542313] io scheduler mq-deadline registered
+[    0.542374] io scheduler kyber registered
+[    0.581628] rtc_cmos PNP0B00:00: registered as rtc0
+[    1.340646]  ftgpio_gpio_probe+0x25f/0x280 [ftgpio010_gpio]
+GPIO_TRACE_FAIL:open /dev/gpiochip0
+REHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=2
+=== rmmod ftgpio010_gpio ===
+rmmod: ERROR: Module ftgpio010_gpio is in use
+=== kernel failure diagnostics ===
+[    0.000000] printk: debug: ignoring loglevel setting.
+[    1.338414] BUG: unable to handle page fault for address: ffffffffc02074d0
+[    1.338484] #PF: supervisor write access in kernel mode
+[    1.338524] #PF: error_code(0x0003) - permissions violation
+[    1.338768] Oops: Oops: 0003 [#1] SMP NOPTI
+[    1.339268] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070
+[    1.339950] CR2: ffffffffc02074d0 CR3: 000000000373f000 CR4: 00000000000006f0
+[    1.340031] Call Trace:
+[    1.341276] RIP: 0033:0x7fbaa7d4138d
+[    1.341922] Modules linked in: ftgpio010_gpio(O+) device_registrar(O)
+[    1.342123] CR2: ffffffffc02074d0
+[    1.342270] ---[ end trace 0000000000000000 ]---
+[    1.342706] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070
+[    1.343142] CR2: ffffffffc02074d0 CR3: 000000000373f000 CR4: 00000000000006f0
+[    1.339268] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070
+[    1.341922] Modules linked in: ftgpio010_gpio(O+) device_registrar(O)
+[    1.342706] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=0
+  done=0 probe=23 real_oops=2
+  => 失败: 崩溃/oops

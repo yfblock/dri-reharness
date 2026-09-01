@@ -8,8 +8,13 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Iterator
 import clang.cindex as cx
+
+
+_EXPORT_SYMBOL_RE = re.compile(
+    r"\bEXPORT_SYMBOL(?:_[A-Za-z0-9_]+)*\s*\(")
 
 
 def _abs(path: str | None) -> str | None:
@@ -19,6 +24,14 @@ def _abs(path: str | None) -> str | None:
 def in_file(cursor, target_file: str) -> bool:
     f = cursor.location.file
     return f is not None and _abs(f.name) == _abs(target_file)
+
+
+@lru_cache(maxsize=256)
+def _read_source_bytes(path: str, mtime_ns: int, size: int) -> bytes:
+    """Read a source file once while its filesystem identity is unchanged."""
+    del mtime_ns, size
+    with open(path, "rb") as fh:
+        return fh.read()
 
 
 def source_text(tu, cursor) -> str:
@@ -33,8 +46,9 @@ def source_text(tu, cursor) -> str:
         f = start.file
         if f is None:
             return ""
-        with open(f.name, "rb") as fh:
-            data = fh.read()
+        path = os.path.abspath(f.name)
+        stat = os.stat(path)
+        data = _read_source_bytes(path, stat.st_mtime_ns, stat.st_size)
         a = start.offset
         b = end.offset
         if a is None or b is None or b < a:
@@ -298,6 +312,23 @@ def direct_callees(func_cursor) -> set[str]:
     return out
 
 
+def _is_export_symbol_reference(cursor) -> bool:
+    """Ignore Linux export metadata when identifying callback roots."""
+    location = cursor.location
+    if location is None or location.file is None or not location.line:
+        return False
+    try:
+        with open(location.file.name, "r", encoding="utf-8",
+                  errors="replace") as fh:
+            lines = fh.readlines()
+    except Exception:
+        return False
+    index = location.line - 1
+    if index < 0 or index >= len(lines):
+        return False
+    return bool(_EXPORT_SYMBOL_RE.search(lines[index]))
+
+
 def callback_entry_functions(tu, target_names: set[str]) -> set[str]:
     """Target functions referenced as function-pointer values (not just called).
 
@@ -345,6 +376,8 @@ def callback_entry_functions(tu, target_names: set[str]) -> set[str]:
         if (ref is None or ref.kind != cx.CursorKind.FUNCTION_DECL
                 or ref.spelling not in target_names):
             continue
+        if _is_export_symbol_reference(c):
+            continue
         s, e = c.extent.start, c.extent.end
         key = (s.offset, e.offset) if (s.offset is not None and e.offset is not None) else None
         # if this DeclRefExpr is a call callee → it's a call, not a callback
@@ -377,6 +410,8 @@ def callback_entry_symbols(tu, target_symbols: set[str]) -> set[str]:
         symbol_id = function_symbol_id(ref)
         if not symbol_id or symbol_id not in target_symbols:
             continue
+        if _is_export_symbol_reference(c):
+            continue
         start, end = c.extent.start, c.extent.end
         key = ((start.offset, end.offset)
                if start.offset is not None and end.offset is not None else None)
@@ -404,6 +439,18 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
         cx.CursorKind.FOR_STMT: 1,
         cx.CursorKind.DO_STMT: 1,
     }
+
+    def switch_instance_id(cursor):
+        location = cursor.location
+        if location is None:
+            return ""
+        source = location.file.name if location.file else ""
+        offset = getattr(location, "offset", 0) or 0
+        if source and offset:
+            return f"{source}:{offset}"
+        line = getattr(location, "line", 0) or 0
+        column = getattr(location, "column", 0) or 0
+        return f"{source}:{line}:{column}"
 
     def switch_case_value(case_cursor):
         parts = list(case_cursor.get_children())
@@ -435,7 +482,7 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
                     values.append(value)
         return values
 
-    def visit_switch_body(body, stack, switch_expr):
+    def visit_switch_body(body, stack, switch_expr, switch_id):
         values = switch_values(body)
         current = None
         for child in body.get_children():
@@ -447,6 +494,7 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
                          if comparisons else switch_expr)
                 current = {"kind": "cond", "guard": guard,
                            "branch": "case", "switch": switch_expr,
+                           "switch_id": switch_id,
                            "case": " | ".join(case_values)}
                 yield child, stack
                 for statement in statements:
@@ -457,7 +505,8 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
                     f"(({switch_expr}) == ({value}))" for value in values)
                 guard = f"!({joined})" if joined else "1"
                 current = {"kind": "cond", "guard": guard,
-                           "branch": "default", "switch": switch_expr}
+                           "branch": "default", "switch": switch_expr,
+                           "switch_id": switch_id}
                 yield child, stack
                 for statement in child.get_children():
                     yield from visit(statement, stack + [current])
@@ -489,10 +538,12 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
             if not parts:
                 return
             switch_expr = source_text(ch.translation_unit, parts[0])
+            switch_id = switch_instance_id(ch)
             yield ch, stack
             yield from visit(parts[0], stack)
             if len(parts) > 1:
-                yield from visit_switch_body(parts[1], stack, switch_expr)
+                yield from visit_switch_body(
+                    parts[1], stack, switch_expr, switch_id)
         elif ch.kind in _CONTROL_PRED_CHILD:
             pred_idx = _CONTROL_PRED_CHILD[ch.kind]
             parts = list(ch.get_children())
@@ -503,21 +554,39 @@ def walk_with_control(func_cursor) -> Iterator[tuple[object, list[dict]]]:
                     init = source_text(ch.translation_unit, parts[0]) if parts else ""
                     step = source_text(ch.translation_unit, parts[2]) if len(parts) > 2 else ""
                 guard_declarations = {}
+                guard_types = {}
                 for ref in parts[pred_idx].walk_preorder():
                     if (ref.kind == cx.CursorKind.DECL_REF_EXPR
                             and ref.referenced is not None):
                         guard_declarations[ref.spelling] = \
                             ref.referenced.kind.name
-                frame = {
-                    "kind": "loop",
-                    "loop_kind": ch.kind.name.replace("_STMT", "").lower(),
-                    "guard": cond,
-                    "init": init,
-                    "step": step,
-                    "guard_declarations": guard_declarations,
-                    "source": source_text(ch.translation_unit, ch),
-                }
-                new_stack = stack + [frame] if cond else stack
+                        try:
+                            guard_types[ref.spelling] = \
+                                ref.referenced.type.get_canonical().spelling
+                        except (AttributeError, TypeError):
+                            pass
+                # scoped_guard()/class_guard() style macros expand to a
+                # run-once for-loop whose init/step carry the macro-call
+                # text (init == step).  That is a locking scope, not a data
+                # loop: treat it as transparent so the enclosed driver loops
+                # are modelled with their own bounds.
+                degenerate_macro_scope = (
+                    ch.kind == cx.CursorKind.FOR_STMT
+                    and init and init == step)
+                if degenerate_macro_scope:
+                    new_stack = stack
+                else:
+                    frame = {
+                        "kind": "loop",
+                        "loop_kind": ch.kind.name.replace("_STMT", "").lower(),
+                        "guard": cond,
+                        "init": init,
+                        "step": step,
+                        "guard_declarations": guard_declarations,
+                        "guard_types": guard_types,
+                        "source": source_text(ch.translation_unit, ch),
+                    }
+                    new_stack = stack + [frame] if cond else stack
             else:
                 new_stack = stack
             yield (ch, new_stack)
@@ -552,20 +621,27 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
     again at the join.  The returned offsets identify transfers covered by
     this model.
     """
-    def terminates(node) -> bool:
+    def terminates(node, *, include_continue: bool = False) -> bool:
         if node.kind == cx.CursorKind.RETURN_STMT:
+            return True
+        if include_continue and node.kind == cx.CursorKind.CONTINUE_STMT:
             return True
         children = list(node.get_children())
         if node.kind == cx.CursorKind.COMPOUND_STMT:
-            return any(terminates(child) for child in children)
+            return any(terminates(child, include_continue=include_continue)
+                       for child in children)
         if node.kind == cx.CursorKind.IF_STMT and len(children) >= 3:
-            return terminates(children[1]) and terminates(children[2])
+            return (terminates(children[1], include_continue=include_continue)
+                    and terminates(children[2],
+                                   include_continue=include_continue))
         return False
 
-    def transfer_offsets(node) -> set[int]:
+    def transfer_offsets(node, *, include_continue: bool = False) -> set[int]:
         out = set()
         for cursor in node.walk_preorder():
-            if cursor.kind == cx.CursorKind.RETURN_STMT:
+            if (cursor.kind == cx.CursorKind.RETURN_STMT
+                    or (include_continue
+                        and cursor.kind == cx.CursorKind.CONTINUE_STMT)):
                 offset = getattr(cursor.location, "offset", 0) or 0
                 if offset:
                     out.add(offset)
@@ -585,15 +661,20 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
         if child.kind == cx.CursorKind.PARM_DECL and child.spelling
     }
 
-    def proof_safe(condition: str) -> bool:
-        """Only prove guards over callback parameters and constants."""
+    def proof_safe(condition: str, *, allow_locals: bool = False) -> bool:
+        """Accept guards whose dataflow is simple enough to replay safely.
+
+        Loop-transfer guards may refer to scalar locals populated earlier in
+        the same iteration.  They only model the surviving path after a
+        ``continue``; they do not establish a loop bound or termination proof.
+        """
         if (re.search(r"->|\.|\[|\]", condition)
                 or re.search(r"\*\s*[A-Za-z_]\w*", condition)):
             return False
         if re.search(r"\b[A-Za-z_]\w*\s*\(", condition):
             return False
         identifiers = set(re.findall(r"\b[A-Za-z_]\w*\b", condition))
-        return all(name in params or name.isupper()
+        return all(allow_locals or name in params or name.isupper()
                    or name in {"true", "false"}
                    for name in identifiers)
 
@@ -602,8 +683,6 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
         if len(parts) < 2:
             return None
         selector = source_text(statement.translation_unit, parts[0]).strip()
-        if not proof_safe(selector):
-            return None
         block = source_text(statement.translation_unit, parts[1])
         labels = list(re.finditer(r"\b(case\s+([^:]+)|default)\s*:", block))
         if not labels:
@@ -612,18 +691,38 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
         returning: list[str] = []
         default_returns = False
         has_default = False
-        for index, label in enumerate(labels):
-            end = labels[index + 1].start() if index + 1 < len(labels) else len(block)
-            segment = block[label.end():end]
+        groups: list[list[re.Match]] = []
+        current: list[re.Match] = [labels[0]]
+        for label in labels[1:]:
+            gap = block[current[-1].end():label.start()]
+            if gap.strip():
+                groups.append(current)
+                current = [label]
+            else:
+                current.append(label)
+        groups.append(current)
+        terminal_returns = True
+        for index, group in enumerate(groups):
+            end = (groups[index + 1][0].start()
+                   if index + 1 < len(groups) else len(block))
+            segment = block[group[-1].end():end]
+            terminal_returns &= bool(re.search(r"\breturn\b", segment))
+            terminal_returns &= not bool(re.search(
+                r"\b(?:goto|break|continue)\b", segment))
             exits = bool(re.search(r"\b(?:return|goto)\b", segment))
-            value = label.group(2)
-            if value is None:
+            values = [label.group(2) for label in group
+                      if label.group(2) is not None]
+            if any(label.group(2) is None for label in group):
                 has_default = True
                 default_returns = exits
-            elif exits:
-                returning.append(value.strip())
+            if exits:
+                returning.extend(value.strip() for value in values)
             else:
-                continuing.append(value.strip())
+                continuing.extend(value.strip() for value in values)
+        if has_default and default_returns and not continuing and terminal_returns:
+            return "0", transfer_offsets(parts[1])
+        if not proof_safe(selector):
+            return None
         if not returning and not default_returns:
             return None
         if default_returns:
@@ -639,7 +738,9 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
             guard = f"!({rejected})"
         return guard, transfer_offsets(parts[1])
 
-    def if_continuation(statement) -> tuple[str, set[int]] | None:
+    def if_continuation(statement, *, include_continue: bool = False,
+                        allow_locals: bool = False
+                        ) -> tuple[str, set[int]] | None:
         """Compute the surviving path of a safe if/else-if cascade."""
         branches: list[tuple[str, object | None, bool]] = []
         prefix: list[str] = []
@@ -650,11 +751,13 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
                 return None
             condition = source_text(
                 current.translation_unit, parts[0]).strip()
-            if not proof_safe(condition):
+            if not proof_safe(condition, allow_locals=allow_locals):
                 return None
             branch_guard = " && ".join(
                 [*(f"({item})" for item in prefix), f"({condition})"])
-            branches.append((branch_guard, parts[1], terminates(parts[1])))
+            branches.append((
+                branch_guard, parts[1],
+                terminates(parts[1], include_continue=include_continue)))
             prefix.append(negate(condition))
             if len(parts) >= 3 and parts[2].kind == cx.CursorKind.IF_STMT:
                 current = parts[2]
@@ -662,19 +765,51 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
             fallback_guard = " && ".join(f"({item})" for item in prefix) or "1"
             fallback = parts[2] if len(parts) >= 3 else None
             branches.append((fallback_guard, fallback,
-                             terminates(fallback) if fallback is not None else False))
+                             (terminates(fallback,
+                                         include_continue=include_continue)
+                              if fallback is not None else False)))
             break
         if not any(exits for _guard, _body, exits in branches):
             return None
         surviving = [guard for guard, _body, exits in branches if not exits]
         if not surviving:
             return "0", set().union(*(
-                transfer_offsets(body) for _guard, body, exits in branches
+                transfer_offsets(body, include_continue=include_continue)
+                for _guard, body, exits in branches
                 if exits and body is not None))
         transfers = set().union(*(
-            transfer_offsets(body) for _guard, body, exits in branches
+            transfer_offsets(body, include_continue=include_continue)
+            for _guard, body, exits in branches
             if exits and body is not None))
         return " || ".join(f"({guard})" for guard in surviving), transfers
+
+    def loop_continuations(statement) -> list[dict]:
+        """Return guards for paths surviving terminal branches in a loop."""
+        parts = list(statement.get_children())
+        if len(parts) < 2:
+            return []
+        body = parts[-1]
+        statements = (list(body.get_children())
+                      if body.kind == cx.CursorKind.COMPOUND_STMT else [body])
+        transitions: list[dict] = []
+        for child in statements:
+            if child.kind != cx.CursorKind.IF_STMT:
+                continue
+            result = if_continuation(
+                child, include_continue=True, allow_locals=True)
+            if result is None:
+                continue
+            guard, transfers = result
+            modeled.update(transfers)
+            transitions.append({
+                "after_offset": getattr(child.extent.end, "offset", 0) or 0,
+                "before_offset": getattr(statement.extent.end, "offset", 0) or 0,
+                "frame": {
+                    "kind": "cond", "guard": guard,
+                    "branch": "continuation", "source": "loop-transfer",
+                },
+            })
+        return transitions
 
     body = next((child for child in func_cursor.get_children()
                  if child.kind == cx.CursorKind.COMPOUND_STMT), None)
@@ -709,6 +844,10 @@ def continuation_guards(func_cursor) -> tuple[list[dict], set[int]]:
                     "branch": "continuation", "source": "switch-exit",
                 },
             })
+        elif statement.kind in {
+                cx.CursorKind.FOR_STMT, cx.CursorKind.WHILE_STMT,
+                cx.CursorKind.DO_STMT}:
+            transitions.extend(loop_continuations(statement))
         elif statement.kind == cx.CursorKind.RETURN_STMT:
             modeled |= transfer_offsets(statement)
             transitions.append({

@@ -1,7 +1,7 @@
 """Bundle assembly for LLM synthesis.
 
-Assembles the reharness extraction output into a directory for the Pi synthesizer.
-Pi communication layer has been extracted to pi_bridge.py; this module re-exports for compat.
+Assembles the reharness extraction output into a directory consumed by the
+Python-native LangChain bridge.
 """
 from __future__ import annotations
 import json
@@ -11,16 +11,6 @@ from extractor.formalize import save_formal_text
 from extractor.spec import default_bind, device_spec_to_dict
 from extractor.metrics import score as score_fn
 from verification.backend_lowering_oracle import build_generation_contract
-
-from pi_bridge import (
-    PiRequest,
-    PiResponse,
-    SubprocessPiBridge,
-    parse_pi_response,
-    render_pi_prompt,
-    run_pi_synth,
-)
-
 
 def build_bundle(res, backend, outdir):
     os.makedirs(outdir, exist_ok=True)

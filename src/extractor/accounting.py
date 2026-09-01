@@ -254,6 +254,15 @@ def build_access_accounting(funcs, formal: dict,
     sites = discover_source_accesses(funcs, extra_blacklist)
     emitted: dict[str, list[str]] = {}
     ops_without_evidence: list[str] = []
+
+    def primitive_site_id(evidence: dict) -> str | None:
+        """Use the definition-owned site for summarized wrapper operations."""
+        current = evidence
+        while isinstance(current.get("wrapper_definition"), dict):
+            current = current["wrapper_definition"]
+        site_id = current.get("site_id")
+        return site_id if isinstance(site_id, str) and site_id else None
+
     for module in formal.get("modules", []):
         for op in walk_leaf_ops(module.get("ops", [])):
             body = (op.get("Read") or op.get("Write")
@@ -271,7 +280,7 @@ def build_access_accounting(funcs, formal: dict,
                     continue
                 ops_without_evidence.append(op_id or f"{module['name']}:?")
                 continue
-            emitted.setdefault(site_id, []).append(op_id)
+            emitted.setdefault(primitive_site_id(evidence) or site_id, []).append(op_id)
 
     for site in sites:
         op_ids = emitted.get(site["site_id"], [])

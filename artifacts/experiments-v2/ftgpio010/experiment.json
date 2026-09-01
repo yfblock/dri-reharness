@@ -1,0 +1,42 @@
+{
+  "accepted": true,
+  "baseline_coverage": {
+    "covered": [
+      "ftgpio_gpio_ack_irq",
+      "ftgpio_gpio_irq_handler",
+      "ftgpio_gpio_mask_irq",
+      "ftgpio_gpio_probe",
+      "ftgpio_gpio_set_config",
+      "ftgpio_gpio_set_irq_type",
+      "ftgpio_gpio_unmask_irq"
+    ],
+    "covered_count": 7,
+    "pct": 100.0,
+    "total": 7
+  },
+  "baseline_pass": true,
+  "baseline_trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2/ftgpio010/baseline/qemu/serial.log",
+  "candidate_coverage": {
+    "covered": [
+      "ftgpio_gpio_ack_irq",
+      "ftgpio_gpio_irq_handler",
+      "ftgpio_gpio_mask_irq",
+      "ftgpio_gpio_probe",
+      "ftgpio_gpio_set_config",
+      "ftgpio_gpio_set_irq_type",
+      "ftgpio_gpio_unmask_irq"
+    ],
+    "covered_count": 7,
+    "pct": 100.0,
+    "total": 7
+  },
+  "candidate_pass": true,
+  "candidate_trace": null,
+  "driver": "ftgpio010",
+  "manifest": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/experiments/ftgpio010.json",
+  "provider": "source_build",
+  "qemu_module": "ftgpio010_gpio",
+  "repair_count": 0,
+  "schema": "reharness-experiment-v2",
+  "status": "accepted"
+}

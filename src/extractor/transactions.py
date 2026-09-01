@@ -47,6 +47,13 @@ _I2C_BUFFER = {
     "i2c_master_send": ("write", "raw"),
 }
 
+_MESSAGE_TRANSFERS = {
+    "i2c_transfer": ("i2c", "i2c_transfer"),
+    "i2c_transfer_buffer_flags": ("i2c", "i2c_transfer_buffer_flags"),
+    "spi_sync": ("spi", "spi_sync"),
+    "spi_sync_locked": ("spi", "spi_sync_locked"),
+}
+
 
 def _strip_output(text: str) -> str:
     return (text or "").strip().lstrip("&*").strip()
@@ -186,6 +193,29 @@ def _i2c_contract(name: str, args: list[str], lhs: str | None) -> dict | None:
     return out
 
 
+def _message_transfer_contract(name: str, args: list[str],
+                               lhs: str | None) -> dict | None:
+    """Model public I2C/SPI message APIs without pretending they are MMIO."""
+    transfer = _MESSAGE_TRANSFERS.get(name)
+    if transfer is None or len(args) < (3 if transfer[0] == "i2c" else 2):
+        return None
+    transport, protocol = transfer
+    message = args[1]
+    out = _base("read", transport, args[0], message)
+    out["payload_kind"] = "message"
+    out["message"] = message.strip()
+    if transport == "i2c":
+        out["count"] = args[2].strip()
+        out["count_unit"] = "messages"
+    else:
+        out.pop("count", None)
+    out["protocol"] = protocol
+    if lhs:
+        out["result"] = lhs
+        out["result_convention"] = "return_value"
+    return out
+
+
 def _public_mfd_contract(call, lhs: str | None) -> dict | None:
     path = (getattr(call, "callee_decl_path", "") or "").replace("\\", "/")
     if "/include/linux/mfd/" not in path:
@@ -221,6 +251,7 @@ def contract_for_call(call, lhs: str | None = None) -> dict | None:
     args = list(call.arg_text)
     return (_regmap_contract(call.name, args)
             or _i2c_contract(call.name, args, lhs)
+            or _message_transfer_contract(call.name, args, lhs)
             or _public_mfd_contract(call, lhs))
 
 

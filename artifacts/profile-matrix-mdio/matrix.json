@@ -1,0 +1,41 @@
+{
+  "accepted": true,
+  "artifact_root": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-mdio",
+  "cases": [
+    {
+      "bus": "mdio",
+      "manifest": "benchmarks/experiments/reharness-mdio.json",
+      "manifest_digest": "e500a8fac8b948b451328338ae64cca52f2b2a6b242032023234ddbcadb7cf50",
+      "module": "reharness_mdio_sensor",
+      "profile": "mdio-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-mdio-sensor.c",
+      "source_sha256": "276813624946e0a5393cd381507a82cdf3ab66a66f559de40e540da93dc5c4e8"
+    }
+  ],
+  "discovered_profiles": [
+    "mdio-generic"
+  ],
+  "duplicate_profiles": [],
+  "failed_profiles": [],
+  "generated_at": "2026-08-25T06:00:29.328655+00:00",
+  "inconclusive_profiles": [],
+  "kernel_dir": "/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build",
+  "missing_profiles": [],
+  "required_profiles": [
+    "mdio-generic"
+  ],
+  "results": [
+    {
+      "manifest": "benchmarks/experiments/reharness-mdio.json",
+      "profile": "mdio-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-mdio/mdio-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_mdio_sensor bus=mdio timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030734] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030798] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.070961] ftrace: allocating 35717 entries in 140 pages\n[    0.071216] ftrace: allocated 140 pages with 3 groups\n[    0.417122] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.421174] thermal_sys: Registered thermal governor 'step_wise'\n[    0.425665] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.432027] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.512507] ACPI: bus type USB registered\n[    0.512796] usbcore: registered new interface driver usbfs\n[    0.512991] usbcore: registered new interface driver hub\n[    0.513090] usbcore: registered new device driver usb\n[    0.513277] pps_core: LinuxPPS API ver. 1 registered\n[    0.513400] PTP clock support registered\n[    0.555887] Key type asymmetric registered\n[    0.555962] Asymmetric key parser 'x509' registered\n[    0.556371] io scheduler mq-deadline registered\n[    0.556474] io scheduler kyber registered\n[    0.597673] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.600612] usbcore: registered new interface driver usbhid\n=== insmod runtime fixture mdio-registrar ===\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0\n=== insmod reharness_mdio_sensor ===\n[    1.039085] reharness_mdio_sensor reharness-mdio-bus:01: REHARNESS_MDIO_DRIVER_PROBE register=0x10 value=0x5a5a\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.039085] reharness_mdio_sensor reharness-mdio-bus:01: REHARNESS_MDIO_DRIVER_PROBE register=0x10 value=0x5a5a\nREHARNESS_SUBSYSTEM_TEST_0_NAME=mdio-transaction\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=mdio-invalid-address\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\n=== rmmod reharness_mdio_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.330350] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_mdio_sensor probe \u6210\u529f\n",
+      "trace": null
+    }
+  ],
+  "schema": 1,
+  "status": "accepted"
+}

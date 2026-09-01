@@ -1,0 +1,80 @@
+{
+  "schema": 2,
+  "name": "reharness-spi",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-spi-sensor.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "spi-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "transfer", "unload"]
+    },
+    "registration": {
+      "root_table": "spi_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": ["spi_device_id"]
+    },
+    "fixture": {
+      "kind": "qemu-spi",
+      "config": {
+        "chip_select": 0,
+        "register": "0x10",
+        "expected_value": "0xa6"
+      },
+      "module_sources": [
+        "qa/verification/device-registrar/spi-registrar.c"
+      ]
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "spi-virtual",
+      "bus": "spi",
+      "module": "reharness_spi_sensor",
+      "timeout_seconds": 90,
+      "probe_pattern": "REHARNESS_SPI_DRIVER_PROBE",
+      "binding": {
+        "bus": "spi",
+        "device_glob": "*"
+      },
+      "kernel_modules": ["spidev"]
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "spi",
+      "tests": [
+        {
+          "name": "spi-transfer",
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "args": ["/dev/reharness-spi-control"],
+          "success_pattern": "SPI_TRANSFER_PASS"
+        },
+        {
+          "name": "spi-invalid-chip-select",
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "args": ["/dev/reharness-spi-control"],
+          "success_pattern": "SPI_INVALID_CHIP_SELECT_PASS"
+        },
+        {
+          "name": "linux-spidev-tool",
+          "provider": "linux-spidev",
+          "args": ["-D", "/dev/spidev0.1", "-p", "01020304", "-S", "4", "-I", "1"]
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "accepted": false,
+  "failure": {
+    "failure_class": "infrastructure",
+    "output": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 198, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/home/yfblock/Code/dri-trans-paper/reharness/src/extractor/__main__.py\", line 3, in <module>\n    sys.exit(main())\n             ^^^^^^\n  File \"/home/yfblock/Code/dri-trans-paper/reharness/src/extractor/cli.py\", line 253, in main\n    code = gen_mod.generate(\n           ^^^^^^^^^^^^^^^^^\n  File \"/home/yfblock/Code/dri-trans-paper/reharness/src/generator/linux/__init__.py\", line 14, in generate\n    return generate_rules(\"linux\", formal, device_spec, bind, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/yfblock/Code/dri-trans-paper/reharness/src/generator/rules/__init__.py\", line 37, in generate_rules\n    return _gen(formal, device_spec, bind, **filtered)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/yfblock/Code/dri-trans-paper/reharness/src/generator/rules/linux/__init__.py\", line 200, in generate_rules\n    code, problem = emit_callback(\n                    ^^^^^^^^^^^^^^\n  File \"/home/yfblock/Code/dri-trans-paper/reharness/src/generator/rules/linux/callbacks.py\", line 391, in emit_callback\n    canonical_args = canonical_args(table_field)\n                     ^^^^^^^^^^^^^^\nUnboundLocalError: cannot access local variable 'canonical_args' where it is not associated with a value\n",
+    "return_code": 1,
+    "stage": "generation"
+  },
+  "manifest": "ftgpio010",
+  "schema": 1,
+  "source": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+  "stage": "generation",
+  "status": "failed"
+}

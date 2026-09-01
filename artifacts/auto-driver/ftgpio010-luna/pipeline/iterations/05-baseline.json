@@ -1,0 +1,22 @@
+{
+  "evidence_digest": "f1adc6246129545a87372dc4c5c8deb54fd2131de5fcdc557bf9f9ee7eceebdf",
+  "iteration": 1,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "result": {
+      "role": "baseline",
+      "subsystem_tests": [
+        {
+          "index": 0,
+          "name": "ftgpio010-gpio-api",
+          "return_code": 0,
+          "status": "pass",
+          "success": true
+        }
+      ],
+      "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/auto-driver/ftgpio010-luna/pipeline/traces/baseline-97927f44925d4bf9bf4236470acc380d.trace"
+    }
+  },
+  "stage": "baseline",
+  "status": "passed"
+}

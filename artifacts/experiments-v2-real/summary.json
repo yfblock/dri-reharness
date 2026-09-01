@@ -1,0 +1,29 @@
+[
+  {
+    "accepted": false,
+    "baseline_coverage": {
+      "covered": [
+        "ftgpio_gpio_ack_irq",
+        "ftgpio_gpio_irq_handler",
+        "ftgpio_gpio_mask_irq",
+        "ftgpio_gpio_probe",
+        "ftgpio_gpio_set_config",
+        "ftgpio_gpio_set_irq_type",
+        "ftgpio_gpio_unmask_irq"
+      ],
+      "covered_count": 7,
+      "pct": 100.0,
+      "total": 7
+    },
+    "candidate_coverage": {
+      "covered": [],
+      "covered_count": 0,
+      "pct": 0.0,
+      "total": 15
+    },
+    "name": "ftgpio010",
+    "output_dir": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2-real/ftgpio010",
+    "repair_count": 4,
+    "status": "failed"
+  }
+]

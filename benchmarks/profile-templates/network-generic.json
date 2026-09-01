@@ -1,0 +1,62 @@
+{
+  "schema": 2,
+  "name": "network-generic",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-network.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "network-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "subsystem", "unload"]
+    },
+    "registration": {
+      "root_table": "net_device",
+      "identity_field": "none"
+    },
+    "fixture": {
+      "kind": "qemu-network",
+      "config": {}
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "network-stack",
+      "bus": "network",
+      "module": "reharness_network",
+      "timeout_seconds": 90,
+      "probe_pattern": "REHARNESS_NETWORK_REGISTERED|REHARNESS_NETWORK_OPEN"
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "network",
+      "tests": [
+        {
+          "name": "network-interface",
+          "executable": "qa/native-tests/network_device_test.c",
+          "args": ["eth"],
+          "success_pattern": "NETWORK_INTERFACE_PASS"
+        },
+        {
+          "name": "linux-netdevice-selftest",
+          "kind": "kselftest",
+          "provider": "linux-netdevice-selftest",
+          "required": false
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

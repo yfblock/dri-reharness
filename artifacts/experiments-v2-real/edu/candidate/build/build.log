@@ -1,0 +1,28 @@
+make: Entering directory '/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build'
+make[1]: Entering directory '/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2-real/edu/candidate/build'
+  CC [M]  edu_drv.o
+  MODPOST Module.symvers
+  CC [M]  edu_drv.mod.o
+  LD [M]  edu_drv.ko
+make[1]: Leaving directory '/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2-real/edu/candidate/build'
+make: Leaving directory '/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build'
+
+edu_drv.c: In function ‘edu_irq_handler’:
+edu_drv.c:47:1: warning: label ‘__rh_op_op_3’ defined but not used [-Wunused-label]
+   47 | __rh_op_op_3: {
+      | ^~~~~~~~~~~~
+edu_drv.c:42:1: warning: label ‘__rh_op_op_2’ defined but not used [-Wunused-label]
+   42 | __rh_op_op_2: {
+      | ^~~~~~~~~~~~
+edu_drv.c: In function ‘edu_read’:
+edu_drv.c:79:1: warning: label ‘__rh_op_op_5’ defined but not used [-Wunused-label]
+   79 | __rh_op_op_5: {
+      | ^~~~~~~~~~~~
+edu_drv.c: In function ‘edu_write’:
+edu_drv.c:104:1: warning: label ‘__rh_op_op_8’ defined but not used [-Wunused-label]
+  104 | __rh_op_op_8: {
+      | ^~~~~~~~~~~~
+edu_drv.c: In function ‘edu_pci_probe’:
+edu_drv.c:157:1: warning: label ‘__rh_op_op_11’ defined but not used [-Wunused-label]
+  157 | __rh_op_op_11: {
+      | ^~~~~~~~~~~~~

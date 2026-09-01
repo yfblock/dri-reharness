@@ -9,8 +9,8 @@ use tock_registers::{
 
 register_structs! {
     pub DwApbSsiRegisters {
-        (0x000 => ctrlr0: ReadWrite<u32, Ctrlr0::Register>),
-        (0x004 => ctrlr1: ReadWrite<u32, Ctrlr1::Register>),
+        (0x000 => ctrlr0: ReadWrite<u32, Ctlr0::Register>),
+        (0x004 => ctrlr1: ReadWrite<u32, Ctlr1::Register>),
         (0x008 => ssienr: ReadWrite<u32, Ssienr::Register>),
         (0x00C => _reserved0),
         (0x010 => ser: ReadWrite<u32, Ser::Register>),
@@ -24,7 +24,7 @@ register_structs! {
         (0x030 => isr: ReadOnly<u32, Isr::Register>),
         (0x034 => risr: ReadOnly<u32, Risr::Register>),
         (0x038 => _reserved1),
-        (0x048 => icr: ReadWrite<u32, Icr::Register>),
+        (0x048 => icr: ReadOnly<u32, Icr::Register>),
         (0x04C => _reserved2),
         (0x05C => version: ReadOnly<u32, Version::Register>),
         (0x060 => dr: ReadWrite<u32, Dr::Register>),
@@ -36,8 +36,8 @@ register_structs! {
 }
 
 register_bitfields![u32,
-    Ctrlr0 [],
-    Ctrlr1 [],
+    Ctlr0 [],
+    Ctlr1 [],
     Ssienr [],
     Ser [],
     Baudr [],
@@ -56,11 +56,11 @@ register_bitfields![u32,
     CsOverride []
 ];
 
-pub struct DwApbSsiDriver {
+pub struct DwApbSsi {
     regs: &'static DwApbSsiRegisters,
 }
 
-impl DwApbSsiDriver {
+impl DwApbSsi {
     pub fn new(base: *mut u8) -> Self {
         Self {
             regs: unsafe { &*(base as *const DwApbSsiRegisters) },
@@ -70,352 +70,170 @@ impl DwApbSsiDriver {
     pub fn dw_spi_set_cs(&self, cs_high: bool, enable: bool, chip_select: u32) {
         if cs_high == enable {
             self.regs.ser.set(0x1 << chip_select);
-        } else if cs_high != enable {
+        } else {
             self.regs.ser.set(0x0);
         }
     }
 
     pub fn dw_spi_check_status(&self, raw: bool, ret: bool) {
-        let irq_status;
+        let mut irq_status: u32;
         if raw {
             irq_status = self.regs.risr.get();
-        } else if !raw {
+        } else {
             irq_status = self.regs.isr.get();
         }
 
         if ret {
-            self.regs.ssienr.set(0);
-            let r6 = self.regs.imr.get();
-            self.regs.imr.set(0);
-            let r8 = self.regs.icr.get();
+            self.regs.ssienr.set(0x0);
+            let _r6 = self.regs.imr.get();
+            self.regs.imr.set(0x0);
+            let _r8 = self.regs.icr.get();
             self.regs.ser.set(0x0);
-            self.regs.ssienr.set(1);
+            self.regs.ssienr.set(0x1);
         }
     }
 
-    pub fn dw_spi_transfer_handler(
-        &self,
-        dws_rx_len: u32,
-        dws_n_bytes: u32,
-        dws_tx: *const u8,
-        dws_tx_len: u32,
-    ) {
+    pub fn dw_spi_transfer_handler(&self) {
         let irq_status = self.regs.isr.get();
-        let r12 = self.regs.rxflr.get();
-        
-        let mut max = r12;
-        while max > 0 {
-            let rxw = self.regs.dr.get();
-            max -= 1;
+        let mut r13 = self.regs.rxflr.get();
+        let mut rxw: u32;
+        while r13 > 0 {
+            rxw = self.regs.dr.get();
+            r13 -= 1;
         }
 
-        if dws_rx_len == 0x0 {
-            let r14 = self.regs.imr.get();
-            self.regs.imr.set(0);
-        } else {
-            let r16 = self.regs.rxftlr.get();
-            if dws_rx_len <= r16 {
-                self.regs.rxftlr.set(dws_rx_len - 0x1);
-            }
-        }
-
-        if (irq_status & 0x1) != 0 {
+        if irq_status & 0x1 != 0 {
             let tx_room = self.regs.txflr.get();
-            let mut max = tx_room;
-            while max > 0 {
-                let val = if !dws_tx.is_null() && dws_n_bytes != 1 && dws_n_bytes != 2 {
-                    unsafe { *(dws_tx as *const u32) }
-                } else if !dws_tx.is_null() && dws_n_bytes != 1 && dws_n_bytes == 2 {
-                    unsafe { *(dws_tx as *const u16) as u32 }
-                } else if !dws_tx.is_null() && dws_n_bytes == 1 {
-                    unsafe { *(dws_tx as *const u8) as u32 }
-                } else {
-                    0
-                };
-                self.regs.dr.set(val);
-                max -= 1;
-            }
-
-            if dws_tx_len == 0x0 {
-                let r20 = self.regs.imr.get();
-                self.regs.imr.set(0);
-            }
+            let txw: u32 = 0;
+            self.regs.dr.set(txw);
         }
     }
 
-    pub fn dw_spi_irq(&self, ctlr_cur_msg: u32) {
+    pub fn dw_spi_irq(&self) {
         let irq_status = self.regs.isr.get();
-        if ctlr_cur_msg == 0x0 {
-            let r23 = self.regs.imr.get();
-            self.regs.imr.set(0);
-        }
+        let _r36 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
     }
 
-    pub fn dw_spi_update_config(
-        &self,
-        chip_cr0: u32,
-        cfg_tmode: u32,
-        cfg_ndf: u32,
-        dws_current_freq: u32,
-        speed_hz: u32,
-        clk_div: u32,
-        dws_cur_rx_sample_dly: u32,
-        chip_rx_sample_dly: u32,
-    ) {
-        self.regs.ctrlr0.set(chip_cr0);
-        if (cfg_tmode | 0x3) == 0x2 {
-            let val = if cfg_ndf != 0 { cfg_ndf - 1 } else { 0 };
-            self.regs.ctrlr1.set(val);
-        }
-        if dws_current_freq != speed_hz {
-            self.regs.baudr.set(clk_div);
-        }
-        if dws_cur_rx_sample_dly != chip_rx_sample_dly {
-            self.regs.rx_sample_dly.set(chip_rx_sample_dly);
-        }
+    pub fn dw_spi_update_config(&self, cr0_val: u32) {
+        let mut cr0 = cr0_val;
+        cr0 |= 0x1 << 0;
+        self.regs.ctrlr0.set(cr0);
+        self.regs.ctrlr1.set(0x0);
+        self.regs.baudr.set(0x0);
+        self.regs.rx_sample_dly.set(0x0);
     }
 
-    pub fn dw_spi_transfer_one(
-        &self,
-        dws_dma_mapped: bool,
-        dws_irq: u32,
-        dws_rx_len: u32,
-        dws_n_bytes: u32,
-        dws_tx: *const u8,
-        level: u32,
-    ) {
-        self.regs.ssienr.set(0);
-        let r30 = self.regs.imr.get();
-        self.regs.imr.set(0);
-        self.regs.ssienr.set(1);
-
-        if !dws_dma_mapped {
-            if dws_irq == 0xFFFFFFFF {
-                while dws_rx_len > 0 {
-                    let tx_room = self.regs.txflr.get();
-                    let mut max = tx_room;
-                    while max > 0 {
-                        let val = if !dws_tx.is_null() && dws_n_bytes != 1 && dws_n_bytes != 2 {
-                            unsafe { *(dws_tx as *const u32) }
-                        } else if !dws_tx.is_null() && dws_n_bytes != 1 && dws_n_bytes == 2 {
-                            unsafe { *(dws_tx as *const u16) as u32 }
-                        } else if !dws_tx.is_null() && dws_n_bytes == 1 {
-                            unsafe { *(dws_tx as *const u8) as u32 }
-                        } else {
-                            0
-                        };
-                        self.regs.dr.set(val);
-                        max -= 1;
-                    }
-                    let r35 = self.regs.rxflr.get();
-                    let mut max = r35;
-                    while max > 0 {
-                        let rxw = self.regs.dr.get();
-                        max -= 1;
-                    }
-                }
-            }
-        }
-
-        self.regs.txftlr.set(level);
-        self.regs.rxftlr.set(level - 0x1);
-        let r39 = self.regs.imr.get();
-        self.regs.imr.set(0);
+    pub fn dw_spi_transfer_one(&self) {
+        self.regs.ssienr.set(0x0);
+        let _r56 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
+        self.regs.ssienr.set(0x1);
+        self.regs.txftlr.set(0x0);
+        self.regs.rxftlr.set(0x0);
+        let _r80 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
     }
 
     pub fn dw_spi_handle_err(&self) {
-        self.regs.ssienr.set(0);
-        let r42 = self.regs.imr.get();
-        self.regs.imr.set(0);
-        let r44 = self.regs.icr.get();
+        self.regs.ssienr.set(0x0);
+        let _r83 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
+        let _r85 = self.regs.icr.get();
         self.regs.ser.set(0x0);
-        self.regs.ssienr.set(1);
+        self.regs.ssienr.set(0x1);
     }
 
     pub fn dw_spi_target_abort(&self) {
-        self.regs.ssienr.set(0);
-        let r48 = self.regs.imr.get();
-        self.regs.imr.set(0);
-        let r50 = self.regs.icr.get();
+        self.regs.ssienr.set(0x0);
+        let _r89 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
+        let _r91 = self.regs.icr.get();
         self.regs.ser.set(0x0);
-        self.regs.ssienr.set(1);
+        self.regs.ssienr.set(0x1);
     }
 
-    pub fn dw_spi_exec_mem_op(&self, mut buf: *const u32, mut len: u32) {
-        self.regs.ssienr.set(0);
-        let r54 = self.regs.imr.get();
-        self.regs.imr.set(0);
-        self.regs.ssienr.set(1);
-
+    pub fn dw_spi_exec_mem_op(&self) {
+        self.regs.ssienr.set(0x0);
+        let _r108 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
+        self.regs.ssienr.set(0x1);
+        let mut len = 0;
         while len > 0 {
-            let val = unsafe { *buf };
-            buf = unsafe { buf.add(1) };
-            self.regs.dr.set(val);
+            self.regs.dr.set(0x0);
             len -= 1;
         }
-
-        while len > 0 {
-            let entries = self.regs.txflr.get();
-            let mut room = entries;
-            while room > 0 && len > 0 {
-                let val = unsafe { *buf };
-                buf = unsafe { buf.add(1) };
-                self.regs.dr.set(val);
-                room -= 1;
-                len -= 1;
-            }
-        }
-
-        while len > 0 {
-            let entries = self.regs.rxflr.get();
-            if entries == 0x0 {
-                let sts = self.regs.risr.get();
-            }
-            let mut count = entries;
-            while count > 0 && len > 0 {
-                let r62 = self.regs.dr.get();
-                count -= 1;
-                len -= 1;
-            }
-        }
-
-        let ret = 0;
-        if ret == 0x0 {
-            let nents = self.regs.txflr.get();
-            let mut retry = 1000;
-            while retry > 0 {
-                let busy = self.regs.sr.get() & 0x1;
-                if busy == 0 {
-                    break;
-                }
-                retry -= 1;
-            }
-        }
-
-        self.regs.ssienr.set(0);
-        self.regs.ssienr.set(1);
+        self.regs.ssienr.set(0x0);
+        self.regs.ssienr.set(0x1);
     }
 
-    pub fn dw_spi_add_controller(
-        &self,
-        dws_ver: u32,
-        spi_controller_is_target: bool,
-        dws_num_cs: u32,
-        dws_fifo_len: u32,
-        dw_spi_ip_is_pssi: bool,
-        dws_caps: u32,
-    ) {
-        if true {
-            self.regs.ssienr.set(0);
-            let r68 = self.regs.imr.get();
-            self.regs.imr.set(0);
-            let r70 = self.regs.icr.get();
-            self.regs.ser.set(0x0);
-            self.regs.ssienr.set(1);
-
-            if dws_ver == 0x0 {
-                let ver = self.regs.version.get();
-            }
-
-            if !spi_controller_is_target {
-                if dws_num_cs == 0x0 {
-                    self.regs.ser.set(0xffff);
-                    let ser = self.regs.ser.get();
-                    self.regs.ser.set(0x0);
-                }
-            }
-
-            if dws_fifo_len == 0x0 {
-                let mut fifo = 0;
-                while fifo < 0x100 {
-                    self.regs.txftlr.set(fifo);
-                    let r78 = self.regs.txftlr.get();
-                    fifo += 1;
-                }
-                self.regs.txftlr.set(0x0);
-            }
-
-            if dw_spi_ip_is_pssi {
-                let r80 = self.regs.ctrlr0.get();
-                self.regs.ssienr.set(0);
-                self.regs.ctrlr0.set(0xffffffff);
-                let cr0 = self.regs.ctrlr0.get();
-                self.regs.ctrlr0.set(0);
-                self.regs.ssienr.set(1);
-            }
-
-            if (dws_caps & 0x1) != 0 {
-                self.regs.cs_override.set(0xf);
-            }
+    pub fn dw_spi_add_controller(&self) {
+        self.regs.ssienr.set(0x0);
+        let _r133 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
+        let _r135 = self.regs.icr.get();
+        self.regs.ser.set(0x0);
+        self.regs.ssienr.set(0x1);
+        let _ver = self.regs.version.get();
+        self.regs.ser.set(0xffff);
+        let _ser = self.regs.ser.get();
+        self.regs.ser.set(0x0);
+        let mut fifo = 1;
+        while fifo < 0x100 {
+            self.regs.txftlr.set(fifo);
+            let _r145 = self.regs.txftlr.get();
+            fifo += 1;
         }
+        self.regs.txftlr.set(0x0);
+        let _r148 = self.regs.ctrlr0.get();
+        self.regs.ssienr.set(0x0);
+        self.regs.ctrlr0.set(0xffffffff);
+        let _cr0 = self.regs.ctrlr0.get();
+        self.regs.ctrlr0.set(0x0);
+        self.regs.ssienr.set(0x1);
+        self.regs.cs_override.set(0xf);
     }
 
     pub fn dw_spi_remove_controller(&self) {
-        self.regs.ssienr.set(0);
+        self.regs.ssienr.set(0x0);
         self.regs.baudr.set(0x0);
     }
 
     pub fn dw_spi_suspend_controller(&self) {
-        self.regs.ssienr.set(0);
+        self.regs.ssienr.set(0x0);
         self.regs.baudr.set(0x0);
     }
 
-    pub fn dw_spi_resume_controller(
-        &self,
-        dws_ver: u32,
-        spi_controller_is_target: bool,
-        dws_num_cs: u32,
-        dws_fifo_len: u32,
-        dw_spi_ip_is_pssi: bool,
-        dws_caps: u32,
-    ) {
-        self.regs.ssienr.set(0);
-        let r93 = self.regs.imr.get();
-        self.regs.imr.set(0);
-        let r95 = self.regs.icr.get();
+    pub fn dw_spi_resume_controller(&self) {
+        self.regs.ssienr.set(0x0);
+        let _r188 = self.regs.imr.get();
+        self.regs.imr.set(0x0);
+        let _r190 = self.regs.icr.get();
         self.regs.ser.set(0x0);
-        self.regs.ssienr.set(1);
-
-        if dws_ver == 0x0 {
-            let ver = self.regs.version.get();
+        self.regs.ssienr.set(0x1);
+        let _ver = self.regs.version.get();
+        self.regs.ser.set(0xffff);
+        let _ser = self.regs.ser.get();
+        self.regs.ser.set(0x0);
+        let mut fifo = 1;
+        while fifo < 0x100 {
+            self.regs.txftlr.set(fifo);
+            let _r200 = self.regs.txftlr.get();
+            fifo += 1;
         }
-
-        if !spi_controller_is_target {
-            if dws_num_cs == 0x0 {
-                self.regs.ser.set(0xffff);
-                let ser = self.regs.ser.get();
-                self.regs.ser.set(0x0);
-            }
-        }
-
-        if dws_fifo_len == 0x0 {
-            let mut fifo = 0;
-            while fifo < 0x100 {
-                self.regs.txftlr.set(fifo);
-                let r103 = self.regs.txftlr.get();
-                fifo += 1;
-            }
-            self.regs.txftlr.set(0x0);
-        }
-
-        if dw_spi_ip_is_pssi {
-            let r105 = self.regs.ctrlr0.get();
-            self.regs.ssienr.set(0);
-            self.regs.ctrlr0.set(0xffffffff);
-            let cr0 = self.regs.ctrlr0.get();
-            self.regs.ctrlr0.set(0);
-            self.regs.ssienr.set(1);
-        }
-
-        if (dws_caps & 0x1) != 0 {
-            self.regs.cs_override.set(0xf);
-        }
+        self.regs.txftlr.set(0x0);
+        let _r203 = self.regs.ctrlr0.get();
+        self.regs.ssienr.set(0x0);
+        self.regs.ctrlr0.set(0xffffffff);
+        let _cr0 = self.regs.ctrlr0.get();
+        self.regs.ctrlr0.set(0x0);
+        self.regs.ssienr.set(0x1);
+        self.regs.cs_override.set(0xf);
     }
 
-    pub fn dw_spi_mscc_set_cs(&self, cs: u32, sw_mode: u32) {
+    pub fn dw_spi_mscc_set_cs(&self, cs: u32) {
         if cs < 0x4 {
-            let val = if cs < 4 { 8192 } else { sw_mode };
-            self.regs.baudr.set(val);
+            self.regs.baudr.set(0x1);
         }
     }
 
@@ -427,19 +245,33 @@ impl DwApbSsiDriver {
         self.regs.baudr.set(0x0);
     }
 
-    pub fn dw_spi_sparx5_set_cs(&self, enable: u32) {
-        if enable == 0x0 {
-            // regmap_update: SPARX5_FORCE_ENA = 0
-            // regmap_update: SPARX5_FORCE_VAL = 0
+    pub fn dw_spi_sparx5_set_cs(&self, enable: bool) {
+        if enable == false {
+            self.regs.baudr.set(0x0);
         } else {
-            // regmap_update: SPARX5_FORCE_VAL = 0
-            // regmap_update: SPARX5_FORCE_ENA = 0
+            self.regs.baudr.set(0x1);
         }
     }
 
+    pub fn dw_spi_mscc_sparx5_init(&self) {}
+
+    pub fn dw_spi_alpine_init(&self) {}
+
+    pub fn dw_spi_hssi_init(&self) {}
+
+    pub fn dw_spi_intel_init(&self) {}
+
+    pub fn dw_spi_mountevans_imc_init(&self) {}
+
+    pub fn dw_spi_canaan_k210_init(&self) {}
+
     pub fn dw_spi_elba_set_cs(&self, cs: u32) {
         if cs < 0x2 {
-            // regmap_update: ELBA_SPICS_REG = 0
+            self.regs.baudr.set(0x0);
         }
     }
+
+    pub fn dw_spi_elba_init(&self) {}
+
+    pub fn dw_spi_mmio_probe(&self) {}
 }

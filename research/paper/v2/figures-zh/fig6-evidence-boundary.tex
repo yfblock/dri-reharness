@@ -1,0 +1,77 @@
+% 补充图 B：LLM 证据边界（学术风格：JSON 以分节条带示意，文字细节移至图注）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+\begin{document}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  det/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    align=center, inner sep=0.16cm, minimum width=3.6cm},
+  llm/.style={rectangle, draw=black, line width=1pt, fill=white,
+    align=center, inner sep=0.16cm, minimum width=2.9cm},
+  back/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    align=center, inner sep=0.1cm, font=\scriptsize, minimum width=2.6cm},
+  gate/.style={rectangle, draw=black, line width=1pt, fill=white,
+    align=center, inner sep=0.16cm, minimum width=3.9cm},
+  acc/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    align=center, inner sep=0.12cm, font=\scriptsize},
+  rej/.style={rectangle, draw=black, dashed, line width=0.5pt, fill=white,
+    align=center, inner sep=0.12cm, font=\scriptsize},
+  src/.style={rectangle, draw=black, dashed, line width=0.5pt, fill=white,
+    align=center, inner sep=0.12cm, font=\scriptsize},
+  arr/.style={-{Stealth[length=2.4mm]}, line width=0.6pt},
+  farr/.style={-{Stealth[length=2.4mm]}, line width=0.6pt, dashed},
+]
+
+% 列 1：确定性分析
+\node[det] (analysis) at (0,0) {确定性分析\\libclang AST + LLVM IR\\（第 3--4 节）};
+
+% evidence JSON：标题 + 六节条带（文件分节示意，细节在图注）
+\node[align=center, font=\footnotesize] (jtitle) at (0,-1.55)
+  {\textbf{evidence JSON}\\{\scriptsize （唯一语义输入）}};
+\begin{scope}[font=\scriptsize]
+  \foreach \i/\name in {0/driver, 1/registers, 2/modules,
+                        3/bind, 4/{constants\textsuperscript{*}},
+                        5/{structs\textsuperscript{*}}} {
+    \pgfmathsetmacro{\ytop}{-0.24 - \i*0.42}
+    \draw[black, line width=0.4pt, fill=white]
+      ($(jtitle.south)+(-1.55, \ytop)$) rectangle
+      ($(jtitle.south)+( 1.55, \ytop-0.30)$);
+    \node[font=\scriptsize] (bar-\i)
+      at ($(jtitle.south)+(0, \ytop-0.15)$) {\name};
+  }
+  \coordinate (jL) at ($(jtitle.south)+(-1.55,-0.24-5*0.42-0.30)$);
+  \coordinate (jR) at ($(jtitle.south)+( 1.55,-0.24)$);
+\end{scope}
+\node[rectangle, draw=black, line width=1pt, inner sep=0.16cm,
+  fit=(jtitle)(jL)(jR)] (json) {};
+\node[src, below=0.55cm of json] (csrc)
+  {原始 C 源码：任何情况下不序列化给 LLM};
+
+% 列 2：LLM 与四后端（组框）
+\node[llm] (llm) at (5.9,-1.9) {LLM 发射\\（不可信候选）\\四后端 prompt};
+\node[back] (b1) at (8.85,-1.1) {harness C};
+\node[back] (b2) at (8.85,-1.7) {裸机 C};
+\node[back] (b3) at (8.85,-2.3) {Linux 内核模块};
+\node[back] (b4) at (8.85,-2.9) {Rust \texttt{no\_std}};
+\node[draw=black, dashed, line width=0.5pt, inner sep=0.14cm,
+  fit=(b1)(b4), label={[font=\scriptsize]above:四个后端插件}] (bgroup) {};
+
+% 列 3：验证门与终态
+\node[gate] (gate) at (12.7,-1.9) {验证门（第 5.3 节）\\编译 · 回执（恰好一次）\\原语形状 · 已执行 trace};
+\node[acc, above=0.55cm of gate] (acc) {接受（在已建模范围内）};
+\node[rej, below=0.55cm of gate] (rej) {失败 $\to$ 记录就绪阻塞项};
+
+\draw[arr] (analysis) -- (json);
+\draw[arr] (json.east) -- node[above, font=\scriptsize] {契约} (llm.west);
+\draw[arr] (llm.east) -- (bgroup.west);
+\draw[arr] (bgroup.east) -- (gate.west);
+\draw[arr] (gate.north) -- (acc.south);
+\draw[arr] (gate.south) -- (rej.north);
+\draw[farr] (gate.east) -- ++(0.5,0) -- ++(0,-3.15)
+  -- node[below, pos=0.5, font=\scriptsize] {结构化修复反馈（迭代预算默认 3 轮）}
+  (llm.south |- 0,-4.85) -- (llm.south);
+\end{tikzpicture}
+\end{document}

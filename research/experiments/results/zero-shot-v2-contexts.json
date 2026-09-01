@@ -1,5 +1,5 @@
 {
-  "compile_database": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+  "compile_database": "artifacts/output/zero-shot-contexts/compile_commands.json",
   "compile_database_sha256": "e6cf1055a601643872d5f151ab55ac9929cceb7abc5a753f1be98b8c2a3e9391",
   "contexts": [
     {
@@ -17,7 +17,7 @@
         "arguments_sha256": "77cc1e235db24c311dacedc93a0376fb2aae039fdb3e3ba541f3aada7ccd24be",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/loongarch-generic",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "a1c54ac42734f7734aaa8965ef1176a5a96ccf8ad92ff43183d88bc7551d4f1d",
         "source": "vendor/linux/drivers/clk/clk-loongson2.c"
       },
@@ -39,7 +39,7 @@
         "arguments_sha256": "e3e5872a720fe4c0f80cbde7ef1136a76016a3538d2619351aca58adb4ebc693",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "207779607b25ae74c2225877c7f42180679f61a9bb944841c960cad735372de0",
         "source": "vendor/linux/drivers/clk/clk-si544.c"
       },
@@ -61,7 +61,7 @@
         "arguments_sha256": "756cc7e69971070d35cf6a9aa8903172468c71f9564a85647aa915f1d00a5601",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "1437a5db5df5a1eb52b47f5651a10c9020ecca2348797f9e9c0c57426dff1c2b",
         "source": "vendor/linux/drivers/clk/clk-twl6040.c"
       },
@@ -83,7 +83,7 @@
         "arguments_sha256": "904a1262101355fdd92e9856eb72d553721bbfbec9c3f12acb7f20504f2da9af",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "fde04496016ec92ad08e7d85462cdef41f77f249f21d3cbbbd2ebcfbeb98f43f",
         "source": "vendor/linux/drivers/gpio/gpio-bd72720.c"
       },
@@ -105,7 +105,7 @@
         "arguments_sha256": "9b9dfb08607244be6844eb88b422b1f53ef33346d34a77fb648c7c51d89460ba",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "002e53203bca78b1bc6ea3ec837651104d35bacb2f1e6d81e49f7be0fed9b3e5",
         "source": "vendor/linux/drivers/gpio/gpio-lp87565.c"
       },
@@ -127,7 +127,7 @@
         "arguments_sha256": "1605c3db5d9fa9dfb613319393ca336e375bbfd0d7713397c5a9ae11dec8021f",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/riscv-generic",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "93eec3bec380a650e260dfdc38f2bac4a01284381d350240da7c44d599753982",
         "source": "vendor/linux/drivers/gpio/gpio-sifive.c"
       },
@@ -149,7 +149,7 @@
         "arguments_sha256": "e2b39ec396f33672e621be057b88f153657be772efba3c141d88c497a04b011f",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "7ac28194e5d3424fea1cc9b73871f7f04ebf1bed88c99ad0aa3d8a1e05552dcb",
         "source": "vendor/linux/drivers/gpio/gpio-tpic2810.c"
       },
@@ -171,7 +171,7 @@
         "arguments_sha256": "af8af64b5b43bed000a8d9633b148ec2e66dbd09201686fabc3026c03ccb7044",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/arm64-generic",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "5a94601291e0c529aeca4a743530bd4c3f9d46a25059e01df9a46be34b162f56",
         "source": "vendor/linux/drivers/mmc/host/sdhci-iproc.c"
       },
@@ -193,7 +193,7 @@
         "arguments_sha256": "308e1d27404eb28d3287ee69926a00f1bbedf94b178f9618388f09a1112bc3eb",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/arm64-generic",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "afca9f11ea96500c807588ef65016e6bf9574efdf1185dc82e1d9638a9ad57b6",
         "source": "vendor/linux/drivers/mmc/host/sdhci-milbeaut.c"
       },
@@ -215,7 +215,7 @@
         "arguments_sha256": "d39bcf6ced51895841e4201af74e6410646ffdaa025c663b12241b5507c6d126",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/arm64-generic",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "e2981fe4f7dfe1f92aaa06239a0f8b1478df368529e280cb503e01321bf87396",
         "source": "vendor/linux/drivers/mmc/host/sdhci-sprd.c"
       },
@@ -237,7 +237,7 @@
         "arguments_sha256": "79b312b65cf480b4ad83a3540367200cc7d61c3808ce6651b1ccbc5054711691",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "515de0e5823acb44cb16cdb3866e6452b60ce4b05d987e44339bfbe763b6252a",
         "source": "vendor/linux/drivers/virtio/virtio_pci_common.c"
       },
@@ -259,7 +259,7 @@
         "arguments_sha256": "98d67d37c0fa318314e4d4e14b9a94cdc50087f6f055170af504b35c574b8531",
         "directory": "artifacts/output/zero-shot-v2-contexts/build/x86-allmodconfig",
         "origin": "compile-commands",
-        "provenance": "artifacts/output/zero-shot-v2-contexts/compile_commands.json",
+        "provenance": "artifacts/output/zero-shot-contexts/compile_commands.json",
         "raw_command_sha256": "5675ba069b92189e8e6fdea3374b6dcc1f7165b199825f07871f50210850760e",
         "source": "vendor/linux/drivers/virtio/virtio_pci_legacy.c"
       },
@@ -269,11 +269,11 @@
   ],
   "environment": {
     "linux_commit": "acb7500801e98639f6d8c2d796ed9f64cba83d3a",
-    "reharness_commit": "f37abb61cb104bccd32dac688856beff27cd4319"
+    "reharness_commit": "d742b7a72378ab3f5989f451f01a7bd6b2b42a42"
   },
   "exact_contexts": 12,
   "expected_contexts": 12,
-  "generated_at": "2026-08-01T07:49:28.960597+00:00",
+  "generated_at": "2026-09-01T13:06:48.049389+00:00",
   "guard": {
     "cases": 12,
     "first_run": "gpio-bd72720",
@@ -288,13 +288,8 @@
     ],
     "schema": 1,
     "specialization_inventory": {
-      "device_name_equals": [
-        "edu"
-      ],
-      "private_mmio_layouts": [
-        "dwc2_readl",
-        "dwc2_writel"
-      ],
+      "device_name_equals": [],
+      "private_mmio_layouts": [],
       "source_basename_equals": [
         "sdhci-esdhc-mcf.c"
       ]
@@ -307,10 +302,10 @@
       "build_dir": "artifacts/output/zero-shot-v2-contexts/build/arm64-generic",
       "cc": "clang-18",
       "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
-      "config_sha256": "9d27cde0145bc4588728d2f8abbf270cc56a10488ff824bfa4e5113e35787369",
+      "config_sha256": "7520edb516f04b161c1d24935424e3bd86a3d6e33f3c3aae09aec1f5c25600c3",
       "defconfig": "defconfig",
       "kind": "native-architecture-defconfig",
-      "lld": "/home/yfblock/.rustup/toolchains/1.78.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "lld": "/usr/lib/llvm-18/bin/lld",
       "make_vars": {
         "OBJCOPY": "llvm-objcopy-18"
       }
@@ -320,10 +315,10 @@
       "build_dir": "artifacts/output/zero-shot-v2-contexts/build/loongarch-generic",
       "cc": "clang-18",
       "cc_version": "Ubuntu clang version 18.1.3 (1ubuntu1)",
-      "config_sha256": "d045eb8b792909888fd5d468dbd589d7eaf2c36e02eb3162752c61e9fefa2c57",
+      "config_sha256": "52445b2752cc3ba293fc2f55809bd4d27a933042f03552a6ea2a34f9c8077e68",
       "defconfig": "defconfig",
       "kind": "native-architecture-defconfig",
-      "lld": "/home/yfblock/.rustup/toolchains/1.78.0-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "lld": "/usr/lib/llvm-18/bin/lld",
       "make_vars": {
         "OBJCOPY": "llvm-objcopy-18"
       }

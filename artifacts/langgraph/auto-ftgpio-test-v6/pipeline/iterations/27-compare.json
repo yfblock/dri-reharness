@@ -1,0 +1,413 @@
+{
+  "evidence_digest": "95653c68965788deef3b07c970ed87191ea1e3302affa898a0876bdd6dc8f7a7",
+  "iteration": 5,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "feedback": {
+      "details": {
+        "divergence": {
+          "candidate": {
+            "address": 8,
+            "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+            "kind": "read",
+            "phase": "runtime",
+            "sequence": 0,
+            "source_op_id": null,
+            "value": 0,
+            "width_bits": 32
+          },
+          "candidate_error": null,
+          "candidate_return_code": 0,
+          "index": 0,
+          "original": {
+            "address": 32,
+            "function": "ftgpio_gpio_probe",
+            "kind": "write",
+            "phase": "runtime",
+            "sequence": 0,
+            "source_op_id": null,
+            "value": 0,
+            "width_bits": 32
+          },
+          "original_error": null,
+          "original_return_code": 0,
+          "prefix": [],
+          "reason": "event_mismatch",
+          "suffix_candidate": [
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 1,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 2,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 3,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            }
+          ],
+          "suffix_original": [
+            {
+              "address": 44,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 1,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 48,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 2,
+              "source_op_id": null,
+              "value": 4294967295,
+              "width_bits": 32
+            },
+            {
+              "address": 64,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 3,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            }
+          ]
+        },
+        "equal": false,
+        "reason": "event_mismatch"
+      },
+      "failure_class": "trace",
+      "iteration": 5,
+      "message": "register trace mismatch",
+      "retryable": true,
+      "stage": "compare"
+    },
+    "result": {
+      "feedback": {
+        "details": {
+          "divergence": {
+            "candidate": {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 0,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            "candidate_error": null,
+            "candidate_return_code": 0,
+            "index": 0,
+            "original": {
+              "address": 32,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 0,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            "original_error": null,
+            "original_return_code": 0,
+            "prefix": [],
+            "reason": "event_mismatch",
+            "suffix_candidate": [
+              {
+                "address": 8,
+                "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+                "kind": "read",
+                "phase": "runtime",
+                "sequence": 1,
+                "source_op_id": null,
+                "value": 0,
+                "width_bits": 32
+              },
+              {
+                "address": 8,
+                "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+                "kind": "read",
+                "phase": "runtime",
+                "sequence": 2,
+                "source_op_id": null,
+                "value": 0,
+                "width_bits": 32
+              },
+              {
+                "address": 8,
+                "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+                "kind": "read",
+                "phase": "runtime",
+                "sequence": 3,
+                "source_op_id": null,
+                "value": 0,
+                "width_bits": 32
+              }
+            ],
+            "suffix_original": [
+              {
+                "address": 44,
+                "function": "ftgpio_gpio_probe",
+                "kind": "write",
+                "phase": "runtime",
+                "sequence": 1,
+                "source_op_id": null,
+                "value": 0,
+                "width_bits": 32
+              },
+              {
+                "address": 48,
+                "function": "ftgpio_gpio_probe",
+                "kind": "write",
+                "phase": "runtime",
+                "sequence": 2,
+                "source_op_id": null,
+                "value": 4294967295,
+                "width_bits": 32
+              },
+              {
+                "address": 64,
+                "function": "ftgpio_gpio_probe",
+                "kind": "write",
+                "phase": "runtime",
+                "sequence": 3,
+                "source_op_id": null,
+                "value": 0,
+                "width_bits": 32
+              }
+            ]
+          },
+          "equal": false,
+          "reason": "event_mismatch"
+        },
+        "failure_class": "trace",
+        "message": "register trace mismatch",
+        "retryable": true,
+        "stage": "compare"
+      },
+      "ok": false,
+      "payload": {
+        "divergence": {
+          "candidate": {
+            "address": 8,
+            "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+            "kind": "read",
+            "phase": "runtime",
+            "sequence": 0,
+            "source_op_id": null,
+            "value": 0,
+            "width_bits": 32
+          },
+          "candidate_error": null,
+          "candidate_return_code": 0,
+          "index": 0,
+          "original": {
+            "address": 32,
+            "function": "ftgpio_gpio_probe",
+            "kind": "write",
+            "phase": "runtime",
+            "sequence": 0,
+            "source_op_id": null,
+            "value": 0,
+            "width_bits": 32
+          },
+          "original_error": null,
+          "original_return_code": 0,
+          "prefix": [],
+          "reason": "event_mismatch",
+          "suffix_candidate": [
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 1,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 2,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 3,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            }
+          ],
+          "suffix_original": [
+            {
+              "address": 44,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 1,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 48,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 2,
+              "source_op_id": null,
+              "value": 4294967295,
+              "width_bits": 32
+            },
+            {
+              "address": 64,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 3,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            }
+          ]
+        },
+        "equal": false,
+        "reason": "event_mismatch"
+      },
+      "value": {
+        "divergence": {
+          "candidate": {
+            "address": 8,
+            "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+            "kind": "read",
+            "phase": "runtime",
+            "sequence": 0,
+            "source_op_id": null,
+            "value": 0,
+            "width_bits": 32
+          },
+          "candidate_error": null,
+          "candidate_return_code": 0,
+          "index": 0,
+          "original": {
+            "address": 32,
+            "function": "ftgpio_gpio_probe",
+            "kind": "write",
+            "phase": "runtime",
+            "sequence": 0,
+            "source_op_id": null,
+            "value": 0,
+            "width_bits": 32
+          },
+          "original_error": null,
+          "original_return_code": 0,
+          "prefix": [],
+          "reason": "event_mismatch",
+          "suffix_candidate": [
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 1,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 2,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 8,
+              "function": "ftgpio_gpio_probe__gpio_generic_get_direction",
+              "kind": "read",
+              "phase": "runtime",
+              "sequence": 3,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            }
+          ],
+          "suffix_original": [
+            {
+              "address": 44,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 1,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            },
+            {
+              "address": 48,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 2,
+              "source_op_id": null,
+              "value": 4294967295,
+              "width_bits": 32
+            },
+            {
+              "address": 64,
+              "function": "ftgpio_gpio_probe",
+              "kind": "write",
+              "phase": "runtime",
+              "sequence": 3,
+              "source_op_id": null,
+              "value": 0,
+              "width_bits": 32
+            }
+          ]
+        },
+        "equal": false,
+        "reason": "event_mismatch"
+      }
+    }
+  },
+  "stage": "compare",
+  "status": "failed"
+}

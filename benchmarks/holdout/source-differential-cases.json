@@ -1,0 +1,26 @@
+{
+ "schema": 1,
+ "suites": {
+  "gpio_mmio_source": {
+   "ts4800": "vendor/linux/drivers/gpio/gpio-ts4800.c",
+   "ge": "vendor/linux/drivers/gpio/gpio-ge.c",
+   "ftgpio": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+   "cadence": "vendor/linux/drivers/gpio/gpio-cadence.c",
+   "idt3243x": "vendor/linux/drivers/gpio/gpio-idt3243x.c",
+   "sodaville": "vendor/linux/drivers/gpio/gpio-sodaville.c",
+   "clps711x": "vendor/linux/drivers/gpio/gpio-clps711x.c",
+   "dwapb": "vendor/linux/drivers/gpio/gpio-dwapb.c"
+  },
+  "sdhci_accessor": {
+   "npcm": "vendor/linux/drivers/mmc/host/sdhci-npcm.c",
+   "dove": "vendor/linux/drivers/mmc/host/sdhci-dove.c",
+   "hlwd": "vendor/linux/drivers/mmc/host/sdhci-of-hlwd.c"
+  },
+  "virtio_state": {
+   "virtio_input": "vendor/linux/drivers/virtio/virtio_input.c"
+  },
+  "w1c_drain": {
+   "altera": "vendor/linux/drivers/gpio/gpio-altera.c"
+  }
+ }
+}

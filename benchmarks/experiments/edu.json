@@ -10,10 +10,14 @@
     "context": "kbuild"
   },
   "runtime": {
-    "adapter": "qemu",
+    "adapter": "qemu-profile",
     "pci_identity": {
       "vendor": "0x1234",
       "device": "0x11e8"
+    },
+    "registration": {
+      "root_table": "pci_driver",
+      "identity_field": "driver_name"
     },
     "safety_policy": {
       "forbidden_tokens": ["IO_DMA_CMD", "DMA_CMD | DMA_IRQ"],
@@ -32,7 +36,11 @@
       "bus": "pci",
       "module": "edu_drv",
       "timeout_seconds": 90,
-      "probe_pattern": "probed|edu device id|edu probed"
+      "launch_device": true,
+      "binding": {
+        "bus": "pci",
+        "device_glob": "*"
+      }
     }
   },
   "test": {

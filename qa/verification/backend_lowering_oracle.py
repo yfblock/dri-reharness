@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT))
 
 from extractor.formal import walk_leaf_ops
 try:
-    from generator.common import (lowering_recipes, ris_op_digest,
+    from backends.common import (lowering_recipes, ris_op_digest,
                                   transaction_digest)
 except ImportError:
     def lowering_recipes(ops):
@@ -49,7 +49,19 @@ _TRANSACTION_RECEIPT = re.compile(
     r"transport=(?P<transport>\S+)\s+status=(?P<status>\S+)\s+"
     r"digest=(?P<digest>[0-9a-f]{16})\s*\*/")
 
-SUPPORTED_TRANSACTION_TRANSPORTS = {"regmap", "i2c_smbus", "i2c", "mfd"}
+_RECEIPT_KIND_ALIASES = {
+    "read": "Read",
+    "r": "Read",
+    "write": "Write",
+    "w": "Write",
+    "readmodifywrite": "ReadModifyWrite",
+    "read_modify_write": "ReadModifyWrite",
+    "rmw": "ReadModifyWrite",
+}
+
+SUPPORTED_TRANSACTION_TRANSPORTS = {
+    "regmap", "i2c_smbus", "i2c", "spi", "mfd",
+}
 
 
 def build_generation_contract(formal: dict) -> dict:
@@ -118,7 +130,12 @@ def verify_backend_lowering(formal: dict, generated_c: str) -> dict:
     expected_rows = contract["register_operations"]
     expected = {row["op_id"]: row for row in expected_rows if row["op_id"]}
     expected_counts = Counter(row["op_id"] for row in expected_rows)
-    receipts = [match.groupdict() for match in _RECEIPT.finditer(generated_c)]
+    receipts = []
+    for match in _RECEIPT.finditer(generated_c):
+        receipt = match.groupdict()
+        receipt["kind"] = _RECEIPT_KIND_ALIASES.get(
+            receipt["kind"].lower(), receipt["kind"])
+        receipts.append(receipt)
     receipt_counts = Counter(row["id"] for row in receipts)
 
     duplicate_expected = sorted(

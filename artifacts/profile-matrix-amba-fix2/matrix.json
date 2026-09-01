@@ -1,0 +1,284 @@
+{
+  "accepted": true,
+  "artifact_root": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-amba-fix2",
+  "cases": [
+    {
+      "bus": "amba",
+      "manifest": "benchmarks/experiments/reharness-amba.json",
+      "manifest_digest": "6695a702854b06caee085074d2d988f373d1621e079ae8f1c81a5500c44f63db",
+      "module": "reharness_amba_sensor",
+      "profile": "amba-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-amba-sensor.c",
+      "source_sha256": "4d0bafbb13c9beeb1ba6a65aa11570a2a7747f325f4c8df685d38dd3cf9426f9"
+    }
+  ],
+  "discovered_profiles": [
+    "amba-generic"
+  ],
+  "duplicate_profiles": [],
+  "failed_profiles": [],
+  "generated_at": "2026-08-25T09:31:48.892509+00:00",
+  "inconclusive_profiles": [],
+  "kernel_dir": "/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build",
+  "missing_profiles": [],
+  "profile_inventory": [
+    {
+      "bus": "amba",
+      "fixture_kind": "qemu-amba",
+      "manifest_template": "benchmarks/profile-templates/amba-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "amba-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "subsystem",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "i2c",
+      "fixture_kind": "qemu-i2c",
+      "manifest_template": "benchmarks/profile-templates/i2c-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "i2c-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transaction",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "mdio",
+      "fixture_kind": "qemu-mdio",
+      "manifest_template": null,
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace",
+        "transaction"
+      ],
+      "origin": "builtin",
+      "profile_id": "mdio-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "network",
+      "fixture_kind": "qemu-network",
+      "manifest_template": "benchmarks/profile-templates/network-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "network-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "subsystem",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "pci",
+      "fixture_kind": "qemu-pci",
+      "manifest_template": null,
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "pci-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "platform",
+      "fixture_kind": "qemu-platform",
+      "manifest_template": "benchmarks/profile-templates/platform-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "platform-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "serdev",
+      "fixture_kind": "qemu-serdev",
+      "manifest_template": null,
+      "matrix_required": false,
+      "optional_capabilities": [
+        "subsystem",
+        "trace",
+        "transfer"
+      ],
+      "origin": "builtin",
+      "profile_id": "serdev-generic",
+      "reason": "trusted runtime fixture is not registered",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "explicit-only",
+      "status": "runtime-inconclusive"
+    },
+    {
+      "bus": "spi",
+      "fixture_kind": "qemu-spi",
+      "manifest_template": "benchmarks/profile-templates/spi-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "spi-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "usb",
+      "fixture_kind": "qemu-usb",
+      "manifest_template": "benchmarks/profile-templates/usb-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "usb-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "virtio",
+      "fixture_kind": "qemu-virtio",
+      "manifest_template": "benchmarks/profile-templates/virtio-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "virtio-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    }
+  ],
+  "required_profiles": [
+    "amba-generic"
+  ],
+  "results": [
+    {
+      "manifest": "benchmarks/experiments/reharness-amba.json",
+      "profile": "amba-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-amba-fix2/amba-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_amba_sensor bus=amba timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030193] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030257] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071807] ftrace: allocating 38031 entries in 150 pages\n[    0.072058] ftrace: allocated 150 pages with 4 groups\n[    0.416065] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.420222] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424745] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.429530] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.512966] ACPI: bus type USB registered\n[    0.512966] usbcore: registered new interface driver usbfs\n[    0.513122] usbcore: registered new interface driver hub\n[    0.513224] usbcore: registered new device driver usb\n[    0.513397] pps_core: LinuxPPS API ver. 1 registered\n[    0.513516] PTP clock support registered\n[    0.543785] NET: Registered PF_INET protocol family\n[    0.557979] Key type asymmetric registered\n[    0.558053] Asymmetric key parser 'x509' registered\n[    0.558441] io scheduler mq-deadline registered\n[    0.558499] io scheduler kyber registered\n[    0.600301] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.602911] usbcore: registered new interface driver usbhid\n[    0.603647] NET: Registered PF_INET6 protocol family\n=== insmod runtime fixture amba-registrar ===\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0\n=== insmod reharness_amba_sensor ===\n[    1.018829] reharness_amba_sensor reharness-amba: REHARNESS_AMBA_DRIVER_PROBE periphid=0x00100001 resource=0x1000\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.018829] reharness_amba_sensor reharness-amba: REHARNESS_AMBA_DRIVER_PROBE periphid=0x00100001 resource=0x1000\nREHARNESS_SUBSYSTEM_TEST_0_NAME=amba-device-lifecycle\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\n=== rmmod reharness_amba_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.295687] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_amba_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 1
+          },
+          "by_provider": {},
+          "optional": 0,
+          "required": 1,
+          "total": 1
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "amba-device-lifecycle"
+          ],
+          "total": 1
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "amba-device-lifecycle",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "amba-device-lifecycle",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    }
+  ],
+  "schema": 1,
+  "status": "accepted"
+}

@@ -1,0 +1,33 @@
+backend linux for device dw-apb-ssi-full {
+  include <linux/io.h>
+  include <linux/platform_device.h>
+  type DeviceState -> "struct dw_apb_ssi_full_priv"
+  type MmioBase -> "void __iomem *"
+  type LogicalIRQ -> "struct irq_data *"
+  type UInt -> "u32"
+  type UIntPtr -> "unsigned long *"
+  callback spi_controller.set_cs = dw_spi_set_cs
+  callback irq_handler.handler = dw_spi_irq
+  callback spi_controller.transfer_one = dw_spi_transfer_one
+  callback spi_controller.handle_err = dw_spi_handle_err
+  callback spi_controller.target_abort = dw_spi_target_abort
+  callback spi_controller_mem_ops.exec_op = dw_spi_exec_mem_op
+  callback platform_driver.probe = dw_spi_mmio_probe
+  callback dev_pm_ops.suspend = dw_spi_mmio_suspend
+  callback dev_pm_ops.resume = dw_spi_mmio_resume
+  callback platform_driver.remove = dw_spi_mmio_remove
+  map dev.base -> "dws->regs"
+  map MmioRead(B4) -> "readl"
+  map MmioWrite(B4) -> "writel"
+  map MmioRead(B2) -> "readw"
+  map MmioWrite(B2) -> "writew"
+  map MmioRead(B1) -> "readb"
+  map MmioWrite(B1) -> "writeb"
+  map MmioWriteW1C(B4) -> "writel"
+  map MmioWriteW1C(B2) -> "writew"
+  map MmioWriteW1C(B1) -> "writeb"
+  map MmioReadBE(B2) -> "ioread16be"
+  map MmioWriteBE(B2) -> "iowrite16be"
+  map MmioReadBE(B4) -> "ioread32be"
+  map MmioWriteBE(B4) -> "iowrite32be"
+}

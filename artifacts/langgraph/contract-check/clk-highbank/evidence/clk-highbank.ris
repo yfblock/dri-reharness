@@ -1,0 +1,90 @@
+driver clk-highbank v0.1.0 {
+  module clk_pll_prepare {
+    reg := R(B4, hbclk->reg[0x0]) -- Power @op_1 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:48
+    reg := VALUE((reg & (HB_PLL_RESET ^ 0xffffffff))) @op_2 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:49
+    RMW(B4, hbclk->reg[0x0]) = (reg & (HB_PLL_RESET ^ 0xffffffff)) -- Power @op_3 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:50
+    LOOP while ((readl(hbclk->reg) & 0x10000000) == 0x0) [Conservative] {
+      r4 := R(B4, hbclk->reg[0x0]) -- Power @op_4 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:52
+    }
+    LOOP while ((readl(hbclk->reg) & 0x20000000) == 0x0) [Conservative] {
+      r5 := R(B4, hbclk->reg[0x0]) -- Power @op_5 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:54
+    }
+  }
+  module clk_pll_unprepare {
+    reg := R(B4, hbclk->reg[0x0]) -- Power @op_6 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:65
+    reg := VALUE((reg | HB_PLL_RESET)) @op_7 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:66
+    RMW(B4, hbclk->reg[0x0]) = (reg | HB_PLL_RESET) -- Power @op_8 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:67
+  }
+  module clk_pll_enable {
+    reg := R(B4, hbclk->reg[0x0]) -- Power @op_9 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:75
+    reg := VALUE((reg | HB_PLL_EXT_ENA)) @op_10 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:76
+    RMW(B4, hbclk->reg[0x0]) = (reg | HB_PLL_EXT_ENA) -- Power @op_11 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:77
+  }
+  module clk_pll_disable {
+    reg := R(B4, hbclk->reg[0x0]) -- Power @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:87
+    reg := VALUE((reg & (HB_PLL_EXT_ENA ^ 0xffffffff))) @op_13 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:88
+    RMW(B4, hbclk->reg[0x0]) = (reg & (HB_PLL_EXT_ENA ^ 0xffffffff)) -- Power @op_14 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:89
+  }
+  module clk_pll_recalc_rate {
+    reg := R(B4, hbclk->reg[0x0]) -- Power @op_15 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:98
+  }
+  module clk_pll_set_rate {
+    OUT(*&divq) := divq @op_16 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:129
+    OUT(*&divf) := divf @op_17 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:130
+    reg := R(B4, hbclk->reg[0x0]) -- Power @op_18 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:155
+    IF (divf != ((reg & 0xff00000) >> 0x14)) {
+      reg := VALUE((reg | HB_PLL_EXT_BYPASS)) @op_19 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:158
+      W(B4, hbclk->reg[0x0]) = (reg | HB_PLL_EXT_BYPASS) -- Power @op_20 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:159
+      W(B4, hbclk->reg[0x0]) = (reg | HB_PLL_RESET) -- Power @op_21 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:161
+      reg := VALUE((reg & ((HB_PLL_DIVF_MASK | HB_PLL_DIVQ_MASK) ^ 0xffffffff))) @op_22 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:162
+      reg := VALUE((reg | ((divf << HB_PLL_DIVF_SHIFT) | (divq << HB_PLL_DIVQ_SHIFT)))) @op_23 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:163
+      W(B4, hbclk->reg[0x0]) = (reg | HB_PLL_RESET) -- Power @op_24 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:164
+      RMW(B4, hbclk->reg[0x0]) = ((divf != ((reg & HB_PLL_DIVF_MASK) >> HB_PLL_DIVF_SHIFT)) ? (((reg | HB_PLL_EXT_BYPASS) & ((HB_PLL_DIVF_MASK | HB_PLL_DIVQ_MASK) ^ 0xffffffff)) | ((divf << HB_PLL_DIVF_SHIFT) | (divq << HB_PLL_DIVQ_SHIFT))) : reg) -- Power @op_25 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:165
+      LOOP while ((readl(hbclk->reg) & 0x10000000) == 0x0) [Conservative] {
+        r26 := R(B4, hbclk->reg[0x0]) -- Power @op_26 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:167
+      }
+      LOOP while ((readl(hbclk->reg) & 0x20000000) == 0x0) [Conservative] {
+        r27 := R(B4, hbclk->reg[0x0]) -- Power @op_27 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:169
+      }
+      reg := VALUE((reg | HB_PLL_EXT_ENA)) @op_28 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:171
+      reg := VALUE((reg & (HB_PLL_EXT_BYPASS ^ 0xffffffff))) @op_29 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:172
+    }
+    IF ((divf != ((reg & 0xff00000) >> 0x14)) == 0x0) {
+      W(B4, hbclk->reg[0x0]) = (reg | HB_PLL_EXT_BYPASS) -- Power @op_30 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:174
+      reg := VALUE((reg & (HB_PLL_DIVQ_MASK ^ 0xffffffff))) @op_31 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:175
+      reg := VALUE((reg | (divq << HB_PLL_DIVQ_SHIFT))) @op_32 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:176
+      W(B4, hbclk->reg[0x0]) = (reg | HB_PLL_EXT_BYPASS) -- Power @op_33 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:177
+    }
+    RMW(B4, hbclk->reg[0x0]) = ((divf != ((reg & HB_PLL_DIVF_MASK) >> HB_PLL_DIVF_SHIFT)) ? (((((reg | HB_PLL_EXT_BYPASS) & ((HB_PLL_DIVF_MASK | HB_PLL_DIVQ_MASK) ^ 0xffffffff)) | ((divf << HB_PLL_DIVF_SHIFT) | (divq << HB_PLL_DIVQ_SHIFT))) | HB_PLL_EXT_ENA) & (HB_PLL_EXT_BYPASS ^ 0xffffffff)) : (((divf != ((reg & HB_PLL_DIVF_MASK) >> HB_PLL_DIVF_SHIFT)) == 0x0) ? ((reg & (HB_PLL_DIVQ_MASK ^ 0xffffffff)) | (divq << HB_PLL_DIVQ_SHIFT)) : reg)) -- Power @op_34 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:179
+  }
+  module clk_cpu_periphclk_recalc_rate {
+    div := R(B4, hbclk->reg[0x0]) -- Power @op_35 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:198
+  }
+  module clk_cpu_a9bclk_recalc_rate {
+    div := R(B4, hbclk->reg[0x0]) -- Power @op_36 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:210
+  }
+  module clk_periclk_recalc_rate {
+    div := R(B4, hbclk->reg[0x0]) -- Power @op_37 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:225
+  }
+  module clk_periclk_set_rate {
+    div := VALUE((parent_rate / rate)) @op_38 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:252
+    W(B4, hbclk->reg[0x0]) = (div >> 0x1) -- Power @op_39 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:256
+  }
+  accounting {
+    source_accesses 25
+    emitted 25
+    filtered 0
+    unsupported 0
+    unaccounted 0
+    ris_ops_without_evidence 0
+    strict_complete true
+  }
+  path_validation {
+    solver "Z3 4.16.0"
+    satisfiable 6
+    infeasible 0
+    unknown 0
+    intentionally_unreachable 0
+    complete true
+  }
+}

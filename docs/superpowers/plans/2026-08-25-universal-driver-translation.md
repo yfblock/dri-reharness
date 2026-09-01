@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn the current two-profile automation into a manifest-driven translation framework with reusable platform, PCI, I2C, and SPI profiles and fail-closed capability evidence.
+**Goal:** Turn the current driver-specific automation into a manifest-driven translation framework with reusable platform, PCI, I2C, SPI, USB, and virtio profiles and fail-closed capability evidence.
 
-**Architecture:** Keep `ExperimentRunner`, LangGraph, LangChain, and the candidate contract bus-neutral. Add a typed profile registry that converts extracted evidence into a validated profile plan, extend manifests with required/optional capabilities, and implement runtime fixtures behind profile adapters. Existing `edu-pci` and `ftgpio010-gpio` become data-backed regression profiles; I2C and SPI use synthetic Linux bus fixtures in QEMU.
+**Architecture:** Keep `ExperimentRunner`, LangGraph, LangChain, and the candidate contract bus-neutral. Add a typed profile registry that converts extracted evidence into a validated profile plan, extend manifests with required/optional capabilities, and implement runtime fixtures behind profile adapters. High-fidelity regression inputs live in `benchmarks/profile-catalog.json`; I2C, SPI, USB, and virtio use synthetic Linux/QEMU fixtures.
 
 **Tech Stack:** Python 3.12, pytest, LangGraph, existing extractor/RIS, Linux Kbuild, QEMU, Linux `i2c-stub` support for I2C negative/transaction fixtures, and a repository-owned synthetic SPI controller fixture.
 
@@ -13,6 +13,7 @@
 ## File Map
 
 - Create `src/driver_profiles.py`: typed profile match/plan contracts and registry.
+- Create `benchmarks/profile-catalog.json`: data-backed mappings for high-fidelity regression manifests.
 - Modify `src/auto_driver.py`: delegate input/profile resolution to the registry.
 - Modify `src/experiment_manifest.py`: parse and serialize profile and capability plans.
 - Modify `src/langgraph_workflow/graph.py` and `src/langgraph_workflow/tools.py`: carry profile evidence through the graph without making acceptance decisions.
@@ -187,7 +188,7 @@ Expected: profile-plan fields are absent and the new assertions fail.
 
 - [ ] **Step 3: Replace the hardcoded profile map**
 
-Make `auto_driver.resolve_profile()` call `build_default_registry().resolve()` using extracted evidence. Keep `PROFILES` as a compatibility mapping only if existing imports require it, but make its values registry profile objects rather than separate matching logic. `_manifest_for_profile()` must serialize the returned `ProfilePlan` and preserve all template tests and coverage declarations.
+Make `auto_driver.resolve_profile()` call `build_default_registry().resolve()` using extracted evidence. Keep `PROFILES` only as a compatibility view loaded from `benchmarks/profile-catalog.json`; no concrete driver id or source path may be embedded in `auto_driver.py`. `_manifest_for_profile()` must serialize the returned `ProfilePlan` and preserve all template tests and coverage declarations.
 
 The graph must carry this shape:
 

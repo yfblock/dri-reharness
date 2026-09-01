@@ -1,0 +1,310 @@
+{
+  "accepted": true,
+  "artifact_root": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-network",
+  "cases": [
+    {
+      "bus": "network",
+      "manifest": "benchmarks/experiments/reharness-network.json",
+      "manifest_digest": "b0427b5bd1ab383662221456c0a851cbe9b208c85842caa7e8c4154814c59af5",
+      "module": "reharness_network",
+      "profile": "network-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-network.c",
+      "source_sha256": "e596c53aaf4187f0f4d4ca074e1863d6f0e2f540462e4e6197f395c880958e34"
+    }
+  ],
+  "discovered_profiles": [
+    "network-generic"
+  ],
+  "duplicate_profiles": [],
+  "failed_profiles": [],
+  "generated_at": "2026-08-25T08:27:25.402924+00:00",
+  "inconclusive_profiles": [],
+  "kernel_dir": "/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build",
+  "missing_profiles": [],
+  "profile_inventory": [
+    {
+      "bus": "amba",
+      "fixture_kind": "qemu-amba",
+      "manifest_template": null,
+      "matrix_required": false,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "amba-generic",
+      "reason": "trusted runtime fixture is not registered",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "explicit-only",
+      "status": "runtime-inconclusive"
+    },
+    {
+      "bus": "i2c",
+      "fixture_kind": "qemu-i2c",
+      "manifest_template": "benchmarks/profile-templates/i2c-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "i2c-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transaction",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "mdio",
+      "fixture_kind": "qemu-mdio",
+      "manifest_template": null,
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace",
+        "transaction"
+      ],
+      "origin": "builtin",
+      "profile_id": "mdio-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "network",
+      "fixture_kind": "qemu-network",
+      "manifest_template": "benchmarks/profile-templates/network-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "network-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "subsystem",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "pci",
+      "fixture_kind": "qemu-pci",
+      "manifest_template": null,
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "pci-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "platform",
+      "fixture_kind": "qemu-platform",
+      "manifest_template": "benchmarks/profile-templates/platform-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "platform-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "serdev",
+      "fixture_kind": "qemu-serdev",
+      "manifest_template": null,
+      "matrix_required": false,
+      "optional_capabilities": [
+        "subsystem",
+        "trace",
+        "transfer"
+      ],
+      "origin": "builtin",
+      "profile_id": "serdev-generic",
+      "reason": "trusted runtime fixture is not registered",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "explicit-only",
+      "status": "runtime-inconclusive"
+    },
+    {
+      "bus": "spi",
+      "fixture_kind": "qemu-spi",
+      "manifest_template": "benchmarks/profile-templates/spi-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "spi-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "usb",
+      "fixture_kind": "qemu-usb",
+      "manifest_template": "benchmarks/profile-templates/usb-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "usb-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "virtio",
+      "fixture_kind": "qemu-virtio",
+      "manifest_template": "benchmarks/profile-templates/virtio-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "virtio-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    }
+  ],
+  "required_profiles": [
+    "network-generic"
+  ],
+  "results": [
+    {
+      "manifest": "benchmarks/experiments/reharness-network.json",
+      "profile": "network-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-network/network-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_network bus=network timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030469] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030535] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071895] ftrace: allocating 37804 entries in 148 pages\n[    0.072148] ftrace: allocated 148 pages with 3 groups\n[    0.414034] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.418431] thermal_sys: Registered thermal governor 'step_wise'\n[    0.422979] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.424511] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.506435] ACPI: bus type USB registered\n[    0.506744] usbcore: registered new interface driver usbfs\n[    0.506943] usbcore: registered new interface driver hub\n[    0.507056] usbcore: registered new device driver usb\n[    0.507231] pps_core: LinuxPPS API ver. 1 registered\n[    0.507353] PTP clock support registered\n[    0.538922] NET: Registered PF_INET protocol family\n[    0.554764] Key type asymmetric registered\n[    0.554840] Asymmetric key parser 'x509' registered\n[    0.555290] io scheduler mq-deadline registered\n[    0.555351] io scheduler kyber registered\n[    0.595904] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.598502] usbcore: registered new interface driver usbhid\n[    0.599494] NET: Registered PF_INET6 protocol family\n=== insmod reharness_network ===\n[    1.037670] REHARNESS_NETWORK_REGISTERED name=eth0\nREHARNESS_DRIVER_INSMOD_RC=0\n[    1.037670] REHARNESS_NETWORK_REGISTERED name=eth0\nREHARNESS_SUBSYSTEM_TEST_0_NAME=network-interface\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=linux-netdevice-selftest\nREHARNESS_SUBSYSTEM_TEST_1_KIND=kselftest\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=linux-netdevice-selftest\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=0\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\n=== rmmod reharness_network ===\nREHARNESS_DRIVER_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.480861] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\n  done=1 probe=4 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_network probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "kselftest": 1,
+            "native": 1
+          },
+          "by_provider": {
+            "linux-netdevice-selftest": 1
+          },
+          "optional": 1,
+          "required": 1,
+          "total": 2
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "linux-netdevice-selftest",
+            "network-interface"
+          ],
+          "total": 2
+        },
+        "optional_failures": [
+          "linux-netdevice-selftest"
+        ],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "network-interface",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "network-interface",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "kselftest",
+            "name": "linux-netdevice-selftest",
+            "observed": {
+              "failure_marker": true,
+              "index": 1,
+              "kind": "kselftest",
+              "name": "linux-netdevice-selftest",
+              "provider": "linux-netdevice-selftest",
+              "required": false,
+              "return_code": 1,
+              "status": "fail",
+              "success": true
+            },
+            "provider": "linux-netdevice-selftest",
+            "required": false,
+            "status": "failed"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    }
+  ],
+  "schema": 1,
+  "status": "accepted"
+}

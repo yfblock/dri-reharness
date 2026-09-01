@@ -1,0 +1,47 @@
+=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031540] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031606] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.072340] ftrace: allocating 31848 entries in 126 pages
+[    0.072606] ftrace: allocated 126 pages with 6 groups
+[    0.405366] thermal_sys: Registered thermal governor 'step_wise'
+[    0.409825] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.411138] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.487515] pps_core: LinuxPPS API ver. 1 registered
+[    0.527374] Key type asymmetric registered
+[    0.527451] Asymmetric key parser 'x509' registered
+[    0.527879] io scheduler mq-deadline registered
+[    0.527955] io scheduler kyber registered
+[    0.572874] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod device-registrar target=ftgpio010-gpio ===
+REHARNESS_REGISTRAR_INSMOD_RC=0
+=== insmod ftgpio010_gpio ===
+[    1.324293] [rhfn] ftgpio_gpio_probe
+[    1.325042] [rh] W 0x20 0x0
+[    1.325085] [rh] W 0x2c 0x0
+[    1.325121] [rh] W 0x30 0xffffffff
+[    1.325160] [rh] W 0x40 0x0
+[    1.327499] insmod (59) used greatest stack depth: 13112 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+[    0.031540] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031606] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.405366] thermal_sys: Registered thermal governor 'step_wise'
+[    0.411138] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.487515] pps_core: LinuxPPS API ver. 1 registered
+[    0.527374] Key type asymmetric registered
+[    0.527451] Asymmetric key parser 'x509' registered
+[    0.527879] io scheduler mq-deadline registered
+[    0.527955] io scheduler kyber registered
+[    0.572874] rtc_cmos PNP0B00:00: registered as rtc0
+GPIO_TRACE_DONE
+REHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+=== rmmod ftgpio010_gpio ===
+=== QEMU_RUN_DONE ===
+[    1.910188] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+  done=1 probe=14 real_oops=0
+  => 成功: ftgpio010_gpio probe 成功

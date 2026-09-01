@@ -130,6 +130,25 @@ def test_repository_python_paths_are_canonical():
     assert QA_ROOT == Path(__file__).resolve().parents[1]
 
 
+def test_backend_pipeline_resolves_kernel_from_repository_root():
+    from backends.pipeline import _repository_root
+
+    assert _repository_root() == REPO_ROOT
+
+
+def test_backend_pipeline_trace_subsequence_preserves_order():
+    from backends.pipeline import _is_subsequence
+
+    assert _is_subsequence(
+        [("R", 0), ("W", 4)],
+        [("R", 0), ("R", 2), ("W", 4)],
+    ) is True
+    assert _is_subsequence(
+        [("R", 0), ("W", 4)],
+        [("W", 4), ("R", 0)],
+    ) is False
+
+
 def test_repository_python_paths_are_deduplicated_and_prepend_canonical_order():
     import sys
     from verification.repo_paths import install_python_paths
@@ -239,6 +258,31 @@ def test_extractor_resolves_canonical_multisource_manifest():
         assert resolved.is_relative_to(root), (
             f"{manifest_rel} source escapes repository: {source}")
         assert resolved.is_file(), f"{manifest_rel} source missing: {source}"
+
+
+def test_multisource_kconfig_is_lowered_to_parser_defines(tmp_path):
+    import json
+
+    from extractor.extractor import _manifest_compile_args
+
+    manifest = tmp_path / "driver.json"
+    manifest.write_text(json.dumps({
+        "sources": ["driver.c"],
+        "kconfig": [
+            "CONFIG_FEATURE=y",
+            "CONFIG_MODULE=m",
+            "CONFIG_DISABLED=n",
+            "CONFIG_LEVEL=7",
+        ],
+    }), encoding="utf-8")
+
+    assert _manifest_compile_args(str(manifest)) == [
+        "-DCONFIG_FEATURE=1",
+        "-DCONFIG_MODULE_MODULE=1",
+        "-UCONFIG_DISABLED",
+        "-UCONFIG_DISABLED_MODULE",
+        "-DCONFIG_LEVEL=7",
+    ]
 
 
 def test_holdout_manifest_uses_canonical_linux_relative_path():

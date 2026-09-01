@@ -1,0 +1,19 @@
+register:
+  - concepts
+  - controlflow
+  - dataflow
+  - lib
+  - mad
+  - namebinding
+  - quantum
+  - rangeanalysis
+  - regex
+  - ssa
+  - threat-models
+  - tutorial
+  - typeflow
+  - typetracking
+  - util
+  - xml
+  - yaml
+  - mmio-oracle

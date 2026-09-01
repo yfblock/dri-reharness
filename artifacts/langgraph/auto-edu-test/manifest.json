@@ -1,0 +1,74 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "edu",
+  "runtime": {
+    "adapter": "qemu",
+    "pci_identity": {
+      "device": "0x11e8",
+      "vendor": "0x1234"
+    },
+    "qemu": {
+      "bus": "pci",
+      "device": "edu",
+      "machine": "pc",
+      "module": "edu_drv",
+      "timeout_seconds": 90
+    },
+    "safety_policy": {
+      "action": "rewrite",
+      "failure_class": "safety",
+      "forbidden_tokens": [
+        "IO_DMA_CMD",
+        "DMA_CMD | DMA_IRQ"
+      ],
+      "rewrite_rules": [
+        {
+          "pattern": "^[ \\t]*writel\\([^;]*(?:IO_DMA_CMD|DMA_CMD\\s*\\|\\s*DMA_IRQ)[^;]*\\);[ \\t]*\\n",
+          "replacement": ""
+        }
+      ]
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/baseline/edu.c",
+    "sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
+  },
+  "test": {
+    "subsystem": {
+      "name": "edu-pci",
+      "tests": [
+        {
+          "args": [
+            "/dev/edu_drv"
+          ],
+          "executable": "qa/native-tests/edu_trace_test",
+          "name": "edu-pci-api",
+          "success_pattern": "EDU_TRACE_OK"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ],
+    "instrument": true,
+    "value_mask": "0xffffffff"
+  }
+}

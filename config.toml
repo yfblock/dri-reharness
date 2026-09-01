@@ -1,0 +1,13 @@
+# reharness 项目配置
+# 环境变量优先级高于本文件：REHARNESS_LLM_MODEL / REHARNESS_LLM_BASE_URL /
+# REHARNESS_LLM_API_KEY（或 OPENAI_API_KEY）/ REHARNESS_LLM_TIMEOUT /
+# REHARNESS_LLM_TEMPERATURE
+
+[llm]
+# 任意 OpenAI 协议兼容端点
+model = "gpt-5.6-luna"
+base_url = "https://ai.lan.yfblock.cn/v1"
+# 留空则回退环境变量；也可直接填入
+api_key = ""
+timeout = 600
+temperature = 0.0

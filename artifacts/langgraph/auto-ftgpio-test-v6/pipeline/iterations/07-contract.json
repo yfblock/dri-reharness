@@ -1,0 +1,39 @@
+{
+  "evidence_digest": "95653c68965788deef3b07c970ed87191ea1e3302affa898a0876bdd6dc8f7a7",
+  "iteration": 2,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "result": {
+      "candidate_structure": {
+        "complete": true,
+        "errors": [],
+        "source_resource_acquisitions": [
+          "devm_clk_get_enabled",
+          "devm_platform_ioremap_resource",
+          "platform_get_irq"
+        ]
+      },
+      "complete": true,
+      "digest_mismatch": [],
+      "duplicate": [],
+      "duplicate_expected_ids": [],
+      "duplicate_transaction_markers": [],
+      "kind_mismatch": [],
+      "missing": [],
+      "missing_transaction_markers": [],
+      "receipts": 36,
+      "rejected": [],
+      "required_ops": 36,
+      "required_transactions": 0,
+      "schema": 1,
+      "transaction_accounting_complete": true,
+      "transaction_marker_mismatch": [],
+      "transaction_markers": 0,
+      "unknown": [],
+      "unknown_transaction_markers": [],
+      "unsupported_transactions": []
+    }
+  },
+  "stage": "contract",
+  "status": "passed"
+}

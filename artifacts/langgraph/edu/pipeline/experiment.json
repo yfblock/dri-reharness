@@ -1,0 +1,138 @@
+{
+  "accepted": false,
+  "failure": {
+    "details": {
+      "exception": "LangChainBridgeError"
+    },
+    "failure_class": "infrastructure",
+    "iteration": 1,
+    "message": "synthesize adapter failed: model invocation failed: Missing credentials. Please pass an `api_key`, `workload_identity`, `admin_api_key`, or set the `OPENAI_API_KEY` or `OPENAI_ADMIN_KEY` environment variable.",
+    "retryable": false,
+    "stage": "synthesize"
+  },
+  "manifest": {
+    "compile": {
+      "backend": "linux",
+      "context": "kbuild",
+      "language": "c"
+    },
+    "limits": {
+      "compile": 3,
+      "runtime": 3,
+      "trace": 3
+    },
+    "name": "edu",
+    "runtime": {
+      "adapter": "qemu",
+      "pci_identity": {
+        "device": 4584,
+        "vendor": 4660
+      },
+      "qemu": {
+        "bus": "pci",
+        "device": "edu",
+        "machine": "pc",
+        "module": "edu_drv",
+        "probe_pattern": "probed|edu device id|edu probed",
+        "timeout_seconds": 90
+      },
+      "safety_policy": {
+        "action": "rewrite",
+        "failure_class": "safety",
+        "forbidden_tokens": [
+          "IO_DMA_CMD",
+          "DMA_CMD | DMA_IRQ"
+        ],
+        "rewrite_rules": [
+          {
+            "pattern": "^[ \\t]*writel\\([^;]*(?:IO_DMA_CMD|DMA_CMD\\s*\\|\\s*DMA_IRQ)[^;]*\\);[ \\t]*\\n",
+            "replacement": ""
+          }
+        ]
+      }
+    },
+    "schema": 2,
+    "source": {
+      "path": "benchmarks/drivers/baseline/edu.c"
+    },
+    "test": {
+      "actions": [
+        {
+          "name": "open"
+        },
+        {
+          "name": "read"
+        },
+        {
+          "name": "write"
+        }
+      ],
+      "args": [
+        "/dev/edu_drv"
+      ],
+      "executable": "qa/native-tests/edu_trace_test",
+      "success_pattern": "EDU_TRACE_OK"
+    },
+    "trace": {
+      "fields": [
+        "phase",
+        "function",
+        "kind",
+        "width_bits",
+        "address",
+        "value",
+        "sequence"
+      ],
+      "instrument": true,
+      "value_mask": "0xffffffff"
+    }
+  },
+  "manifest_digest": "a8398d1eff4ef681e13a92d6f8a402fd570e810399b5587123247ff1d075a0f6",
+  "name": "edu",
+  "records": [
+    {
+      "evidence_digest": "ae2e3432cc1ac0d689c6221569ef97fa8c422a4adf272f9ff1c0e4f9b72e0296",
+      "iteration": 1,
+      "manifest_digest": "a8398d1eff4ef681e13a92d6f8a402fd570e810399b5587123247ff1d075a0f6",
+      "payload": {
+        "result": {
+          "digest": "ae2e3432cc1ac0d689c6221569ef97fa8c422a4adf272f9ff1c0e4f9b72e0296",
+          "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence",
+          "files": [
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.device-spec.json",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.dspec",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.facts",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.formal.json",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.linux.bind",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.ris",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/generation-contract.json",
+            "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/score.txt"
+          ]
+        }
+      },
+      "stage": "extract",
+      "status": "passed"
+    },
+    {
+      "evidence_digest": "ae2e3432cc1ac0d689c6221569ef97fa8c422a4adf272f9ff1c0e4f9b72e0296",
+      "iteration": 1,
+      "manifest_digest": "a8398d1eff4ef681e13a92d6f8a402fd570e810399b5587123247ff1d075a0f6",
+      "payload": {
+        "feedback": {
+          "details": {
+            "exception": "LangChainBridgeError"
+          },
+          "failure_class": "infrastructure",
+          "iteration": 1,
+          "message": "synthesize adapter failed: model invocation failed: Missing credentials. Please pass an `api_key`, `workload_identity`, `admin_api_key`, or set the `OPENAI_API_KEY` or `OPENAI_ADMIN_KEY` environment variable.",
+          "retryable": false,
+          "stage": "synthesize"
+        }
+      },
+      "stage": "synthesize",
+      "status": "failed"
+    }
+  ],
+  "schema": 1,
+  "status": "failed"
+}

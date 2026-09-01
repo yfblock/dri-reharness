@@ -1,0 +1,42 @@
+=== QEMU run: module=e1000 bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031203] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031269] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.074049] ftrace: allocating 38351 entries in 152 pages
+[    0.074334] ftrace: allocated 152 pages with 3 groups
+[    0.431423] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.435913] thermal_sys: Registered thermal governor 'step_wise'
+[    0.440558] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.442050] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.528005] ACPI: bus type USB registered
+[    0.528324] usbcore: registered new interface driver usbfs
+[    0.528548] usbcore: registered new interface driver hub
+[    0.528652] usbcore: registered new device driver usb
+[    0.528833] pps_core: LinuxPPS API ver. 1 registered
+[    0.528954] PTP clock support registered
+[    0.561015] NET: Registered PF_INET protocol family
+[    0.578491] Key type asymmetric registered
+[    0.578571] Asymmetric key parser 'x509' registered
+[    0.579017] io scheduler mq-deadline registered
+[    0.579079] io scheduler kyber registered
+[    0.624080] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.629739] usbcore: registered new interface driver usbhid
+[    0.630493] NET: Registered PF_INET6 protocol family
+=== insmod e1000 ===
+[    1.068010] e1000: [rhcov] e1000_probe
+[    1.068050] e1000: [rhcov] e1000_probe
+[    1.068078] e1000: [rhcov] e1000_probe
+[    1.068105] e1000: [rhcov] e1000_probe
+[    1.628935] insmod (60) used greatest stack depth: 13000 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+                               drv probe link
+EXERCISER_RC=0
+=== rmmod e1000 ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[   10.384864] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=19 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: e1000 probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-e1000-qemu.fGe78j

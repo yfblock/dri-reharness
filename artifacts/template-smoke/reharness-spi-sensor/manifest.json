@@ -1,0 +1,116 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "reharness_spi_sensor",
+  "runtime": {
+    "adapter": "qemu-profile",
+    "capabilities": {
+      "optional": [
+        "subsystem",
+        "trace"
+      ],
+      "required": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ]
+    },
+    "fixture": {
+      "config": {
+        "chip_select": 0,
+        "driver_name": "reharness_spi_sens",
+        "expected_value": "0xa6",
+        "module_args": {
+          "spi-registrar": [
+            "modalias=reharness_spi_sens"
+          ]
+        },
+        "register": "0x10"
+      },
+      "kind": "qemu-spi",
+      "module_sources": [
+        "qa/verification/device-registrar/spi-registrar.c"
+      ]
+    },
+    "profile": "spi-generic",
+    "qemu": {
+      "binding": {
+        "bus": "spi",
+        "device_glob": "*"
+      },
+      "bus": "spi",
+      "device": "spi-virtual",
+      "kernel_modules": [
+        "spidev"
+      ],
+      "machine": "pc",
+      "module": "reharness_spi_sensor",
+      "probe_pattern": "REHARNESS_SPI_DRIVER_PROBE",
+      "timeout_seconds": 90
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-spi-sensor.c",
+    "sha256": "9576672f30772dcd2331cb7e970ec4bb200a6e2c7175b6d46208ccbd28767f85"
+  },
+  "test": {
+    "subsystem": {
+      "name": "spi",
+      "tests": [
+        {
+          "args": [
+            "/dev/reharness-spi-control"
+          ],
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "name": "spi-transfer",
+          "success_pattern": "SPI_TRANSFER_PASS"
+        },
+        {
+          "args": [
+            "/dev/reharness-spi-control"
+          ],
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "name": "spi-invalid-chip-select",
+          "success_pattern": "SPI_INVALID_CHIP_SELECT_PASS"
+        },
+        {
+          "args": [
+            "-D",
+            "/dev/spidev0.1",
+            "-p",
+            "01020304",
+            "-S",
+            "4",
+            "-I",
+            "1"
+          ],
+          "executable": "vendor/linux/tools/spi/spidev_test.c",
+          "kind": "tool",
+          "name": "linux-spidev-tool",
+          "provider": "linux-spidev"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ]
+  }
+}

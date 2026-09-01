@@ -1,0 +1,92 @@
+device clk-highbank {
+  class clock
+  source "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c"
+  state {
+    base: MmioBase
+  }
+  resource mmio0: MmioResource { required true bind base }
+  function clk_pll_prepare(hwclk: DeviceState) -> UInt {
+    role init
+    source "clk-highbank.c:43"
+    context thread
+    callback clk_ops.prepare
+    ris clk_pll_prepare
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function clk_pll_unprepare(hwclk: DeviceState) -> Void {
+    role remove
+    source "clk-highbank.c:60"
+    context thread
+    callback clk_ops.unprepare
+    ris clk_pll_unprepare
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function clk_pll_enable(hwclk: DeviceState) -> UInt {
+    role init
+    source "clk-highbank.c:70"
+    context thread
+    callback clk_ops.enable
+    ris clk_pll_enable
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function clk_pll_disable(hwclk: DeviceState) -> Void {
+    role remove
+    source "clk-highbank.c:82"
+    context thread
+    callback clk_ops.disable
+    ris clk_pll_disable
+    effect releases_device()
+    ensure device_state == OFF
+  }
+  function clk_pll_recalc_rate(hwclk: DeviceState, parent_rate: UInt) -> UInt {
+    role read_config
+    source "clk-highbank.c:92"
+    context thread
+    callback clk_ops.recalc_rate
+    ris clk_pll_recalc_rate
+    effect reads_config(offset)
+  }
+  function clk_pll_set_rate(hwclk: DeviceState, rate: UInt, parent_rate: UInt) -> UInt {
+    role write_config
+    source "clk-highbank.c:146"
+    context thread
+    callback clk_ops.set_rate
+    ris clk_pll_set_rate
+    effect writes_config(offset)
+  }
+  function clk_cpu_periphclk_recalc_rate(hwclk: DeviceState, parent_rate: UInt) -> UInt {
+    role read_config
+    source "clk-highbank.c:194"
+    context thread
+    callback clk_ops.recalc_rate
+    ris clk_cpu_periphclk_recalc_rate
+    effect reads_config(offset)
+  }
+  function clk_cpu_a9bclk_recalc_rate(hwclk: DeviceState, parent_rate: UInt) -> UInt {
+    role read_config
+    source "clk-highbank.c:206"
+    context thread
+    callback clk_ops.recalc_rate
+    ris clk_cpu_a9bclk_recalc_rate
+    effect reads_config(offset)
+  }
+  function clk_periclk_recalc_rate(hwclk: DeviceState, parent_rate: UInt) -> UInt {
+    role read_config
+    source "clk-highbank.c:219"
+    context thread
+    callback clk_ops.recalc_rate
+    ris clk_periclk_recalc_rate
+    effect reads_config(offset)
+  }
+  function clk_periclk_set_rate(hwclk: DeviceState, rate: UInt, parent_rate: UInt) -> UInt {
+    role write_config
+    source "clk-highbank.c:246"
+    context thread
+    callback clk_ops.set_rate
+    ris clk_periclk_set_rate
+    effect writes_config(offset)
+  }
+}

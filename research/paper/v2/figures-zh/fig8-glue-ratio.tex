@@ -1,0 +1,147 @@
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usepackage{xcolor}
+\definecolor{figblue}{HTML}{1D4ED8}
+\definecolor{figorange}{HTML}{F97316}
+\begin{document}
+\begin{tikzpicture}[x=0.082cm,y=1cm,font=\scriptsize]
+  \draw[line width=0.7pt] (0,0.34) -- (0,0) -- (106,0);
+  \foreach \x/\xl in {0/0,25/25,50/50,75/75,100/100} {
+    \draw[line width=0.5pt] (\x,0) -- (\x,0.12);
+    \node[above, font=\scriptsize] at (\x,0.16) {\xl};
+  }
+  \node[above=8pt, font=\scriptsize] at (50,0.25)
+    {非空源行构成（\%）};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.00) rectangle (20.70,-0.26);
+  \path[fill=figorange, draw=black, line width=0.3pt] (20.70,-0.00) rectangle (30.80,-0.26);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (30.80,-0.00) rectangle (62.20,-0.26);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (62.20,-0.00) rectangle (100.10,-0.26);
+  \node[left, font=\scriptsize] at (-0.18,-0.13) {wmt\_ge\_rops};
+  \node[right, font=\scriptsize] at (101.2,-0.13) {20.7\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.36) rectangle (18.10,-0.62);
+  \path[fill=figorange, draw=black, line width=0.3pt] (18.10,-0.36) rectangle (75.30,-0.62);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (75.30,-0.36) rectangle (75.60,-0.62);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (75.60,-0.36) rectangle (100.00,-0.62);
+  \node[left, font=\scriptsize] at (-0.18,-0.49) {gpio-pl061};
+  \node[right, font=\scriptsize] at (101.2,-0.49) {18.1\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.72) rectangle (17.00,-0.98);
+  \path[fill=figorange, draw=black, line width=0.3pt] (17.00,-0.72) rectangle (72.20,-0.98);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (72.20,-0.72) rectangle (72.50,-0.98);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (72.50,-0.72) rectangle (99.90,-0.98);
+  \node[left, font=\scriptsize] at (-0.18,-0.85) {gpio-ftgpio010};
+  \node[right, font=\scriptsize] at (101.2,-0.85) {17.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-1.08) rectangle (16.50,-1.34);
+  \path[fill=figorange, draw=black, line width=0.3pt] (16.50,-1.08) rectangle (71.40,-1.34);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (71.40,-1.08) rectangle (71.80,-1.34);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (71.80,-1.08) rectangle (100.00,-1.34);
+  \node[left, font=\scriptsize] at (-0.18,-1.21) {gpio-cadence};
+  \node[right, font=\scriptsize] at (101.2,-1.21) {16.5\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-1.44) rectangle (14.60,-1.70);
+  \path[fill=figorange, draw=black, line width=0.3pt] (14.60,-1.44) rectangle (48.90,-1.70);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (48.90,-1.44) rectangle (79.10,-1.70);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (79.10,-1.44) rectangle (100.00,-1.70);
+  \node[left, font=\scriptsize] at (-0.18,-1.57) {clk-highbank};
+  \node[right, font=\scriptsize] at (101.2,-1.57) {14.6\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-1.80) rectangle (14.20,-2.06);
+  \path[fill=figorange, draw=black, line width=0.3pt] (14.20,-1.80) rectangle (72.20,-2.06);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (72.20,-1.80) rectangle (72.80,-2.06);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (72.80,-1.80) rectangle (100.00,-2.06);
+  \node[left, font=\scriptsize] at (-0.18,-1.93) {gpio-idt3243x};
+  \node[right, font=\scriptsize] at (101.2,-1.93) {14.2\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-2.16) rectangle (13.60,-2.42);
+  \path[fill=figorange, draw=black, line width=0.3pt] (13.60,-2.16) rectangle (37.50,-2.42);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (37.50,-2.16) rectangle (81.60,-2.42);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (81.60,-2.16) rectangle (100.00,-2.42);
+  \node[left, font=\scriptsize] at (-0.18,-2.29) {pll};
+  \node[right, font=\scriptsize] at (101.2,-2.29) {13.6\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-2.52) rectangle (11.70,-2.78);
+  \path[fill=figorange, draw=black, line width=0.3pt] (11.70,-2.52) rectangle (48.50,-2.78);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (48.50,-2.52) rectangle (65.70,-2.78);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (65.70,-2.52) rectangle (99.90,-2.78);
+  \node[left, font=\scriptsize] at (-0.18,-2.65) {virtio\_mmio};
+  \node[right, font=\scriptsize] at (101.2,-2.65) {11.7\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-2.88) rectangle (11.20,-3.14);
+  \path[fill=figorange, draw=black, line width=0.3pt] (11.20,-2.88) rectangle (56.30,-3.14);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (56.30,-2.88) rectangle (74.30,-3.14);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (74.30,-2.88) rectangle (100.00,-3.14);
+  \node[left, font=\scriptsize] at (-0.18,-3.01) {gpio-sodaville};
+  \node[right, font=\scriptsize] at (101.2,-3.01) {11.2\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-3.24) rectangle (10.40,-3.50);
+  \path[fill=figorange, draw=black, line width=0.3pt] (10.40,-3.24) rectangle (65.50,-3.50);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (65.50,-3.24) rectangle (77.40,-3.50);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (77.40,-3.24) rectangle (100.00,-3.50);
+  \node[left, font=\scriptsize] at (-0.18,-3.37) {sdhci-of-at91};
+  \node[right, font=\scriptsize] at (101.2,-3.37) {10.4\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-3.60) rectangle (9.10,-3.86);
+  \path[fill=figorange, draw=black, line width=0.3pt] (9.10,-3.60) rectangle (69.40,-3.86);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (69.40,-3.60) rectangle (83.30,-3.86);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (83.30,-3.60) rectangle (99.90,-3.86);
+  \node[left, font=\scriptsize] at (-0.18,-3.73) {sdhci-esdhc-mcf};
+  \node[right, font=\scriptsize] at (101.2,-3.73) {9.1\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-3.96) rectangle (8.50,-4.22);
+  \path[fill=figorange, draw=black, line width=0.3pt] (8.50,-3.96) rectangle (45.80,-4.22);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (45.80,-3.96) rectangle (68.50,-4.22);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (68.50,-3.96) rectangle (100.00,-4.22);
+  \node[left, font=\scriptsize] at (-0.18,-4.09) {ahci\_ceva};
+  \node[right, font=\scriptsize] at (101.2,-4.09) {8.5\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-4.32) rectangle (8.40,-4.58);
+  \path[fill=figorange, draw=black, line width=0.3pt] (8.40,-4.32) rectangle (27.60,-4.58);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (27.60,-4.32) rectangle (55.20,-4.58);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (55.20,-4.32) rectangle (100.10,-4.58);
+  \node[left, font=\scriptsize] at (-0.18,-4.45) {ahci\_mvebu};
+  \node[right, font=\scriptsize] at (101.2,-4.45) {8.4\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-4.68) rectangle (8.20,-4.94);
+  \path[fill=figorange, draw=black, line width=0.3pt] (8.20,-4.68) rectangle (51.60,-4.94);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (51.60,-4.68) rectangle (56.00,-4.94);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (56.00,-4.68) rectangle (100.00,-4.94);
+  \node[left, font=\scriptsize] at (-0.18,-4.81) {edu};
+  \node[right, font=\scriptsize] at (101.2,-4.81) {8.2\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-5.04) rectangle (8.00,-5.30);
+  \path[fill=figorange, draw=black, line width=0.3pt] (8.00,-5.04) rectangle (25.20,-5.30);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (25.20,-5.04) rectangle (63.90,-5.30);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (63.90,-5.04) rectangle (100.00,-5.30);
+  \node[left, font=\scriptsize] at (-0.18,-5.17) {clk-nomadik};
+  \node[right, font=\scriptsize] at (101.2,-5.17) {8.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-5.40) rectangle (7.00,-5.66);
+  \path[fill=figorange, draw=black, line width=0.3pt] (7.00,-5.40) rectangle (25.20,-5.66);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (25.20,-5.40) rectangle (70.20,-5.66);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (70.20,-5.40) rectangle (100.00,-5.66);
+  \node[left, font=\scriptsize] at (-0.18,-5.53) {ahci\_sunxi};
+  \node[right, font=\scriptsize] at (101.2,-5.53) {7.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-5.76) rectangle (7.00,-6.02);
+  \path[fill=figorange, draw=black, line width=0.3pt] (7.00,-5.76) rectangle (68.30,-6.02);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (68.30,-5.76) rectangle (68.80,-6.02);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (68.80,-5.76) rectangle (100.00,-6.02);
+  \node[left, font=\scriptsize] at (-0.18,-5.89) {gpio-mb86s7x};
+  \node[right, font=\scriptsize] at (101.2,-5.89) {7.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-6.12) rectangle (6.40,-6.38);
+  \path[fill=figorange, draw=black, line width=0.3pt] (6.40,-6.12) rectangle (19.20,-6.38);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (19.20,-6.12) rectangle (63.00,-6.38);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (63.00,-6.12) rectangle (100.10,-6.38);
+  \node[left, font=\scriptsize] at (-0.18,-6.25) {ahci\_dwc};
+  \node[right, font=\scriptsize] at (101.2,-6.25) {6.4\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-6.48) rectangle (4.00,-6.74);
+  \path[fill=figorange, draw=black, line width=0.3pt] (4.00,-6.48) rectangle (19.30,-6.74);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (19.30,-6.48) rectangle (60.10,-6.74);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (60.10,-6.48) rectangle (100.00,-6.74);
+  \node[left, font=\scriptsize] at (-0.18,-6.61) {ahci};
+  \node[right, font=\scriptsize] at (101.2,-6.61) {4.0\%};
+  \draw[line width=0.5pt] (0,-6.84) -- (106,-6.84);
+  \path[fill=figblue, draw=black, line width=0.5pt] (0.00,-6.96) rectangle (9.50,-7.28);
+  \path[fill=figorange, draw=black, line width=0.5pt] (9.50,-6.96) rectangle (42.10,-7.28);
+  \path[fill=gray!45, draw=black, line width=0.5pt] (42.10,-6.96) rectangle (67.80,-7.28);
+  \path[fill=gray!15, draw=black, line width=0.5pt] (67.80,-6.96) rectangle (100.00,-7.28);
+  \node[left, font=\scriptsize\bfseries] at (-0.18,-7.12) {\textbf{合计（19）}};
+  \node[right, font=\scriptsize\bfseries] at (101.2,-7.12) {9.5\% 设备核心};
+  \path[fill=figblue, draw=black, line width=0.4pt] (4.00,-7.81) rectangle (6.40,-7.55);
+  \node[right, font=\scriptsize] at (6.90,-7.68) {设备核心行};
+  \path[fill=figorange, draw=black, line width=0.4pt] (56.00,-7.81) rectangle (58.40,-7.55);
+  \node[right, font=\scriptsize] at (58.90,-7.68) {框架入口函数体};
+  \path[fill=gray!45, draw=black, line width=0.4pt] (4.00,-8.19) rectangle (6.40,-7.93);
+  \node[right, font=\scriptsize] at (6.90,-8.06) {胶水/辅助及其它函数体};
+  \path[fill=gray!15, draw=black, line width=0.4pt] (56.00,-8.19) rectangle (58.40,-7.93);
+  \node[right, font=\scriptsize] at (58.90,-8.06) {文件级声明与注册样板};
+\end{tikzpicture}
+\end{document}

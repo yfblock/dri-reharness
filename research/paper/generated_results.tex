@@ -36,6 +36,184 @@
 \newcommand{\MultiSourcePropagatedEdges}{578}
 \newcommand{\MultiSourceSourceMMIO}{907}
 \newcommand{\MultiSourceRISMMIO}{3794}
+\newcommand{\MultiSourceAspeedVhubSourceMMIO}{101}
+\newcommand{\MultiSourceAspeedVhubRISMMIO}{154}
+\newcommand{\MultiSourceAspeedVhubOps}{158}
+\newcommand{\MultiSourceAspeedVhubSeconds}{40.893}
+\newcommand{\MultiSourceAspeedVhubUnresolvedCalls}{0}
+\newcommand{\MultiSourceCSixtySevenXZeroZeroSourceMMIO}{2}
+\newcommand{\MultiSourceCSixtySevenXZeroZeroRISMMIO}{32}
+\newcommand{\MultiSourceCSixtySevenXZeroZeroOps}{38}
+\newcommand{\MultiSourceCSixtySevenXZeroZeroSeconds}{28.547}
+\newcommand{\MultiSourceCSixtySevenXZeroZeroUnresolvedCalls}{0}
+\newcommand{\MultiSourceDwcTwoSourceMMIO}{804}
+\newcommand{\MultiSourceDwcTwoRISMMIO}{3608}
+\newcommand{\MultiSourceDwcTwoOps}{4250}
+\newcommand{\MultiSourceDwcTwoSeconds}{176.452}
+\newcommand{\MultiSourceDwcTwoUnresolvedCalls}{68}
+\newcommand{\EvalSecondsMin}{6.0}
+\newcommand{\EvalSecondsMedian}{9.6}
+\newcommand{\EvalSecondsMax}{11.8}
+\newcommand{\HarnessReadyDriverList}{edu, gpio-ftgpio010, gpio-idt3243x, gpio-pl061}
+\newcommand{\BaremetalReadyDriverList}{edu, gpio-ftgpio010, gpio-idt3243x, gpio-pl061}
+\newcommand{\LinuxReadyDriverList}{gpio-ftgpio010, gpio-idt3243x}
+\newcommand{\MultiSourceUnresolvedCalls}{68}
+\newcommand{\MultiSourceCallResolutionPct}{93.0\%}
+\newcommand{\GlueCorePct}{9.5\%}
+\newcommand{\GlueEntryPct}{32.6\%}
+\newcommand{\GlueHelperPct}{25.7\%}
+\newcommand{\GlueFileScopePct}{32.2\%}
+\newcommand{\GlueGluePct}{90.5\%}
+\newcommand{\GlueCoreLines}{707}
+\newcommand{\GlueCodeLines}{7439}
+\newcommand{\ZeroShotCases}{12}
+\newcommand{\ZeroShotCompile}{12}
+\newcommand{\ZeroShotHarnessStrict}{7}
+\newcommand{\ZeroShotBaremetalStrict}{7}
+\newcommand{\ZeroShotLinuxStrict}{5}
+\newcommand{\ZeroShotAllStrict}{5}
+\newcommand{\ZeroShotHardwareCases}{11}
+
+\newcommand{\GlueRatioChart}{%
+\begin{tikzpicture}[x=0.082cm,y=1cm,font=\scriptsize]
+  \draw[line width=0.7pt] (0,0.34) -- (0,0) -- (106,0);
+  \foreach \x/\xl in {0/0,25/25,50/50,75/75,100/100} {
+    \draw[line width=0.5pt] (\x,0) -- (\x,0.12);
+    \node[above, font=\scriptsize] at (\x,0.16) {\xl};
+  }
+  \node[above=8pt, font=\scriptsize] at (50,0.25)
+    {Composition of non-blank source lines (\%)};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.00) rectangle (35.00,-0.26);
+  \path[fill=figorange, draw=black, line width=0.3pt] (35.00,-0.00) rectangle (52.00,-0.26);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (52.00,-0.00) rectangle (105.00,-0.26);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (105.00,-0.00) rectangle (169.00,-0.26);
+  \node[left, font=\scriptsize] at (-0.18,-0.13) {wmt\_ge\_rops};
+  \node[right, font=\scriptsize] at (101.2,-0.13) {20.7\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.36) rectangle (65.00,-0.62);
+  \path[fill=figorange, draw=black, line width=0.3pt] (65.00,-0.36) rectangle (271.00,-0.62);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (271.00,-0.36) rectangle (272.00,-0.62);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (272.00,-0.36) rectangle (360.00,-0.62);
+  \node[left, font=\scriptsize] at (-0.18,-0.49) {gpio-pl061};
+  \node[right, font=\scriptsize] at (101.2,-0.49) {18.1\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.72) rectangle (49.00,-0.98);
+  \path[fill=figorange, draw=black, line width=0.3pt] (49.00,-0.72) rectangle (208.00,-0.98);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (208.00,-0.72) rectangle (209.00,-0.98);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (209.00,-0.72) rectangle (288.00,-0.98);
+  \node[left, font=\scriptsize] at (-0.18,-0.85) {gpio-ftgpio010};
+  \node[right, font=\scriptsize] at (101.2,-0.85) {17.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-1.08) rectangle (45.00,-1.34);
+  \path[fill=figorange, draw=black, line width=0.3pt] (45.00,-1.08) rectangle (195.00,-1.34);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (195.00,-1.08) rectangle (196.00,-1.34);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (196.00,-1.08) rectangle (273.00,-1.34);
+  \node[left, font=\scriptsize] at (-0.18,-1.21) {gpio-cadence};
+  \node[right, font=\scriptsize] at (101.2,-1.21) {16.5\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-1.44) rectangle (39.00,-1.70);
+  \path[fill=figorange, draw=black, line width=0.3pt] (39.00,-1.44) rectangle (131.00,-1.70);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (131.00,-1.44) rectangle (212.00,-1.70);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (212.00,-1.44) rectangle (268.00,-1.70);
+  \node[left, font=\scriptsize] at (-0.18,-1.57) {clk-highbank};
+  \node[right, font=\scriptsize] at (101.2,-1.57) {14.6\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-1.80) rectangle (24.00,-2.06);
+  \path[fill=figorange, draw=black, line width=0.3pt] (24.00,-1.80) rectangle (122.00,-2.06);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (122.00,-1.80) rectangle (123.00,-2.06);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (123.00,-1.80) rectangle (169.00,-2.06);
+  \node[left, font=\scriptsize] at (-0.18,-1.93) {gpio-idt3243x};
+  \node[right, font=\scriptsize] at (101.2,-1.93) {14.2\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-2.16) rectangle (37.00,-2.42);
+  \path[fill=figorange, draw=black, line width=0.3pt] (37.00,-2.16) rectangle (102.00,-2.42);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (102.00,-2.16) rectangle (222.00,-2.42);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (222.00,-2.16) rectangle (272.00,-2.42);
+  \node[left, font=\scriptsize] at (-0.18,-2.29) {pll};
+  \node[right, font=\scriptsize] at (101.2,-2.29) {13.6\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-2.52) rectangle (79.00,-2.78);
+  \path[fill=figorange, draw=black, line width=0.3pt] (79.00,-2.52) rectangle (327.00,-2.78);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (327.00,-2.52) rectangle (443.00,-2.78);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (443.00,-2.52) rectangle (673.00,-2.78);
+  \node[left, font=\scriptsize] at (-0.18,-2.65) {virtio\_mmio};
+  \node[right, font=\scriptsize] at (101.2,-2.65) {11.7\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-2.88) rectangle (23.00,-3.14);
+  \path[fill=figorange, draw=black, line width=0.3pt] (23.00,-2.88) rectangle (116.00,-3.14);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (116.00,-2.88) rectangle (153.00,-3.14);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (153.00,-2.88) rectangle (206.00,-3.14);
+  \node[left, font=\scriptsize] at (-0.18,-3.01) {gpio-sodaville};
+  \node[right, font=\scriptsize] at (101.2,-3.01) {11.2\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-3.24) rectangle (40.00,-3.50);
+  \path[fill=figorange, draw=black, line width=0.3pt] (40.00,-3.24) rectangle (252.00,-3.50);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (252.00,-3.24) rectangle (298.00,-3.50);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (298.00,-3.24) rectangle (385.00,-3.50);
+  \node[left, font=\scriptsize] at (-0.18,-3.37) {sdhci-of-at91};
+  \node[right, font=\scriptsize] at (101.2,-3.37) {10.4\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-3.60) rectangle (38.00,-3.86);
+  \path[fill=figorange, draw=black, line width=0.3pt] (38.00,-3.60) rectangle (289.00,-3.86);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (289.00,-3.60) rectangle (347.00,-3.86);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (347.00,-3.60) rectangle (416.00,-3.86);
+  \node[left, font=\scriptsize] at (-0.18,-3.73) {sdhci-esdhc-mcf};
+  \node[right, font=\scriptsize] at (101.2,-3.73) {9.1\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-3.96) rectangle (29.00,-4.22);
+  \path[fill=figorange, draw=black, line width=0.3pt] (29.00,-3.96) rectangle (157.00,-4.22);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (157.00,-3.96) rectangle (235.00,-4.22);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (235.00,-3.96) rectangle (343.00,-4.22);
+  \node[left, font=\scriptsize] at (-0.18,-4.09) {ahci\_ceva};
+  \node[right, font=\scriptsize] at (101.2,-4.09) {8.5\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-4.32) rectangle (18.00,-4.58);
+  \path[fill=figorange, draw=black, line width=0.3pt] (18.00,-4.32) rectangle (59.00,-4.58);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (59.00,-4.32) rectangle (118.00,-4.58);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (118.00,-4.32) rectangle (214.00,-4.58);
+  \node[left, font=\scriptsize] at (-0.18,-4.45) {ahci\_mvebu};
+  \node[right, font=\scriptsize] at (101.2,-4.45) {8.4\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-4.68) rectangle (15.00,-4.94);
+  \path[fill=figorange, draw=black, line width=0.3pt] (15.00,-4.68) rectangle (94.00,-4.94);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (94.00,-4.68) rectangle (102.00,-4.94);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (102.00,-4.68) rectangle (182.00,-4.94);
+  \node[left, font=\scriptsize] at (-0.18,-4.81) {edu};
+  \node[right, font=\scriptsize] at (101.2,-4.81) {8.2\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-5.04) rectangle (40.00,-5.30);
+  \path[fill=figorange, draw=black, line width=0.3pt] (40.00,-5.04) rectangle (126.00,-5.30);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (126.00,-5.04) rectangle (319.00,-5.30);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (319.00,-5.04) rectangle (499.00,-5.30);
+  \node[left, font=\scriptsize] at (-0.18,-5.17) {clk-nomadik};
+  \node[right, font=\scriptsize] at (101.2,-5.17) {8.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-5.40) rectangle (18.00,-5.66);
+  \path[fill=figorange, draw=black, line width=0.3pt] (18.00,-5.40) rectangle (65.00,-5.66);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (65.00,-5.40) rectangle (181.00,-5.66);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (181.00,-5.40) rectangle (258.00,-5.66);
+  \node[left, font=\scriptsize] at (-0.18,-5.53) {ahci\_sunxi};
+  \node[right, font=\scriptsize] at (101.2,-5.53) {7.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-5.76) rectangle (13.00,-6.02);
+  \path[fill=figorange, draw=black, line width=0.3pt] (13.00,-5.76) rectangle (127.00,-6.02);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (127.00,-5.76) rectangle (128.00,-6.02);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (128.00,-5.76) rectangle (186.00,-6.02);
+  \node[left, font=\scriptsize] at (-0.18,-5.89) {gpio-mb86s7x};
+  \node[right, font=\scriptsize] at (101.2,-5.89) {7.0\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-6.12) rectangle (22.00,-6.38);
+  \path[fill=figorange, draw=black, line width=0.3pt] (22.00,-6.12) rectangle (66.00,-6.38);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (66.00,-6.12) rectangle (217.00,-6.38);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (217.00,-6.12) rectangle (345.00,-6.38);
+  \node[left, font=\scriptsize] at (-0.18,-6.25) {ahci\_dwc};
+  \node[right, font=\scriptsize] at (101.2,-6.25) {6.4\%};
+  \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-6.48) rectangle (78.00,-6.74);
+  \path[fill=figorange, draw=black, line width=0.3pt] (78.00,-6.48) rectangle (374.00,-6.74);
+  \path[fill=gray!45, draw=black, line width=0.3pt] (374.00,-6.48) rectangle (1162.00,-6.74);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (1162.00,-6.48) rectangle (1933.00,-6.74);
+  \node[left, font=\scriptsize] at (-0.18,-6.61) {ahci};
+  \node[right, font=\scriptsize] at (101.2,-6.61) {4.0\%};
+  \draw[line width=0.5pt] (0,-6.84) -- (106,-6.84);
+  \path[fill=figblue, draw=black, line width=0.5pt] (0.00,-6.96) rectangle (707.00,-7.28);
+  \path[fill=figorange, draw=black, line width=0.5pt] (707.00,-6.96) rectangle (3133.00,-7.28);
+  \path[fill=gray!45, draw=black, line width=0.5pt] (3133.00,-6.96) rectangle (5042.00,-7.28);
+  \path[fill=gray!15, draw=black, line width=0.5pt] (5042.00,-6.96) rectangle (7439.00,-7.28);
+  \node[left, font=\scriptsize\bfseries] at (-0.18,-7.12) {\textbf{Total (19)}};
+  \node[right, font=\scriptsize\bfseries] at (101.2,-7.12) {9.5\% device-core};
+  \path[fill=figblue, draw=black, line width=0.4pt] (6.00,-7.74) rectangle (8.40,-8.00);
+  \node[right, font=\scriptsize] at (8.90,-7.87) {Device-core lines};
+  \path[fill=figorange, draw=black, line width=0.4pt] (54.00,-7.74) rectangle (56.40,-8.00);
+  \node[right, font=\scriptsize] at (56.90,-7.87) {Framework entry bodies};
+  \path[fill=gray!45, draw=black, line width=0.4pt] (6.00,-8.19) rectangle (8.40,-8.45);
+  \node[right, font=\scriptsize] at (8.90,-8.32) {Glue wrappers & other function bodies};
+  \path[fill=gray!15, draw=black, line width=0.4pt] (54.00,-8.19) rectangle (56.40,-8.45);
+  \node[right, font=\scriptsize] at (56.90,-8.32) {File-scope declarations & registration};
+\end{tikzpicture}
+}
 
 \newcommand{\ExtractionResultsTable}{%
 \begin{tabular}{lrrrrrrrr}
@@ -56,7 +234,7 @@ edu & 5 & 3 & 2 & 0 & 0 & 2 & 3 & 60.0\%\\
 \newcommand{\ReadinessResultsTable}{%
 \begin{tabular}{lcccccc}
 \hline
-\textbf{Driver} & \textbf{RIS} & \textbf{FuncSpec} & \textbf{DevSpec} & \textbf{H/B/L compile} & \textbf{Linux ready} & \textbf{LLM ready}\\
+\textbf{Driver} & \textbf{RIS} & \textbf{FuncSpec} & \textbf{DevSpec} & \textbf{H/B/L compile} & \textbf{Linux ready} & \textbf{Synth.-eligible}\\
 \hline
 gpio-ftgpio010 & 1.000 & 1.000 & 1.000 & \checkmark/\checkmark/\checkmark & \checkmark & \checkmark\\
 virtio\_mmio & 0.897 & 0.875 & 1.000 & \checkmark/\checkmark/\checkmark & -- & --\\
@@ -79,4 +257,4 @@ dwc2 & 10 & 21668 & 445 & 140 & 445 & 804 & 3608 & 4250 & \checkmark/\checkmark/
 \end{tabular}
 }
 
-% QEMU evidence: {"edu": {"probe": true, "value_oracle": "EDU_TRACE_OK"}, "gpio-ftgpio010": {"call_coverage": "7/7", "module_coverage": "6/6", "op_coverage": "13/13", "probe": true, "register_coverage": "8/8", "trace_oracle": "TRACE_MATCH_OK"}}
+% QEMU evidence: {"edu": {"manifest_digest": "fdf8ce2531793c7ee9e463bede2c60a7e29fbe7b34b5df72aa8078749426ffe9", "probe": true, "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e", "trace_oracle": true, "value_oracle": "EDU_TRACE_OK"}, "ftgpio010": {"call_coverage": "7/7", "manifest_digest": "7d0aa358fca274b1375570b2dd54c9532aed9251be809b42aaaf5384f88ad7fe", "module_coverage": "6/6", "op_coverage": "13/13", "probe": true, "register_coverage": "8/8", "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33", "trace_oracle": true}, "reharness-amba": {"manifest_digest": "6695a702854b06caee085074d2d988f373d1621e079ae8f1c81a5500c44f63db", "probe": false, "source_sha256": "4d0bafbb13c9beeb1ba6a65aa11570a2a7747f325f4c8df685d38dd3cf9426f9", "trace_oracle": true}, "reharness-i2c": {"manifest_digest": "c2a507c31c7fb791cc429b1b620fd44d373f064c9fb12287425acc798a965485", "probe": false, "source_sha256": "48ae7a4f52e6e2027830f1d33ed8a41adefaa3f1d4a91843e0f2a223e20473cf", "trace_oracle": false}, "reharness-mdio": {"manifest_digest": "e500a8fac8b948b451328338ae64cca52f2b2a6b242032023234ddbcadb7cf50", "probe": false, "source_sha256": "276813624946e0a5393cd381507a82cdf3ab66a66f559de40e540da93dc5c4e8", "trace_oracle": true}, "reharness-network": {"manifest_digest": "b0427b5bd1ab383662221456c0a851cbe9b208c85842caa7e8c4154814c59af5", "probe": false, "source_sha256": "e596c53aaf4187f0f4d4ca074e1863d6f0e2f540462e4e6197f395c880958e34", "trace_oracle": true}, "reharness-spi": {"manifest_digest": "20e16e43eac16f1dd7d1d0e141e3809a0374de6aa2eb9068bdfdd3032912dddf", "probe": false, "source_sha256": "9576672f30772dcd2331cb7e970ec4bb200a6e2c7175b6d46208ccbd28767f85", "trace_oracle": true}, "reharness-usb": {"manifest_digest": "9be90b43641b0d14d7c8a64601ad16fd5087d042df66c78d670fe5f1410d7efa", "probe": false, "source_sha256": "b2694440ba132e19c52c74f468834f35f4b02aee22e491951886783682d97133", "trace_oracle": true}, "reharness-virtio": {"manifest_digest": "315fcebffca54f9c41bbeefc46c4736b3523a59f0d8c82ac138b7abc0397df9e", "probe": false, "source_sha256": "a67c4cb8c36e523a38dab65d4c1c35aa44cbadc222421f7007e94e6a58a5b66a", "trace_oracle": true}}

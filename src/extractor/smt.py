@@ -87,7 +87,7 @@ def _translator():
     return z3, translate, boolean
 
 
-def validate_formal_paths(formal: dict, timeout_ms: int = 100) -> dict:
+def validate_formal_paths(formal: dict, timeout_ms: int = 250) -> dict:
     condition_nodes = []
     for module in formal.get("modules", []):
         stack = list(module.get("ops", []))
@@ -135,7 +135,32 @@ def validate_formal_paths(formal: dict, timeout_ms: int = 100) -> dict:
             return "infeasible"
         return "unknown"
 
-    def walk(ops, constraints, module_name):
+    def evaluate_guard(expr, constraints):
+        """Classify local constants before checking symbolic path constraints."""
+        translated = boolean(translate(expr))
+        simplified = z3.simplify(translated)
+        if z3.is_false(simplified):
+            return None, "intentionally_unreachable"
+        if z3.is_true(simplified):
+            return simplified, "satisfiable"
+        return translated, check(constraints + [translated])
+
+    def cross_inline_context(control, ancestors):
+        """Recognize contradictions introduced across an inline boundary.
+
+        A helper branch can be unreachable because its caller already
+        established the opposite predicate.  The same contradiction inside a
+        single function remains a real extraction defect, so only classify an
+        infeasible path as intentional when its control frames carry more
+        than one inline provenance (including the non-inlined caller frame).
+        """
+        frames = [frame for frame in [*ancestors, control]
+                  if isinstance(frame, dict)]
+        origins = {frame.get("inline_origin") for frame in frames}
+        return any(origin is not None for origin in origins) and len(origins) > 1
+
+    def walk(ops, constraints, module_name, ancestors=None):
+        ancestors = list(ancestors or [])
         switch_groups = {}
         for op in ops:
             if "Cond" in op:
@@ -151,32 +176,41 @@ def validate_formal_paths(formal: dict, timeout_ms: int = 100) -> dict:
                     status = "intentionally_unreachable"
                 else:
                     try:
-                        guard = boolean(translate(node["guard"]))
-                        status = check(constraints + [guard])
+                        guard, status = evaluate_guard(
+                            node["guard"], constraints)
+                        intentionally_unreachable = (
+                            status == "intentionally_unreachable")
                     except Exception as exc:
                         guard = None
                         status = "unknown"
                         node["validation_error"] = str(exc)
+                if status == "infeasible" and cross_inline_context(
+                        control, ancestors):
+                    status = "intentionally_unreachable"
+                    intentionally_unreachable = True
                 node["path_id"] = path_id
                 node["validation"] = status
                 records.append({
                     "path_id": path_id, "module": module_name,
                     "status": status, "control": node.get("control", {}),
                 })
-                if control.get("switch"):
-                    switch_groups.setdefault(control["switch"], []).append(node)
+                if (control.get("switch")
+                        and status != "intentionally_unreachable"):
+                    switch_key = control.get("switch_id") or control["switch"]
+                    switch_groups.setdefault(switch_key, []).append(node)
                 if not intentionally_unreachable:
                     walk(node.get("then_ops", []),
                          constraints + ([guard] if guard is not None else []),
-                         module_name)
-                walk(node.get("else_ops") or [], constraints, module_name)
+                         module_name, ancestors + [control])
+                walk(node.get("else_ops") or [], constraints,
+                     module_name, ancestors + [control])
             elif "Loop" in op:
                 node = op["Loop"]
                 next_id[0] += 1
                 path_id = f"path_{next_id[0]}"
                 try:
-                    guard = boolean(translate(node["guard"]))
-                    status = check(constraints + [guard])
+                    guard, status = evaluate_guard(
+                        node["guard"], constraints)
                 except Exception as exc:
                     guard = None
                     status = "unknown"
@@ -185,15 +219,23 @@ def validate_formal_paths(formal: dict, timeout_ms: int = 100) -> dict:
                 node["validation"] = status
                 records.append({"path_id": path_id, "module": module_name,
                                 "status": status, "control": "loop"})
-                walk(node.get("body", []),
-                     constraints + ([guard] if guard is not None else []),
-                     module_name)
+                if status != "intentionally_unreachable":
+                    walk(node.get("body", []),
+                         constraints + ([guard] if guard is not None else []),
+                         module_name, ancestors)
             elif "Seq" in op:
-                walk(op["Seq"].get("ops", []), constraints, module_name)
+                walk(op["Seq"].get("ops", []), constraints, module_name,
+                     ancestors)
 
         for switch, nodes in switch_groups.items():
             for index, left in enumerate(nodes):
                 for right in nodes[index + 1:]:
+                    left_control = left.get("control") or {}
+                    right_control = right.get("control") or {}
+                    if (left_control.get("case")
+                            and left_control.get("case")
+                            == right_control.get("case")):
+                        continue
                     try:
                         pair_status = check(constraints + [
                             boolean(translate(left["guard"])),
@@ -202,7 +244,8 @@ def validate_formal_paths(formal: dict, timeout_ms: int = 100) -> dict:
                     except Exception:
                         pair_status = "unknown"
                     switch_pairs.append({
-                        "switch": switch,
+                        "switch": left_control.get("switch", switch),
+                        "switch_id": switch,
                         "left": left.get("path_id"),
                         "right": right.get("path_id"),
                         "exclusive": pair_status == "infeasible",

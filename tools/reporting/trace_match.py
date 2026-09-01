@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from generator.common import lowering_recipes  # noqa: E402
+from backends.common import lowering_recipes  # noqa: E402
 from trace_protocol import (  # noqa: E402
     TraceComparison,
     TraceRun,
@@ -235,63 +235,230 @@ def parse_calls(text: str) -> list[tuple[str, str]]:
     return calls
 
 
+def _trace_op_dict(op: TraceOp) -> dict[str, int | str]:
+    return {"kind": op[0], "address": op[1]}
+
+
+def _segment_dict(segment: RuntimeSegment) -> dict[str, object]:
+    return {
+        "function": segment.function,
+        "ops": [_trace_op_dict(op) for op in segment.ops],
+    }
+
+
+def _call_dict(index: int, formal: str, runtime: str,
+               expected_variants: FormalVariants,
+               observed: RuntimeSegment | None,
+               status: str) -> dict[str, object]:
+    observed_ops = observed.ops if observed is not None else []
+    selected = (observed_ops if status == "passed"
+                else min(expected_variants, key=len))
+    return {
+        "index": index,
+        "formal": formal,
+        "runtime": runtime,
+        "status": status,
+        "expected_variants": [
+            [_trace_op_dict(op) for op in variant]
+            for variant in expected_variants
+        ],
+        "expected_ops": [_trace_op_dict(op) for op in selected],
+        "observed": (_segment_dict(observed) if observed is not None else None),
+        "observed_ops": [_trace_op_dict(op) for op in observed_ops],
+    }
+
+
+_PRIVATE_CONTEXT_HELPER_RE = re.compile(
+    r"(?:[A-Za-z_]\w*_)?priv_from_(?:gc|irq|desc)$")
+
+
+def _fold_private_context_helpers(
+        modules: dict[str, FormalVariants],
+        segments: list[RuntimeSegment],
+        ) -> tuple[list[RuntimeSegment], list[dict[str, object]]]:
+    """Attach known context-only helper traces to their callback segment.
+
+    Function-entry tracing has no return markers, so an accessor such as
+    ``priv_from_gc()`` becomes the active segment while its caller's MMIO
+    operation executes.  Only the narrowly named private-context helpers are
+    folded, and only after a declared formal function; unknown callbacks stay
+    visible and fail closed below.
+    """
+    folded: list[RuntimeSegment] = []
+    helpers: list[dict[str, object]] = []
+    for segment in segments:
+        if (_PRIVATE_CONTEXT_HELPER_RE.fullmatch(segment.function)
+                and folded and folded[-1].function in modules):
+            folded[-1].ops.extend(segment.ops)
+            helpers.append({"function": segment.function,
+                            "ops": [_trace_op_dict(op) for op in segment.ops],
+                            "attached_to": folded[-1].function})
+            continue
+        folded.append(RuntimeSegment(segment.function, list(segment.ops)))
+    return folded, helpers
+
+
+def exact_call_analysis(modules: dict[str, FormalVariants], untraceable: set[str],
+                        calls: list[tuple[str, str]], segments: list[RuntimeSegment],
+                        traced_count: int) -> dict[str, object]:
+    """Return a fail-closed, structured report for declared callback calls.
+
+    Each declaration consumes one runtime function segment.  Unmatched
+    segments and operations are retained in the report instead of being
+    silently skipped, which makes the report useful as repair feedback.
+    """
+    report: dict[str, object] = {
+        "ok": False,
+        "traced_count": traced_count,
+        "expected_call_count": len(calls),
+        "observed_segment_count": len(segments),
+        "calls": [],
+        "unexpected_segments": [],
+        "missing_modules": [],
+        "untraceable_modules": [],
+        "helper_segments": [],
+    }
+    missing_modules = sorted({formal for formal, _ in calls if formal not in modules})
+    if missing_modules:
+        report["missing_modules"] = missing_modules
+        report["reason"] = "missing_formal_modules"
+        return report
+    selected_untraceable = sorted({formal for formal, _ in calls if formal in untraceable})
+    if selected_untraceable:
+        report["untraceable_modules"] = selected_untraceable
+        report["reason"] = "untraceable_formal_modules"
+        return report
+    if not segments:
+        report["reason"] = "missing_function_segments"
+        return report
+
+    normalized_segments, helper_segments = _fold_private_context_helpers(
+        modules, segments)
+    report["helper_segments"] = helper_segments
+
+    cursor = 0
+    consumed_indices: set[int] = set()
+    call_reports: list[dict[str, object]] = []
+    runtime_modules: dict[str, set[str]] = {}
+    for formal, runtime in calls:
+        runtime_modules.setdefault(runtime, set()).add(formal)
+    for index, (formal, runtime) in enumerate(calls, 1):
+        expected_variants = modules[formal]
+        found = None
+        for segment_index in range(cursor, len(normalized_segments)):
+            if normalized_segments[segment_index].function == runtime:
+                found = segment_index
+                break
+        if found is None:
+            call_reports.append(_call_dict(
+                index, formal, runtime, expected_variants, None,
+                "missing_segment"))
+            continue
+        observed = normalized_segments[found]
+        status = "passed" if any(observed.ops == variant
+                                  for variant in expected_variants) \
+            else "operation_mismatch"
+        call_reports.append(_call_dict(
+            index, formal, runtime, expected_variants, observed, status))
+        consumed_indices.add(found)
+        cursor = found + 1
+
+    additional: list[dict[str, object]] = []
+    unexpected: list[dict[str, object]] = []
+    for index, segment in enumerate(normalized_segments):
+        if index in consumed_indices:
+            continue
+        formal_candidates = runtime_modules.get(segment.function, set())
+        if not formal_candidates and segment.function in modules:
+            formal_candidates = {segment.function}
+        if len(formal_candidates) == 1:
+            formal = next(iter(formal_candidates))
+            variants = modules[formal]
+            if any(segment.ops == variant for variant in variants):
+                additional.append({
+                    "index": index,
+                    "formal": formal,
+                    "status": "validated",
+                    **_segment_dict(segment),
+                })
+                continue
+            unexpected.append({
+                "index": index,
+                "formal": formal,
+                "status": "operation_mismatch",
+                **_segment_dict(segment),
+            })
+            continue
+        unexpected.append({
+            "index": index,
+            "status": "unknown_function",
+            **_segment_dict(segment),
+        })
+    report["calls"] = call_reports
+    report["additional_segments"] = additional
+    report["unexpected_segments"] = unexpected
+    report["ok"] = (
+        all(item["status"] == "passed" for item in call_reports)
+        and not unexpected
+    )
+    report["reason"] = None if report["ok"] else "callback_trace_mismatch"
+    return report
+
+
 def exact_call_report(modules: dict[str, FormalVariants], untraceable: set[str],
                       calls: list[tuple[str, str]], segments: list[RuntimeSegment],
                       traced_count: int) -> int:
-    missing_modules = sorted({formal for formal, _ in calls if formal not in modules})
-    if missing_modules:
-        print("TRACE_MATCH_FAIL: Formal RIS 缺少模块: " + ", ".join(missing_modules))
+    analysis = exact_call_analysis(modules, untraceable, calls, segments, traced_count)
+    if analysis.get("missing_modules"):
+        print("TRACE_MATCH_FAIL: Formal RIS 缺少模块: "
+              + ", ".join(analysis["missing_modules"]))
         return 1
-    selected_untraceable = sorted({formal for formal, _ in calls if formal in untraceable})
-    if selected_untraceable:
-        print("TRACE_MATCH_FAIL: 模块含不可追踪地址: " + ", ".join(selected_untraceable))
+    if analysis.get("untraceable_modules"):
+        print("TRACE_MATCH_FAIL: 模块含不可追踪地址: "
+              + ", ".join(analysis["untraceable_modules"]))
         return 1
-    if not segments:
+    if analysis.get("reason") == "missing_function_segments":
         print("TRACE_MATCH_FAIL: trace 缺少 [rhfn] 函数边界")
         return 1
 
-    cursor = 0
-    results: list[tuple[str, str, list[TraceOp], int, list[TraceOp]]] = []
-    for formal, runtime in calls:
-        while cursor < len(segments) and segments[cursor].function != runtime:
-            cursor += 1
-        expected_variants = modules[formal]
-        if cursor == len(segments):
-            expected = min(expected_variants, key=len)
-            results.append((formal, runtime, expected, 0, list(expected)))
-            continue
-        candidates = []
-        for expected in expected_variants:
-            matched, missing = subsequence_match(
-                expected, segments[cursor].ops)
-            candidates.append((not missing, matched, -len(missing), expected, missing))
-        _passed, matched, _missing_count, expected, missing = max(
-            candidates, key=lambda item: item[:3])
-        results.append((formal, runtime, expected, matched, missing))
-        cursor += 1
-
-    passed_calls = sum(not missing for _, _, _, _, missing in results)
-    expected_ops = sum(len(expected) for _, _, expected, _, _ in results)
-    matched_ops = sum(matched for _, _, _, matched, _ in results)
-    expected_offsets = {off for _, _, expected, _, _ in results for _, off in expected}
+    call_reports = analysis["calls"]
+    passed_calls = sum(item["status"] == "passed" for item in call_reports)
+    expected_ops = sum(
+        len(item["expected_ops"]) for item in call_reports)
+    matched_ops = sum(
+        len(item["observed_ops"])
+        for item in call_reports if item["status"] == "passed")
+    expected_offsets = {
+        operation["address"]
+        for item in call_reports
+        for operation in item["expected_ops"]
+    }
     matched_offsets = {
-        off for _, _, expected, matched, missing in results
-        if matched and not missing for _, off in expected
+        operation["address"]
+        for item in call_reports if item["status"] == "passed"
+        for operation in item["observed_ops"]
     }
     unique_modules = {formal for formal, _ in calls}
-    failed_modules = {formal for formal, _, _, _, missing in results if missing}
+    failed_modules = {
+        item["formal"] for item in call_reports if item["status"] != "passed"
+    }
     passed_modules = len(unique_modules - failed_modules)
 
     print(f"[trace_match] {len(calls)} 个精确调用 / {len(unique_modules)} 个模块 "
           f"({passed_calls} call pass, {len(calls) - passed_calls} call fail), "
           f"traced={traced_count} ops", file=sys.stderr)
     failures: list[str] = []
-    for index, (formal, runtime, expected, _, missing) in enumerate(results, 1):
-        status = "✓" if not missing else "✗"
-        print(f"  {status} call#{index} {formal} => {runtime}: "
+    for item in call_reports:
+        status = "✓" if item["status"] == "passed" else "✗"
+        expected = item["expected_ops"]
+        print(f"  {status} call#{item['index']} {item['formal']} => {item['runtime']}: "
               f"{len(expected)} ops {expected}", file=sys.stderr)
-        if missing:
-            failures.append(f"call#{index} {formal}=>{runtime}: 缺失 {missing}")
+        if item["status"] == "missing_segment":
+            failures.append(f"call#{item['index']} {item['formal']}=>{item['runtime']}: 缺少函数段")
+        elif item["status"] != "passed":
+            failures.append(f"call#{item['index']} {item['formal']}=>{item['runtime']}: 操作序列不匹配")
+    for segment in analysis["unexpected_segments"]:
+        failures.append(f"unexpected segment#{segment['index']}: {segment['function']}")
 
     print("", file=sys.stderr)
     print(f"[coverage] 模块覆盖: {passed_modules}/{len(unique_modules)} 精确模块通过", file=sys.stderr)

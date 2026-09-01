@@ -1,0 +1,799 @@
+{
+  "claim_scope": {
+    "alias_analysis": "off",
+    "call_semantics_proven": false,
+    "callee_rescue_semantics_complete": false,
+    "claim": "recognized hardware-access and structured-control universe",
+    "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
+    "indirect_calls": "simple static initializer/assignment targets",
+    "register_accesses": "typed MMIO, regmap, I2C and public MFD helper transactions plus direct volatile and inline-asm detection",
+    "whole_program_complete": false
+  },
+  "driver": "clk-highbank",
+  "policy": {
+    "cardinality": "exactly-once",
+    "required_disposition": "lowered",
+    "semantic_authority": "canonical-formal-ris",
+    "unknown_operations_allowed": false
+  },
+  "register_operations": [
+    {
+      "access_domain": "mmio",
+      "digest": "209a2a4958c406f5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_pll_prepare",
+        "line": 48,
+        "offset": 1211,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:48:8:1211:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_prepare",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_prepare",
+      "op_id": "op_1",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "c7409c02bd889e04",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "clk_pll_prepare",
+        "line": 50,
+        "offset": 1254,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:50:2:1254:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_prepare",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_1"
+      },
+      "module": "clk_pll_prepare",
+      "op_id": "op_3",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "b79d7db826e3bf68",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "function": "clk_pll_prepare",
+        "line": 52,
+        "offset": 1289,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:52:10:1289:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_prepare",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_prepare",
+      "op_id": "op_4",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "b0b608ed83d1d397",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "function": "clk_pll_prepare",
+        "line": 54,
+        "offset": 1341,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:54:10:1341:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_prepare",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_prepare",
+      "op_id": "op_5",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "209a2a4958c406f5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_pll_unprepare",
+        "line": 65,
+        "offset": 1517,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:65:8:1517:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_unprepare",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_unprepare",
+      "op_id": "op_6",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "7a0e0be1c2232d51",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "clk_pll_unprepare",
+        "line": 67,
+        "offset": 1559,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:67:2:1559:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_unprepare",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_6"
+      },
+      "module": "clk_pll_unprepare",
+      "op_id": "op_8",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "209a2a4958c406f5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_pll_enable",
+        "line": 75,
+        "offset": 1697,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:75:8:1697:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_enable",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_enable",
+      "op_id": "op_9",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "948a4e56918b33eb",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "clk_pll_enable",
+        "line": 77,
+        "offset": 1741,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:77:2:1741:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_enable",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_9"
+      },
+      "module": "clk_pll_enable",
+      "op_id": "op_11",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "209a2a4958c406f5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_pll_disable",
+        "line": 87,
+        "offset": 1893,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:87:8:1893:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_disable",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_disable",
+      "op_id": "op_12",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "406c5cc6a1bf417a",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "clk_pll_disable",
+        "line": 89,
+        "offset": 1938,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:89:2:1938:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_disable",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_12"
+      },
+      "module": "clk_pll_disable",
+      "op_id": "op_14",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "209a2a4958c406f5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_pll_recalc_rate",
+        "line": 98,
+        "offset": 2156,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:98:8:2156:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_recalc_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_recalc_rate",
+      "op_id": "op_15",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "209a2a4958c406f5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_pll_set_rate",
+        "line": 155,
+        "offset": 3399,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:155:8:3399:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_18",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "32e18c8a74f039cd",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "clk_pll_set_rate",
+        "line": 159,
+        "offset": 3568,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:159:3:3568:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_20",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "86a912de3a32b6b0",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "clk_pll_set_rate",
+        "line": 161,
+        "offset": 3616,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:161:3:3616:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_21",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "86a912de3a32b6b0",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "clk_pll_set_rate",
+        "line": 164,
+        "offset": 3775,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:164:3:3775:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_24",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "690ae9988e3575ec",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "clk_pll_set_rate",
+        "line": 165,
+        "offset": 3817,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:165:3:3817:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_25",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a5e83eef3a7cf7f2",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 11,
+        "function": "clk_pll_set_rate",
+        "line": 167,
+        "offset": 3853,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:167:11:3853:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_26",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "21f5faec212d18b2",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 11,
+        "function": "clk_pll_set_rate",
+        "line": 169,
+        "offset": 3907,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:169:11:3907:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_27",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "32e18c8a74f039cd",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "clk_pll_set_rate",
+        "line": 174,
+        "offset": 4021,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:174:3:4021:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_30",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "32e18c8a74f039cd",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "clk_pll_set_rate",
+        "line": 177,
+        "offset": 4132,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:177:3:4132:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_33",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "8c0dd2b85b8433ae",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "clk_pll_set_rate",
+        "line": 179,
+        "offset": 4181,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:179:2:4181:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_pll_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_18"
+      },
+      "module": "clk_pll_set_rate",
+      "op_id": "op_34",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "222bb508ad30b59c",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 13,
+        "function": "clk_cpu_periphclk_recalc_rate",
+        "line": 198,
+        "offset": 4663,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:198:13:4663:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_cpu_periphclk_recalc_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_cpu_periphclk_recalc_rate",
+      "op_id": "op_35",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "222bb508ad30b59c",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 13,
+        "function": "clk_cpu_a9bclk_recalc_rate",
+        "line": 210,
+        "offset": 4996,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:210:13:4996:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_cpu_a9bclk_recalc_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_cpu_a9bclk_recalc_rate",
+      "op_id": "op_36",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "222bb508ad30b59c",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "clk_periclk_recalc_rate",
+        "line": 225,
+        "offset": 5356,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:225:8:5356:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_periclk_recalc_rate",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "clk_periclk_recalc_rate",
+      "op_id": "op_37",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "37cbe4602d03544b",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "clk_periclk_set_rate",
+        "line": 256,
+        "offset": 5887,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c:256:2:5887:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c::clk_periclk_set_rate",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "clk_periclk_set_rate",
+      "op_id": "op_39",
+      "reliability": "Exact",
+      "width": "B4"
+    }
+  ],
+  "schema": 1,
+  "synthesis_readiness": {
+    "backend_bare_metal_ready": false,
+    "backend_harness_ready": false,
+    "backend_linux_ready": false,
+    "blockers": [
+      "2 inlined helper definition(s) lack call-context proof",
+      "4 conservative loop summary/summaries require validation",
+      "generated backend compile/lowering/attestation results unavailable"
+    ],
+    "device_spec_quality": 0.5,
+    "facts_quality": 0.7,
+    "function_spec_quality": 1.0,
+    "llm_synthesis_ready": false,
+    "ris_quality": 0.8
+  },
+  "transaction_operations": []
+}

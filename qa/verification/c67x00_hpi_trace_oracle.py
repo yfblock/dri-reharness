@@ -23,7 +23,7 @@ HPI_IRQ_ROUTING_REG = 0x0142
 
 
 def _helper_source() -> str:
-    from generator.linux import _source_function
+    from source_function import source_function as _source_function
 
     path = os.path.join(
         ROOT, "vendor", "linux", "drivers", "usb", "c67x00",

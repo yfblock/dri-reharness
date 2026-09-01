@@ -1,0 +1,40 @@
+=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031262] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031327] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073563] ftrace: allocating 31612 entries in 124 pages
+[    0.073828] ftrace: allocated 124 pages with 5 groups
+[    0.413546] thermal_sys: Registered thermal governor 'step_wise'
+[    0.418063] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.419536] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.497011] pps_core: LinuxPPS API ver. 1 registered
+[    0.538247] Key type asymmetric registered
+[    0.538322] Asymmetric key parser 'x509' registered
+[    0.538735] io scheduler mq-deadline registered
+[    0.538797] io scheduler kyber registered
+[    0.579086] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod device-registrar target=ftgpio010-gpio ===
+REHARNESS_REGISTRAR_INSMOD_RC=0
+=== insmod ftgpio010_gpio ===
+REHARNESS_DRIVER_INSMOD_RC=0
+[    0.031262] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031327] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.413546] thermal_sys: Registered thermal governor 'step_wise'
+[    0.419536] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.497011] pps_core: LinuxPPS API ver. 1 registered
+[    0.538247] Key type asymmetric registered
+[    0.538322] Asymmetric key parser 'x509' registered
+[    0.538735] io scheduler mq-deadline registered
+[    0.538797] io scheduler kyber registered
+[    0.579086] rtc_cmos PNP0B00:00: registered as rtc0
+GPIO_TRACE_FAIL:open /dev/gpiochip0
+REHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=2
+=== rmmod ftgpio010_gpio ===
+=== QEMU_RUN_DONE ===
+[    1.927127] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=0
+  done=1 probe=15 real_oops=0
+  => 失败: exerciser/subsystem semantic test failed

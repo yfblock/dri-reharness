@@ -122,7 +122,12 @@ def _transaction_payload(contract: dict, *, read: bool = False) -> dict:
     return {"Scalar": body}
 
 
-def _to_risop(op: Op, id_counter: list[int]) -> dict:
+def _parse_expr_c(text, constants=None):
+    return F.parse_expr(text, constants)
+
+
+def _to_risop(op: Op, id_counter: list[int],
+              constants: dict[str, int] | None = None) -> dict:
     addr = F.formal_addr(op.addr, op.reg_name)
     width = F.width_of(op.width)
     op_id = f"op_{id_counter[0]}"
@@ -132,13 +137,13 @@ def _to_risop(op: Op, id_counter: list[int]) -> dict:
         body.update(_common_fields(op, op_id, addr))
         return {"Read": body}
     if op.kind == "Write":
-        value = F.parse_expr(op.value)
+        value = _parse_expr_c(op.value, constants)
         body = {"addr": addr, "width": width,
                 "value": value, "intent": op.intent}
         body.update(_common_fields(op, op_id, addr, value))
         return {"Write": body}
     if op.kind == "ReadModifyWrite":
-        transform = F.parse_expr(op.value)
+        transform = _parse_expr_c(op.value, constants)
         body = {"addr": addr, "width": width,
                 "transform": transform, "read_var": op.var,
                 "intent": op.intent}
@@ -182,8 +187,8 @@ def _to_risop(op: Op, id_counter: list[int]) -> dict:
         return {"TransactionWrite": body}
     if op.kind == "TransactionUpdate":
         endpoint = _transaction_endpoint(op.transaction)
-        mask = F.parse_expr(op.transaction.get("update_mask"))
-        value = F.parse_expr(op.transaction.get("update_value"))
+        mask = _parse_expr_c(op.transaction.get("update_mask", constants))
+        value = _parse_expr_c(op.transaction.get("update_value", constants))
         width = (F.width_of(op.transaction.get("element_width", 0))
                  if op.transaction.get("element_width") in {1, 2, 4, 8}
                  else "Unknown")
@@ -207,23 +212,28 @@ def _to_risop(op: Op, id_counter: list[int]) -> dict:
         body.update(_semantic_fields(op, op_id))
         return {"StateRead": body}
     if op.kind == "StateWrite":
-        value = F.parse_expr(op.value)
+        value = _parse_expr_c(op.value, constants)
         body = {"field": op.state_field, "value": value, "width": width}
         body.update(_semantic_fields(op, op_id, value))
         return {"StateWrite": body}
     if op.kind == "OutputWrite":
-        value = F.parse_expr(op.value)
+        value = _parse_expr_c(op.value, constants)
         body = {"target": op.var, "value": value}
         body.update(_semantic_fields(op, op_id, value))
         return {"OutputWrite": body}
+    if op.kind == "ValueBind":
+        value = _parse_expr_c(op.value, constants)
+        body = {"var": op.var, "value": value}
+        body.update(_semantic_fields(op, op_id, value))
+        return {"ValueBind": body}
     if op.kind == "Return":
-        value = F.parse_expr(op.value)
+        value = _parse_expr_c(op.value, constants)
         body = {"value": value}
         body.update(_semantic_fields(op, op_id, value))
         return {"Return": body}
     if op.kind == "Delay":
         ns = getattr(op, "_delay_ns", 0)
-        return {"Delay": {"cycles": F.parse_expr(str(ns))}}
+        return {"Delay": {"cycles": _parse_expr_c(str(ns))}}
     return {"Seq": {"ops": []}}
 
 
@@ -280,6 +290,13 @@ def _bounded_loop(frame: dict, macros) -> dict | None:
     relation, bound_text = guard_match.groups()
     if re.fullmatch(rf"(?:{re.escape(var)}\+\+|\+\+{re.escape(var)})", step):
         stride = 1
+    elif re.fullmatch(
+            rf"(?:[A-Za-z_]\w*\+\+|\+\+[A-Za-z_]\w*)"
+            rf"(?:\s*,\s*(?:[A-Za-z_]\w*\+\+|\+\+[A-Za-z_]\w*))*", step) \
+            and re.search(rf"(?:^|\s|,)\s*{re.escape(var)}\+\+", f" {step}"):
+        # induction var increments by 1; companions are independent pointer
+        # cursors that do not affect the bound
+        stride = 1
     else:
         step_match = re.fullmatch(
             rf"{re.escape(var)}\s*\+=\s*(.+)", step)
@@ -290,7 +307,10 @@ def _bounded_loop(frame: dict, macros) -> dict | None:
         return None
     distance = bound - start + (1 if relation == "<=" else 0)
     count = 0 if distance <= 0 else (distance + stride - 1) // stride
-    if count > 256:
+    # Constant bounds prove without unrolling (the RIS Loop node carries the
+    # count; backends decide execution strategy), so allow large constants —
+    # the sanity cap only guards against malformed/huge literals.
+    if count > 10_000_000:
         return None
     return {
         "count": {"Const": count},
@@ -321,8 +341,13 @@ def _runtime_bounded_loop(frame: dict) -> dict | None:
     guard_match = re.fullmatch(
         rf"{re.escape(var)}\s*<\s*"
         r"([A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)*)", guard)
-    if not guard_match or not re.fullmatch(
-            rf"(?:{re.escape(var)}\+\+|\+\+{re.escape(var)})", step):
+    step_ok = re.fullmatch(
+        rf"(?:{re.escape(var)}\+\+|\+\+{re.escape(var)})", step) or (
+        re.fullmatch(
+            rf"(?:[A-Za-z_]\w*\+\+|\+\+[A-Za-z_]\w*)"
+            rf"(?:\s*,\s*(?:[A-Za-z_]\w*\+\+|\+\+[A-Za-z_]\w*))*", step)
+        and re.search(rf"(?:^|\s|,)\s*{re.escape(var)}\+\+", f" {step}"))
+    if not guard_match or not step_ok:
         return None
     bound_text = guard_match.group(1)
     bound_root = re.match(r"[A-Za-z_]\w*", bound_text).group(0)
@@ -332,9 +357,26 @@ def _runtime_bounded_loop(frame: dict) -> dict | None:
         "nr_ports", "max_ports", "num_channels", "num_eps", "fifo_count",
         "word_count", "dword_count", "desc_count", "fifo_size",
     }
-    if (declaration_kind != "PARM_DECL"
-            and (declaration_kind != "VAR_DECL" or bound_field is None
-                 or bound_field.group(1) not in modeled_bound_fields)):
+    def integer_scalar(type_name: str) -> bool:
+        normalized = re.sub(r"\s+", " ", type_name or "").strip()
+        if (not normalized or "*" in normalized
+                or re.search(r"\b(?:float|double|long double)\b", normalized)
+                or re.search(r"\b(?:struct|union)\b", normalized)):
+            return False
+        return bool(re.search(
+            r"\b(?:_Bool|bool|char|short|int|long|signed|unsigned|"
+            r"size_t|u?int(?:8|16|32|64)?_t|__u(?:8|16|32|64)|"
+            r"__s(?:8|16|32|64))\b", normalized))
+
+    guard_types = frame.get("guard_types") or {}
+    if declaration_kind == "PARM_DECL":
+        pass
+    elif declaration_kind == "VAR_DECL":
+        field_name = bound_field.group(1) if bound_field else None
+        if (field_name not in modeled_bound_fields
+                and not integer_scalar(guard_types.get(bound_root, ""))):
+            return None
+    else:
         return None
     bound = F.parse_expr(bound_text)
     if "Top" in bound:
@@ -367,6 +409,56 @@ def _runtime_bounded_loop(frame: dict) -> dict | None:
         "start": start,
         "stride": 1,
         "proof": "affine monotonic loop bounded by runtime scalar/state",
+    }
+
+
+def _runtime_post_decrement_loop(frame: dict) -> dict | None:
+    """Prove ``while (v--)`` / ``while (g && (v-- >= 0))`` loops.
+
+    The induction variable is consumed by the guard itself, so the trip
+    count equals the variable's initial runtime value (plus the final
+    failing test): a finite dynamic bound.
+    """
+    if frame.get("loop_kind") not in ("while", "do"):
+        return None
+    guard = (frame.get("guard") or "").strip()
+    comparison = False
+    # strip an optional leading pure-predicate conjunct: g && v--  /  g && (v-- >= 0)
+    core = guard
+    if "&&" in core:
+        head, _, tail = core.rpartition("&&")
+        core = tail.strip()
+        if core.endswith(")") and not core.startswith("("):
+            core = core[:-1].strip()
+        comparison = True
+    m = re.fullmatch(r"([A-Za-z_]\w*)--", core)
+    if m is None:
+        m = re.fullmatch(
+            r"\(?\s*([A-Za-z_]\w*)--\s*(?:>=|>|<=|<|==|!=)\s*[^)]*\)?", core)
+        comparison = True
+    if m is None:
+        return None
+    var = m.group(1)
+    declarations = frame.get("guard_declarations") or {}
+    declared = declarations.get(var)
+    if declared not in (None, "PARM_DECL", "VAR_DECL"):
+        return None
+    guard_types = frame.get("guard_types") or {}
+    type_name = guard_types.get(var, "")
+    if re.search(r"\b(?:float|double)\b", type_name or ""):
+        return None
+    return {
+        "count": {"Var": var},
+        "bound_expr": {"Var": var},
+        "relation": "post-decrement",
+        "reliability": "Exact",
+        "bounded": True,
+        "dynamic_bound": True,
+        "induction_var": var,
+        "start": 0,
+        "stride": 1,
+        "proof": ("guarded post-decrement while-loop"
+                  if comparison else "post-decrement while-loop"),
     }
 
 
@@ -545,11 +637,39 @@ def _w1c_drain_loop(frame: dict, body: list[dict]) -> dict | None:
     }
 
 
-def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict]:
+def _nest(ops: list[Op], depth: int, id_counter: list[int], macros,
+          _memo: dict | None = None) -> list[dict]:
     """Build nested Cond/Loop nodes from structured lexical control frames."""
     result = []
     i = 0
     n = len(ops)
+    # Identical guard text resolves its macros once per MODULE (shared
+    # across recursion levels): the macro table may be consulted for
+    # enum/register constants.
+    if _memo is None:
+        _memo = {"guards": {}, "constants": None}
+    _guard_cache: dict[str, dict] = _memo["guards"]
+    _constants_cache: dict[str, int] | None = None
+
+    def _set_constants(value):
+        _memo["constants"] = value
+
+    def _constants() -> dict[str, int]:
+        if _memo["constants"] is None:
+            table: dict[str, int] = {}
+            resolve = getattr(macros, "resolve", None)
+            if callable(resolve):
+                for name in getattr(macros, "names", lambda: [])():
+                    value = resolve(name)
+                    if isinstance(value, int):
+                        table[name] = value
+            _memo["constants"] = table
+        return _memo["constants"]
+
+    def _parse_guard(text: str | None) -> dict:
+        if text not in _guard_cache:
+            _guard_cache[text] = F.parse_expr(text, _constants())
+        return _guard_cache[text]
     while i < n:
         op = ops[i]
         st = (op.control_stack or [
@@ -565,11 +685,35 @@ def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict
                     break
                 run.append(ops[i])
                 i += 1
-            body = _nest(run, depth + 1, id_counter, macros)
+            body = _nest(run, depth + 1, id_counter, macros, _memo)
             if frame.get("kind") == "loop":
+                # Delay macros (mdelay/udelay/ndelay via statement-expression
+                # expansion) surface as an opaque loop whose guard text is
+                # the macro call itself: fold to a single Delay op instead
+                # of an unprovable Conservative loop.
+                delay_m = re.fullmatch(
+                    r"\s*(m|u|n)delay\s*\(\s*(\d+|0x[0-9a-fA-F]+)\s*\)\s*;?\s*",
+                    (frame.get("guard") or "")
+                    + ";" + (frame.get("source") or "").strip().rstrip(";"))
+                delay_guard = re.fullmatch(
+                    r"\s*(m|u|n)delay\s*\(\s*(\d+|0x[0-9a-fA-F]+)\s*\)\s*",
+                    frame.get("guard") or "")
+                dm = delay_guard or delay_m
+                if dm is not None:
+                    unit, amount = dm.group(1), int(dm.group(2), 0)
+                    ns = {"m": amount * 1_000_000,
+                          "u": amount * 1_000,
+                          "n": amount}[unit]
+                    id_counter[0] += 1
+                    result.append({"Delay": {
+                        "cycles": {"Const": ns},
+                        "op_id": f"op_{id_counter[0]}",
+                        "evidence": {"origin": "delay_macro_expansion",
+                                     "macro": f"{dm.group(1)}delay"}}})
+                    continue
                 loop = {
                     "count": {"Top": None},
-                    "guard": F.parse_expr(frame.get("guard")),
+                    "guard": _parse_guard(frame.get("guard")),
                     "loop_kind": frame.get("loop_kind", "loop"),
                     "init": frame.get("init", ""),
                     "step": frame.get("step", ""),
@@ -581,6 +725,8 @@ def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict
                 if proof is None:
                     proof = _runtime_bounded_loop(frame)
                 if proof is None:
+                    proof = _runtime_post_decrement_loop(frame)
+                if proof is None:
                     proof = _w1c_drain_loop(frame, body)
                 if proof:
                     loop.update(proof)
@@ -590,12 +736,12 @@ def _nest(ops: list[Op], depth: int, id_counter: list[int], macros) -> list[dict
                 result.append({"Loop": loop})
             else:
                 result.append({"Cond": {
-                    "guard": F.parse_expr(frame.get("guard")),
+                    "guard": _parse_guard(frame.get("guard")),
                     "control": dict(frame),
                     "then_ops": body, "else_ops": None}})
         else:
             id_counter[0] += 1
-            result.append(_to_risop(op, id_counter))
+            result.append(_to_risop(op, id_counter, _constants()))
             i += 1
     return result
 
@@ -858,12 +1004,24 @@ def build_formal_ris(driver_name: str, source_path: str,
     inlined_names = inlined_names or set()
     id_counter = [0]
     modules = []
+
+    def has_hardware_semantics(ops) -> bool:
+        """Keep modules that contain executable hardware/transaction effects."""
+        return any(op.kind in {
+            "Read", "Write", "ReadModifyWrite",
+            "TransactionRead", "TransactionWrite", "TransactionUpdate",
+            # subsystem summaries rewrite every hardware call into
+            # StateRead/StateWrite — those modules are the whole semantic
+            # content of subsystem-only drivers and must stay executable
+            "StateRead", "StateWrite",
+        } for op in ops)
+
     for f in funcs:
         symbol = f.symbol_id or f.name
         if symbol in inlined_names:
             continue   # inlined into a caller — avoid duplicate module
         ex = extractions.get(symbol)
-        if not ex or not ex.ops:
+        if not ex or not ex.ops or not has_hardware_semantics(ex.ops):
             continue
         modules.append(_module(f, ex, id_counter, macros))
 

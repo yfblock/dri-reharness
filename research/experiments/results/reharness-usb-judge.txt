@@ -1,0 +1,89 @@
+=== QEMU run: module=reharness_usb_sensor bus=usb timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.030408] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030474] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073133] ftrace: allocating 38031 entries in 150 pages
+[    0.073388] ftrace: allocated 150 pages with 4 groups
+[    0.418833] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.423237] thermal_sys: Registered thermal governor 'step_wise'
+[    0.427620] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.429366] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.515125] ACPI: bus type USB registered
+[    0.515429] usbcore: registered new interface driver usbfs
+[    0.515626] usbcore: registered new interface driver hub
+[    0.515739] usbcore: registered new device driver usb
+[    0.515958] pps_core: LinuxPPS API ver. 1 registered
+[    0.516077] PTP clock support registered
+[    0.549613] NET: Registered PF_INET protocol family
+[    0.574402] Key type asymmetric registered
+[    0.574479] Asymmetric key parser 'x509' registered
+[    0.574917] io scheduler mq-deadline registered
+[    0.574977] io scheduler kyber registered
+[    0.615926] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.618454] usbcore: registered new interface driver usbhid
+[    0.621761] NET: Registered PF_INET6 protocol family
+=== insmod required kernel module xhci-hcd ===
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod required kernel module xhci-pci ===
+[    1.054149] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.061496] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.069977] insmod (63) used greatest stack depth: 11992 bytes left
+REHARNESS_KERNEL_MODULE_1_INSMOD_RC=0
+=== insmod required kernel module udc-core ===
+REHARNESS_KERNEL_MODULE_2_INSMOD_RC=0
+=== insmod required kernel module dummy_hcd ===
+[    1.085447] dummy_hcd dummy_hcd.0: new USB bus registered, assigned bus number 3
+[    1.089095] insmod (65) used greatest stack depth: 11976 bytes left
+REHARNESS_KERNEL_MODULE_3_INSMOD_RC=0
+=== insmod required kernel module libcomposite ===
+REHARNESS_KERNEL_MODULE_4_INSMOD_RC=0
+=== insmod required kernel module usb_f_ss_lb ===
+REHARNESS_KERNEL_MODULE_5_INSMOD_RC=0
+=== insmod required kernel module g_zero ===
+REHARNESS_KERNEL_MODULE_6_INSMOD_RC=0
+=== insmod required kernel module usbtest ===
+[    1.449187] usbcore: registered new interface driver usbtest
+REHARNESS_KERNEL_MODULE_7_INSMOD_RC=0
+=== insmod reharness_usb_sensor ===
+[    1.455889] [rhcov] reharness_usb_probe
+[    1.456331] reharness_usb_sens 1-1:1.0: REHARNESS_USB_DRIVER_PROBE status=0xb1 0x60
+[    1.456468] usbcore: registered new interface driver reharness_usb_sens
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    1.456331] reharness_usb_sens 1-1:1.0: REHARNESS_USB_DRIVER_PROBE status=0xb1 0x60
+REHARNESS_SUBSYSTEM_TEST_0_NAME=usb-control-status
+REHARNESS_SUBSYSTEM_TEST_0_KIND=native
+REHARNESS_SUBSYSTEM_TEST_0_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_1_NAME=usb-bulk-out
+REHARNESS_SUBSYSTEM_TEST_1_KIND=native
+REHARNESS_SUBSYSTEM_TEST_1_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_1_RC=0
+REHARNESS_SUBSYSTEM_TEST_1_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_2_NAME=usb-invalid-endpoint
+REHARNESS_SUBSYSTEM_TEST_2_KIND=native
+REHARNESS_SUBSYSTEM_TEST_2_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_2_RC=0
+REHARNESS_SUBSYSTEM_TEST_2_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_3_NAME=linux-usbtest-gadget
+REHARNESS_SUBSYSTEM_TEST_3_KIND=tool
+REHARNESS_SUBSYSTEM_TEST_3_PROVIDER=linux-usbtest
+REHARNESS_SUBSYSTEM_TEST_3_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_3_RC=0
+REHARNESS_SUBSYSTEM_TEST_3_STATUS=pass
+=== rmmod reharness_usb_sensor ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.769653] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_3_SUCCESS=1
+  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: reharness_usb_sensor probe 成功

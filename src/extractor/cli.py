@@ -1,18 +1,16 @@
 """CLI entry: `python3 -m extractor extract --source ... --output out.ris`"""
 from __future__ import annotations
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
-import sys
 
 from .extractor import ExtractorConfig, extract_ris
 from .formalize import save_formal_text
 
 def _backend_choices():
     try:
-        from generator.registry import backend_names
+        from backends.registry import backend_names
         names = backend_names()
         if names:
             return names
@@ -39,7 +37,7 @@ def _config_from_args(args) -> ExtractorConfig:
         extra_blacklist=[s.strip() for s in getattr(args, "blacklist", "").split(",")
                          if s.strip()],
         linux_root=getattr(args, "linux_root", None),
-        max_inline_depth=getattr(args, "max_inline_depth", 3),
+        max_inline_depth=getattr(args, "max_inline_depth", None),
         alias_mode=getattr(args, "alias_mode", "off"),
         driver_name=getattr(args, "driver_name", None),
         compile_commands=getattr(args, "compile_commands", None),
@@ -67,7 +65,9 @@ def _add_analysis_options(parser, *, extended: bool = False) -> None:
         parser.add_argument("--include-framework", action="store_true")
         parser.add_argument("--blacklist", default="",
                             help="comma-separated extra functions to exclude")
-        parser.add_argument("--max-inline-depth", type=int, default=3)
+        parser.add_argument(
+            "--max-inline-depth", type=int, default=None,
+            help="bound helper expansion depth (default: adaptive call-graph depth)")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -115,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     sc.add_argument("-s", "--source", required=True,
                     help="C source file or multi-source JSON manifest")
     _add_analysis_options(sc)
+
 
     dr = sub.add_parser("driver", help="One-shot full pipeline: RIS + dspec + bind "
                                        "+ all backends + trace verification")
@@ -202,8 +203,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "gen":
         from .spec import default_bind
-        from generator.registry import get_backend as _get_backend
-        from generator.common import generate_pair
+        from backends.registry import get_backend as _get_backend
+        from backends.common import split_header_source
+        from backends.llm_bridge import generated_file_entries
         res = extract_ris(_config_from_args(args))
         bind = default_bind(res.device_spec, args.backend)
         gen_mod = _get_backend(args.backend)
@@ -213,14 +215,32 @@ def main(argv: list[str] | None = None) -> int:
                 gen_kwargs["facts"] = res.facts
             elif kw == "pci_identity":
                 pci_identity = None
+                registrar = None
                 if args.manifest:
                     from experiment_manifest import load_manifest
-                    pci_identity = load_manifest(args.manifest).runtime.pci_identity
+                    runtime = load_manifest(args.manifest).runtime
+                    pci_identity = runtime.pci_identity
+                    registrar = (getattr(runtime.qemu, "registrar", None)
+                                 if runtime.qemu is not None else None)
                 gen_kwargs["pci_identity"] = pci_identity
+                gen_kwargs["registrar"] = registrar
         if args.pair:
-            header, source = generate_pair(
-                gen_mod, res.formal, res.device_spec, bind,
-                **gen_kwargs)
+            generated = gen_mod.generate(
+                res.formal, res.device_spec, bind, **gen_kwargs)
+            if getattr(generated, "files", None):
+                base = Path(
+                    args.output or
+                    f"artifacts/output/{res.formal['driver']}_{args.backend}")
+                root = base.parent if base.suffix else base
+                for entry in generated_file_entries(
+                        generated, default_path=f"{args.backend}.c"):
+                    destination = root / entry["path"]
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_text(entry["code"], encoding="utf-8")
+                    print(f"✅ {args.backend} file saved to {destination}")
+                return 0
+            header, source = split_header_source(
+                generated, res.formal["driver"], args.backend)
             base = (args.output
                     or f"artifacts/output/{res.formal['driver']}_{args.backend}")
             base = base[:-2] if base.endswith(".c") else base
@@ -236,6 +256,18 @@ def main(argv: list[str] | None = None) -> int:
         else:
             code = gen_mod.generate(
                 res.formal, res.device_spec, bind, **gen_kwargs)
+            if getattr(code, "files", None):
+                out = Path(
+                    args.output or
+                    f"artifacts/output/{res.formal['driver']}_{args.backend}")
+                root = out.parent if out.suffix else out
+                for entry in generated_file_entries(
+                        code, default_path=f"{args.backend}.c"):
+                    destination = root / entry["path"]
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_text(entry["code"], encoding="utf-8")
+                    print(f"✅ {args.backend} file saved to {destination}")
+                return 0
             out = (args.output
                    or f"artifacts/output/{res.formal['driver']}_{args.backend}.c")
             os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
@@ -249,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
         res = extract_ris(_config_from_args(args))
         print(format_score(score(res.device_spec, res.formal, res.warnings, res.facts)))
         return 0
+
 
     if args.command == "driver":
         from driver_pipeline import run_driver_pipeline

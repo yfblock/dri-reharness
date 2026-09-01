@@ -1,0 +1,45 @@
+% 图 3：编译 vs 严格产物就绪（学术风格：L 形轴、内刻度、黑描边柱、带框图例、无网格）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usepackage{xcolor}
+\definecolor{figblue}{HTML}{1D4ED8}
+\definecolor{figorange}{HTML}{F97316}
+\begin{document}
+\begin{tikzpicture}[x=1.05cm,y=0.22cm,font=\footnotesize]
+  % 轴（L 形，无箭头，刻度向内）
+  \draw[line width=0.8pt] (0,22.6) -- (0,0) -- (6.7,0);
+  \foreach \y in {0,5,10,15,19} {
+    \draw[line width=0.5pt] (0,\y) -- (-0.14,\y);
+    \node[left, font=\scriptsize] at (-0.22,\y) {\y};
+  }
+  \node[rotate=90, font=\scriptsize] at (-0.95,11.3) {驱动数（共 19）};
+
+  % 柱（黑描边）
+  \path[fill=figblue,   draw=black, line width=0.5pt] (0.75,0) rectangle (1.15,19);
+  \path[fill=figorange, draw=black, line width=0.5pt] (1.20,0) rectangle (1.60,4);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (2.65,0) rectangle (3.05,19);
+  \path[fill=figorange, draw=black, line width=0.5pt] (3.10,0) rectangle (3.50,4);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (4.55,0) rectangle (4.95,18);
+  \path[fill=figorange, draw=black, line width=0.5pt] (5.00,0) rectangle (5.40,2);
+
+  \node[font=\scriptsize, above=1pt] at (0.95,19) {19};
+  \node[font=\scriptsize, above=1pt] at (1.40,4)  {4};
+  \node[font=\scriptsize, above=1pt] at (2.85,19) {19};
+  \node[font=\scriptsize, above=1pt] at (3.30,4)  {4};
+  \node[font=\scriptsize, above=1pt] at (4.75,18) {18};
+  \node[font=\scriptsize, above=1pt] at (5.20,2)  {2};
+
+  \node[below=3pt, font=\footnotesize] at (1.175,0) {Harness};
+  \node[below=3pt, font=\footnotesize] at (3.075,0) {裸机};
+  \node[below=3pt, font=\footnotesize] at (4.975,0) {Linux};
+
+  % 图例（带框，置于图内空白区）
+  \draw[black, line width=0.4pt, fill=white] (5.05,11.5) rectangle (6.5,15.3);
+  \path[fill=figblue, draw=black, line width=0.5pt] (5.2,14.3) rectangle (5.45,14.9);
+  \node[right, font=\scriptsize] at (5.55,14.6) {编译};
+  \path[fill=figorange, draw=black, line width=0.5pt] (5.2,12.4) rectangle (5.45,13.0);
+  \node[right, font=\scriptsize] at (5.55,12.7) {严格就绪};
+\end{tikzpicture}
+\end{document}

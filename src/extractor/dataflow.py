@@ -116,11 +116,10 @@ def _split_top(text: str, sep: str) -> list[str]:
                 cur += ch
                 i += 1
                 continue
-            if sep == "<" and i + 1 < n and text[i + 1] == "<":
-                cur += ch
-                i += 1
-                continue
-            if sep == ">" and i - 1 >= 0 and text[i - 1] == ">":
+            if (sep in {"<", ">"}
+                    and ((i > 0 and text[i - 1] == sep)
+                         or (i + 1 < n and text[i + 1] == sep)
+                         or (i + 1 < n and text[i + 1] == "="))):
                 cur += ch
                 i += 1
                 continue
@@ -510,6 +509,133 @@ def _general_assignments(func_cursor, tu) -> list[dict]:
     return assignments
 
 
+_STATE_LHS_RE = re.compile(
+    r"^[A-Za-z_]\w*(?:\s*(?:->|\.)\s*[A-Za-z_]\w*)+$")
+
+
+def _state_assignment_entries(func_cursor, tu,
+                               general_assignments: list[dict]) -> list[dict]:
+    """Collect persistent member updates for functional-state evidence.
+
+    Local temporaries remain internal dataflow facts. Member assignments and
+    increments/decrements are emitted because they change state observed by
+    later callbacks or by an inlined helper.
+    """
+    entries = [
+        dict(entry) for entry in general_assignments
+        if _STATE_LHS_RE.fullmatch(entry["lhs"].replace(" ", ""))
+    ]
+    seen = {
+        (entry["offset"], entry["lhs"], entry["rhs"])
+        for entry in entries
+    }
+    for cursor, control in walk_with_control(func_cursor):
+        if cursor.kind != cx.CursorKind.UNARY_OPERATOR:
+            continue
+        text = source_text(tu, cursor).strip().rstrip(";").strip()
+        match = re.match(
+            r"^(?:(\+\+|--)\s*)?"
+            r"([A-Za-z_]\w*(?:\s*(?:->|\.)\s*[A-Za-z_]\w*)+)"
+            r"\s*(\+\+|--)?$",
+            text)
+        if not match:
+            continue
+        prefix, raw_lhs, suffix = match.groups()
+        if not prefix and not suffix:
+            continue
+        lhs = raw_lhs.replace(" ", "")
+        operator = prefix or suffix
+        delta = "1" if operator == "++" else "-1"
+        rhs = f"({lhs}) + ({delta})"
+        loc = cursor.location
+        offset = loc.offset if loc else 0
+        key = (offset, lhs, rhs)
+        if key in seen:
+            continue
+        seen.add(key)
+        entries.append({
+            "lhs": lhs,
+            "operator": "+=" if operator == "++" else "-=",
+            "rhs": rhs,
+            "line": loc.line if loc else 0,
+            "offset": offset,
+            "control": [dict(frame) for frame in control],
+            "conditions": [
+                frame.get("guard", "") for frame in control
+                if frame.get("guard")
+            ],
+        })
+    entries.sort(key=lambda entry: (entry["offset"], entry["line"]))
+    return entries
+
+
+def _local_value_entries(func_cursor, tu, general_assignments: list[dict],
+                         calls: list) -> list[dict]:
+    """Keep local assignments that feed a later call argument.
+
+    Most locals are control-flow bookkeeping and should stay out of RIS. A
+    local used by an MMIO wrapper argument is different: retaining its binding
+    prevents a later state update from changing the meaning of a dereference
+    that was evaluated before that update.
+    """
+    call_text = "\n".join(
+        arg for call in calls for arg in (call.arg_text or []))
+    entries = []
+    for entry in general_assignments:
+        lhs = entry["lhs"]
+        loop_initializers = {
+            frame.get("init", "").split("=", 1)[0].strip()
+            for frame in entry.get("control", [])
+            if frame.get("kind") == "loop" and "=" in frame.get("init", "")
+        }
+        if lhs in loop_initializers:
+            # The enclosing Loop node owns its induction initializer. Emitting
+            # a second ValueBind changes leaf ordering without adding state.
+            continue
+        if not _IDENT_RE.fullmatch(lhs) or not re.search(
+                rf"\b{re.escape(lhs)}\b", call_text):
+            continue
+        item = dict(entry)
+        item["kind"] = "ValueBind"
+        entries.append(item)
+    return entries
+
+
+def _buffer_write_entries(func_cursor, tu) -> list[dict]:
+    """Collect pointer-target assignments such as ``*rx = rxw``."""
+    entries = []
+    for cursor, control in walk_with_control(func_cursor):
+        if cursor.kind not in {
+                cx.CursorKind.BINARY_OPERATOR,
+                cx.CursorKind.COMPOUND_ASSIGNMENT_OPERATOR}:
+            continue
+        text = source_text(tu, cursor).strip()
+        match = re.match(r"^(\*.+?)\s*=\s*(.+?)\s*;?$", text, re.S)
+        if not match:
+            continue
+        target, value = match.groups()
+        target = target.strip()
+        if not target.startswith("*"):
+            continue
+        loc = cursor.location
+        extent_end = cursor.extent.end
+        entries.append({
+            "kind": "OutputWrite",
+            "target": target,
+            "value": value.strip(),
+            "line": loc.line if loc else 0,
+            # Use the end of the assignment so calls in the RHS (for
+            # example ``*rx = readl(base)``) are emitted first.
+            "offset": (extent_end.offset if extent_end else
+                       (loc.offset if loc else 0)),
+            "control": [dict(frame) for frame in control],
+            "conditions": [frame.get("guard", "") for frame in control
+                           if frame.get("guard")],
+        })
+    entries.sort(key=lambda entry: (entry["offset"], entry["line"]))
+    return entries
+
+
 def _abs_expr(value: AbsVal, fallback: str) -> str:
     if isinstance(value, Const):
         return hex(value.n) if value.n >= 0 else str(value.n)
@@ -556,6 +682,11 @@ def _general_assignment_store(assignments: list[dict], before_offset: int,
                 _substitute_text(entry["rhs"], {lhs: marker}) != entry["rhs"])
             if induction or self_dependent:
                 continue
+        # A local assignment after an MMIO read may update the value before a
+        # wrapper write. Keep the read taint as the producer; _rmw_transform
+        # reconstructs the intervening expression from source order.
+        if isinstance(store.get(lhs), ReadTaint):
+            continue
         scalar_mapping = {
             name: _abs_expr(item, name) for name, item in store.items()
             if _IDENT_RE.fullmatch(name) and not isinstance(item, Top)
@@ -736,6 +867,16 @@ def _expand_addr_numeric_macros(addr: dict, macros) -> dict:
     return addr
 
 
+_ADDRESS_OF_MEMBER_RE = re.compile(
+    r"\((?P<address>&[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w+)*)\)->")
+
+
+def _normalise_address_of_member(text: str) -> str:
+    """Normalize ``(&object)->field`` after pointer-argument substitution."""
+    return _ADDRESS_OF_MEMBER_RE.sub(
+        lambda match: match.group("address")[1:] + ".", text)
+
+
 def _substitute_text(text: Optional[str], mapping: dict[str, str]) -> Optional[str]:
     if not text or not mapping:
         return text
@@ -747,9 +888,17 @@ def _substitute_text(text: Optional[str], mapping: dict[str, str]) -> Optional[s
         # A field token named like a parameter is not a parameter reference.
         if before.endswith(("->", ".")):
             return match.group(0)
-        return mapping.get(match.group(0), match.group(0))
+        replacement = mapping.get(match.group(0), match.group(0))
+        # An address-of argument substituted into ``param->field`` needs
+        # parentheses before the member operator.  Normalize that temporary
+        # form after the whole token substitution so the expression parser
+        # sees the original object member rather than a top-level ``&``.
+        if (replacement.lstrip().startswith("&")
+                and text[match.end():].lstrip().startswith("->")):
+            return f"({replacement})"
+        return replacement
 
-    return pattern.sub(replace, text)
+    return _normalise_address_of_member(pattern.sub(replace, text))
 
 
 def _substitute_addr(addr: dict, mapping: dict[str, str]) -> dict:
@@ -768,7 +917,8 @@ def _substitute_addr(addr: dict, mapping: dict[str, str]) -> dict:
 
 
 def _instantiate_op(op: Op, mapping: dict[str, str], macros=None,
-                    inline_cache: Optional[dict] = None) -> Op:
+                    inline_cache: Optional[dict] = None,
+                    inline_context: Optional[str] = None) -> Op:
     import copy
     out = copy.copy(op)
     out.evidence = copy.deepcopy(op.evidence)
@@ -779,6 +929,8 @@ def _instantiate_op(op: Op, mapping: dict[str, str], macros=None,
             out.transaction[key] = _substitute_text(
                 str(out.transaction[key]), mapping)
     out.addr = _substitute_addr(op.addr, mapping)
+    out.var = _substitute_text(op.var, mapping)
+    out.state_field = _substitute_text(op.state_field, mapping)
     if "Indirect" in out.addr and out.addr["Indirect"].get("expr"):
         original_expr = out.addr["Indirect"]["expr"]
         expanded = _expand_pure_calls(
@@ -804,6 +956,11 @@ def _instantiate_op(op: Op, mapping: dict[str, str], macros=None,
         for key in ("guard", "init", "step"):
             if copied.get(key):
                 copied[key] = _substitute_text(copied[key], mapping)
+        if inline_context and not copied.get("inline_origin"):
+            copied["inline_origin"] = inline_context
+        if copied.get("switch_id") and inline_context:
+            copied["switch_id"] = (
+                f"{copied['switch_id']}@{inline_context}")
         out.control_stack.append(copied)
     out.var = _substitute_text(op.var, mapping)
     return out
@@ -973,11 +1130,21 @@ def _has_classified_read_provenance(op: Op | None) -> bool:
     """Whether ``op`` came from a read accepted by the MMIO classifier."""
     if op is None or op.kind != "Read":
         return False
-    evidence = op.evidence or {}
-    access_name = evidence.get("effective_callee") or evidence.get("callee")
-    return (evidence.get("access_kind") == "read"
-            and isinstance(access_name, str)
-            and mmio.is_mmio_read(access_name))
+
+    def classified(evidence: dict) -> bool:
+        access_name = evidence.get("effective_callee") or evidence.get("callee")
+        if (evidence.get("access_kind") == "read"
+                and isinstance(access_name, str)
+                and mmio.is_mmio_read(access_name)):
+            return True
+        # Wrapper summaries preserve the definition-level callsite evidence
+        # under ``wrapper_definition``.  Treat that nested proof as equivalent
+        # to a direct read, while still rejecting a helper merely named like a
+        # read API or an unproven synthetic operation.
+        nested = evidence.get("wrapper_definition")
+        return isinstance(nested, dict) and classified(nested)
+
+    return classified(op.evidence or {})
 
 
 def _proven_return_read_var(return_expr: str | None,
@@ -1050,6 +1217,123 @@ def extract_function(func: Func, macros, tu, *,
 
     calls = function_calls(func.cursor)
     result.calls = calls
+
+    semantic_entries = []
+    semantic_entries.extend(_local_value_entries(
+        func.cursor, tu, general_assignments, calls))
+    for entry in _state_assignment_entries(
+            func.cursor, tu, general_assignments):
+        item = dict(entry)
+        item["kind"] = "StateWrite"
+        semantic_entries.append(item)
+    semantic_entries.extend(_buffer_write_entries(func.cursor, tu))
+    semantic_entries.sort(key=lambda entry: (entry["offset"], entry["line"]))
+    semantic_index = 0
+    read_value_bindings: dict[str, str] = {}
+    buffer_read_names: dict[str, str] = {}
+
+    def buffer_read_name(call_text: str) -> str | None:
+        normalized = re.sub(r"\s+", "", call_text).rstrip(";")
+        for entry in semantic_entries:
+            if (entry["kind"] == "OutputWrite"
+                    and re.sub(r"\s+", "", entry["value"])
+                    .rstrip(";") == normalized):
+                return buffer_read_names.setdefault(
+                    normalized, f"buffer_read_{len(buffer_read_names)}")
+        return None
+
+    def entry_conditions(entry):
+        return [
+            condition for condition in entry["conditions"]
+            if condition and "scoped_guard" not in condition
+            and "gpio_generic_lock" not in condition
+        ]
+
+    def emit_semantic_before(offset: int) -> None:
+        nonlocal semantic_index
+        while (semantic_index < len(semantic_entries)
+               and semantic_entries[semantic_index]["offset"] < offset):
+            entry = semantic_entries[semantic_index]
+            semantic_index += 1
+            conditions = [
+                condition for condition in entry_conditions(entry)
+            ]
+            kind = entry["kind"]
+            if kind == "ValueBind":
+                result.ops.append(Op(
+                    kind=kind, addr=addr_fixed(0), width=0,
+                    value=entry["rhs"], var=entry["lhs"],
+                    condition=conditions[-1] if conditions else None,
+                    cond_stack=conditions,
+                    control_stack=entry["control"],
+                    source_loc=f"{func.name}:{entry['line']}",
+                    line=entry["line"],
+                    evidence={
+                        "origin": "local_assignment",
+                        "source": func.source_path,
+                        "line": entry["line"],
+                        "variable": entry["lhs"],
+                    },
+                ))
+                continue
+            if kind == "OutputWrite":
+                output_value = entry["value"]
+                read_var = read_value_bindings.get(output_value.strip())
+                if not read_var:
+                    normalized = re.sub(
+                        r"\s+", "", output_value).rstrip(";")
+                    read_var = next(
+                        (var for expression, var in read_value_bindings.items()
+                         if re.sub(r"\s+", "", expression).rstrip(";")
+                         == normalized),
+                        None)
+                if read_var:
+                    output_value = read_var
+                result.ops.append(Op(
+                    kind=kind, addr=addr_fixed(0), width=0,
+                    value=output_value, var=entry["target"],
+                    condition=conditions[-1] if conditions else None,
+                    cond_stack=conditions,
+                    control_stack=entry["control"],
+                    source_loc=f"{func.name}:{entry['line']}",
+                    line=entry["line"],
+                    evidence={
+                        "origin": "buffer_write",
+                        "source": func.source_path,
+                        "line": entry["line"],
+                        "target": entry["target"],
+                    },
+                ))
+                continue
+            result.ops.append(Op(
+                kind="StateWrite",
+                addr=addr_fixed(0),
+                width=0,
+                value=entry["rhs"],
+                condition=conditions[-1] if conditions else None,
+                cond_stack=conditions,
+                control_stack=entry["control"],
+                state_field=entry["lhs"],
+                source_loc=f"{func.name}:{entry['line']}",
+                line=entry["line"],
+                evidence={
+                    "origin": "state_assignment",
+                    "source": func.source_path,
+                    "line": entry["line"],
+                    "field": entry["lhs"],
+                },
+            ))
+
+    def resolved_call_argument(arg: str, call_offset: int,
+                               call_store: dict) -> str:
+        token = arg.strip()
+        if (_IDENT_RE.fullmatch(token)
+                and any(entry["kind"] == "ValueBind"
+                        and entry["lhs"] == token
+                        and entry["offset"] < call_offset
+                        for entry in semantic_entries)):
+            return token
+        return _resolved_argument(arg, call_store, macros)
 
     def evidence_for(cs, kind: str, addr: dict,
                      source_address: str = "",
@@ -1126,15 +1410,22 @@ def extract_function(func: Func, macros, tu, *,
 
         call_offset = (cs.cursor.location.offset
                        if cs.cursor.location is not None else 0)
+        emit_semantic_before(call_offset)
         for transition in continuation:
             before_offset = transition.get("before_offset", 0)
             if (transition["after_offset"]
                     and transition["after_offset"] <= call_offset
                     and (not before_offset or call_offset < before_offset)):
                 frame = dict(transition["frame"])
-                control_stack.insert(0, frame)
+                if frame.get("source") == "loop-transfer":
+                    control_stack.append(frame)
+                else:
+                    control_stack.insert(0, frame)
                 if frame.get("guard"):
-                    cond_stack.insert(0, frame["guard"])
+                    if frame.get("source") == "loop-transfer":
+                        cond_stack.append(frame["guard"])
+                    else:
+                        cond_stack.insert(0, frame["guard"])
                     cond = cond or frame["guard"]
 
         access_name = mmio.effective_access_name(name, cs.callee_text)
@@ -1158,6 +1449,18 @@ def extract_function(func: Func, macros, tu, *,
             general_assignments, call_offset, call_store, macros))
         call_store.update(_pointer_assignment_store(
             pointer_assignments, cs.line))
+        # Path-sensitive scalar fold: conditional assignments to a local
+        # (value = 1; if (g) value = 2; writel(value, ...)) join into a
+        # ternary so the Write carries Ite(g, 2, 1) instead of the bare
+        # variable.  Only overlays names still unresolved (bare SymExpr).
+        for lhs, folded in _pointer_assignment_store(
+                general_assignments, cs.line).items():
+            current = call_store.get(lhs)
+            if ("?" in folded.text
+                    and (current is None
+                         or (isinstance(current, SymExpr)
+                             and current.text == lhs))):
+                call_store[lhs] = folded
 
         # ioremap → taint LHS as BasePtr
         if mmio.is_ioremap(name):
@@ -1198,6 +1501,8 @@ def extract_function(func: Func, macros, tu, *,
             result_var = mmio.read_result_var(
                 access_name, access_args, lhs) or None
             call_text = source_text(tu, cs.cursor).strip()
+            if not result_var:
+                result_var = buffer_read_name(call_text)
             if (not result_var and return_value and call_text
                     and call_text in return_value):
                 result_var = f"__return_read_{return_read_index}"
@@ -1217,6 +1522,9 @@ def extract_function(func: Func, macros, tu, *,
                     cs, "read", addr, addr_arg, access_name, access_args),
             )
             result.ops.append(op)
+            if result_var:
+                read_value_bindings[call_text] = result_var
+                read_value_bindings[call_text.rstrip(";").strip()] = result_var
             if result_var:
                 key = _norm_key(result_var)
                 store[key] = ReadTaint(addr=addr, reg_name=reg_name)
@@ -1253,8 +1561,8 @@ def extract_function(func: Func, macros, tu, *,
             continue
 
         if mmio.is_mmio_write(access_name):
-            # Generic Linux writel(val, addr), plus explicitly modeled
-            # driver-private wrappers such as dwc2_writel(state, val, off).
+            # Generic Linux writel(val, addr); private accessors are handled
+            # through source-derived wrapper summaries below.
             val_text, addr_text = mmio.write_value_addr(
                 access_name, access_args)
             source_addr_text = addr_text
@@ -1263,7 +1571,22 @@ def extract_function(func: Func, macros, tu, *,
             addr, reg_name = resolve_addr(addr_text, call_store, macros)
             if addr_text != source_addr_text:
                 addr = _expand_addr_numeric_macros(addr, macros)
-            val = eval_expr(val_text, call_store, macros)
+            preserve_local = bool(
+                _IDENT_RE.fullmatch(val_text.strip())
+                and any(entry["kind"] == "ValueBind"
+                        and entry["lhs"] == val_text.strip()
+                        and entry["offset"] < call_offset
+                        for entry in semantic_entries)
+                and not isinstance(
+                    store.get(_norm_key(val_text.strip())), ReadTaint))
+            if preserve_local:
+                folded = call_store.get(_norm_key(val_text.strip()))
+                val = (folded if isinstance(folded, (SymExpr, ReadTaint))
+                       and not (isinstance(folded, SymExpr)
+                                and folded.text == val_text.strip())
+                       else SymExpr(val_text.strip()))
+            else:
+                val = eval_expr(val_text, call_store, macros)
             kind = "Write"
             value = val_to_value_str(val) or val_text.strip() or None
             rmw_var = None
@@ -1313,19 +1636,19 @@ def extract_function(func: Func, macros, tu, *,
                    or (inline_cache or {}).get(resolved_name))
         summary = ((wrapper_summaries or {}).get(callee_key)
                    or (wrapper_summaries or {}).get(resolved_name))
-        # A function registered as a callback is an independent entry point.
-        # A direct C call to it must not duplicate its MMIO body in another
-        # module.  An actual indirect ops-table dispatch is different: the
-        # call-site semantics depend on resolving that target, so propagation
-        # remains enabled for ``indirect_target``.
-        if (not indirect_target
-                and callee_key in (callback_entries or set())):
-            inlined = None
-            summary = None
+        # A callback entry is an independent registration root, but a direct
+        # C call to it is still an ordinary callsite whose effects must be
+        # represented in the caller.  The formalizer retains the callback's
+        # own module separately; keeping both views preserves registration and
+        # direct-call semantics without relying on backend-specific glue.
+        # An independently proven wrapper call remains useful even when the
+        # caller also contains an unknown external call.  The unknown effect
+        # stays visible to access accounting/readiness; dropping this known
+        # operation would lose evidence rather than make the result safer.
         if (inlined is None or depth >= max_depth) and summary is not None:
             import copy
             mapping = {
-                param: _resolved_argument(arg, call_store, macros)
+                param: resolved_call_argument(arg, call_offset, call_store)
                 for param, arg in zip(
                     summary.get("params", []), cs.arg_text)
                 if param and arg
@@ -1337,8 +1660,20 @@ def extract_function(func: Func, macros, tu, *,
             addr, reg_name = resolve_addr(address_text, call_store, macros)
             if address_text != source_address_text:
                 addr = _expand_addr_numeric_macros(addr, macros)
-            evidence = copy.deepcopy(summary.get("evidence", {}))
+            # A wrapper summary has two distinct provenance layers.  The
+            # primitive access belongs to the wrapper definition, while the
+            # instantiated operation belongs to this caller callsite.  Using
+            # the definition's site_id for both makes coverage rescue think
+            # unrelated helper callsites are already covered.
+            wrapper_definition = copy.deepcopy(summary.get("evidence", {}))
+            evidence = evidence_for(
+                cs, "read" if summary["kind"] == "Read" else "write",
+                addr, address_text, effective_name=resolved_name,
+                subsystem_args=cs.arg_text)
+            evidence["width_bytes"] = summary["width"]
             evidence["origin"] = "wrapper_summary"
+            evidence["wrapper_definition"] = wrapper_definition
+            evidence["wrapper_symbol"] = summary.get("symbol")
             evidence.setdefault("summarized_at", []).append({
                 "function": func.name, "line": cs.line,
                 "callee": resolved_name, "source_loc": func.source_path,
@@ -1372,12 +1707,31 @@ def extract_function(func: Func, macros, tu, *,
                 raw_value = _substitute_text(
                     summary.get("value"), mapping) or ""
                 raw_value = _expand_pure_calls(raw_value, inline_cache)
-                abstract_value = eval_expr(raw_value, call_store, macros)
+                raw_key = _norm_key(raw_value.strip())
+                original_taint = store.get(raw_key)
+                if (isinstance(original_taint, ReadTaint)
+                        and addr_equal(original_taint.addr, addr)):
+                    abstract_value = original_taint
+                else:
+                    abstract_value = eval_expr(raw_value, call_store, macros)
                 value = val_to_value_str(abstract_value) or raw_value or None
+                kind = "Write"
+                rmw_var = None
+                if (isinstance(abstract_value, ReadTaint)
+                        and addr_equal(abstract_value.addr, addr)):
+                    kind = "ReadModifyWrite"
+                    key = _norm_key(raw_value.strip())
+                    origin = read_origins.get(key)
+                    if origin and addr_equal(origin[0], addr):
+                        rmw_var = key
+                        value = _rmw_transform(
+                            key, origin[1], cs.line, source_lines or [],
+                            line_to_cond, read_initial.get(key))
                 result.ops.append(Op(
-                    kind="Write", addr=addr, width=summary["width"],
+                    kind=kind, addr=addr, width=summary["width"],
                     value=value, condition=cond, cond_stack=cond_stack,
                     control_stack=control_stack, reg_name=reg_name,
+                    var=rmw_var,
                     evidence=evidence,
                     source_loc=f"{func.name}:{cs.line} (summary {resolved_name})",
                     line=cs.line))
@@ -1391,12 +1745,14 @@ def extract_function(func: Func, macros, tu, *,
         if inlined is not None and depth < max_depth:
             if inlined.ops:
                 mapping = {
-                    param: _resolved_argument(arg, call_store, macros)
+                    param: resolved_call_argument(arg, call_offset, call_store)
                     for param, arg in zip(inlined.params, cs.arg_text)
                     if param and arg
                 }
                 instantiated = [
-                    _instantiate_op(op, mapping, macros, inline_cache)
+                    _instantiate_op(
+                        op, mapping, macros, inline_cache,
+                        inline_context=f"{func.name}:{call_offset}")
                     for op in inlined.ops
                 ]
                 # A callee Return describes the value of this call, not an
@@ -1441,8 +1797,13 @@ def extract_function(func: Func, macros, tu, *,
                         "indirect_expression": cs.callee_text
                         if indirect_target else None,
                     })
+                    if o2.kind == "Read":
+                        o2.var = o2.var or buffer_read_name(call_text)
+                        if o2.var:
+                            read_value_bindings[call_text] = o2.var
                     result.ops.append(o2)
 
+    emit_semantic_before(1 << 62)
     materialize_return = return_value != source_return_expr
     if return_value is not None:
         final_store = _general_assignment_store(

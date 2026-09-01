@@ -1,0 +1,1408 @@
+c[?7l[2J[0mSeaBIOS (version rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org)
+
+
+iPXE (http://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+0EFD1C40+0EF31C40 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+
+
+iPXE (http://ipxe.org) 00:04.0 CB00 PCI2.10 PnP PMM+0EF20C40 0EF31C40 CB00
+Press Ctrl-B to configure iPXE (PCI 00:04.0)...                                                                               
+
+
+Booting from ROM..c[?7l[2JNo EFI environment detected.
+early console in extract_kernel
+input_data: 0x000000000266c2c4
+input_len: 0x000000000095c97d
+output: 0x0000000001000000
+output_len: 0x0000000001f8870c
+kernel_total_size: 0x0000000001d8c000
+needed_size: 0x0000000002000000
+trampoline_32bit: 0x0000000000000000
+
+
+KASLR disabled: 'nokaslr' on cmdline.
+
+
+Decompressing Linux... Parsing ELF... No relocation needed... done.
+Booting the kernel (entry_offset: 0x0000000001a193b0).
+[    0.000000] Linux version 7.1.0-rc7+ (yfblock@9950x) (gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #18 SMP PREEMPT_DYNAMIC Mon Aug 31 01:09:14 CST 2026
+[    0.000000] Command line: console=ttyS0 nokaslr panic=1 ignore_loglevel earlyprintk=serial,ttyS0,115200
+[    0.000000] BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x00000000000a0000-0x00000000000effff]
+[    0.000000] BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff]  device reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x000000000ffdffff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x000000000ffe0000-0x000000000fffffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x0000000010000000-0x00000000fffbffff]
+[    0.000000] BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x0000000100000000-0x000000fcffffffff]
+[    0.000000] BIOS-e820: [mem 0x000000fd00000000-0x000000ffffffffff]  device reserved
+[    0.000000] printk: debug: ignoring loglevel setting.
+[    0.000000] printk: legacy bootconsole [earlyser0] enabled
+[    0.000000] NX (Execute Disable) protection: active
+[    0.000000] APIC: Static calls initialized
+[    0.000000] DMI: SMBIOS 2.8 present.
+[    0.000000] DMI: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[    0.000000] DMI: Memory slots populated: 1/1
+[    0.000000] tsc: Fast TSC calibration using PIT
+[    0.000000] tsc: Detected 4299.930 MHz processor
+[    0.008267] e820: update [mem 0x00000000-0x00000fff] System RAM ==> device reserved
+[    0.008457] e820: remove [mem 0x000a0000-0x000fffff] System RAM
+[    0.008616] last_pfn = 0xffe0 max_arch_pfn = 0x400000000
+[    0.009070] MTRR map: 4 entries (3 fixed + 1 variable; max 19), built from 8 variable MTRRs
+[    0.009235] x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT  
+[    0.021033] found SMP MP-table at [mem 0x000f54b0-0x000f54bf]
+[    0.024117] RAMDISK: [mem 0x0f7e8000-0x0ffdffff]
+[    0.024406] ACPI: Early table checksum verification disabled
+[    0.024723] ACPI: RSDP 0x00000000000F52D0 000014 (v00 BOCHS )
+[    0.024928] ACPI: RSDT 0x000000000FFE2389 000034 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025442] ACPI: FACP 0x000000000FFE2235 000074 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025882] ACPI: DSDT 0x000000000FFE0040 0021F5 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025990] ACPI: FACS 0x000000000FFE0000 000040
+[    0.026057] ACPI: APIC 0x000000000FFE22A9 000080 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.026124] ACPI: HPET 0x000000000FFE2329 000038 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.026189] ACPI: WAET 0x000000000FFE2361 000028 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.026296] ACPI: Reserving FACP table memory at [mem 0xffe2235-0xffe22a8]
+[    0.026349] ACPI: Reserving DSDT table memory at [mem 0xffe0040-0xffe2234]
+[    0.026402] ACPI: Reserving FACS table memory at [mem 0xffe0000-0xffe003f]
+[    0.026446] ACPI: Reserving APIC table memory at [mem 0xffe22a9-0xffe2328]
+[    0.026490] ACPI: Reserving HPET table memory at [mem 0xffe2329-0xffe2360]
+[    0.026533] ACPI: Reserving WAET table memory at [mem 0xffe2361-0xffe2388]
+[    0.027826] No NUMA configuration found
+[    0.027869] Faking a node at [mem 0x0000000000000000-0x000000000ffdffff]
+[    0.028278] NODE_DATA(0) allocated [mem 0x0f7e4680-0x0f7e7fff]
+[    0.028799] ACPI: PM-Timer IO Port: 0x608
+[    0.029083] ACPI: LAPIC_NMI (acpi_id[0xff] dfl dfl lint[0x1])
+[    0.029347] IOAPIC[0]: apic_id 0, version 32, address 0xfec00000, GSI 0-23
+[    0.029459] ACPI: INT_SRC_OVR (bus 0 bus_irq 0 global_irq 2 dfl dfl)
+[    0.029641] ACPI: INT_SRC_OVR (bus 0 bus_irq 5 global_irq 5 high level)
+[    0.029707] ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)
+[    0.029801] ACPI: INT_SRC_OVR (bus 0 bus_irq 10 global_irq 10 high level)
+[    0.029846] ACPI: INT_SRC_OVR (bus 0 bus_irq 11 global_irq 11 high level)
+[    0.029994] ACPI: Using ACPI (MADT) for SMP configuration information
+[    0.030060] ACPI: HPET id: 0x8086a201 base: 0xfed00000
+[    0.030335] CPU topo: Max. logical packages:   1
+[    0.030388] CPU topo: Max. logical nodes:      1
+[    0.030423] CPU topo: Num. nodes per package:  1
+[    0.030486] CPU topo: Max. logical dies:       1
+[    0.030526] CPU topo: Max. dies per package:   1
+[    0.030588] CPU topo: Max. threads per core:   1
+[    0.030701] CPU topo: Num. cores per package:     2
+[    0.030741] CPU topo: Num. threads per package:   2
+[    0.030776] CPU topo: Allowing 2 present CPUs plus 0 hotplug CPUs
+[    0.031296] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031362] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.031479] [gap 0x10000000-0xfffbffff] available for PCI devices
+[    0.031553] Booting paravirtualized kernel on bare hardware
+[    0.031777] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1910969940391419 ns
+[    0.039081] Zone ranges:
+[    0.039118]   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
+[    0.039197]   DMA32    [mem 0x0000000001000000-0x000000000ffdffff]
+[    0.039243]   Normal   empty
+[    0.039277] Movable zone start for each node
+[    0.039318] Early memory node ranges
+[    0.039360]   node   0: [mem 0x0000000000001000-0x000000000009efff]
+[    0.039475]   node   0: [mem 0x0000000000100000-0x000000000ffdffff]
+[    0.039585] Initmem setup node 0 [mem 0x0000000000001000-0x000000000ffdffff]
+[    0.040163] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.040380] On node 0, zone DMA: 97 pages in unavailable ranges
+[    0.041697] On node 0, zone DMA32: 32 pages in unavailable ranges
+[    0.041862] setup_percpu: NR_CPUS:64 nr_cpumask_bits:2 nr_cpu_ids:2 nr_node_ids:1
+[    0.042905] percpu: Embedded 52 pages/cpu s175064 r8192 d29736 u1048576
+[    0.043184] pcpu-alloc: s175064 r8192 d29736 u1048576 alloc=1*2097152
+[    0.043273] pcpu-alloc: [0] 0 1 
+[    0.044160] Kernel command line: console=ttyS0 nokaslr panic=1 ignore_loglevel earlyprintk=serial,ttyS0,115200
+[    0.044907] Unknown kernel command line parameters "nokaslr", will be passed to user space.
+[    0.045095] printk: log buffer data + meta data: 262144 + 917504 = 1179648 bytes
+[    0.045345] Dentry cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.045475] Inode-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.047057] Fallback order for Node 0: 0 
+[    0.047322] Built 1 zonelists, mobility grouping on.  Total pages: 65406
+[    0.047405] Policy zone: DMA32
+[    0.047573] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[    0.052944] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+Poking KASLR using RDTSC...
+[    0.074480] ftrace: allocating 38351 entries in 152 pages
+[    0.074766] ftrace: allocated 152 pages with 3 groups
+[    0.079387] Dynamic Preempt: lazy
+[    0.081206] rcu: Preemptible hierarchical RCU implementation.
+[    0.081253] rcu: 	RCU event tracing is enabled.
+[    0.081294] rcu: 	RCU restricting CPUs from NR_CPUS=64 to nr_cpu_ids=2.
+[    0.081413] 	Trampoline variant of Tasks RCU enabled.
+[    0.081447] 	Rude variant of Tasks RCU enabled.
+[    0.081478] 	Tracing variant of Tasks RCU enabled.
+[    0.081564] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.081622] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.082340] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.082403] RCU Tasks Rude: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.097251] NR_IRQS: 4352, nr_irqs: 440, preallocated irqs: 16
+[    0.102690] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.107119] Console: colour VGA+ 80x25
+[    0.108278] printk: legacy console [ttyS0] enabled
+[    0.108278] printk: legacy console [ttyS0] enabled
+[    0.108556] printk: legacy bootconsole [earlyser0] disabled
+[    0.108556] printk: legacy bootconsole [earlyser0] disabled
+[    0.109432] ACPI: Core revision 20251212
+[    0.112619] clocksource: hpet: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604467 ns
+[    0.115544] APIC: Switch to symmetric I/O mode setup
+[    0.118228] ..TIMER: vector=0x30 apic1=0 pin1=2 apic2=-1 pin2=-1
+[    0.123475] clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x3dfb2144b5b, max_idle_ns: 440795343929 ns
+[    0.123758] Calibrating delay loop (skipped), value calculated using timer frequency.. 8599.86 BogoMIPS (lpj=4299930)
+[    0.126026] Last level iTLB entries: 4KB 512, 2MB 255, 4MB 127
+[    0.126088] Last level dTLB entries: 4KB 512, 2MB 255, 4MB 127, 1GB 0
+[    0.126261] mitigations: Enabled attack vectors: user_kernel, user_user, SMT mitigations: auto
+[    0.126536] Spectre V2 : Mitigation: Retpolines
+[    0.126653] Spectre V1 : Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+[    0.126762] Spectre V2 : Spectre v2 / SpectreRSB: Filling RSB on context switch and VMEXIT
+[    0.127235] x86/fpu: x87 FPU will use FXSAVE
+[    0.192904] pid_max: default: 32768 minimum: 301
+[    0.201963] Mount-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+[    0.202123] Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+[    0.206962] VFS: Finished mounting rootfs on nullfs
+[    0.322628] smpboot: CPU0: AMD QEMU Virtual CPU version 2.5+ (family: 0xf, model: 0x6b, stepping: 0x1)
+[    0.328954] Performance Events: PMU not available due to virtualization, using software events only.
+[    0.329714] signal: max sigframe size: 1440
+[    0.330405] rcu: Hierarchical SRCU implementation.
+[    0.330461] rcu: 	Max phase no-delay instances is 400.
+[    0.331127] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.333676] smp: Bringing up secondary CPUs ...
+[    0.337766] smpboot: x86: Booting SMP configuration:
+[    0.337827] .... node  #0, CPUs:      #1
+[    0.409182] smp: Brought up 1 node, 2 CPUs
+[    0.409375] smpboot: Total of 2 processors activated (17201.36 BogoMIPS)
+[    0.414526] Memory: 214288K/261624K available (12748K kernel code, 2347K rwdata, 5156K rodata, 2808K init, 544K bss, 43884K reserved, 0K cma-reserved)
+[    0.419443] devtmpfs: initialized
+[    0.425325] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.425325] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.425432] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.428009] PM: RTC time: 06:54:10, date: 2026-08-31
+[    0.430713] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.435316] thermal_sys: Registered thermal governor 'step_wise'
+[    0.435752] cpuidle: using governor menu
+[    0.436930] Freeing SMP alternatives memory: 36K
+[    0.438381] PCI: Using configuration type 1 for base access
+[    0.438679] mtrr: your CPUs had inconsistent fixed MTRR settings
+[    0.438731] mtrr: your CPUs had inconsistent variable MTRR settings
+[    0.438778] mtrr: your CPUs had inconsistent MTRRdefType settings
+[    0.438819] mtrr: probably your BIOS does not setup all CPUs.
+[    0.438859] mtrr: corrected configuration.
+[    0.440526] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.442123] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.442202] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.444846] ACPI: Added _OSI(Module Device)
+[    0.444899] ACPI: Added _OSI(Processor Device)
+[    0.444949] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.456735] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.467937] ACPI: \_SB_: platform _OSC: OS support mask [002a7eee]
+[    0.474072] ACPI: Interpreter enabled
+[    0.476734] ACPI: PM: (supports S0 S3 S4 S5)
+[    0.476793] ACPI: Using IOAPIC for interrupt routing
+[    0.477055] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.477132] PCI: Using E820 reservations for host bridge windows
+[    0.477976] ACPI: Enabled 2 GPEs in block 00 to 0F
+[    0.502853] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.503338] acpi PNP0A03:00: _OSC: OS supports [ASPM ClockPM Segments MSI HPX-Type3]
+[    0.503477] acpi PNP0A03:00: _OSC: not requesting OS control; OS requires [ExtendedConfig ASPM ClockPM MSI]
+[    0.503758] acpi PNP0A03:00: _OSC: platform retains control of PCIe features (AE_ERROR)
+[    0.504063] acpi PNP0A03:00: fail to add MMCONFIG information, can't access extended configuration space under this bridge
+[    0.505974] PCI host bridge to bus 0000:00
+[    0.506135] pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7 window]
+[    0.506250] pci_bus 0000:00: root bus resource [io  0x0d00-0xffff window]
+[    0.506298] pci_bus 0000:00: root bus resource [mem 0x000a0000-0x000bffff window]
+[    0.506371] pci_bus 0000:00: root bus resource [mem 0x10000000-0xfebfffff window]
+[    0.506424] pci_bus 0000:00: root bus resource [mem 0x100000000-0x17fffffff window]
+[    0.506548] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.507390] pci 0000:00:00.0: [8086:1237] type 00 class 0x060000 conventional PCI endpoint
+[    0.509905] pci 0000:00:01.0: [8086:7000] type 00 class 0x060100 conventional PCI endpoint
+[    0.510283] pci 0000:00:01.1: [8086:7010] type 00 class 0x010180 conventional PCI endpoint
+[    0.510746] pci 0000:00:01.1: BAR 4 [io  0xc060-0xc06f]
+[    0.510829] pci 0000:00:01.1: BAR 0 [io  0x01f0-0x01f7]: legacy IDE quirk
+[    0.510891] pci 0000:00:01.1: BAR 1 [io  0x03f6]: legacy IDE quirk
+[    0.510967] pci 0000:00:01.1: BAR 2 [io  0x0170-0x0177]: legacy IDE quirk
+[    0.511023] pci 0000:00:01.1: BAR 3 [io  0x0376]: legacy IDE quirk
+[    0.511410] pci 0000:00:01.3: [8086:7113] type 00 class 0x068000 conventional PCI endpoint
+[    0.511760] pci 0000:00:01.3: quirk: [io  0x0600-0x063f] claimed by PIIX4 ACPI
+[    0.511850] pci 0000:00:01.3: quirk: [io  0x0700-0x070f] claimed by PIIX4 SMB
+[    0.512232] pci 0000:00:02.0: [1234:1111] type 00 class 0x030000 conventional PCI endpoint
+[    0.512653] pci 0000:00:02.0: BAR 0 [mem 0xfd000000-0xfdffffff pref]
+[    0.512738] pci 0000:00:02.0: BAR 2 [mem 0xfebf4000-0xfebf4fff]
+[    0.512782] pci 0000:00:02.0: ROM [mem 0xfebe0000-0xfebeffff pref]
+[    0.512977] pci 0000:00:02.0: Video device with shadowed ROM at [mem 0x000c0000-0x000dffff]
+[    0.513341] pci 0000:00:03.0: [8086:100e] type 00 class 0x020000 conventional PCI endpoint
+[    0.513841] pci 0000:00:03.0: BAR 0 [mem 0xfeb80000-0xfeb9ffff]
+[    0.513899] pci 0000:00:03.0: BAR 1 [io  0xc000-0xc03f]
+[    0.513940] pci 0000:00:03.0: ROM [mem 0xfeb00000-0xfeb3ffff pref]
+[    0.517573] pci 0000:00:04.0: [8086:10d3] type 00 class 0x020000 PCIe Endpoint
+[    0.518291] pci 0000:00:04.0: BAR 0 [mem 0xfeba0000-0xfebbffff]
+[    0.518348] pci 0000:00:04.0: BAR 1 [mem 0xfebc0000-0xfebdffff]
+[    0.518400] pci 0000:00:04.0: BAR 2 [io  0xc040-0xc05f]
+[    0.518440] pci 0000:00:04.0: BAR 3 [mem 0xfebf0000-0xfebf3fff]
+[    0.518483] pci 0000:00:04.0: ROM [mem 0xfeb40000-0xfeb7ffff pref]
+[    0.518585] pci 0000:00:04.0: enabling Extended Tags
+[    0.524931] ACPI: PCI: Interrupt link LNKA configured for IRQ 10
+[    0.525389] ACPI: PCI: Interrupt link LNKB configured for IRQ 10
+[    0.525739] ACPI: PCI: Interrupt link LNKC configured for IRQ 11
+[    0.526045] ACPI: PCI: Interrupt link LNKD configured for IRQ 11
+[    0.526199] ACPI: PCI: Interrupt link LNKS configured for IRQ 9
+[    0.528144] iommu: Default domain type: Translated
+[    0.528204] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.529752] SCSI subsystem initialized
+[    0.530807] libata version 3.00 loaded.
+[    0.531346] ACPI: bus type USB registered
+[    0.531682] usbcore: registered new interface driver usbfs
+[    0.531892] usbcore: registered new interface driver hub
+[    0.532002] usbcore: registered new device driver usb
+[    0.532188] pps_core: LinuxPPS API ver. 1 registered
+[    0.532228] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.532309] PTP clock support registered
+[    0.538763] PCI: Using ACPI for IRQ routing
+[    0.538870] PCI: pci_cache_line_size set to 64 bytes
+[    0.539109] e820: register RAM buffer resource [mem 0x0009fc00-0x0009ffff]
+[    0.539247] e820: register RAM buffer resource [mem 0x0ffe0000-0x0fffffff]
+[    0.542047] pci 0000:00:02.0: vgaarb: setting as boot VGA device
+[    0.542073] pci 0000:00:02.0: vgaarb: bridge control possible
+[    0.542138] pci 0000:00:02.0: vgaarb: VGA device added: decodes=io+mem,owns=io+mem,locks=none
+[    0.542138] vgaarb: loaded
+[    0.542269] hpet: 3 channels of 0 reserved for per-cpu timers
+[    0.542753] hpet0: at MMIO 0xfed00000, IRQs 2, 8, 0
+[    0.542842] hpet0: 3 comparators, 64-bit 100.000000 MHz counter
+[    0.548013] clocksource: Switched to clocksource tsc-early
+[    0.549048] VFS: Disk quotas dquot_6.6.0
+[    0.549141] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.551917] pnp: PnP ACPI init
+[    0.553149] pnp 00:02: [dma 2]
+[    0.554330] pnp: PnP ACPI: found 5 devices
+[    0.567888] clocksource: acpi_pm: mask: 0xffffff max_cycles: 0xffffff, max_idle_ns: 2085701024 ns
+[    0.568319] NET: Registered PF_INET protocol family
+[    0.568947] IP idents hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.570434] tcp_listen_portaddr_hash hash table entries: 256 (order: 0, 4096 bytes, linear)
+[    0.570703] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.570836] TCP established hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.571052] TCP bind hash table entries: 2048 (order: 4, 65536 bytes, linear)
+[    0.571189] TCP: Hash tables configured (established 2048 bind 2048)
+[    0.571983] UDP hash table entries: 256 (order: 2, 16384 bytes, linear)
+[    0.573071] pci_bus 0000:00: resource 4 [io  0x0000-0x0cf7 window]
+[    0.573128] pci_bus 0000:00: resource 5 [io  0x0d00-0xffff window]
+[    0.573172] pci_bus 0000:00: resource 6 [mem 0x000a0000-0x000bffff window]
+[    0.573219] pci_bus 0000:00: resource 7 [mem 0x10000000-0xfebfffff window]
+[    0.573265] pci_bus 0000:00: resource 8 [mem 0x100000000-0x17fffffff window]
+[    0.573589] pci 0000:00:01.0: PIIX3: Enabling Passive Release
+[    0.573676] pci 0000:00:00.0: Limiting direct PCI/PCI transfers
+[    0.573817] PCI: CLS 0 bytes, default 64
+[    0.576364] Unpacking initramfs...
+[    0.579957] Initialise system trusted keyrings
+[    0.580922] workingset: timestamp_bits=56 (anon: 52) max_order=16 bucket_order=0 (anon: 0)
+[    0.583276] Key type asymmetric registered
+[    0.583352] Asymmetric key parser 'x509' registered
+[    0.583492] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 250)
+[    0.583793] io scheduler mq-deadline registered
+[    0.583856] io scheduler kyber registered
+[    0.585844] input: Power Button as /devices/platform/LNXPWRBN:00/input/input0
+[    0.586442] ACPI: button: Power Button [PWRF]
+[    0.589690] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.592081] 00:04: ttyS0 at I/O 0x3f8 (irq = 4, base_baud = 115200) is a 16550A
+[    0.601272] Non-volatile memory driver v1.3
+[    0.611392] loop: module loaded
+[    0.617161] scsi host0: ata_piix
+[    0.618962] scsi host1: ata_piix
+[    0.619246] ata1: PATA max MWDMA2 cmd 0x1f0 ctl 0x3f6 bmdma 0xc060 irq 14 lpm-pol 0
+[    0.619316] ata2: PATA max MWDMA2 cmd 0x170 ctl 0x376 bmdma 0xc068 irq 15 lpm-pol 0
+[    0.620512] i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+[    0.623083] serio: i8042 KBD port at 0x60,0x64 irq 1
+[    0.623280] serio: i8042 AUX port at 0x60,0x64 irq 12
+[    0.624772] rtc_cmos PNP0B00:00: RTC can wake from S4
+[    0.627480] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input1
+[    0.630494] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.631335] rtc_cmos PNP0B00:00: alarms up to one day, y3k, 242 bytes nvram, hpet irqs
+[    0.631996] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[    0.632253] amd_pstate: the _CPC object is not present in SBIOS or ACPI disabled
+[    0.632433] hid: raw HID events driver (C) Jiri Kosina
+[    0.632877] usbcore: registered new interface driver usbhid
+[    0.632925] usbhid: USB HID core driver
+[    0.633606] NET: Registered PF_INET6 protocol family
+[    0.638418] Segment Routing with IPv6
+[    0.638570] In-situ OAM (IOAM) with IPv6
+[    0.640409] IPI shorthand broadcast: enabled
+[    0.647915] sched_clock: Marking stable (636540705, 10482854)->(649340231, -2316672)
+[    0.649273] Loading compiled-in X.509 certificates
+[    0.655873] Demotion targets for Node 0: null
+[    0.657804] PM:   Magic number: 6:867:924
+[    0.658602] clk: Disabling unused clocks
+[    0.658823] KTAP version 1
+[    0.658851] 1..0
+[    0.732914] Freeing initrd memory: 8160K
+[    0.777329] ata2: found unknown device (class 0)
+[    0.780137] ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
+[    0.786560] scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
+[    0.800666] sr 1:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    0.810951] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    0.817589] sr 1:0:0:0: Attached scsi CD-ROM sr0
+[    0.818505] sr 1:0:0:0: Attached scsi generic sg0 type 5
+[    0.855861] Freeing unused kernel image (initmem) memory: 2808K
+[    0.856053] Write protecting the kernel read-only data: 20480k
+[    0.857518] Freeing unused kernel image (text/rodata gap) memory: 1584K
+[    0.857970] Freeing unused kernel image (rodata/data gap) memory: 988K
+[    0.944309] x86/mm: Checked W+X mappings: passed, no W+X pages found.
+[    0.944518] Run /init as init process
+[    0.944547]   with arguments:
+[    0.944573]     /init
+[    0.944594]     nokaslr
+[    0.944612]   with environment:
+[    0.944637]     HOME=/
+[    0.944657]     TERM=linux
+[    1.004266] mount (55) used greatest stack depth: 13208 bytes left
+[    1.023977] mount (59) used greatest stack depth: 13120 bytes left
+=== insmod e1000e ===
+[    1.042808] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
+[    1.060746] e1000e: [rhcov] e1000_init_module
+[    1.060831] e1000e: [rhcov] e1000_init_module
+[    1.060863] e1000e: [rhcov] e1000_init_module
+[    1.060893] e1000e: [rhcov] e1000_init_module
+[    1.060921] e1000e: [rhcov] e1000_init_module
+[    1.060951] e1000e: [rhcov] e1000_init_module
+[    1.060978] e1000e: Intel(R) PRO/1000 Network Driver
+[    1.061012] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[    1.061160] e1000e: [rhcov] e1000_probe
+[    1.061195] e1000e: [rhcov] e1000_probe
+[    1.061221] e1000e: [rhcov] e1000_probe
+[    1.061248] e1000e: [rhcov] e1000_probe
+[    1.061274] e1000e: [rhcov] e1000_probe
+[    1.061302] e1000e: [rhcov] e1000_probe
+[    1.061356] e1000e: [rhcov] e1000e_disable_aspm
+[    1.061396] e1000e: [rhcov] e1000e_disable_aspm
+[    1.061425] e1000e: [rhcov] e1000e_disable_aspm
+[    1.061455] e1000e: [rhcov] e1000e_disable_aspm
+[    1.061484] e1000e: [rhcov] e1000e_disable_aspm
+[    1.061514] e1000e: [rhcov] e1000e_disable_aspm
+[    1.061554] e1000e: [rhcov] __e1000e_disable_aspm
+[    1.061587] e1000e: [rhcov] __e1000e_disable_aspm
+[    1.061617] e1000e: [rhcov] __e1000e_disable_aspm
+[    1.061647] e1000e: [rhcov] __e1000e_disable_aspm
+[    1.061677] e1000e: [rhcov] __e1000e_disable_aspm
+[    1.061707] e1000e: [rhcov] __e1000e_disable_aspm
+[    1.066919] ACPI: \_SB_.LNKD: Enabled at IRQ 11
+[    1.073328] [rhcov] e1000e_set_ethtool_ops
+[    1.073407] [rhcov] e1000e_set_ethtool_ops
+[    1.073455] [rhcov] e1000e_set_ethtool_ops
+[    1.073499] [rhcov] e1000e_set_ethtool_ops
+[    1.073543] [rhcov] e1000e_set_ethtool_ops
+[    1.074178] [rhcov] e1000e_check_options
+[    1.074233] [rhcov] e1000e_check_options
+[    1.074278] [rhcov] e1000e_check_options
+[    1.074322] [rhcov] e1000e_check_options
+[    1.074367] [rhcov] e1000e_check_options
+[    1.074434] e1000e 0000:00:04.0: Interrupt Throttling Rate (ints/sec) set to dynamic conservative mode
+[    1.074531] e1000e: [rhcov] e1000_sw_init
+[    1.074561] e1000e: [rhcov] e1000_sw_init
+[    1.074589] e1000e: [rhcov] e1000_sw_init
+[    1.074618] e1000e: [rhcov] e1000_sw_init
+[    1.074646] e1000e: [rhcov] e1000_sw_init
+[    1.074675] e1000e: [rhcov] e1000_sw_init
+[    1.074736] e1000e: [rhcov] e1000e_set_interrupt_capability
+[    1.074774] e1000e: [rhcov] e1000e_set_interrupt_capability
+[    1.074809] e1000e: [rhcov] e1000e_set_interrupt_capability
+[    1.074845] e1000e: [rhcov] e1000e_set_interrupt_capability
+[    1.074881] e1000e: [rhcov] e1000e_set_interrupt_capability
+[    1.074915] e1000e: [rhcov] e1000e_set_interrupt_capability
+[    1.077225] e1000e: [rhcov] e1000_alloc_queues
+[    1.077268] e1000e: [rhcov] e1000_alloc_queues
+[    1.077300] e1000e: [rhcov] e1000_alloc_queues
+[    1.077332] e1000e: [rhcov] e1000_alloc_queues
+[    1.077421] e1000e: [rhcov] e1000_alloc_queues
+[    1.077477] e1000e: [rhcov] e1000_alloc_queues
+[    1.077553] e1000e: [rhcov] e1000_irq_disable
+[    1.077585] e1000e: [rhcov] e1000_irq_disable
+[    1.077614] e1000e: [rhcov] e1000_irq_disable
+[    1.077643] e1000e: [rhcov] e1000_irq_disable
+[    1.077672] e1000e: [rhcov] e1000_irq_disable
+[    1.077702] e1000e: [rhcov] e1000_irq_disable
+[    1.077773] e1000e: [rhcov] __ew32
+[    1.077802] e1000e: [rhcov] __ew32
+[    1.077827] e1000e: [rhcov] __ew32
+[    1.077852] e1000e: [rhcov] __ew32
+[    1.077876] e1000e: [rhcov] __ew32
+[    1.077901] e1000e: [rhcov] __ew32
+[    1.078069] [rhcov] e1000_get_variants_82571
+[    1.078103] [rhcov] e1000_get_variants_82571
+[    1.078134] [rhcov] e1000_get_variants_82571
+[    1.078162] [rhcov] e1000_get_variants_82571
+[    1.078191] [rhcov] e1000_get_variants_82571
+[    1.078229] [rhcov] e1000_init_mac_params_82571
+[    1.078260] [rhcov] e1000_init_mac_params_82571
+[    1.078291] [rhcov] e1000_init_mac_params_82571
+[    1.078322] [rhcov] e1000_init_mac_params_82571
+[    1.078353] [rhcov] e1000_init_mac_params_82571
+[    1.078428] [rhcov] e1000_init_nvm_params_82571
+[    1.078459] [rhcov] e1000_init_nvm_params_82571
+[    1.078490] [rhcov] e1000_init_nvm_params_82571
+[    1.078521] [rhcov] e1000_init_nvm_params_82571
+[    1.078552] [rhcov] e1000_init_nvm_params_82571
+[    1.078628] [rhcov] e1000_init_phy_params_82571
+[    1.078659] [rhcov] e1000_init_phy_params_82571
+[    1.078690] [rhcov] e1000_init_phy_params_82571
+[    1.078749] [rhcov] e1000_init_phy_params_82571
+[    1.078784] [rhcov] e1000_init_phy_params_82571
+[    1.078835] [rhcov] e1000_get_phy_id_82571
+[    1.078864] [rhcov] e1000_get_phy_id_82571
+[    1.078893] [rhcov] e1000_get_phy_id_82571
+[    1.078922] [rhcov] e1000_get_phy_id_82571
+[    1.078950] [rhcov] e1000_get_phy_id_82571
+[    1.079006] [rhcov] e1000e_read_phy_reg_bm2
+[    1.079042] [rhcov] e1000e_read_phy_reg_bm2
+[    1.079072] [rhcov] e1000e_read_phy_reg_bm2
+[    1.079106] [rhcov] e1000e_read_phy_reg_bm2
+[    1.079135] [rhcov] e1000e_read_phy_reg_bm2
+[    1.079180] [rhcov] e1000_get_hw_semaphore_82574
+[    1.079211] [rhcov] e1000_get_hw_semaphore_82574
+[    1.079241] [rhcov] e1000_get_hw_semaphore_82574
+[    1.079272] [rhcov] e1000_get_hw_semaphore_82574
+[    1.079302] [rhcov] e1000_get_hw_semaphore_82574
+[    1.079340] [rhcov] e1000_get_hw_semaphore_82573
+[    1.079372] [rhcov] e1000_get_hw_semaphore_82573
+[    1.079403] [rhcov] e1000_get_hw_semaphore_82573
+[    1.079434] [rhcov] e1000_get_hw_semaphore_82573
+[    1.079466] [rhcov] e1000_get_hw_semaphore_82573
+[    1.079554] [rhcov] e1000e_read_phy_reg_mdic
+[    1.079585] [rhcov] e1000e_read_phy_reg_mdic
+[    1.079614] [rhcov] e1000e_read_phy_reg_mdic
+[    1.079642] [rhcov] e1000e_read_phy_reg_mdic
+[    1.079671] [rhcov] e1000e_read_phy_reg_mdic
+[    1.079881] [rhcov] e1000_put_hw_semaphore_82574
+[    1.079916] [rhcov] e1000_put_hw_semaphore_82574
+[    1.079946] [rhcov] e1000_put_hw_semaphore_82574
+[    1.079976] [rhcov] e1000_put_hw_semaphore_82574
+[    1.080010] [rhcov] e1000_put_hw_semaphore_82574
+[    1.080056] [rhcov] e1000_put_hw_semaphore_82573
+[    1.080088] [rhcov] e1000_put_hw_semaphore_82573
+[    1.080118] [rhcov] e1000_put_hw_semaphore_82573
+[    1.080148] [rhcov] e1000_put_hw_semaphore_82573
+[    1.080178] [rhcov] e1000_put_hw_semaphore_82573
+[    1.080918] [rhcov] e1000e_get_bus_info_pcie
+[    1.080954] [rhcov] e1000e_get_bus_info_pcie
+[    1.080983] [rhcov] e1000e_get_bus_info_pcie
+[    1.081015] [rhcov] e1000e_get_bus_info_pcie
+[    1.081055] [rhcov] e1000e_get_bus_info_pcie
+[    1.081107] [rhcov] e1000_set_lan_id_single_port
+[    1.081138] [rhcov] e1000_set_lan_id_single_port
+[    1.081168] [rhcov] e1000_set_lan_id_single_port
+[    1.081198] [rhcov] e1000_set_lan_id_single_port
+[    1.081229] [rhcov] e1000_set_lan_id_single_port
+[    1.081292] [rhcov] e1000e_check_reset_block_generic
+[    1.081326] [rhcov] e1000e_check_reset_block_generic
+[    1.081358] [rhcov] e1000e_check_reset_block_generic
+[    1.081390] [rhcov] e1000e_check_reset_block_generic
+[    1.081423] [rhcov] e1000e_check_reset_block_generic
+[    1.081519] [rhcov] e1000e_enable_mng_pass_thru
+[    1.081552] [rhcov] e1000e_enable_mng_pass_thru
+[    1.081583] [rhcov] e1000e_enable_mng_pass_thru
+[    1.081615] [rhcov] e1000e_enable_mng_pass_thru
+[    1.081646] [rhcov] e1000e_enable_mng_pass_thru
+[    1.081712] [rhcov] e1000_reset_hw_82571
+[    1.081755] [rhcov] e1000_reset_hw_82571
+[    1.081783] [rhcov] e1000_reset_hw_82571
+[    1.081810] [rhcov] e1000_reset_hw_82571
+[    1.081837] [rhcov] e1000_reset_hw_82571
+[    1.081880] [rhcov] e1000e_disable_pcie_master
+[    1.081911] [rhcov] e1000e_disable_pcie_master
+[    1.081941] [rhcov] e1000e_disable_pcie_master
+[    1.081970] [rhcov] e1000e_disable_pcie_master
+[    1.082003] [rhcov] e1000e_disable_pcie_master
+[    1.092804] [rhcov] e1000e_get_auto_rd_done
+[    1.092840] [rhcov] e1000e_get_auto_rd_done
+[    1.092868] [rhcov] e1000e_get_auto_rd_done
+[    1.092897] [rhcov] e1000e_get_auto_rd_done
+[    1.092926] [rhcov] e1000e_get_auto_rd_done
+[    1.118790] [rhcov] e1000_validate_nvm_checksum_82571
+[    1.118829] [rhcov] e1000_validate_nvm_checksum_82571
+[    1.118861] [rhcov] e1000_validate_nvm_checksum_82571
+[    1.118892] [rhcov] e1000_validate_nvm_checksum_82571
+[    1.118923] [rhcov] e1000_validate_nvm_checksum_82571
+[    1.118968] [rhcov] e1000e_validate_nvm_checksum_generic
+[    1.119004] [rhcov] e1000e_validate_nvm_checksum_generic
+[    1.119037] [rhcov] e1000e_validate_nvm_checksum_generic
+[    1.119069] [rhcov] e1000e_validate_nvm_checksum_generic
+[    1.119101] [rhcov] e1000e_validate_nvm_checksum_generic
+[    1.119157] [rhcov] e1000e_read_nvm_eerd
+[    1.119185] [rhcov] e1000e_read_nvm_eerd
+[    1.119211] [rhcov] e1000e_read_nvm_eerd
+[    1.119238] [rhcov] e1000e_read_nvm_eerd
+[    1.119263] [rhcov] e1000e_read_nvm_eerd
+[    1.119313] [rhcov] e1000e_poll_eerd_eewr_done
+[    1.119341] [rhcov] e1000e_poll_eerd_eewr_done
+[    1.119373] [rhcov] e1000e_poll_eerd_eewr_done
+[    1.119402] [rhcov] e1000e_poll_eerd_eewr_done
+[    1.119431] [rhcov] e1000e_poll_eerd_eewr_done
+[    1.119566] e1000e: [rhcov] e1000_eeprom_checks
+[    1.119597] e1000e: [rhcov] e1000_eeprom_checks
+[    1.119628] e1000e: [rhcov] e1000_eeprom_checks
+[    1.119659] e1000e: [rhcov] e1000_eeprom_checks
+[    1.119690] e1000e: [rhcov] e1000_eeprom_checks
+[    1.119721] e1000e: [rhcov] e1000_eeprom_checks
+[    1.119776] [rhcov] e1000_read_mac_addr_82571
+[    1.119806] [rhcov] e1000_read_mac_addr_82571
+[    1.119836] [rhcov] e1000_read_mac_addr_82571
+[    1.119866] [rhcov] e1000_read_mac_addr_82571
+[    1.119897] [rhcov] e1000_read_mac_addr_82571
+[    1.119934] [rhcov] e1000_read_mac_addr_generic
+[    1.119965] [rhcov] e1000_read_mac_addr_generic
+[    1.119994] [rhcov] e1000_read_mac_addr_generic
+[    1.120024] [rhcov] e1000_read_mac_addr_generic
+[    1.120058] [rhcov] e1000_read_mac_addr_generic
+[    1.120281] [rhcov] e1000e_ptp_init
+[    1.120322] [rhcov] e1000e_ptp_init
+[    1.120360] [rhcov] e1000e_ptp_init
+[    1.120397] [rhcov] e1000e_ptp_init
+[    1.120434] [rhcov] e1000e_ptp_init
+[    1.121388] e1000e 0000:00:04.0 0000:00:04.0 (uninitialized): registered PHC clock
+[    1.121487] e1000e: [rhcov] e1000e_reset
+[    1.121521] e1000e: [rhcov] e1000e_reset
+[    1.121549] e1000e: [rhcov] e1000e_reset
+[    1.121577] e1000e: [rhcov] e1000e_reset
+[    1.121604] e1000e: [rhcov] e1000e_reset
+[    1.121631] e1000e: [rhcov] e1000e_reset
+[    1.154386] e1000e: [rhcov] e1000e_get_hw_control
+[    1.154447] e1000e: [rhcov] e1000e_get_hw_control
+[    1.154482] e1000e: [rhcov] e1000e_get_hw_control
+[    1.154686] e1000e: [rhcov] e1000e_get_hw_control
+[    1.154721] e1000e: [rhcov] e1000e_get_hw_control
+[    1.154760] e1000e: [rhcov] e1000e_get_hw_control
+[    1.154823] [rhcov] e1000_init_hw_82571
+[    1.154852] [rhcov] e1000_init_hw_82571
+[    1.154879] [rhcov] e1000_init_hw_82571
+[    1.154904] [rhcov] e1000_init_hw_82571
+[    1.154931] [rhcov] e1000_init_hw_82571
+[    1.154958] [rhcov] e1000_initialize_hw_bits_82571
+[    1.154988] [rhcov] e1000_initialize_hw_bits_82571
+[    1.155018] [rhcov] e1000_initialize_hw_bits_82571
+[    1.155048] [rhcov] e1000_initialize_hw_bits_82571
+[    1.155079] [rhcov] e1000_initialize_hw_bits_82571
+[    1.155217] [rhcov] e1000e_id_led_init_generic
+[    1.155247] [rhcov] e1000e_id_led_init_generic
+[    1.155276] [rhcov] e1000e_id_led_init_generic
+[    1.155305] [rhcov] e1000e_id_led_init_generic
+[    1.155333] [rhcov] e1000e_id_led_init_generic
+[    1.155371] [rhcov] e1000_valid_led_default_82571
+[    1.155402] [rhcov] e1000_valid_led_default_82571
+[    1.155433] [rhcov] e1000_valid_led_default_82571
+[    1.155468] [rhcov] e1000_valid_led_default_82571
+[    1.155517] [rhcov] e1000_valid_led_default_82571
+[    1.155643] [rhcov] e1000_clear_vfta_82571
+[    1.155672] [rhcov] e1000_clear_vfta_82571
+[    1.155700] [rhcov] e1000_clear_vfta_82571
+[    1.155732] [rhcov] e1000_clear_vfta_82571
+[    1.155761] [rhcov] e1000_clear_vfta_82571
+[    1.155862] [rhcov] e1000e_get_laa_state_82571
+[    1.155893] [rhcov] e1000e_get_laa_state_82571
+[    1.155922] [rhcov] e1000e_get_laa_state_82571
+[    1.155951] [rhcov] e1000e_get_laa_state_82571
+[    1.155980] [rhcov] e1000e_get_laa_state_82571
+[    1.156042] [rhcov] e1000e_init_rx_addrs
+[    1.156070] [rhcov] e1000e_init_rx_addrs
+[    1.156097] [rhcov] e1000e_init_rx_addrs
+[    1.156122] [rhcov] e1000e_init_rx_addrs
+[    1.156149] [rhcov] e1000e_init_rx_addrs
+[    1.156186] [rhcov] e1000e_rar_set_generic
+[    1.156214] [rhcov] e1000e_rar_set_generic
+[    1.156241] [rhcov] e1000e_rar_set_generic
+[    1.156268] [rhcov] e1000e_rar_set_generic
+[    1.156295] [rhcov] e1000e_rar_set_generic
+[    1.156437] [rhcov] e1000_setup_link_82571
+[    1.156466] [rhcov] e1000_setup_link_82571
+[    1.156509] [rhcov] e1000_setup_link_82571
+[    1.156539] [rhcov] e1000_setup_link_82571
+[    1.156569] [rhcov] e1000_setup_link_82571
+[    1.156622] [rhcov] e1000e_setup_link_generic
+[    1.156658] [rhcov] e1000e_setup_link_generic
+[    1.156687] [rhcov] e1000e_setup_link_generic
+[    1.156717] [rhcov] e1000e_setup_link_generic
+[    1.156750] [rhcov] e1000e_setup_link_generic
+[    1.156806] [rhcov] e1000_setup_copper_link_82571
+[    1.156836] [rhcov] e1000_setup_copper_link_82571
+[    1.156866] [rhcov] e1000_setup_copper_link_82571
+[    1.156896] [rhcov] e1000_setup_copper_link_82571
+[    1.156926] [rhcov] e1000_setup_copper_link_82571
+[    1.156992] [rhcov] e1000e_copper_link_setup_m88
+[    1.157026] [rhcov] e1000e_copper_link_setup_m88
+[    1.157056] [rhcov] e1000e_copper_link_setup_m88
+[    1.157087] [rhcov] e1000e_copper_link_setup_m88
+[    1.157118] [rhcov] e1000e_copper_link_setup_m88
+[    1.157164] [rhcov] e1000e_write_phy_reg_mdic
+[    1.157193] [rhcov] e1000e_write_phy_reg_mdic
+[    1.157222] [rhcov] e1000e_write_phy_reg_mdic
+[    1.157250] [rhcov] e1000e_write_phy_reg_mdic
+[    1.157278] [rhcov] e1000e_write_phy_reg_mdic
+[    1.157510] [rhcov] e1000e_write_phy_reg_bm2
+[    1.157542] [rhcov] e1000e_write_phy_reg_bm2
+[    1.157571] [rhcov] e1000e_write_phy_reg_bm2
+[    1.157601] [rhcov] e1000e_write_phy_reg_bm2
+[    1.157630] [rhcov] e1000e_write_phy_reg_bm2
+[    1.157821] [rhcov] e1000e_phy_sw_reset
+[    1.157852] [rhcov] e1000e_phy_sw_reset
+[    1.157880] [rhcov] e1000e_phy_sw_reset
+[    1.157909] [rhcov] e1000e_phy_sw_reset
+[    1.157937] [rhcov] e1000e_phy_sw_reset
+[    1.158597] [rhcov] e1000e_setup_copper_link
+[    1.158632] [rhcov] e1000e_setup_copper_link
+[    1.158662] [rhcov] e1000e_setup_copper_link
+[    1.158694] [rhcov] e1000e_setup_copper_link
+[    1.158724] [rhcov] e1000e_setup_copper_link
+[    1.158864] [rhcov] e1000_copper_link_autoneg
+[    1.158954] [rhcov] e1000_copper_link_autoneg
+[    1.159025] [rhcov] e1000_copper_link_autoneg
+[    1.159087] [rhcov] e1000_copper_link_autoneg
+[    1.159150] [rhcov] e1000_copper_link_autoneg
+[    1.159215] [rhcov] e1000_phy_setup_autoneg
+[    1.159245] [rhcov] e1000_phy_setup_autoneg
+[    1.159275] [rhcov] e1000_phy_setup_autoneg
+[    1.159304] [rhcov] e1000_phy_setup_autoneg
+[    1.159333] [rhcov] e1000_phy_setup_autoneg
+[    1.159825] [rhcov] e1000e_phy_has_link_generic
+[    1.159865] [rhcov] e1000e_phy_has_link_generic
+[    1.159897] [rhcov] e1000e_phy_has_link_generic
+[    1.159928] [rhcov] e1000e_phy_has_link_generic
+[    1.159959] [rhcov] e1000e_phy_has_link_generic
+[    1.161206] [rhcov] e1000e_set_fc_watermarks
+[    1.161238] [rhcov] e1000e_set_fc_watermarks
+[    1.161267] [rhcov] e1000e_set_fc_watermarks
+[    1.161294] [rhcov] e1000e_set_fc_watermarks
+[    1.161322] [rhcov] e1000e_set_fc_watermarks
+[    1.161406] [rhcov] e1000_clear_hw_cntrs_82571
+[    1.161438] [rhcov] e1000_clear_hw_cntrs_82571
+[    1.161467] [rhcov] e1000_clear_hw_cntrs_82571
+[    1.161507] [rhcov] e1000_clear_hw_cntrs_82571
+[    1.161536] [rhcov] e1000_clear_hw_cntrs_82571
+[    1.161572] [rhcov] e1000e_clear_hw_cntrs_base
+[    1.161601] [rhcov] e1000e_clear_hw_cntrs_base
+[    1.161629] [rhcov] e1000e_clear_hw_cntrs_base
+[    1.161658] [rhcov] e1000e_clear_hw_cntrs_base
+[    1.161687] [rhcov] e1000e_clear_hw_cntrs_base
+[    1.163074] e1000e: [rhcov] e1000_update_mng_vlan
+[    1.163113] e1000e: [rhcov] e1000_update_mng_vlan
+[    1.163145] e1000e: [rhcov] e1000_update_mng_vlan
+[    1.163178] e1000e: [rhcov] e1000_update_mng_vlan
+[    1.163210] e1000e: [rhcov] e1000_update_mng_vlan
+[    1.163242] e1000e: [rhcov] e1000_update_mng_vlan
+[    1.163297] [rhcov] e1000e_reset_adaptive
+[    1.163326] [rhcov] e1000e_reset_adaptive
+[    1.163355] [rhcov] e1000e_reset_adaptive
+[    1.163384] [rhcov] e1000e_reset_adaptive
+[    1.163412] [rhcov] e1000e_reset_adaptive
+[    1.163470] e1000e: [rhcov] e1000e_systim_reset
+[    1.163518] e1000e: [rhcov] e1000e_systim_reset
+[    1.163549] e1000e: [rhcov] e1000e_systim_reset
+[    1.163579] e1000e: [rhcov] e1000e_systim_reset
+[    1.163609] e1000e: [rhcov] e1000e_systim_reset
+[    1.163639] e1000e: [rhcov] e1000e_systim_reset
+[    1.163702] [rhcov] e1000e_phc_adjfine
+[    1.163735] [rhcov] e1000e_phc_adjfine
+[    1.163762] [rhcov] e1000e_phc_adjfine
+[    1.163790] [rhcov] e1000e_phc_adjfine
+[    1.163818] [rhcov] e1000e_phc_adjfine
+[    1.163851] e1000e: [rhcov] e1000e_get_base_timinca
+[    1.163883] e1000e: [rhcov] e1000e_get_base_timinca
+[    1.163916] e1000e: [rhcov] e1000e_get_base_timinca
+[    1.163948] e1000e: [rhcov] e1000e_get_base_timinca
+[    1.163980] e1000e: [rhcov] e1000e_get_base_timinca
+[    1.164014] e1000e: [rhcov] e1000e_get_base_timinca
+[    1.164130] e1000e: [rhcov] e1000e_cyclecounter_read
+[    1.164165] e1000e: [rhcov] e1000e_cyclecounter_read
+[    1.164197] e1000e: [rhcov] e1000e_cyclecounter_read
+[    1.164229] e1000e: [rhcov] e1000e_cyclecounter_read
+[    1.164260] e1000e: [rhcov] e1000e_cyclecounter_read
+[    1.164292] e1000e: [rhcov] e1000e_cyclecounter_read
+[    1.164342] e1000e: [rhcov] e1000e_read_systim
+[    1.164374] e1000e: [rhcov] e1000e_read_systim
+[    1.164405] e1000e: [rhcov] e1000e_read_systim
+[    1.164438] e1000e: [rhcov] e1000e_read_systim
+[    1.164469] e1000e: [rhcov] e1000e_read_systim
+[    1.164503] e1000e: [rhcov] e1000e_read_systim
+[    1.164559] e1000e: [rhcov] e1000e_sanitize_systim
+[    1.164591] e1000e: [rhcov] e1000e_sanitize_systim
+[    1.164623] e1000e: [rhcov] e1000e_sanitize_systim
+[    1.164654] e1000e: [rhcov] e1000e_sanitize_systim
+[    1.164686] e1000e: [rhcov] e1000e_sanitize_systim
+[    1.164717] e1000e: [rhcov] e1000e_sanitize_systim
+[    1.164841] e1000e: [rhcov] e1000e_config_hwtstamp
+[    1.164875] e1000e: [rhcov] e1000e_config_hwtstamp
+[    1.164909] e1000e: [rhcov] e1000e_config_hwtstamp
+[    1.164941] e1000e: [rhcov] e1000e_config_hwtstamp
+[    1.164974] e1000e: [rhcov] e1000e_config_hwtstamp
+[    1.165011] e1000e: [rhcov] e1000e_config_hwtstamp
+[    1.165179] e1000e: [rhcov] e1000_power_down_phy
+[    1.165212] e1000e: [rhcov] e1000_power_down_phy
+[    1.165244] e1000e: [rhcov] e1000_power_down_phy
+[    1.165274] e1000e: [rhcov] e1000_power_down_phy
+[    1.165305] e1000e: [rhcov] e1000_power_down_phy
+[    1.165336] e1000e: [rhcov] e1000_power_down_phy
+[    1.165373] [rhcov] e1000_power_down_phy_copper_82571
+[    1.165407] [rhcov] e1000_power_down_phy_copper_82571
+[    1.165441] [rhcov] e1000_power_down_phy_copper_82571
+[    1.165474] [rhcov] e1000_power_down_phy_copper_82571
+[    1.165521] [rhcov] e1000_power_down_phy_copper_82571
+[    1.165566] [rhcov] e1000_check_mng_mode_82574
+[    1.165596] [rhcov] e1000_check_mng_mode_82574
+[    1.165626] [rhcov] e1000_check_mng_mode_82574
+[    1.165656] [rhcov] e1000_check_mng_mode_82574
+[    1.165685] [rhcov] e1000_check_mng_mode_82574
+[    1.165771] [rhcov] e1000_power_down_phy_copper
+[    1.165805] [rhcov] e1000_power_down_phy_copper
+[    1.165835] [rhcov] e1000_power_down_phy_copper
+[    1.165865] [rhcov] e1000_power_down_phy_copper
+[    1.165895] [rhcov] e1000_power_down_phy_copper
+[    1.168198] [rhcov] e1000e_get_phy_info_m88
+[    1.168281] [rhcov] e1000e_get_phy_info_m88
+[    1.168343] [rhcov] e1000e_get_phy_info_m88
+[    1.168401] [rhcov] e1000e_get_phy_info_m88
+[    1.168463] [rhcov] e1000e_get_phy_info_m88
+[    1.171284] e1000e: [rhcov] e1000_fix_features
+[    1.171329] e1000e: [rhcov] e1000_fix_features
+[    1.171360] e1000e: [rhcov] e1000_fix_features
+[    1.171391] e1000e: [rhcov] e1000_fix_features
+[    1.171421] e1000e: [rhcov] e1000_fix_features
+[    1.171451] e1000e: [rhcov] e1000_fix_features
+[    1.171939] e1000e: [rhcov] e1000e_get_stats64
+[    1.171979] e1000e: [rhcov] e1000e_get_stats64
+[    1.172010] e1000e: [rhcov] e1000e_get_stats64
+[    1.172039] e1000e: [rhcov] e1000e_get_stats64
+[    1.172069] e1000e: [rhcov] e1000e_get_stats64
+[    1.172098] e1000e: [rhcov] e1000e_get_stats64
+[    1.172149] e1000e: [rhcov] e1000e_update_stats
+[    1.172182] e1000e: [rhcov] e1000e_update_stats
+[    1.172213] e1000e: [rhcov] e1000e_update_stats
+[    1.172244] e1000e: [rhcov] e1000e_update_stats
+[    1.172275] e1000e: [rhcov] e1000e_update_stats
+[    1.172310] e1000e: [rhcov] e1000e_update_stats
+[    1.172857] e1000e: [rhcov] e1000_print_device_info
+[    1.172916] e1000e: [rhcov] e1000_print_device_info
+[    1.172950] e1000e: [rhcov] e1000_print_device_info
+[    1.172983] e1000e: [rhcov] e1000_print_device_info
+[    1.173021] e1000e: [rhcov] e1000_print_device_info
+[    1.173054] e1000e: [rhcov] e1000_print_device_info
+[    1.173102] e1000e 0000:00:04.0 eth0: (PCI Express:2.5GT/s:Width x1) 52:54:00:12:34:57
+[    1.173175] e1000e 0000:00:04.0 eth0: Intel(R) PRO/1000 Network Connection
+[    1.173231] [rhcov] e1000_read_pba_string_generic
+[    1.173263] [rhcov] e1000_read_pba_string_generic
+[    1.173295] [rhcov] e1000_read_pba_string_generic
+[    1.173328] [rhcov] e1000_read_pba_string_generic
+[    1.173361] [rhcov] e1000_read_pba_string_generic
+[    1.173461] e1000e 0000:00:04.0 eth0: MAC: 3, PHY: 8, PBA No: 000000-000
+[    1.175954] insmod (61) used greatest stack depth: 13040 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+=== dmesg ===
+[    1.171360] e1000e: [rhcov] e1000_fix_features
+[    1.171391] e1000e: [rhcov] e1000_fix_features
+[    1.171421] e1000e: [rhcov] e1000_fix_features
+[    1.171451] e1000e: [rhcov] e1000_fix_features
+[    1.171939] e1000e: [rhcov] e1000e_get_stats64
+[    1.171979] e1000e: [rhcov] e1000e_get_stats64
+[    1.172010] e1000e: [rhcov] e1000e_get_stats64
+[    1.172039] e1000e: [rhcov] e1000e_get_stats64
+[    1.172069] e1000e: [rhcov] e1000e_get_stats64
+[    1.172098] e1000e: [rhcov] e1000e_get_stats64
+[    1.172149] e1000e: [rhcov] e1000e_update_stats
+[    1.172182] e1000e: [rhcov] e1000e_update_stats
+[    1.172213] e1000e: [rhcov] e1000e_update_stats
+[    1.172244] e1000e: [rhcov] e1000e_update_stats
+[    1.172275] e1000e: [rhcov] e1000e_update_stats
+[    1.172310] e1000e: [rhcov] e1000e_update_stats
+[    1.172857] e1000e: [rhcov] e1000_print_device_info
+[    1.172916] e1000e: [rhcov] e1000_print_device_info
+[    1.172950] e1000e: [rhcov] e1000_print_device_info
+[    1.172983] e1000e: [rhcov] e1000_print_device_info
+[    1.173021] e1000e: [rhcov] e1000_print_device_info
+[    1.173054] e1000e: [rhcov] e1000_print_device_info
+[    1.173102] e1000e 0000:00:04.0 eth0: (PCI Express:2.5GT/s:Width x1) 52:54:00:12:34:57
+[    1.173175] e1000e 0000:00:04.0 eth0: Intel(R) PRO/1000 Network Connection
+[    1.173461] e1000e 0000:00:04.0 eth0: MAC: 3, PHY: 8, PBA No: 000000-000
+=== exerciser ===
+[    1.220065] [rhcov] e1000_get_link_ksettings
+[    1.220159] [rhcov] e1000_get_link_ksettings
+[    1.220192] [rhcov] e1000_get_link_ksettings
+[    1.220222] [rhcov] e1000_get_link_ksettings
+[    1.220251] [rhcov] e1000_get_link_ksettings
+Settings for eth0:
+	Supported ports: [ TP ]
+	Supported link modes:   10baseT/Half 10baseT/Full
+	                        100baseT/Half 100baseT/Full
+	                        1000baseT/Full
+	Supported pause frame use: Symmetric Receive-only
+	Supports auto-negotiation: Yes
+	Supported FEC modes: Not reported
+	Advertised link modes:  10baseT/Half 10baseT/Full
+	                        100baseT/Half 100baseT/Full
+	                        1000baseT/Full
+	Advertised pause frame use: Symmetric Receive-only
+	Advertised auto-negotiation: Yes
+	Advertised FEC modes: Not reported
+	Speed: Unknown!
+	Duplex: Unknown! (255)
+	Auto-negotiation: on
+	Port: Twisted Pair
+	PHYAD: 1
+	Transceiver: internal
+	MDI-X: Unknown (auto)
+[    1.223751] [rhcov] e1000_get_wol
+[    1.223809] [rhcov] e1000_get_wol
+[    1.223836] [rhcov] e1000_get_wol
+[    1.223861] [rhcov] e1000_get_wol
+[    1.223886] [rhcov] e1000_get_wol
+	Supports Wake-on: d
+	Wake-on: d
+[    1.224378] [rhcov] e1000_get_msglevel
+[    1.224412] [rhcov] e1000_get_msglevel
+[    1.224438] [rhcov] e1000_get_msglevel
+[    1.224463] [rhcov] e1000_get_msglevel
+[    1.224507] [rhcov] e1000_get_msglevel
+        Current message level: 0x00000007 (7)
+                               drv probe link
+	Link detected: no
+[    1.231439] [rhcov] e1000_get_drvinfo
+[    1.231531] [rhcov] e1000_get_drvinfo
+[    1.231563] [rhcov] e1000_get_drvinfo
+[    1.231598] [rhcov] e1000_get_drvinfo
+[    1.231625] [rhcov] e1000_get_drvinfo
+[    1.231700] [rhcov] e1000e_get_sset_count
+[    1.231735] [rhcov] e1000e_get_sset_count
+[    1.231761] [rhcov] e1000e_get_sset_count
+[    1.231788] [rhcov] e1000e_get_sset_count
+[    1.231814] [rhcov] e1000e_get_sset_count
+[    1.231878] [rhcov] e1000_get_regs_len
+[    1.231904] [rhcov] e1000_get_regs_len
+[    1.231929] [rhcov] e1000_get_regs_len
+[    1.231955] [rhcov] e1000_get_regs_len
+[    1.231980] [rhcov] e1000_get_regs_len
+[    1.232035] [rhcov] e1000_get_eeprom_len
+[    1.232061] [rhcov] e1000_get_eeprom_len
+[    1.232087] [rhcov] e1000_get_eeprom_len
+[    1.232114] [rhcov] e1000_get_eeprom_len
+[    1.232139] [rhcov] e1000_get_eeprom_len
+driver: e1000e
+version: 7.1.0-rc7+
+firmware-version: 2.1-0
+expansion-rom-version: 
+bus-info: 0000:00:04.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+[    1.237589] [rhcov] e1000_get_strings
+[    1.237647] [rhcov] e1000_get_strings
+[    1.237676] [rhcov] e1000_get_strings
+[    1.237704] [rhcov] e1000_get_strings
+[    1.237734] [rhcov] e1000_get_strings
+[    1.237927] [rhcov] e1000_get_ethtool_stats
+[    1.237959] [rhcov] e1000_get_ethtool_stats
+[    1.237987] [rhcov] e1000_get_ethtool_stats
+[    1.238021] [rhcov] e1000_get_ethtool_stats
+[    1.238048] [rhcov] e1000_get_ethtool_stats
+NIC statistics:
+     rx_packets: 0
+     tx_packets: 0
+     rx_bytes: 0
+     tx_bytes: 0
+     rx_broadcast: 0
+     tx_broadcast: 0
+     rx_multicast: 0
+     tx_multicast: 0
+     rx_errors: 0
+     tx_errors: 0
+     tx_dropped: 0
+     multicast: 0
+     collisions: 0
+     rx_length_errors: 0
+     rx_over_errors: 0
+     rx_crc_errors: 0
+     rx_frame_errors: 0
+     rx_no_buffer_count: 0
+     rx_missed_errors: 0
+     tx_aborted_errors: 0
+     tx_carrier_errors: 0
+     tx_fifo_errors: 0
+     tx_heartbeat_errors: 0
+     tx_window_errors: 0
+     tx_abort_late_coll: 0
+     tx_deferred_ok: 0
+     tx_single_coll_ok: 0
+     tx_multi_coll_ok: 0
+     tx_timeout_count: 0
+     tx_restart_queue: 0
+     rx_long_length_errors: 0
+     rx_short_length_errors: 0
+     rx_align_errors: 0
+     tx_tcp_seg_good: 0
+     tx_tcp_seg_failed: 0
+     rx_flow_control_xon: 0
+     rx_flow_control_xoff: 0
+     tx_flow_control_xon: 0
+     tx_flow_control_xoff: 0
+     rx_csum_offload_good: 0
+     rx_csum_offload_errors: 0
+     rx_header_split: 0
+     alloc_rx_buff_failed: 0
+     tx_smbus: 0
+     rx_smbus: 0
+     dropped_smbus: 0
+     rx_dma_failed: 0
+     tx_dma_failed: 0
+     rx_hwtstamp_cleared: 0
+     uncorr_ecc_errors: 0
+     corr_ecc_errors: 0
+     tx_hwtstamp_timeouts: 0
+     tx_hwtstamp_skipped: 0
+[    1.244916] [rhcov] e1000_get_pauseparam
+[    1.244980] [rhcov] e1000_get_pauseparam
+[    1.245015] [rhcov] e1000_get_pauseparam
+[    1.245043] [rhcov] e1000_get_pauseparam
+[    1.245070] [rhcov] e1000_get_pauseparam
+Pause parameters for eth0:
+Autonegotiate:	on
+RX:		on
+TX:		on
+
+[    1.250423] [rhcov] e1000_get_ringparam
+[    1.250484] [rhcov] e1000_get_ringparam
+[    1.250581] [rhcov] e1000_get_ringparam
+[    1.250609] [rhcov] e1000_get_ringparam
+[    1.250635] [rhcov] e1000_get_ringparam
+Ring parameters for eth0:
+Pre-set maximums:
+RX:			4096
+RX Mini:		n/a
+RX Jumbo:		n/a
+TX:			4096
+TX push buff len:	n/a
+Current hardware settings:
+RX:			256
+RX Mini:		n/a
+RX Jumbo:		n/a
+TX:			256
+RX Buf Len:		n/a
+CQE Size:		n/a
+TX Push:		off
+RX Push:		off
+TX push buff len:	n/a
+TCP data split:		n/a
+Features for eth0:
+rx-checksumming: on
+tx-checksumming: on
+	tx-checksum-ipv4: off [fixed]
+	tx-checksum-ip-generic: on
+	tx-checksum-ipv6: off [fixed]
+	tx-checksum-fcoe-crc: off [fixed]
+	tx-checksum-sctp: off [fixed]
+scatter-gather: on
+	tx-scatter-gather: on
+	tx-scatter-gather-fraglist: off [fixed]
+tcp-segmentation-offload: on
+	tx-tcp-segmentation: on
+	tx-tcp-ecn-segmentation: off [fixed]
+	tx-tcp-mangleid-segmentation: off
+	tx-tcp6-segmentation: on
+	tx-tcp-accecn-segmentation: off [fixed]
+generic-segmentation-offload: on
+generic-receive-offload: on
+large-receive-offload: off [fixed]
+rx-vlan-offload: on
+tx-vlan-offload: on
+ntuple-filters: off [fixed]
+receive-hashing: on
+highdma: on [fixed]
+rx-vlan-filter: on [fixed]
+vlan-challenged: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: off [fixed]
+tx-gre-csum-segmentation: off [fixed]
+tx-ipxip4-segmentation: off [fixed]
+tx-ipxip6-segmentation: off [fixed]
+tx-udp_tnl-segmentation: off [fixed]
+tx-udp_tnl-csum-segmentation: off [fixed]
+tx-gso-partial: off [fixed]
+tx-tunnel-remcsum-segmentation: off [fixed]
+tx-sctp-segmentation: off [fixed]
+tx-esp-segmentation: off [fixed]
+tx-udp-segmentation: off [fixed]
+tx-gso-list: off [fixed]
+tx-nocache-copy: off
+loopback: off [fixed]
+rx-fcs: off
+rx-all: off
+tx-vlan-stag-hw-insert: off [fixed]
+rx-vlan-stag-hw-parse: off [fixed]
+rx-vlan-stag-filter: off [fixed]
+l2-fwd-offload: off [fixed]
+hw-tc-offload: off [fixed]
+esp-hw-offload: off [fixed]
+esp-tx-csum-hw-offload: off [fixed]
+rx-udp_tunnel-port-offload: off [fixed]
+tls-hw-tx-offload: off [fixed]
+tls-hw-rx-offload: off [fixed]
+rx-gro-hw: off [fixed]
+tls-hw-record: off [fixed]
+rx-gro-list: off
+macsec-hw-offload: off [fixed]
+rx-udp-gro-forwarding: off
+hsr-tag-ins-offload: off [fixed]
+hsr-tag-rm-offload: off [fixed]
+hsr-fwd-offload: off [fixed]
+hsr-dup-offload: off [fixed]
+[    1.265404] [rhcov] e1000_get_coalesce
+[    1.265484] [rhcov] e1000_get_coalesce
+[    1.265577] [rhcov] e1000_get_coalesce
+[    1.265608] [rhcov] e1000_get_coalesce
+[    1.265634] [rhcov] e1000_get_coalesce
+Coalesce parameters for eth0:
+Adaptive RX: n/a  TX: n/a
+stats-block-usecs:	n/a
+sample-interval:	n/a
+pkt-rate-low:		n/a
+pkt-rate-high:		n/a
+
+rx-usecs:	3
+rx-frames:	n/a
+rx-usecs-irq:	n/a
+rx-frames-irq:	n/a
+
+tx-usecs:	n/a
+tx-frames:	n/a
+tx-usecs-irq:	n/a
+tx-frames-irq:	n/a
+
+rx-usecs-low:	n/a
+rx-frame-low:	n/a
+tx-usecs-low:	n/a
+tx-frame-low:	n/a
+
+rx-usecs-high:	n/a
+rx-frame-high:	n/a
+tx-usecs-high:	n/a
+tx-frame-high:	n/a
+
+CQE mode RX: n/a  TX: n/a
+
+tx-aggr-max-bytes:	n/a
+tx-aggr-max-frames:	n/a
+tx-aggr-time-usecs	n/a
+
+[    1.271545] [rhcov] e1000_nway_reset
+[    1.271606] [rhcov] e1000_nway_reset
+[    1.271636] [rhcov] e1000_nway_reset
+[    1.271663] [rhcov] e1000_nway_reset
+[    1.271688] [rhcov] e1000_nway_reset
+Cannot restart autonegotiation: Resource temporarily unavailable
+[    1.276929] [rhcov] e1000e_get_priv_flags
+[    1.276993] [rhcov] e1000e_get_priv_flags
+[    1.277023] [rhcov] e1000e_get_priv_flags
+[    1.277051] [rhcov] e1000e_get_priv_flags
+[    1.277078] [rhcov] e1000e_get_priv_flags
+Private flags for eth0:
+s0ix-enabled: off
+disable-k1  : off
+  tx_packets=0 rx_packets=0
+Settings for eth0:
+	Supported ports: [ TP ]
+	Supported link modes:   10baseT/Half 10baseT/Full
+	                        100baseT/Half 100baseT/Full
+	                        1000baseT/Full
+	Supported pause frame use: Symmetric Receive-only
+	Supports auto-negotiation: Yes
+	Supported FEC modes: Not reported
+	Advertised link modes:  10baseT/Half 10baseT/Full
+	                        100baseT/Half 100baseT/Full
+	                        1000baseT/Full
+	Advertised pause frame use: Symmetric Receive-only
+	Advertised auto-negotiation: Yes
+	Advertised FEC modes: Not reported
+	Speed: Unknown!
+	Duplex: Unknown! (255)
+	Auto-negotiation: on
+	Port: Twisted Pair
+	PHYAD: 1
+	Transceiver: internal
+	MDI-X: Unknown (auto)
+	Supports Wake-on: d
+	Wake-on: d
+        Current message level: 0x00000007 (7)
+                               drv probe link
+	Link detected: no
+driver: e1000e
+version: 7.1.0-rc7+
+firmware-version: 2.1-0
+expansion-rom-version: 
+bus-info: 0000:00:04.0
+supports-statistics: yes
+supports-test: yes
+supports-eeprom-access: yes
+supports-register-dump: yes
+supports-priv-flags: yes
+NIC statistics:
+     rx_packets: 0
+     tx_packets: 0
+     rx_bytes: 0
+     tx_bytes: 0
+     rx_broadcast: 0
+     tx_broadcast: 0
+     rx_multicast: 0
+     tx_multicast: 0
+     rx_errors: 0
+     tx_errors: 0
+     tx_dropped: 0
+     multicast: 0
+     collisions: 0
+     rx_length_errors: 0
+     rx_over_errors: 0
+     rx_crc_errors: 0
+     rx_frame_errors: 0
+     rx_no_buffer_count: 0
+     rx_missed_errors: 0
+     tx_aborted_errors: 0
+     tx_carrier_errors: 0
+     tx_fifo_errors: 0
+     tx_heartbeat_errors: 0
+     tx_window_errors: 0
+     tx_abort_late_coll: 0
+     tx_deferred_ok: 0
+     tx_single_coll_ok: 0
+     tx_multi_coll_ok: 0
+     tx_timeout_count: 0
+     tx_restart_queue: 0
+     rx_long_length_errors: 0
+     rx_short_length_errors: 0
+     rx_align_errors: 0
+     tx_tcp_seg_good: 0
+     tx_tcp_seg_failed: 0
+     rx_flow_control_xon: 0
+     rx_flow_control_xoff: 0
+     tx_flow_control_xon: 0
+     tx_flow_control_xoff: 0
+     rx_csum_offload_good: 0
+     rx_csum_offload_errors: 0
+     rx_header_split: 0
+     alloc_rx_buff_failed: 0
+     tx_smbus: 0
+     rx_smbus: 0
+     dropped_smbus: 0
+     rx_dma_failed: 0
+     tx_dma_failed: 0
+     rx_hwtstamp_cleared: 0
+     uncorr_ecc_errors: 0
+     corr_ecc_errors: 0
+     tx_hwtstamp_timeouts: 0
+     tx_hwtstamp_skipped: 0
+Pause parameters for eth0:
+Autonegotiate:	on
+RX:		on
+TX:		on
+
+Ring parameters for eth0:
+Pre-set maximums:
+RX:			4096
+RX Mini:		n/a
+RX Jumbo:		n/a
+TX:			4096
+TX push buff len:	n/a
+Current hardware settings:
+RX:			256
+RX Mini:		n/a
+RX Jumbo:		n/a
+TX:			256
+RX Buf Len:		n/a
+CQE Size:		n/a
+TX Push:		off
+RX Push:		off
+TX push buff len:	n/a
+TCP data split:		n/a
+Features for eth0:
+rx-checksumming: on
+tx-checksumming: on
+	tx-checksum-ipv4: off [fixed]
+	tx-checksum-ip-generic: on
+	tx-checksum-ipv6: off [fixed]
+	tx-checksum-fcoe-crc: off [fixed]
+	tx-checksum-sctp: off [fixed]
+scatter-gather: on
+	tx-scatter-gather: on
+	tx-scatter-gather-fraglist: off [fixed]
+tcp-segmentation-offload: on
+	tx-tcp-segmentation: on
+	tx-tcp-ecn-segmentation: off [fixed]
+	tx-tcp-mangleid-segmentation: off
+	tx-tcp6-segmentation: on
+	tx-tcp-accecn-segmentation: off [fixed]
+generic-segmentation-offload: on
+generic-receive-offload: on
+large-receive-offload: off [fixed]
+rx-vlan-offload: on
+tx-vlan-offload: on
+ntuple-filters: off [fixed]
+receive-hashing: on
+highdma: on [fixed]
+rx-vlan-filter: on [fixed]
+vlan-challenged: off [fixed]
+tx-gso-robust: off [fixed]
+tx-fcoe-segmentation: off [fixed]
+tx-gre-segmentation: off [fixed]
+tx-gre-csum-segmentation: off [fixed]
+tx-ipxip4-segmentation: off [fixed]
+tx-ipxip6-segmentation: off [fixed]
+tx-udp_tnl-segmentation: off [fixed]
+tx-udp_tnl-csum-segmentation: off [fixed]
+tx-gso-partial: off [fixed]
+tx-tunnel-remcsum-segmentation: off [fixed]
+tx-sctp-segmentation: off [fixed]
+tx-esp-segmentation: off [fixed]
+tx-udp-segmentation: off [fixed]
+tx-gso-list: off [fixed]
+tx-nocache-copy: off
+loopback: off [fixed]
+rx-fcs: off
+rx-all: off
+tx-vlan-stag-hw-insert: off [fixed]
+rx-vlan-stag-hw-parse: off [fixed]
+rx-vlan-stag-filter: off [fixed]
+l2-fwd-offload: off [fixed]
+hw-tc-offload: off [fixed]
+esp-hw-offload: off [fixed]
+esp-tx-csum-hw-offload: off [fixed]
+rx-udp_tunnel-port-offload: off [fixed]
+tls-hw-tx-offload: off [fixed]
+tls-hw-rx-offload: off [fixed]
+rx-gro-hw: off [fixed]
+tls-hw-record: off [fixed]
+rx-gro-list: off
+macsec-hw-offload: off [fixed]
+rx-udp-gro-forwarding: off
+hsr-tag-ins-offload: off [fixed]
+hsr-tag-rm-offload: off [fixed]
+hsr-fwd-offload: off [fixed]
+hsr-dup-offload: off [fixed]
+Coalesce parameters for eth0:
+Adaptive RX: n/a  TX: n/a
+stats-block-usecs:	n/a
+sample-interval:	n/a
+pkt-rate-low:		n/a
+pkt-rate-high:		n/a
+
+rx-usecs:	3
+rx-frames:	n/a
+rx-usecs-irq:	n/a
+rx-frames-irq:	n/a
+
+tx-usecs:	n/a
+tx-frames:	n/a
+tx-usecs-irq:	n/a
+tx-frames-irq:	n/a
+
+rx-usecs-low:	n/a
+rx-frame-low:	n/a
+tx-usecs-low:	n/a
+tx-frame-low:	n/a
+
+rx-usecs-high:	n/a
+rx-frame-high:	n/a
+tx-usecs-high:	n/a
+tx-frame-high:	n/a
+
+CQE mode RX: n/a  TX: n/a
+
+tx-aggr-max-bytes:	n/a
+tx-aggr-max-frames:	n/a
+tx-aggr-time-usecs	n/a
+
+Cannot restart autonegotiation: Resource temporarily unavailable
+Private flags for eth0:
+s0ix-enabled: off
+disable-k1  : off
+[    1.335758] [rhcov] e1000e_get_ts_info
+[    1.335862] [rhcov] e1000e_get_ts_info
+[    1.335893] [rhcov] e1000e_get_ts_info
+[    1.335921] [rhcov] e1000e_get_ts_info
+[    1.335949] [rhcov] e1000e_get_ts_info
+Time stamping parameters for eth0:
+Capabilities:
+	hardware-transmit
+	software-transmit
+	hardware-receive
+	software-receive
+	software-system-clock
+	hardware-raw-clock
+PTP Hardware Clock: 0
+Hardware Transmit Timestamp Modes:
+	off
+	on
+Hardware Receive Filter Modes:
+	none
+	all
+	ptpv1-l4-sync
+	ptpv1-l4-delay-req
+	ptpv2-l4-sync
+	ptpv2-l4-delay-req
+	ptpv2-l2-sync
+	ptpv2-l2-delay-req
+	ptpv2-event
+	ptpv2-sync
+	ptpv2-delay-req
+REHARNESS_NIC_OK driver=e1000e
+EXERCISER_RC=0
+=== rmmod e1000e ===
+[    1.344629] e1000e: [rhcov] e1000_exit_module
+[    1.344740] e1000e: [rhcov] e1000_exit_module
+[    1.344777] e1000e: [rhcov] e1000_exit_module
+[    1.344809] e1000e: [rhcov] e1000_exit_module
+[    1.344838] e1000e: [rhcov] e1000_exit_module
+[    1.344868] e1000e: [rhcov] e1000_exit_module
+[    1.345200] e1000e: [rhcov] e1000_remove
+[    1.345248] e1000e: [rhcov] e1000_remove
+[    1.345278] e1000e: [rhcov] e1000_remove
+[    1.345307] e1000e: [rhcov] e1000_remove
+[    1.345336] e1000e: [rhcov] e1000_remove
+[    1.345365] e1000e: [rhcov] e1000_remove
+[    1.345399] [rhcov] e1000e_ptp_remove
+[    1.345427] [rhcov] e1000e_ptp_remove
+[    1.345455] [rhcov] e1000e_ptp_remove
+[    1.345482] [rhcov] e1000e_ptp_remove
+[    1.345556] [rhcov] e1000e_ptp_remove
+[    1.347576] e1000e 0000:00:04.0 eth0: removed PHC
+[    1.355783] e1000e: [rhcov] e1000e_release_hw_control
+[    1.355840] e1000e: [rhcov] e1000e_release_hw_control
+[    1.355876] e1000e: [rhcov] e1000e_release_hw_control
+[    1.355911] e1000e: [rhcov] e1000e_release_hw_control
+[    1.355945] e1000e: [rhcov] e1000e_release_hw_control
+[    1.355978] e1000e: [rhcov] e1000e_release_hw_control
+[    1.356044] e1000e: [rhcov] e1000e_reset_interrupt_capability
+[    1.356082] e1000e: [rhcov] e1000e_reset_interrupt_capability
+[    1.356119] e1000e: [rhcov] e1000e_reset_interrupt_capability
+[    1.356156] e1000e: [rhcov] e1000e_reset_interrupt_capability
+[    1.356193] e1000e: [rhcov] e1000e_reset_interrupt_capability
+[    1.356230] e1000e: [rhcov] e1000e_reset_interrupt_capability
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.602192] sysrq: Power Off
+[    1.603260] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000
+[    1.603612] CPU: 0 UID: 0 PID: 1 Comm: init Not tainted 7.1.0-rc7+ #18 PREEMPT(lazy) 
+[    1.603718] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[    1.603898] Call Trace:
+[    1.604351]  <TASK>
+[    1.604425]  vpanic+0x32f/0x4b0
+[    1.604591]  panic+0x63/0x70
+[    1.604615]  do_exit+0x952/0xaf0
+[    1.604640]  do_group_exit+0x30/0x80
+[    1.604664]  __x64_sys_exit_group+0x18/0x20
+[    1.604695]  x64_sys_call+0x12e2/0x1880
+[    1.604722]  do_syscall_64+0x10e/0x4e0
+[    1.604754]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[    1.604857] RIP: 0033:0x7f621870d31d
+[    1.605005] Code: 02 ba ff ff ff ff 89 d0 c3 0f 1f 40 00 f3 0f 1e fa 48 8b 35 ed 4a 11 00 ba e7 00 00 00 eb 07 66 0f 1f 44 00 00 f4 89 d0 0f 05 <48> 3d 00 f0 ff ff 76 f3 f7 d8 64 89 06 eb ec 0f 1f 40 00 f3 0f 1e
+[    1.605127] RSP: 002b:00007ffe8efd5c98 EFLAGS: 00000202 ORIG_RAX: 00000000000000e7
+[    1.605188] RAX: ffffffffffffffda RBX: 00007ffe8efd5f20 RCX: 00007f621870d31d
+[    1.605230] RDX: 00000000000000e7 RSI: ffffffffffffff88 RDI: 0000000000000000
+[    1.605271] RBP: 00007ffe8efd5d70 R08: 00005557f47e4010 R09: 0000000000000007
+[    1.605312] R10: 00005557f47e6960 R11: 0000000000000202 R12: 0000000000000000
+[    1.605352] R13: 00007ffe8efd5f10 R14: 00005557d678edd8 R15: 00007f6218873000
+[    1.605416]  </TASK>
+[    1.605807] Kernel Offset: disabled
+[    1.605984] Rebooting in 1 seconds..

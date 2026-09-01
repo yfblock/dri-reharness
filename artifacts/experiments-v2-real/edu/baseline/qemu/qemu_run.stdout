@@ -1,0 +1,66 @@
+=== QEMU run: module=edu_drv bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031215] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031280] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.074389] ftrace: allocating 38351 entries in 152 pages
+[    0.074684] ftrace: allocated 152 pages with 3 groups
+[    0.429062] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.433630] thermal_sys: Registered thermal governor 'step_wise'
+[    0.438245] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.439923] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.542123] ACPI: bus type USB registered
+[    0.542529] usbcore: registered new interface driver usbfs
+[    0.542732] usbcore: registered new interface driver hub
+[    0.542834] usbcore: registered new device driver usb
+[    0.543008] pps_core: LinuxPPS API ver. 1 registered
+[    0.543137] PTP clock support registered
+[    0.577765] NET: Registered PF_INET protocol family
+[    0.593497] Key type asymmetric registered
+[    0.593577] Asymmetric key parser 'x509' registered
+[    0.594030] io scheduler mq-deadline registered
+[    0.594093] io scheduler kyber registered
+[    0.636802] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.639275] usbcore: registered new interface driver usbhid
+[    0.640724] NET: Registered PF_INET6 protocol family
+=== insmod edu_drv ===
+[    1.055917] [rhcov] edu_pci_probe
+[    1.061998] edu_drv 0000:00:04.0: edu probed (irq 11)
+[    1.063711] insmod (61) used greatest stack depth: 13072 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    0.031215] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031280] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.429062] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.433630] thermal_sys: Registered thermal governor 'step_wise'
+[    0.438245] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.439923] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.542123] ACPI: bus type USB registered
+[    0.542529] usbcore: registered new interface driver usbfs
+[    0.542732] usbcore: registered new interface driver hub
+[    0.542834] usbcore: registered new device driver usb
+[    0.543008] pps_core: LinuxPPS API ver. 1 registered
+[    0.543137] PTP clock support registered
+[    0.577765] NET: Registered PF_INET protocol family
+[    0.593497] Key type asymmetric registered
+[    0.593577] Asymmetric key parser 'x509' registered
+[    0.594030] io scheduler mq-deadline registered
+[    0.594093] io scheduler kyber registered
+[    0.636802] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.639275] usbcore: registered new interface driver usbhid
+[    0.640724] NET: Registered PF_INET6 protocol family
+[    1.055917] [rhcov] edu_pci_probe
+[    1.061998] edu_drv 0000:00:04.0: edu probed (irq 11)
+TRACE id@0x00 = 0x010000ed OK
+TRACE live_check@0x04 write0xa5a5a5a5 read0x5a5a5a5a OK (~X)
+TRACE factorial@0x08(5)=120 OK
+EDU_TRACE_OK
+EXERCISER_RC=0
+=== rmmod edu_drv ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.346154] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=32 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: edu_drv probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-edu_drv-qemu.hGeKn8

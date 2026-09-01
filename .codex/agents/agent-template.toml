@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────
+# Codex Custom Subagent Template
+# 定义一个自定义子代理（subagent）
+# 放置位置：~/.codex/agents/ （个人级）或 .codex/agents/ （项目级）
+# 每个文件定义一个子代理
+# ─────────────────────────────────────────────────────────
+
+# [必填] 子代理名称，Codex 在 spawn 时通过此名称引用。
+# 如果与内置代理（default/worker/explorer）同名，自定义版本优先。
+name = "agent-template"
+
+# [必填] 面向人类的描述，说明 Codex 何时应该使用此子代理。
+description = "TODO: 描述何时使用此子代理。例如：用于在代码变更前进行只读代码库探索，收集证据并定位关键文件和符号。"
+
+# [必填] 核心行为指令，定义此子代理的工作方式和约束。
+# 这是子代理被 spawn 后收到的 system prompt。
+developer_instructions = """
+TODO: 在此编写子代理的核心指令。
+
+建议涵盖：
+- 此代理应该做什么（角色定位）
+- 此代理不应该做什么（边界）
+- 输出格式（返回给主代理的摘要格式）
+- 工具使用偏好（优先用 rg 而非 grep，优先用 fast search 等）
+
+示例：
+保持探索模式。
+追踪真实的执行路径，引用文件和符号，除非主代理要求，否则不要提出修复方案。
+优先使用快速搜索和有针对性的文件读取，而非大范围扫描。
+"""
+
+# [可选] 指定模型。不设置时 Codex 会自动选择。
+# gpt-5.6      — 适合复杂、多步骤、需要规划和工具调用的任务
+# gpt-5.6-terra — 适合快速、低成本的轻量任务（探索、扫描、审查）
+# gpt-5.6-luna  — 适合快速、范围明确的重复性任务
+model = "gpt-5.6-terra"
+
+# [可选] 推理深度。不设置时使用模型默认值。
+# ultra / max / xhigh — 最深层推理（模型支持时）
+# high   — 需要追踪复杂逻辑、检查假设、处理边缘情况
+# medium — 大多数任务的平衡默认值
+# low    — 任务简单且速度优先
+model_reasoning_effort = "medium"
+
+# [可选] 沙盒模式。不设置时继承父代理的配置。
+# "read-only"       — 只读，不能修改文件
+# "workspace-write" — 可写工作区
+# "danger-full-access" — 完全访问（谨慎使用）
+# sandbox_mode = "read-only"
+
+# [可选] MCP 服务器配置。不设置时继承父代理的配置。
+# [mcp_servers.openaiDeveloperDocs]
+# url = "https://developers.openai.com/mcp"
+
+# [可选] 技能配置。可以启用或禁用特定技能。
+# [[skills.config]]
+# path = "/path/to/skill/SKILL.md"
+# enabled = false

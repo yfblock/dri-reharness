@@ -1,0 +1,7 @@
+{
+  "functions": [
+    "reharness_mdio_sensor_probe",
+    "reharness_mdio_sensor_remove"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_mdio_sensor/reharness_mdio_sensor.c"
+}

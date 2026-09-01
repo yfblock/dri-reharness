@@ -8,16 +8,20 @@ configured LLM, and validates it through the strongest available evidence.
 The framework must not encode a particular driver or subsystem in its core
 translation loop.
 
-The first runtime-supported bus families are platform, PCI, I2C, and SPI.
-USB and virtio can be added as profiles without changing the core pipeline.
+The first runtime-supported bus families are platform, PCI, I2C, SPI, USB,
+virtio, and MDIO. The profile boundary is intentionally extensible so
+additional Linux driver families can be added without changing the core
+pipeline.
 
 ## Current Gap
 
-The existing automatic entry point resolves only `edu-pci` and
-`ftgpio010-gpio`. Unknown inputs can be analyzed but cannot select a runtime
-profile. The existing `ExperimentRunner` is already mostly generic, while
-manifest construction, registration validation, QEMU setup, and subsystem
-tests are still profile-owned data mixed with a small number of assumptions.
+The automatic entry point now resolves seven runtime-ready bus-neutral built-in profiles and
+can load additional profiles through the plugin boundary. High-fidelity
+regression manifests are kept in the versioned
+`benchmarks/profile-catalog.json` data file; they are not driver-name branches
+in the normalizer. The remaining gap is breadth of runtime fixtures: a profile
+must still declare a fixture and observable contract before a new Linux driver
+family can be accepted at runtime.
 
 The new design preserves the existing closed-loop runner and LangGraph state
 model, but makes profile selection and runtime capability explicit.
@@ -94,10 +98,40 @@ The initial registry entries are:
   probe/remove and SMBus/I2C transaction checks;
 - `spi-generic`: SPI device identity, virtual SPI controller/fixture, probe/
   remove and transfer checks.
+- `usb-generic`: USB device identity, QEMU xHCI/USB-serial fixture, probe,
+  control/bulk transfer, negative request, and unload checks.
+- `virtio-generic`: Virtio device identity, QEMU block fixture, probe,
+  virtqueue transaction, negative request, and unload checks.
+- `mdio-generic`: MDIO device identity, synthetic `mii_bus` fixture, register
+  read/write, invalid address, probe, binding, and unload checks.
 
-`edu-pci` and `ftgpio010-gpio` become concrete data profiles built on the PCI
-and platform implementations. They remain regression fixtures, not special
-branches in the core runner.
+The entries in `benchmarks/profile-catalog.json` are concrete regression inputs
+built on the generic PCI and platform implementations. They remain data-backed
+regression fixtures, not special branches in the core runner.
+
+Generic matching rules are declared separately in
+`benchmarks/driver-profile-definitions.json`. Each definition contains the bus,
+callback/resource evidence keys, source tokens, optional identity regexes,
+manifest template, fixture identity requirements, and required/optional
+capabilities. The loader validates ids, capability names, regex capture groups,
+duplicate definitions, and repository-contained template paths before creating
+the common `_GenericBusProfile`. The automatic normalizer loads this catalog
+from its selected `repo_root`; a missing catalog falls back only to the
+repository's pinned default catalog. This makes ordinary new driver families
+data-extensible while leaving complex source semantics to the explicit plugin
+contract. `profile-catalog.json` remains source-specific regression data and is
+never used as the type detector.
+
+Subsystem semantics are a separate overlay registry at
+`benchmarks/subsystem-contract-definitions.json`. A contract declares its
+subsystem name, callback/resource evidence keys, source tokens, and static
+capabilities. Detection returns zero or more matches, so transport and
+subsystem are intentionally many-to-many: for example, a platform driver may
+also implement GPIO and SDHCI contracts, while an I2C driver may implement a
+GPIO expander contract. Matches are copied into `ProfilePlan`, LangGraph
+synthesis evidence, and the optional manifest field
+`runtime.subsystem_contracts`. They do not create a runtime result; a contract
+without a registered provider or fixture remains `inconclusive`.
 
 ## Capability Matrix
 
@@ -147,6 +181,16 @@ The profile id is recorded separately from the source name. The manifest
 loader rejects unknown capability statuses, duplicate IDs, paths outside the
 repository, and a required capability with no declared evidence producer.
 
+Subsystem test sources use a repository-owned provider catalog at
+`benchmarks/subsystem-providers.json`. A provider declares its test kind,
+validated executable (or KUnit module), supported subsystem, default test
+fields, and required kernel modules. A manifest may reference the provider and
+override only data such as device arguments; it cannot replace the provider's
+executable with an arbitrary path or command. Unknown providers, kind/source
+mismatches, unsupported subsystem use, and missing kernel prerequisites fail at
+manifest validation. This keeps Linux kselftest/tool/KUnit integration data
+driven while preserving the existing runner boundary.
+
 Existing `runtime.qemu` remains a fixture-specific configuration nested under
 the generic runtime plan. This avoids coupling all future adapters to QEMU.
 
@@ -157,8 +201,9 @@ the generic runtime plan. This avoids coupling all future adapters to QEMU.
 3. Extract DeviceSpec, Formal RIS, facts, callback bindings, and readiness.
 4. Match profiles using extracted evidence, not only the filename.
 5. Reject ambiguous matches. If no profile matches, continue static analysis
-   and Kbuild where possible, then return `inconclusive` with missing runtime
-   capabilities.
+   and Kbuild where possible. In LangGraph generation mode, missing runtime
+   capabilities do not prevent this static pipeline; final status remains
+   `inconclusive` until a profile supplies runtime evidence.
 6. Generate a portable candidate (`code` or validated multi-file `files`).
 7. Run generic safety, generation-contract, compile, and registration gates.
 8. Run the profile runtime plan and every declared subsystem test.
@@ -201,7 +246,8 @@ valid evidence for PCI, I2C, or SPI support.
 ## Migration
 
 1. Extract profile matching and plan construction from `auto_driver.py` into a
-   registry module without changing existing CLI output.
+   registry module without changing existing CLI output; keep only the
+   versioned regression catalog as data.
 2. Add the capability report while preserving the current `accepted`,
    `failed`, and `inconclusive` top-level statuses.
 3. Convert the two existing profiles to registry entries and prove their

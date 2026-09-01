@@ -1,0 +1,94 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "reharness_virtio_sensor",
+  "runtime": {
+    "adapter": "qemu-profile",
+    "capabilities": {
+      "optional": [
+        "subsystem",
+        "trace"
+      ],
+      "required": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ]
+    },
+    "fixture": {
+      "config": {
+        "driver_name": "reharness_virtio_sensor"
+      },
+      "kind": "qemu-virtio"
+    },
+    "profile": "virtio-generic",
+    "qemu": {
+      "binding": {
+        "bus": "virtio",
+        "device_glob": "*"
+      },
+      "bus": "virtio",
+      "device": "virtio-blk-pci",
+      "launch_device": false,
+      "machine": "pc",
+      "module": "reharness_virtio_sensor",
+      "qemu_args": [
+        "-drive",
+        "if=none,id=reharness_disk,driver=null-co,size=1M",
+        "-device",
+        "virtio-blk-pci,drive=reharness_disk"
+      ],
+      "timeout_seconds": 90
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-virtio-sensor.c",
+    "sha256": "a67c4cb8c36e523a38dab65d4c1c35aa44cbadc222421f7007e94e6a58a5b66a"
+  },
+  "test": {
+    "subsystem": {
+      "name": "virtio",
+      "tests": [
+        {
+          "args": [
+            "/dev/reharness-virtio-control",
+            "valid"
+          ],
+          "executable": "qa/native-tests/virtio_queue_test.c",
+          "name": "virtio-queue-read",
+          "success_pattern": "VIRTIO_QUEUE_PASS"
+        },
+        {
+          "args": [
+            "/dev/reharness-virtio-control",
+            "invalid"
+          ],
+          "executable": "qa/native-tests/virtio_queue_test.c",
+          "name": "virtio-invalid-ioctl",
+          "success_pattern": "VIRTIO_INVALID_IOCTL_PASS"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ]
+  }
+}

@@ -8,7 +8,7 @@ import os
 import datetime
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from . import tu as tu_mod
 from . import macros as macros_mod
@@ -17,6 +17,7 @@ from .call_graph import extract_with_inlining
 from .compile_context import compile_context_identity
 from .formalize import build_formal_ris
 from .dataflow import Op
+from .wrappers import _candidate_functions
 
 
 @dataclass
@@ -26,11 +27,12 @@ class ExtractorConfig:
     include_framework: bool = False
     extra_blacklist: list[str] = field(default_factory=list)
     linux_root: str | None = None
-    max_inline_depth: int = 3
+    max_inline_depth: int | None = None
     alias_mode: str = "off"                # off | auto | required
     driver_name: str | None = None          # required only for direct multi-source API use
     compile_commands: str | None = None      # optional Linux compile_commands.json
     compile_context_mode: str = "auto"       # off | auto | required
+    extra_args: list[str] = field(default_factory=list)
     ir_mode: str = "off"                     # off | auto | required
 
 
@@ -44,6 +46,36 @@ class ExtractionResult:
 
 
 _extraction_cache: dict[tuple, ExtractionResult] = {}
+
+
+def _manifest_compile_args(descriptor: str) -> list[str]:
+    """Translate manifest Kconfig values into deterministic parser defines."""
+    if not descriptor.endswith(".json"):
+        return []
+    try:
+        with open(descriptor, "r", encoding="utf-8") as handle:
+            document = json.load(handle)
+    except (OSError, json.JSONDecodeError, TypeError):
+        return []
+    values = document.get("kconfig") if isinstance(document, dict) else None
+    if not isinstance(values, list):
+        return []
+    result: list[str] = []
+    for item in values:
+        if not isinstance(item, str) or "=" not in item:
+            continue
+        name, value = (part.strip() for part in item.split("=", 1))
+        if not re.fullmatch(r"CONFIG_[A-Za-z0-9_]+", name) or not value:
+            continue
+        if value in {"y", "1"}:
+            result.append(f"-D{name}=1")
+        elif value == "m":
+            result.append(f"-D{name}_MODULE=1")
+        elif value in {"n", "0"}:
+            result.extend([f"-U{name}", f"-U{name}_MODULE"])
+        else:
+            result.append(f"-D{name}={value}")
+    return result
 
 
 def _alias_cache_identity(mode: str) -> tuple:
@@ -108,6 +140,28 @@ def _assign_multi_module_names(funcs) -> dict[str, int]:
     }
 
 
+def _materialize_header_functions(base_funcs, formal_funcs, extractions,
+                                  inlined_names):
+    """Retain extracted header helpers when they are not safely inlined.
+
+    Header-defined inline functions are candidates of the call-graph pass but
+    are not part of a manifest's target-file function list.  A rescued helper
+    therefore needs to be added to FormalRIS explicitly; otherwise its direct
+    evidence is counted by extraction but disappears during formalization.
+    """
+    result = list(formal_funcs)
+    known = {func.symbol_id or func.name for func in result}
+    for func in _candidate_functions(list(base_funcs)):
+        symbol = func.symbol_id or func.name
+        if (symbol in known or symbol in inlined_names
+                or not extractions.get(symbol)
+                or not extractions[symbol].ops):
+            continue
+        result.append(func)
+        known.add(symbol)
+    return result
+
+
 def _resolve_sources(config: ExtractorConfig) -> tuple[list[str], str, str]:
     """Resolve a source file/list or a versioned multi-source JSON manifest.
 
@@ -149,6 +203,7 @@ def _merge_facts(parts, source: str, warnings: list[str]):
     struct_names: set[str] = set()
     constants: dict = {}
     callbacks: dict = {}
+    callback_signatures: dict = {}
     resources = []
     resource_keys: set[tuple] = set()
     error_paths: set[str] = set()
@@ -172,13 +227,20 @@ def _merge_facts(parts, source: str, warnings: list[str]):
                 warnings.append(f"multi-source callback conflict: {field}")
                 continue
             callbacks.setdefault(field, fn)
+        for field, signature in facts.callback_signatures.items():
+            if field in callback_signatures and callback_signatures[field] != signature:
+                warnings.append(f"multi-source callback signature conflict: {field}")
+                continue
+            callback_signatures.setdefault(field, signature)
         for resource in facts.resources:
             key = (resource.acquisition, resource.binds_to)
             if key in resource_keys:
                 continue
             resource_keys.add(key)
             resources.append(ResourceFact(
-                f"resource{len(resources)}", resource.acquisition, resource.binds_to))
+                f"resource{len(resources)}", resource.acquisition,
+                resource.binds_to, required=resource.required,
+                failure_policy=resource.failure_policy))
         error_paths.update(facts.error_paths)
         helper_calls.update(facts.helper_calls)
         for name, snippets in facts.source_snippets.items():
@@ -189,6 +251,7 @@ def _merge_facts(parts, source: str, warnings: list[str]):
     return FactsSpec(
         source=source, includes=includes, structs=structs, constants=constants,
         callbacks=callbacks, resources=resources,
+        callback_signatures=callback_signatures,
         error_paths=sorted(error_paths), helper_calls=sorted(helper_calls),
         source_snippets=source_snippets,
     )
@@ -346,7 +409,9 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     from .call_graph import extract_multi_with_inlining
     from .formal import emitted_stats
     from .spec_infer import (callback_binding_analysis,
-                             infer_callback_bindings, infer_function_specs,
+                             infer_callback_bindings,
+                             infer_callback_signatures,
+                             infer_function_specs,
                              infer_device_spec, infer_facts)
 
     warnings: list[str] = []
@@ -368,6 +433,7 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
             source, config.linux_root,
             compile_commands=config.compile_commands,
             compile_context_mode=config.compile_context_mode,
+            extra_args=config.extra_args,
             return_context=True)
         warnings.extend(diag)
         macros = macros_mod.build(tu, source, source_text)
@@ -433,10 +499,13 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
 
     (extractions, inlined_names, callback_entries,
      call_stats) = extract_multi_with_inlining(
-         units, max_depth=config.max_inline_depth,
-         include_framework=config.include_framework,
-         extra_blacklist=set(config.extra_blacklist),
-     )
+        units, max_depth=config.max_inline_depth,
+        include_framework=config.include_framework,
+        extra_blacklist=set(config.extra_blacklist),
+    )
+    formal_funcs = _materialize_header_functions(
+        funcs, funcs, extractions, inlined_names)
+    _assign_multi_module_names(formal_funcs)
     stats = {
         "extracted_at": datetime.datetime.now().isoformat(timespec="seconds"),
         "functions_analyzed": len(funcs),
@@ -476,7 +545,7 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         **call_stats,
     }
     formal = build_formal_ris(
-        driver_name, descriptor, funcs, extractions, combined_macros,
+        driver_name, descriptor, formal_funcs, extractions, combined_macros,
         stats, inlined_names)
     stats.pop("_call_closure_overlays", None)
     formal["metadata"]["sources"] = list(sources)
@@ -486,11 +555,13 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
     stats["path_validation"] = path_validation
     from .accounting import build_access_accounting
     accounting = build_access_accounting(
-        funcs, formal, set(config.extra_blacklist))
+        [func for func in formal_funcs if func.cursor is not None],
+        formal, set(config.extra_blacklist))
     formal["metadata"]["access_accounting"] = accounting
     stats["access_accounting"] = accounting
     from .control import build_control_accounting
-    control_accounting = build_control_accounting(funcs)
+    control_accounting = build_control_accounting(
+        [func for func in formal_funcs if func.cursor is not None])
     formal["metadata"]["control_accounting"] = control_accounting
     stats["control_accounting"] = control_accounting
     stats.update(emitted_stats(formal))
@@ -557,8 +628,11 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         f"/* translation unit: {unit['source']} */\n{unit['source_text']}"
         for unit in units)
     callback_bindings: dict[str, dict] = {}
+    callback_signatures: dict[str, dict] = {}
     for unit in units:
-        unit_bindings = infer_callback_bindings(unit["tu"], funcs)
+        unit_bindings = infer_callback_bindings(
+            unit["tu"], funcs,
+            target_files={unit["source"]})
         unit["callback_bindings"] = unit_bindings
         for symbol, info in unit_bindings.items():
             existing = callback_bindings.get(symbol)
@@ -567,9 +641,32 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
                     f"multi-source callback binding conflict: {symbol}")
                 continue
             callback_bindings[symbol] = info
+    from .spec_infer import propagate_callback_dispatch_roles
+    propagate_callback_dispatch_roles(
+        callback_bindings, [unit["tu"] for unit in units],
+        target_files={unit["source"] for unit in units})
+    callback_fields = {
+        f"{info['table']}.{info['field']}"
+        for primary in callback_bindings.values()
+        for info in [primary, *primary.get("alternates", [])]
+    }
+    callback_fields.update(
+        fn.synthetic_callback_table for fn in funcs
+        if fn.synthetic_callback_table)
+    for unit in units:
+        unit_signatures = infer_callback_signatures(
+            unit["tu"], callback_fields,
+            bindings=unit["callback_bindings"])
+        unit["callback_signatures"] = unit_signatures
+        for field, signature in unit_signatures.items():
+            if field in callback_signatures and callback_signatures[field] != signature:
+                warnings.append(
+                    f"multi-source callback signature conflict: {field}")
+                continue
+            callback_signatures.setdefault(field, signature)
     fn_specs, cb_bindings = infer_function_specs(
         formal, funcs, combined_text, descriptor, callback_entries,
-        callback_bindings)
+        callback_bindings, callback_signatures=callback_signatures)
     binding_analysis = callback_binding_analysis(
         cb_bindings, funcs, callback_entries)
     formal["metadata"]["callback_binding_analysis"] = binding_analysis
@@ -587,7 +684,8 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         fact_parts.append(infer_facts(
             unit["source_text"], unit["source"], unit["tu"], unit["macros"],
             unit["callback_bindings"], register_names, formal=formal,
-            driver_name=driver_name))
+            driver_name=driver_name,
+            callback_signatures=unit["callback_signatures"]))
     facts = _merge_facts(fact_parts, descriptor, warnings)
     # Combined parsing can discover cross-TU registrations that no individual
     # source text contains in full; retain those authoritative bindings.
@@ -608,13 +706,33 @@ def _extract_multi(config: ExtractorConfig, sources: list[str],
         warnings=warnings, stats=stats)
 
 
-def extract_ris(config: ExtractorConfig) -> ExtractionResult:
+def extract_ris(config):
+    """Extract RIS formal model — IR-primary with AST supplements.
+
+    PRIMARY:   LLVM IR text analysis (MMIO + SSA chains + debug lines)
+    SUPPLEMENT: libclang AST (roles, DeviceSpec, facts, switch/case)
+    FALLBACK:   Pure AST if IR compilation fails
+    """
+    try:
+        from .ir_primary import extract_ris_ir_primary
+        return extract_ris_ir_primary(config)
+    except Exception:
+        return _extract_ris_ast(config)
+
+
+def _extract_ris_ast(config: ExtractorConfig) -> ExtractionResult:
     if config.alias_mode not in {"off", "auto", "required"}:
         raise ValueError(f"invalid alias_mode: {config.alias_mode}")
     if config.compile_context_mode not in {"off", "auto", "required"}:
         raise ValueError(
             f"invalid compile_context_mode: {config.compile_context_mode}")
     sources, driver_name, descriptor = _resolve_sources(config)
+    manifest_args = _manifest_compile_args(descriptor)
+    if manifest_args:
+        config = replace(
+            config,
+            extra_args=[*config.extra_args, *manifest_args],
+        )
     if len(sources) > 1:
         source_state = []
         for source in sources:
@@ -634,6 +752,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
             config.compile_context_mode,
             config.max_inline_depth, config.include_framework,
             tuple(sorted(config.extra_blacklist)), config.alias_mode,
+            tuple(config.extra_args),
             _alias_cache_identity(config.alias_mode),
             tuple(compile_context_identity(source, config.linux_root,
                                            config.compile_commands,
@@ -661,6 +780,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         config.compile_context_mode,
         config.max_inline_depth, config.include_framework,
         tuple(sorted(config.extra_blacklist)), config.alias_mode,
+        tuple(config.extra_args),
         _alias_cache_identity(config.alias_mode),
         compile_context_identity(source, config.linux_root,
                                  config.compile_commands,
@@ -678,6 +798,7 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         source, config.linux_root,
         compile_commands=config.compile_commands,
         compile_context_mode=config.compile_context_mode,
+        extra_args=config.extra_args,
         return_context=True)
     warnings.extend(diag)
 
@@ -772,7 +893,10 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
         **wrapper_stats,
     }
 
-    formal = build_formal_ris(driver_name, source, funcs, extractions, macros,
+    formal_funcs = _materialize_header_functions(
+        source_funcs, funcs, extractions, inlined_names)
+    _assign_multi_module_names(formal_funcs)
+    formal = build_formal_ris(driver_name, source, formal_funcs, extractions, macros,
                               stats, inlined_names)
     stats.pop("_call_closure_overlays", None)
     from .smt import validate_formal_paths
@@ -781,11 +905,13 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     stats["path_validation"] = path_validation
     from .accounting import build_access_accounting
     accounting = build_access_accounting(
-        source_funcs, formal, set(config.extra_blacklist))
+        [func for func in formal_funcs if func.cursor is not None],
+        formal, set(config.extra_blacklist))
     formal["metadata"]["access_accounting"] = accounting
     stats["access_accounting"] = accounting
     from .control import build_control_accounting
-    control_accounting = build_control_accounting(source_funcs)
+    control_accounting = build_control_accounting(
+        [func for func in formal_funcs if func.cursor is not None])
     formal["metadata"]["control_accounting"] = control_accounting
     stats["control_accounting"] = control_accounting
 
@@ -795,12 +921,25 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
 
     # infer backend-independent FunctionSpec / DeviceSpec (plan M3/M4) + facts (M9)
     from .spec_infer import (callback_binding_analysis,
-                             infer_callback_bindings, infer_function_specs,
+                             infer_callback_bindings,
+                             infer_callback_signatures,
+                             infer_function_specs,
                              infer_device_spec, infer_facts)
-    callback_bindings = infer_callback_bindings(tu, funcs)
+    callback_bindings = infer_callback_bindings(
+        tu, funcs, target_files={source})
+    callback_fields = {
+        f"{info['table']}.{info['field']}"
+        for primary in callback_bindings.values()
+        for info in [primary, *primary.get("alternates", [])]
+    }
+    callback_fields.update(
+        fn.synthetic_callback_table for fn in funcs
+        if fn.synthetic_callback_table)
+    callback_signatures = infer_callback_signatures(
+        tu, callback_fields, bindings=callback_bindings)
     fn_specs, cb_bindings = infer_function_specs(
         formal, funcs, source_text, source, callback_entries,
-        callback_bindings)
+        callback_bindings, callback_signatures=callback_signatures)
     binding_analysis = callback_binding_analysis(
         cb_bindings, funcs, callback_entries)
     formal["metadata"]["callback_binding_analysis"] = binding_analysis
@@ -812,8 +951,10 @@ def extract_ris(config: ExtractorConfig) -> ExtractionResult:
     formal["metadata"]["usb_hcd_lifecycle"] = usb_hcd_lifecycle
     stats["usb_hcd_lifecycle"] = usb_hcd_lifecycle
     register_names = {r["name"] for r in formal.get("register_map", [])}
-    facts = infer_facts(source_text, source, tu, macros, cb_bindings,
-                        register_names, formal=formal, driver_name=driver_name)
+    facts = infer_facts(
+        source_text, source, tu, macros, cb_bindings, register_names,
+        formal=formal, driver_name=driver_name,
+        callback_signatures=callback_signatures)
 
     if config.ir_mode != "off":
         ir_analysis = _run_ir_analysis(

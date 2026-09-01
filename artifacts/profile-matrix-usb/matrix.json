@@ -1,0 +1,41 @@
+{
+  "accepted": true,
+  "artifact_root": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-usb",
+  "cases": [
+    {
+      "bus": "usb",
+      "manifest": "benchmarks/experiments/reharness-usb.json",
+      "manifest_digest": "7eb34460628fe8907e538d0c45fb2d63d92400bbaa2096b7799aa6e2e2e837fc",
+      "module": "reharness_usb_sensor",
+      "profile": "usb-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-usb-sensor.c",
+      "source_sha256": "b2694440ba132e19c52c74f468834f35f4b02aee22e491951886783682d97133"
+    }
+  ],
+  "discovered_profiles": [
+    "usb-generic"
+  ],
+  "duplicate_profiles": [],
+  "failed_profiles": [],
+  "generated_at": "2026-08-25T03:35:30.698669+00:00",
+  "inconclusive_profiles": [],
+  "kernel_dir": "/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build",
+  "missing_profiles": [],
+  "required_profiles": [
+    "usb-generic"
+  ],
+  "results": [
+    {
+      "manifest": "benchmarks/experiments/reharness-usb.json",
+      "profile": "usb-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-usb/usb-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030919] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030984] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071451] ftrace: allocating 32582 entries in 128 pages\n[    0.071705] ftrace: allocated 128 pages with 1 groups\n[    0.404443] thermal_sys: Registered thermal governor 'step_wise'\n[    0.408875] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.419915] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.498379] ACPI: bus type USB registered\n[    0.498667] usbcore: registered new interface driver usbfs\n[    0.498863] usbcore: registered new interface driver hub\n[    0.498957] usbcore: registered new device driver usb\n[    0.499118] pps_core: LinuxPPS API ver. 1 registered\n[    0.546816] Key type asymmetric registered\n[    0.546891] Asymmetric key parser 'x509' registered\n[    0.547292] io scheduler mq-deadline registered\n[    0.547352] io scheduler kyber registered\n[    0.587332] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.592280] usbcore: registered new interface driver usbhid\n=== insmod required kernel module xhci-hcd ===\nREHARNESS_KERNEL_MODULE_0_INSMOD_RC=0\n=== insmod required kernel module xhci-pci ===\n[    1.017849] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1\n[    1.022884] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2\n[    1.031002] insmod (58) used greatest stack depth: 12008 bytes left\nREHARNESS_KERNEL_MODULE_1_INSMOD_RC=0\n=== insmod required kernel module udc-core ===\nREHARNESS_KERNEL_MODULE_2_INSMOD_RC=0\n=== insmod required kernel module dummy_hcd ===\n[    1.043987] dummy_hcd dummy_hcd.0: new USB bus registered, assigned bus number 3\n[    1.046559] insmod (60) used greatest stack depth: 11976 bytes left\nREHARNESS_KERNEL_MODULE_3_INSMOD_RC=0\n=== insmod required kernel module libcomposite ===\nREHARNESS_KERNEL_MODULE_4_INSMOD_RC=0\n=== insmod required kernel module usb_f_ss_lb ===\nREHARNESS_KERNEL_MODULE_5_INSMOD_RC=0\n=== insmod required kernel module g_zero ===\nREHARNESS_KERNEL_MODULE_6_INSMOD_RC=0\n=== insmod required kernel module usbtest ===\n[    1.413105] usbcore: registered new interface driver usbtest\nREHARNESS_KERNEL_MODULE_7_INSMOD_RC=0\n=== insmod reharness_usb_sensor ===\n[    1.420720] reharness_usb_sens 1-1:1.0: REHARNESS_USB_DRIVER_PROBE status=0xb1 0x60\n[    1.420919] usbcore: registered new interface driver reharness_usb_sens\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.420720] reharness_usb_sens 1-1:1.0: REHARNESS_USB_DRIVER_PROBE status=0xb1 0x60\nREHARNESS_SUBSYSTEM_TEST_0_NAME=usb-control-status\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=usb-bulk-out\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_2_NAME=usb-invalid-endpoint\nREHARNESS_SUBSYSTEM_TEST_2_KIND=native\nREHARNESS_SUBSYSTEM_TEST_2_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_2_RC=0\nREHARNESS_SUBSYSTEM_TEST_2_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_3_NAME=linux-usbtest-gadget\nREHARNESS_SUBSYSTEM_TEST_3_KIND=tool\nREHARNESS_SUBSYSTEM_TEST_3_PROVIDER=linux-usbtest\nREHARNESS_SUBSYSTEM_TEST_3_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_3_RC=0\nREHARNESS_SUBSYSTEM_TEST_3_STATUS=pass\n=== rmmod reharness_usb_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.727979] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_3_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_usb_sensor probe \u6210\u529f\n",
+      "trace": null
+    }
+  ],
+  "schema": 1,
+  "status": "accepted"
+}

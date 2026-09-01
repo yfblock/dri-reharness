@@ -1,0 +1,74 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "gpio_ftgpio010",
+  "runtime": {
+    "adapter": "qemu-platform",
+    "qemu": {
+      "bus": "platform",
+      "device": "ftgpio010-gpio",
+      "machine": "pc",
+      "module": "ftgpio010_gpio",
+      "probe_pattern": "probed|registered|gpiochip",
+      "registrar": "ftgpio010-gpio",
+      "timeout_seconds": 90
+    },
+    "safety_policy": {
+      "action": "allow",
+      "failure_class": "safety",
+      "forbidden_tokens": []
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+    "sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
+  },
+  "test": {
+    "subsystem": {
+      "name": "ftgpio010-gpio",
+      "tests": [
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_trace_test",
+          "name": "ftgpio010-gpio-api",
+          "success_pattern": "GPIO_TRACE_DONE"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "exercised_calls": [
+      "ftgpio_gpio_probe=gpio_ftgpio010_probe",
+      "ftgpio_gpio_probe__gpio_generic_get_direction",
+      "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "ftgpio_gpio_probe__gpio_generic_get_multiple",
+      "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "ftgpio_gpio_probe__gpio_generic_direction_input"
+    ],
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence",
+      "source_op_id"
+    ],
+    "instrument": true,
+    "normalize_function": true,
+    "value_mask": "0xffffffff"
+  }
+}

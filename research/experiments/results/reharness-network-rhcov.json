@@ -1,0 +1,10 @@
+{
+  "functions": [
+    "reharness_network_open",
+    "reharness_network_stop",
+    "reharness_network_xmit",
+    "reharness_network_init",
+    "reharness_network_exit"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_network/reharness_network.c"
+}

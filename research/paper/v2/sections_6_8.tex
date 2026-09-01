@@ -1,0 +1,616 @@
+% reharness - ASPLOS submission (sections_6_8.tex)
+% Constrained LLM Translation and Verification, Evaluation.
+% Requires: \input{generated_results.tex} and \newcommand{\reharness},
+% \newcommand{\rislang} in preamble.
+
+% =====================================================================
+%  CONSTRAINED LLM TRANSLATION AND VERIFICATION
+% =====================================================================
+\section{Constrained LLM Translation and Verification}
+\label{sec:generation}
+
+The extraction and semantic-inference stages produce \rislang{}, function and
+device semantics, backend bindings, and selected source facts. This section
+defines the subset that crosses the LLM boundary, then describes backend
+plugins, acceptance checks, and bounded repair.
+
+\subsection{Evidence Boundary}
+\label{sec:llm-bridge}
+
+All backends use one bridge that serializes six JSON sections: \emph{driver}
+(identity and class), \emph{registers} (name, offset, width), \emph{modules}
+(ordered operations and nested control flow), \emph{bind} (types, primitives,
+state expressions, callbacks, and includes), and optional \emph{constants}
+and \emph{structs} from selected source facts. Module entries retain
+\texttt{op\_id}, address, value/transform, transaction transport, and
+functional-state operations. Function roles are represented by callback and
+state bindings; the full \texttt{FunctionSpec} object is not serialized.
+
+The LLM never sees the original C source. The JSON is a generation-oriented
+projection, not a claim that every analysis fact crosses the boundary. The
+prompt authorizes target-language expression of required evidence but forbids
+inventing or omitting device operations. Subsequent checks detect missing or
+mutated traceable register operations and compare exercised MMIO order; they
+do not prove that arbitrary extra accesses are absent.
+
+\subsection{Backend Plugins and Prompted Translation}
+\label{sec:registry}
+\label{sec:backends}
+
+Each backend is a self-contained directory containing a Python module that
+constructs its \texttt{BindSpec} and a \texttt{prompt.md} with target rules. A
+registry discovers modules exposing \texttt{NAME} and \texttt{generate()}, so
+adding a target does not modify extraction or verification. \textbf{Harness C}
+uses fake MMIO and access logs; \textbf{bare-metal C} uses volatile primitives;
+\textbf{Linux C} emits platform or PCI lifecycles and kernel MMIO; and
+\textbf{Rust \texttt{no\_std}} uses \texttt{tock-registers}, confining
+\texttt{unsafe} to base-address construction.
+
+The bridge instantiates the selected prompt with the evidence JSON, calls the
+configured endpoint, and extracts candidate code. For example, the Linux
+prompt selects PCI or platform resource APIs and requests MMIO tracing, while
+the Rust prompt requires the corresponding \texttt{tock-registers} layout and
+bitfield macros. These rules constrain target adaptation but do not replace
+the evidence as the source of device operations.
+
+The current implementation invokes a configurable endpoint through
+\texttt{tools/pi/pi\_synth.sh}; the bridge interface admits any endpoint that
+accepts a prompt and returns text. Swapping models does not change the stated
+acceptance criteria: different candidates face the same compile, receipt, and
+trace checks.
+
+\subsection{Compilation, Receipts, and Trace Oracles}
+\label{sec:verification}
+
+LLM-generated code cannot be trusted. Models may hallucinate APIs, omit or
+reorder required operations, or introduce accesses absent from the contract.
+\reharness{} therefore treats every candidate as untrusted and checks it
+against \rislang{}. Passing means satisfying the checks described below; it
+does not mean that every unmodeled effect has been excluded.
+Figure~\ref{fig:verification-scope} summarizes this boundary and its explicit
+non-claims.
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  stage/.style={rectangle, draw=black, line width=0.6pt, fill=white,
+    minimum width=2.7cm, minimum height=0.6cm, align=center},
+  flow/.style={-{Stealth[length=2.4mm]}, line width=0.6pt},
+]
+% inside the gate: tinted region + four short stages
+\fill[figblue!5] (-0.4,-4.0) rectangle (3.4,1.0);
+\draw[black, dashed, line width=0.7pt] (-0.4,-4.0) rectangle (3.4,1.0);
+\node[font=\footnotesize\bfseries, anchor=north] at (1.5,0.92) {Bounded evidence contract};
+
+\node[stage] (s1) at (1.5,-0.15) {Compile};
+\node[stage] (s2) at (1.5,-1.22) {Receipts (once)};
+\node[stage] (s3) at (1.5,-2.29) {Shape + callbacks};
+\node[stage] (s4) at (1.5,-3.36) {Exercised trace};
+\draw[flow] (s1) -- (s2);
+\draw[flow] (s2) -- (s3);
+\draw[flow] (s3) -- (s4);
+
+% outside the gate: gray not-established list
+\node[font=\footnotesize\bfseries, text=black!55, anchor=west] (nh)
+  at (4.35,-0.15) {Outside the gate --- not established};
+\foreach \i/\t in {0/arbitrary addresses and values,
+                   1/guard equivalence for all inputs,
+                   2/global order on unexercised paths,
+                   3/extra accesses and side effects,
+                   4/DMA · IRQ races · lifecycle} {
+  \node[font=\scriptsize, text=black!55, anchor=west] (q\i)
+    at (4.35,-0.78-\i*0.54) {$\times$~\t};
+}
+
+% bottom warning
+\node[rectangle, draw=black, line width=0.6pt, fill=white,
+  minimum width=9.4cm, minimum height=0.5cm, align=center, font=\bfseries]
+  at (2.9,-4.72) {Does not establish whole-driver equivalence};
+\end{tikzpicture}%
+}
+\caption{Scope of the verification gate. The left column lists checks
+implemented by the artifact; the right column records properties intentionally
+outside the gate. These are bounded evidence checks, not complete verification.}
+\Description{A bounded evidence contract encloses a four-stage verification
+flow and a separate panel listing properties not established by the gate.}
+\label{fig:verification-scope}
+\end{figure}
+
+\paragraph{Compilation.}
+
+The first stage compiles the candidate with strict warnings for the target
+backend. Harness output is compiled with \texttt{cc\,-Wall\,-Werror}; bare-metal
+output with \texttt{cc\,-ffreestanding\,-Wall\,-Werror}; Linux output through the
+pinned kernel's Kbuild interface (\texttt{make\,M=...}); and Rust output with
+\texttt{rustc}. Compilation catches type mismatches, undefined symbols, missing
+includes, and syntactic errors---the most common LLM failure modes. A
+candidate that fails to compile is rejected before more expensive checks run.
+
+\paragraph{AST lowering receipts.}
+
+The second stage is a structural accounting check. Each recognized operation
+receives a unique \texttt{op\_id}; generated C carries a lowering marker with
+that identifier, a canonical contract digest, and an emitted kind. The
+lowering oracle checks marker presence, cardinality, unknown identifiers,
+status, kind, and digest consistency with the frozen RIS contract. A separate
+libclang pass checks C labels and the primitive shape (kind, width, byte order,
+and write semantics) for covered leaf operations. The current AST oracle does
+not independently recover arbitrary address or value expressions, guard
+semantics, or cross-operation ordering from generated code; those are outside
+the proof scope and must not be described as digest re-computation from the
+candidate AST.
+
+The receipt reconciliation enforces four properties:
+
+\begin{itemize}
+\item \textbf{Presence:} every \rislang{} operation with a traceable address
+must have a corresponding receipt. Missing operations indicate that the LLM
+dropped evidence.
+\item \textbf{Exactly-once:} each \texttt{op\_id} may appear in at most one
+receipt. Duplicate receipts indicate redundant or duplicated operations.
+\item \textbf{Kind matching:} a \rislang{} \texttt{Read} must lower to a read
+primitive call, a \texttt{Write} to a write primitive call, and a
+\texttt{ReadModifyWrite} to either a read followed by a write at the same
+address or a single write whose value derives from a prior read of that
+address (validated through the lowering recipe).
+\item \textbf{Digest consistency:} the digest in the generated marker must
+match the canonical digest in the frozen contract. This catches marker-level
+drift, but is not by itself an independent proof that the candidate's address,
+value expression, guard, or control-flow structure equals the source.
+\end{itemize}
+
+Operations whose addresses are untraceable (e.g., \texttt{Computed} addresses
+with non-lowerable terms) are excluded from receipt reconciliation and
+instead recorded as explicit readiness blockers, ensuring that the check is
+sound: it does not credit an operation that cannot be statically resolved to
+a register offset.
+
+\paragraph{Trace oracle.}
+
+The third stage compares the generated code's runtime register-access trace
+against an oracle derived from the structured \rislang{} evidence. The trace oracle
+operates at two levels. For the harness backend, the generated program is
+executed and its \texttt{[trace]} log is parsed into an ordered sequence of
+(operation kind, offset) pairs. The oracle derives the expected sequence from
+the \rislang{} modules' operations, resolving symbolic register names to
+offsets via the register map and expanding RMW operations into read-then-write
+pairs.
+
+For Linux and bare-metal backends deployed in QEMU, the trace oracle consumes
+an instrumented kernel serial log. The instrumentation macros (injected by
+the Linux prompt template) emit \texttt{[rhfn]\,$function$} boundaries before
+each module function and \texttt{[rh]\,R/W\,0x$O$\,0x$V$} for each MMIO access.
+The oracle parses these into per-function segments and matches each segment
+against the expected \rislang{} operation sequence using subsequence matching,
+which allows the runtime trace to contain additional accesses (e.g.,
+framework-level reads) without failing the check, as long as all expected
+operations appear in order.
+
+The trace oracle also handles branch sensitivity. The \rislang{} records
+conditional operations with then/else branches, but the runtime trace reflects
+only the path actually taken. The oracle computes branch-sensitive sequence
+variants and accepts a trace matching one of them. Because the current runtime
+log does not carry a proof of the source predicate's value, this check confirms
+an exercised sequence variant rather than guard equivalence for all inputs.
+
+\paragraph{Scope of acceptance.}
+The QEMU matcher uses subsequences because framework code may perform accesses
+outside the extracted callback contract. It therefore confirms that expected
+MMIO events occur in order on an exercised path, but does not reject every
+additional access or prove that an unmodeled DMA/IRQ/MMIO side effect is absent.
+The general runtime trace also does not observe
+\texttt{VALUE}, \texttt{STATE}, or \texttt{OUT}; those operations are retained
+in evidence and checked only by dedicated artifact tests in the DesignWare
+case study. These limitations are part of the reported readiness boundary.
+
+\subsection{Bounded Repair}
+
+If any verification stage fails, \reharness{} formats structured feedback and
+re-prompts the LLM. The feedback identifies the specific failure: a missing
+receipt for \texttt{op\_id\,$n$}, a kind mismatch (expected \texttt{Write},
+got \texttt{Read}), a compilation error at line $L$, or a trace mismatch
+(missing operation at offset 0x$O$). The LLM receives the current candidate
+and the failure report, and is instructed to produce a patched candidate.
+This repair loop iterates until the candidate passes all checks or the
+iteration budget (default~3) is exhausted, at which point the failure is
+recorded as a readiness blocker.
+
+% =====================================================================
+%  EVALUATION
+% =====================================================================
+\section{Evaluation}
+\label{sec:evaluation}
+
+\subsection{Experimental Setup and Research Questions}
+
+We evaluate \reharness{} on \EvalDrivers{} versioned Linux driver sources
+spanning GPIO controllers, clock/PLL, AHCI SATA, SDHCI MMC, virtio-MMIO, a
+framebuffer raster engine, and the QEMU edu PCI device. All results are
+produced by the machine-readable \path{./run.sh} pipeline and exported to
+\path{generated_results.tex}; the
+tables in this section are populated by the macros and table macros defined
+therein, not manually transcribed.
+
+The evaluation addresses five research questions:
+
+\begin{itemize}
+\item \textbf{RQ1 (Address resolution):} Among emitted addressable operations,
+what fractions are symbolic, fixed, or computed?
+\item \textbf{RQ2 (Extracted structure):} How many RMW patterns and branch
+conditions does the extractor report?
+\item \textbf{RQ3 (Baseline translation):} Do the deterministically generated
+harness, bare-metal, and Linux outputs compile?
+\item \textbf{RQ4 (Strict readiness):} Beyond compilation, do the generated
+outputs satisfy the stated verification criteria (AST receipts, lowering
+reconciliation, and registration attestation)?
+\item \textbf{RQ5 (End-to-end validation):} Do generated drivers satisfy
+runtime oracles and, for the LLM case study, the reported case-specific artifact
+checks?
+\end{itemize}
+
+\subsection{Contract Extraction Characteristics (RQ1--RQ2)}
+
+Table~\ref{tab:extraction} shows per-driver extraction metrics for a
+representative subset. Across all \EvalDrivers{} drivers, \reharness{}
+extracts \EvalOps{} operations: \EvalSymbolic{} symbolic (\EvalSymbolicPct{}
+of all addressable operations), \EvalFixed{} fixed, and \EvalComputed{}
+computed-address accesses. The pipeline detects \EvalRMW{} read-modify-write
+patterns and \EvalConditions{} branch conditions, referencing \EvalRegisters{}
+distinct registers.
+
+\begin{table}[t]
+\centering
+\caption{Extraction results for representative drivers. Sym = symbolic
+addresses, Fixed = fixed offset, Comp = computed address, RMW = read-modify-
+write, Cond = branch conditions, Regs = distinct registers. The subset spans
+the QEMU-validated drivers (ftgpio010, edu), the most condition-heavy driver
+(virtio\_mmio), and the extremes of the symbolic-rate range; per-driver rows
+for all \EvalDrivers{} drivers are in the versioned matrix artifact. In the
+total row, Ops includes \EvalUnknown{}-unknown plus 14 non-address operations,
+so Sym+Fixed+Comp (471) is the addressable denominator of \%Sym; per-driver
+rows have no non-address operations.}
+\label{tab:extraction}
+\resizebox{\columnwidth}{!}{\ExtractionResultsTable}
+\end{table}
+
+The symbolic rate of \EvalSymbolicPct{} shows that preprocessing records and
+flow-sensitive dataflow recover names for most emitted addressable operations.
+The remaining emitted accesses are classified as \EvalFixed{} direct numeric
+offsets or \EvalComputed{} runtime expressions for indexed register banks.
+The aggregate has 471 addressable and 14 non-address emitted operations; the
+zero unknown count (\EvalUnknown{}) is an internal provenance count, not
+evidence that no operations were missed.
+These are internal characterization metrics, not precision or recall against a
+manually labeled ground truth; an access missed before emission would not
+appear in the unknown count.
+
+The gpio-ftgpio010 and gpio-cadence drivers achieve 100\% symbolic rates
+because all their register offsets are defined through preprocessor macros
+that the MacroTable resolves. The edu driver has the lowest symbolic rate
+(60\%) because two of its five accesses use fixed numeric offsets in the
+original source. virtio\_mmio exercises the most complex extraction: 59
+operations across 44 conditions, reflecting the virtio configuration-space
+negotiation protocol.
+
+The same corpus also quantifies the two interleaved concerns of Section~2:
+classifying each driver's non-blank lines by provenance, the aggregate
+composition is \GlueCorePct{} device-core lines, \GlueEntryPct{} framework
+entry bodies (non-core lines inside callback and lifecycle functions),
+\GlueHelperPct{} glue wrappers and other function bodies, and
+\GlueFileScopePct{} file-scope declarations and registration boilerplate
+(Figure~\ref{fig:glue-ratio}). Only the first category crosses the
+cross-backend contract; the remaining three are re-bound per backend. The
+corpus is integration-dominated, which is precisely the composition the
+semantic-boundary design targets.
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{\GlueRatioChart}
+\caption{Composition of non-blank lines per driver, measured by source-line
+provenance of emitted operations. Device-core lines are referenced by
+$\ge$1 recorded operation; framework entry bodies are the non-core lines of
+callback and lifecycle functions; glue wrappers and helpers are remaining
+function bodies; file-scope lines are declarations, macros, and registration
+tables outside functions (blank lines excluded). The aggregate is
+\GlueCorePct{} device-core versus \GlueGluePct{} integration. Line-level
+attribution is an approximation: a line interleaving a guard and a register
+access counts as device-core.}
+\label{fig:glue-ratio}
+\Description{Horizontal stacked bars per driver show device-core versus
+integration line shares; the aggregate is 9.5\% device-core and 90.5\%
+integration.}
+\end{figure}
+
+\subsection{Translation and Strict Readiness (RQ3--RQ4)}
+
+Table~\ref{tab:readiness} reports readiness metrics for the representative
+subset (selection criteria as in Table~\ref{tab:extraction}). Under the frozen
+retired deterministic-emitter baseline (superseded by LLM-only
+synthesis; the emitter was removed from the tree), the harness backend
+compiles for \HarnessCompileCount{}/\EvalDrivers{} drivers, the bare-metal
+backend for \BaremetalCompileCount{}/\EvalDrivers{}, and the Linux backend
+for \LinuxCompileCount{}/\EvalDrivers{}. All three backends compile the
+gpio-ftgpio010, gpio-pl061, gpio-cadence, virtio\_mmio, and edu drivers. The
+single Linux compilation failure is the sdhci-esdhc-mcf driver, whose SDHCI
+accessor contract lacks a passing source-contract oracle.
+
+\begin{table}[t]
+\centering
+\caption{Readiness results. RIS = internal RIS quality heuristic (0--1),
+FuncSpec = function-spec quality, DevSpec = device-spec quality. H/B/L =
+harness / bare-metal / Linux compilation. Linux ready denotes strict artifact
+readiness; synthesis-eligible denotes sufficient context to attempt LLM
+synthesis.}
+\label{tab:readiness}
+\resizebox{\columnwidth}{!}{\ReadinessResultsTable}
+\end{table}
+
+The mean RIS quality score across all drivers is \EvalMeanRIS{}. This is an
+internal completeness/readiness heuristic, not a calibrated probability or an
+accuracy estimate against source-level ground truth. The drivers that achieve
+1.000 (gpio-ftgpio010, gpio-cadence) have all-symbolic addresses, no
+unsupported control-flow transfers, and callback bindings that pass the available internal attestation checks.
+
+\paragraph{Strict artifact readiness.}
+
+Compilation is necessary but not sufficient. \reharness{} distinguishes
+\emph{compilation} from \emph{strict artifact readiness}: the latter requires
+that, for the recognized contract scope,
+every traceable register operation carries a lowering receipt with exactly-once
+enforcement, that the AST-receipt reconciliation succeeds with no missing or
+duplicate operations, that callback entries have verified table bindings,
+and that no readiness blockers (unsupported control-flow transfers, unsafe
+dynamic addresses, unproven loop summaries) remain.
+
+Under strict artifact readiness, the harness and bare-metal backends achieve
+\HarnessReadyCount{}/\EvalDrivers{} and \BaremetalReadyCount{}/\EvalDrivers{}
+respectively, and the Linux backend achieves \LinuxReadyCount{}/\EvalDrivers{}.
+The passing drivers are named in the versioned matrix artifact:
+\HarnessReadyDriverList{} for harness and bare-metal, and
+\LinuxReadyDriverList{} for Linux.
+The gap between compilation (18--19/19) and strict readiness (2--4/19) is
+intentional: \reharness{} treats unknown transforms, unsafe dynamic addresses,
+and unbound subsystem state as blockers rather than silently approximating
+them. A driver that compiles but has an unproven loop summary or a
+registration attestation failure is reported as not ready rather than
+ready with caveats, ensuring that downstream consumers do not mistake
+compilation for semantic correctness.
+Figure~\ref{fig:readiness-gap} makes this compilation/readiness separation
+explicit.
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[x=1.05cm,y=0.22cm,font=\footnotesize]
+  \draw[line width=0.8pt] (0,22.6) -- (0,0) -- (6.7,0);
+  \foreach \y in {0,5,10,15,19} {
+    \draw[line width=0.5pt] (0,\y) -- (-0.14,\y);
+    \node[left, font=\scriptsize] at (-0.22,\y) {\y};
+  }
+  \node[rotate=90, font=\scriptsize] at (-0.95,11.3) {Drivers (of \EvalDrivers{})};
+
+  \path[fill=figblue,   draw=black, line width=0.5pt] (0.75,0) rectangle (1.15,\HarnessCompileCount);
+  \path[fill=figorange, draw=black, line width=0.5pt] (1.20,0) rectangle (1.60,\HarnessReadyCount);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (2.65,0) rectangle (3.05,\BaremetalCompileCount);
+  \path[fill=figorange, draw=black, line width=0.5pt] (3.10,0) rectangle (3.50,\BaremetalReadyCount);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (4.55,0) rectangle (4.95,\LinuxCompileCount);
+  \path[fill=figorange, draw=black, line width=0.5pt] (5.00,0) rectangle (5.40,\LinuxReadyCount);
+
+  \node[font=\scriptsize, above=1pt] at (0.95,\HarnessCompileCount) {\HarnessCompileCount};
+  \node[font=\scriptsize, above=1pt] at (1.40,\HarnessReadyCount) {\HarnessReadyCount};
+  \node[font=\scriptsize, above=1pt] at (2.85,\BaremetalCompileCount) {\BaremetalCompileCount};
+  \node[font=\scriptsize, above=1pt] at (3.30,\BaremetalReadyCount) {\BaremetalReadyCount};
+  \node[font=\scriptsize, above=1pt] at (4.75,\LinuxCompileCount) {\LinuxCompileCount};
+  \node[font=\scriptsize, above=1pt] at (5.20,\LinuxReadyCount) {\LinuxReadyCount};
+
+  \node[below=3pt] at (1.175,0) {Harness};
+  \node[below=3pt] at (3.075,0) {Bare-metal};
+  \node[below=3pt] at (4.975,0) {Linux};
+
+  \draw[black, line width=0.4pt, fill=white] (5.05,11.5) rectangle (6.5,15.7);
+  \path[fill=figblue, draw=black, line width=0.5pt] (5.2,14.5) rectangle (5.45,15.1);
+  \node[right, font=\scriptsize] at (5.55,14.8) {Compilation};
+  \path[fill=figorange, draw=black, line width=0.5pt] (5.2,12.3) rectangle (5.45,12.9);
+  \node[right, font=\scriptsize] at (5.55,12.6) {Strict ready};
+\end{tikzpicture}%
+}
+\caption{Compilation versus strict artifact readiness across the
+\EvalDrivers{}-driver evaluation. Blue bars count compilable deterministic
+outputs; orange bars count artifacts passing the modeled strict gate.
+Compilation is necessary but not sufficient, and neither result establishes
+whole-driver equivalence.}
+\Description{Grouped blue and orange bars compare compilation and strict
+readiness for harness, bare-metal, and Linux backends. Compilation counts are
+19, 19, and 18; strict-readiness counts are 4, 4, and 2.}
+\label{fig:readiness-gap}
+\end{figure}
+
+The \LLMReadyCount{}/\EvalDrivers{} synthesis-eligible metric counts drivers
+whose structured context is sufficient for attempting assisted LLM synthesis:
+their evidence
+JSON passes the eligibility checks for bindings, unsupported operations, and
+source facts needed to attempt a candidate. This label does not imply that a
+candidate was generated or accepted.
+
+\subsection{Multi-Source Scalability}
+
+To evaluate whether the pipeline scales beyond single-file drivers, we apply
+\reharness{} to \MultiSourceDrivers{} real multi-source Linux USB modules
+totaling \MultiSourceTUs{} translation units and \MultiSourceLines{} lines of
+code (Table~\ref{tab:multisource}). The multi-source pipeline links per-TU
+bitcode, resolves cross-TU call edges through a single whole-program-analysis
+(WPA) pass, and propagates MMIO operations through inter-procedural call
+graphs to bounded depth.
+
+\begin{table}[t]
+\centering
+\caption{Multi-source results. TUs = translation units, LoC = source lines,
+Funcs = functions analyzed, X-TU = resolved cross-TU call edges,
+Prop = propagated MMIO edges, Src MMIO = source-level MMIO primitives,
+RIS MMIO = propagated RIS MMIO operations, H/B/L = backend compilation.}
+\label{tab:multisource}
+\resizebox{\columnwidth}{!}{\MultiSourceResultsTable}
+\end{table}
+
+In the three modules, the pipeline analyzes \MultiSourceFunctions{}
+functions and resolves \MultiSourceResolvedCrossTUEdges{} of the
+\MultiSourceCrossTUEdges{} cross-TU edges identified by its linker analysis;
+module-internal calls are partially resolved: \MultiSourceUnresolvedCalls{}
+internal call sites remain unresolved (all in dwc2), for an overall call-edge
+resolution rate of \MultiSourceCallResolutionPct{}. MMIO propagation expands
+\MultiSourceSourceMMIO{} source-level primitives into
+\MultiSourceRISMMIO{} recorded RIS operations. This is evidence of wrapper
+propagation, not a recall measurement or proof of the full hardware footprint.
+Figure~\ref{fig:multisource-mmio} shows the per-module distribution on a
+logarithmic scale.
+The dwc2 controller, with 445 functions and 726 call edges across 10
+translation units, produces \MultiSourceDwcTwoOps{} operations (the three
+modules total \MultiSourceOps{}) and is the largest driver in the evaluation;
+its extraction takes \MultiSourceDwcTwoSeconds{} seconds.
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[x=1.05cm,y=1.15cm,font=\footnotesize]
+  \pgfmathsetmacro{\aspeedsource}{ln(\MultiSourceAspeedVhubSourceMMIO)/ln(10)}
+  \pgfmathsetmacro{\aspeedris}{ln(\MultiSourceAspeedVhubRISMMIO)/ln(10)}
+  \pgfmathsetmacro{\csource}{ln(\MultiSourceCSixtySevenXZeroZeroSourceMMIO)/ln(10)}
+  \pgfmathsetmacro{\cris}{ln(\MultiSourceCSixtySevenXZeroZeroRISMMIO)/ln(10)}
+  \pgfmathsetmacro{\dwcsource}{ln(\MultiSourceDwcTwoSourceMMIO)/ln(10)}
+  \pgfmathsetmacro{\dwcris}{ln(\MultiSourceDwcTwoRISMMIO)/ln(10)}
+
+  \draw[line width=0.8pt] (0,4.05) -- (0,0) -- (6.7,0);
+  \foreach \y/\yl in {0/1,1/10,2/100,3/1{,}000} {
+    \draw[line width=0.5pt] (0,\y) -- (-0.14,\y);
+    \node[left, font=\scriptsize] at (-0.22,\y) {\yl};
+  }
+  \node[rotate=90, font=\scriptsize] at (-1.0,1.95)
+    {MMIO operations (log$_{10}$)};
+
+  \path[fill=figblue,   draw=black, line width=0.5pt] (0.75,0) rectangle (1.15,\aspeedsource);
+  \path[fill=figorange, draw=black, line width=0.5pt] (1.20,0) rectangle (1.60,\aspeedris);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (2.65,0) rectangle (3.05,\csource);
+  \path[fill=figorange, draw=black, line width=0.5pt] (3.10,0) rectangle (3.50,\cris);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (4.55,0) rectangle (4.95,\dwcsource);
+  \path[fill=figorange, draw=black, line width=0.5pt] (5.00,0) rectangle (5.40,\dwcris);
+
+  \node[font=\scriptsize, above=1pt] at (0.95,\aspeedsource) {\MultiSourceAspeedVhubSourceMMIO};
+  \node[font=\scriptsize, above=1pt] at (1.40,\aspeedris) {\MultiSourceAspeedVhubRISMMIO};
+  \node[font=\scriptsize, above=1pt] at (2.85,\csource) {\MultiSourceCSixtySevenXZeroZeroSourceMMIO};
+  \node[font=\scriptsize, above=1pt] at (3.30,\cris) {\MultiSourceCSixtySevenXZeroZeroRISMMIO};
+  \node[font=\scriptsize, above=1pt] at (4.75,\dwcsource) {\MultiSourceDwcTwoSourceMMIO};
+  \node[font=\scriptsize, above=1pt] at (5.20,\dwcris) {\MultiSourceDwcTwoRISMMIO};
+
+  \node[below=3pt] at (1.175,0) {aspeed-vhub};
+  \node[below=3pt] at (3.075,0) {c67x00};
+  \node[below=3pt] at (4.975,0) {dwc2};
+
+  \draw[black, line width=0.4pt, fill=white] (0.55,2.62) rectangle (2.45,3.72);
+  \path[fill=figblue, draw=black, line width=0.5pt] (0.7,3.28) rectangle (0.95,3.54);
+  \node[right, font=\scriptsize] at (1.05,3.41) {Source MMIO};
+  \path[fill=figorange, draw=black, line width=0.5pt] (0.7,2.82) rectangle (0.95,3.08);
+  \node[right, font=\scriptsize] at (1.05,2.95) {RIS MMIO};
+\end{tikzpicture}%
+}
+\caption{Source MMIO primitives and propagated RIS MMIO operations for the
+three multi-source modules (log scale). Counts show recorded evidence after
+propagation; they are not precision/recall measurements and do not establish a
+complete hardware-access footprint.}
+\Description{Log-scale grouped bars compare source MMIO and propagated RIS
+MMIO counts for aspeed-vhub, c67x00, and dwc2.}
+\label{fig:multisource-mmio}
+\end{figure}
+
+All three multi-source generated artifacts compile for all three backends
+($\checkmark$/$\checkmark$/$\checkmark$), and each module original Kbuild
+Makefile builds successfully against the pinned kernel tree (indicated by
+$\checkmark^{\dagger}$ in the table). The latter is a build-integrity check on
+the original module and is not a semantic validation of the generated driver.
+
+\subsection{Runtime and End-to-End LLM Validation (RQ5)}
+
+Two QEMU experiments check concrete runtime behavior of deterministically
+generated drivers. Neither experiment invokes an LLM; both use the
+deterministic-emitter baseline (restored as an explicit in-tree mode,
+\texttt{REHARNESS\_GENERATION=rules}, so the reported numbers are regenerable).
+The QEMU suite currently attempts exactly these two experiments; no other
+corpus driver has a validated runtime manifest, so 2/2 reflects the attempted
+denominator rather than a corpus-wide pass rate.
+
+\textbf{QEMU edu (PCI).} The deterministic PCI backend generates a
+miscdevice providing positional reads and writes over the mapped BAR. The
+guest exerciser validates the device ID at offset 0x00, the complemented
+live-check value at 0x04, and the factorial result at 0x08. All value-level
+checks pass (\texttt{\EduQEMUOracle}).
+
+\textbf{QEMU gpio-ftgpio010 (platform).} The experiment registers a
+platform device, loads the instrumented deterministic module, and runs a
+GPIO chardev exerciser that triggers generic-chip direction, get-multiple,
+and set-multiple callbacks. Instrumentation emits exact runtime-function
+boundaries (\texttt{[rhfn]} events), and the oracle matches each selected
+  call segment once against the structured RIS evidence operations, preventing
+one global trace from being credited to multiple callbacks. The oracle
+passes (\texttt{\FTQEMUOracle}) with \FTQEMUModuleCoverage{} module coverage,
+\FTQEMUCallCoverage{} call coverage, \FTQEMUOpCoverage{} operation coverage,
+and \FTQEMURegisterCoverage{} register coverage.
+
+These experiments validate two complementary properties: concrete read/write
+\emph{values} on a modeled PCI device, and access-order and offset
+\emph{preservation} across a Linux platform-driver probe and exercised
+subsystem callbacks. Together they show agreement with two exercised protocol
+slices: concrete values on edu and per-callback access order on
+gpio-ftgpio010.
+
+\paragraph{End-to-end LLM translation: DesignWare APB SSI.}
+\label{sec:dw-apb-ssi}
+
+The Synopsys DesignWare APB SSI SPI controller exercises every component of
+\reharness{} simultaneously: the hybrid IR-enhanced extraction (its register
+accessors are \texttt{static inline} header functions invisible to the AST
+path alone), the functional-state operations (its transmit/receive paths
+move data between memory buffers and the data FIFO register), and the
+prompt-driven four-backend generation with LLM emission subject to the stated
+verification checks.
+
+\textbf{IR-enhanced extraction.} Header-defined accessors and interrupt-mask
+helpers hide the underlying MMIO from a source-file-only AST pass. Merging IR
+evidence by function and offset yields 28 modules and 244 evidenced operations
+covering control, interrupt, and FIFO registers.
+
+\textbf{Functional-state preservation.} The writer preserves the
+\texttt{VALUE}$\rightarrow$cursor \texttt{STATE}$\rightarrow$FIFO
+\texttt{W}$\rightarrow$length \texttt{STATE} order shown in
+Listing~\ref{lst:ris-example}; the reader preserves the symmetric register-to-
+buffer \texttt{OUT} path. Width-dependent buffer accesses remain distinct
+branches.
+
+\textbf{Four-backend generation.} All four backends---harness C, bare-metal C,
+Linux kernel module, and Rust \texttt{no\_std} with \texttt{tock-registers}---were
+generated by the LLM bridge from this single \rislang{} specification. checked artifacts are audited by a versioned, machine-checked 18-item
+artifact checklist (\texttt{qa/verification/dw\_apb\_ssi\_checklist.py})
+covering per-backend compilation, chip-select assertion in \texttt{set\_cs},
+interrupt mask/unmask sequences, transfer configuration, and the ordered tx/rx
+buffer data flow described above. The checklist result is reported honestly:
+the three C backends pass all control, configuration, register-order, and
+C data-flow items; the current versioned Linux artifact fails strict Kbuild
+compilation against the pinned kernel (an emitted struct member is missing),
+and the Rust artifact fails the strict-crate build and the six buffer
+data-flow items because its emission binds buffer reads to constants rather
+than dereferencing software buffers. This is an artifact-level case study
+rather than a repeated-sampling study or a held-out evaluation. The checklist
+is case-specific and does not establish whole-driver semantic equivalence. The
+artifacts, checklist script, and per-item results (including open failures)
+are versioned under \texttt{examples/dw-apb-ssi/} and
+\texttt{research/experiments/results/dw-apb-ssi-checklist.json}.
+
+Two observations from this case study shaped the framework design. First,
+IR evidence is a supplement, not a replacement: in this case the IR pass
+recovers header-inlined MMIO, but macro names, controlling predicates, and
+callback bindings exist only at the AST level. Second, register-level
+equivalence is insufficient for a data-moving driver. An earlier iteration
+that dropped the \texttt{STATE}/\texttt{VALUE}/\texttt{OUT} operations
+produced backends that touched the correct registers in the correct order
+yet could not transfer a byte, because buffer cursors never advanced. This
+experience directly motivated the functional-state layer in \rislang{}.

@@ -7,10 +7,10 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_COMMANDS = (
-    "extract", "spec", "gen", "driver", "facts", "bundle", "metrics",
-    "score", "reliability", "compare", "test", "e2e", "experiment",
-    "qemu",
-    "qemu-experiments", "log-event",
+    "extract", "spec", "gen", "facts", "bundle", "metrics",
+    "score", "reliability", "compare", "test",
+    "qemu", "langgraph", "auto-driver",
+    "v2", "log-event",
 )
 HELP_COMMAND_LINE = re.compile(
     r"^  ([a-z][a-z0-9-]*)(?:[ \t]|$)")

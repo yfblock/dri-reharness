@@ -1,0 +1,32 @@
+=== QEMU run: module=edu_drv bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031138] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031205] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.070947] ftrace: allocating 31573 entries in 124 pages
+[    0.071206] ftrace: allocated 124 pages with 5 groups
+[    0.404380] thermal_sys: Registered thermal governor 'step_wise'
+[    0.408857] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.410288] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.491237] pps_core: LinuxPPS API ver. 1 registered
+[    0.531314] Key type asymmetric registered
+[    0.531392] Asymmetric key parser 'x509' registered
+[    0.531804] io scheduler mq-deadline registered
+[    0.531863] io scheduler kyber registered
+[    0.577540] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod edu_drv ===
+[    0.981623] [rhfn] edu_pci_probe
+[    0.988656] insmod (55) used greatest stack depth: 13080 bytes left
+[    0.981623] [rhfn] edu_pci_probe
+[    0.988656] insmod (55) used greatest stack depth: 13080 bytes left
+TRACE id@0x00 = 0x010000ed OK
+TRACE live_check@0x04 write0xa5a5a5a5 read0x5a5a5a5a OK (~X)
+TRACE factorial@0x08(5)=120 OK
+EDU_TRACE_OK
+EXERCISER_RC=0
+=== rmmod edu_drv ===
+=== QEMU_RUN_DONE ===
+[    1.561735] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=10 real_oops=0
+  => 成功: edu_drv probe 成功

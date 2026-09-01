@@ -1,0 +1,86 @@
+% reharness - ASPLOS submission (v2)
+% Compile: pdflatex main && pdflatex main
+
+\documentclass[sigplan, screen, review, anonymous]{acmart}
+
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{cleveref}
+\usetikzlibrary{arrows.meta,arrows,shapes,positioning,fit,backgrounds,calc}
+\crefname{lstlisting}{listing}{listings}
+\Crefname{lstlisting}{Listing}{Listings}
+
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\definecolor{figblue}{HTML}{1D4ED8}
+\definecolor{figorange}{HTML}{F97316}
+\definecolor{figgray}{HTML}{64748B}
+\lstdefinelanguage{ris}{
+  morekeywords={driver,version,module,LOOP,DELAY,IF,ELSE,SEQ,RMW,R,W,VALUE,STATE,OUT,TXN_R,TXN_W,TXN_U},
+  sensitive=true,
+  morecomment=[l]{--},
+  morestring=[b]",
+}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framesep=4pt,
+  aboveskip=6pt,
+  belowskip=6pt,
+  breaklines=true,
+  breakatwhitespace=false,
+}
+
+\newcommand{\reharness}{\textsc{reharness}}
+\newcommand{\rislang}{RIS}
+\input{generated_results}
+
+\title{\reharness: Evidence-Driven Reconstruction of Device Drivers from C Source to Multi-Backend Targets}
+
+\author{Anonymous Author(s)}
+\affiliation{%
+  \institution{Anonymous Institution}
+  \city{Anonymous City}
+  \country{Anonymous Country}
+}
+\email{anonymous@example.com}
+
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10010520.10010553.10010562</concept_id>
+       <concept_desc>Computer systems organization~Embedded systems</concept_desc>
+       <concept_significance>500</concept_significance>
+   </concept>
+   <concept>
+       <concept_id>10003752.10003790.10011750</concept_id>
+       <concept_desc>Software and its engineering~Software development techniques</concept_desc>
+       <concept_significance>300</concept_significance>
+   </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computer systems organization~Embedded systems}
+\ccsdesc[300]{Software and its engineering~Software development techniques}
+
+\keywords{device drivers, evidence intermediate representation, program analysis, code generation, LLM-assisted synthesis, Rust}
+
+\acmConference[ASPLOS '27]{ACM International Conference on Architectural Support for Programming Languages and Operating Systems}{2027}{}
+% ISBN/DOI are intentionally omitted from the anonymous review source.
+
+\begin{abstract}
+Translating a Linux device driver to another environment is difficult because its source interleaves operating-system integration with the device core. Rule-based systems such as C2Rust preserve this complete source structure, leaving the result OS-bound and its register protocol implicit; unconstrained LLMs can emit idiomatic target code but may hallucinate register behavior and stale kernel APIs. We present \reharness, a hybrid LLM translation framework with a bounded deterministic evidence boundary. A static extractor analyzes the complete Linux driver and records recognized hardware-facing behavior in a structured Register Interaction Sequence (\rislang) contract: register identity, width, order, path predicates, typed bus transactions, and selected buffer/state data flow. Backend plugins translate this evidence---never raw C source---into harness C, bare-metal C, Linux kernel modules, and Rust \texttt{no\_std}; an LLM performs target-language emission, while deterministic compilation, receipt accounting, primitive-shape checks, and exercised-path trace comparison provide bounded acceptance and repair. In our DesignWare APB SSI case study, 1{,}844 Linux source lines yield 828-line Linux, 581-line bare-metal, and 276-line Rust targets. Evaluation over \EvalDrivers{} drivers and \MultiSourceDrivers{} multi-source modules separates deterministic baseline compilation from conservative artifact readiness. Two deterministic outputs pass QEMU value/trace oracles, reproduced with the restored rule-based emitters. The DesignWare artifact set is audited by a versioned, machine-checked 18-item checklist: the three C backends pass the control, configuration, and ordered tx/rx data-flow items, while per-backend strict compilation and the Rust buffer data-flow items are reported as open checklist failures rather than claimed as a full pass.
+\end{abstract}
+
+\begin{document}
+
+\maketitle
+
+\input{sections_1_2}
+\input{sections_3_5}
+\input{sections_6_8}
+\input{sections_9_11}
+
+\end{document}

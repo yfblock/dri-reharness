@@ -1,0 +1,43 @@
+{
+  "evidence_digest": "72a64b1bfd1c1d4733d99144b5b002b8a1967297de265b339093b74eb6c90877",
+  "iteration": 3,
+  "manifest_digest": "8430c3990f0e0fa0783b3e606d513fffcbf6ddb4ab17d00056022d00ecb9ccba",
+  "payload": {
+    "feedback": {
+      "details": {
+        "complete": false,
+        "digest_mismatch": [],
+        "duplicate": [],
+        "duplicate_expected_ids": [],
+        "duplicate_transaction_markers": [],
+        "kind_mismatch": [
+          "op_12",
+          "op_2",
+          "op_3",
+          "op_6",
+          "op_9"
+        ],
+        "missing": [],
+        "missing_transaction_markers": [],
+        "receipts": 5,
+        "rejected": [],
+        "required_ops": 5,
+        "required_transactions": 0,
+        "schema": 1,
+        "transaction_accounting_complete": true,
+        "transaction_marker_mismatch": [],
+        "transaction_markers": 0,
+        "unknown": [],
+        "unknown_transaction_markers": [],
+        "unsupported_transactions": []
+      },
+      "failure_class": "contract",
+      "iteration": 3,
+      "message": "candidate does not satisfy generation contract",
+      "retryable": true,
+      "stage": "contract"
+    }
+  },
+  "stage": "contract",
+  "status": "failed"
+}

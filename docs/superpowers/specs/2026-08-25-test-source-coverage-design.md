@@ -27,9 +27,12 @@ manifest.test.subsystem.tests
 
 Each declared test is matched by its stable `name`. The report records its
 declared `kind`, `provider`, and `required` flag together with observed status
-and return code. A required test is accepted only when the guest reports
-`status=pass`, `success=true`, and `return_code=0`. Missing, malformed, or
-unexpected evidence is never silently treated as success.
+and return code. When the guest emits these metadata fields, they must match
+the manifest; a declared provider must be present and equal, while an empty
+declared provider may be omitted by the guest protocol. A required test is
+accepted only when the guest reports `status=pass`, `success=true`, and
+`return_code=0`. Missing, malformed, unexpected, or metadata-mismatched
+evidence is never silently treated as success.
 
 ## Report Contract
 
@@ -56,10 +59,13 @@ The report is JSON-compatible:
 ```
 
 Report status is `failed` when a required test explicitly fails; it is
-`inconclusive` when required evidence is missing, malformed, skipped, or
-unexpected. Optional failures are retained in `optional_failures` but do not
-block acceptance. Duplicate declared or observed names are reported as
-inconclusive evidence rather than being arbitrarily merged.
+`inconclusive` when required evidence is missing, malformed, skipped,
+unexpected, or metadata-mismatched. Optional failures are retained in
+`optional_failures` but do not block acceptance. Metadata mismatches are always
+retained in `metadata_mismatches`, and a mismatch on an optional test also
+prevents acceptance because the observed source identity is not trustworthy.
+Duplicate declared or observed names are reported as inconclusive evidence
+rather than being arbitrarily merged.
 
 ## Capability Integration
 

@@ -1,0 +1,87 @@
+=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    1.284852] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.284904] [rh] R 0x8 0x0
+[    1.284921] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.284972] [rh] R 0x8 0x0
+[    1.284996] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285048] [rh] R 0x8 0x0
+[    1.285064] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285116] [rh] R 0x8 0x0
+[    1.285133] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285184] [rh] R 0x8 0x0
+[    1.285201] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285253] [rh] R 0x8 0x0
+[    1.285270] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285321] [rh] R 0x8 0x0
+[    1.285338] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285389] [rh] R 0x8 0x0
+[    1.285406] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285458] [rh] R 0x8 0x0
+[    1.285475] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285526] [rh] R 0x8 0x0
+[    1.285543] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285610] [rh] R 0x8 0x0
+[    1.285627] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285678] [rh] R 0x8 0x0
+[    1.285695] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285745] [rh] R 0x8 0x0
+[    1.285762] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285815] [rh] R 0x8 0x0
+[    1.285832] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285885] [rh] R 0x8 0x0
+[    1.285902] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.285952] [rh] R 0x8 0x0
+[    1.285969] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.286020] [rh] R 0x8 0x0
+[    1.286036] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.286087] [rh] R 0x8 0x0
+[    1.286104] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.286155] [rh] R 0x8 0x0
+[    1.286172] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.286223] [rh] R 0x8 0x0
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    0.031182] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031247] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.401662] thermal_sys: Registered thermal governor 'step_wise'
+[    0.407378] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.483913] pps_core: LinuxPPS API ver. 1 registered
+[    0.522745] Key type asymmetric registered
+[    0.522830] Asymmetric key parser 'x509' registered
+[    0.523248] io scheduler mq-deadline registered
+[    0.523311] io scheduler kyber registered
+[    0.565592] rtc_cmos PNP0B00:00: registered as rtc0
+[    1.626830] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.626941] [rh] R 0x8 0x0
+[    1.627216] [rh] R 0x44 0x0
+[    1.627249] [rh] R 0x40 0x0
+[    1.627270] [rh] W 0x44 0x116
+[    1.627299] [rh] W 0x40 0x1
+[    1.627424] [rh] R 0x44 0x0
+[    1.627442] [rh] R 0x40 0x0
+[    1.627460] [rh] W 0x44 0x8
+[    1.627478] [rh] W 0x40 0x1
+[    1.627549] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_output
+[    1.627613] [rh] W 0x14 0x1
+[    1.627641] [rh] W 0x8 0x1
+[    1.628131] [rhfn] ftgpio_gpio_probe__gpio_generic_get_multiple
+[    1.628203] [rh] R 0x4 0x0
+[    1.628620] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
+[    1.628715] [rh] W 0x10 0x1
+[    1.628848] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
+[    1.628910] [rh] W 0x14 0x1
+[    1.629076] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.629145] [rh] W 0x8 0x0
+GPIO_TRACE_DONE
+REHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+=== rmmod ftgpio010_gpio ===
+=== QEMU_RUN_DONE ===
+[    1.874650] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+  done=1 probe=16 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0
+  => 成功: ftgpio010_gpio probe 成功

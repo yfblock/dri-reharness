@@ -1,0 +1,1 @@
+{'ris_quality': 0.92, 'function_spec_quality': 1.0, 'device_spec_quality': 0.688, 'facts_quality': 0.7, 'backend_harness_ready': False, 'backend_bare_metal_ready': False, 'backend_linux_ready': False, 'llm_synthesis_ready': True, 'blockers': ['generated backend compile/lowering/attestation results unavailable']}

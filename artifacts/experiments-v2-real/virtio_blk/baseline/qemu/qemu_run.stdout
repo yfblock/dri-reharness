@@ -1,0 +1,59 @@
+=== QEMU run: module=virtio_blk bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031075] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031140] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.074653] ftrace: allocating 38351 entries in 152 pages
+[    0.074940] ftrace: allocated 152 pages with 3 groups
+[    0.419334] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.423771] thermal_sys: Registered thermal governor 'step_wise'
+[    0.428446] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.430083] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.505117] ACPI: bus type USB registered
+[    0.505419] usbcore: registered new interface driver usbfs
+[    0.505620] usbcore: registered new interface driver hub
+[    0.505729] usbcore: registered new device driver usb
+[    0.505908] pps_core: LinuxPPS API ver. 1 registered
+[    0.506041] PTP clock support registered
+[    0.543259] NET: Registered PF_INET protocol family
+[    0.560965] Key type asymmetric registered
+[    0.561077] Asymmetric key parser 'x509' registered
+[    0.561586] io scheduler mq-deadline registered
+[    0.561647] io scheduler kyber registered
+[    0.611018] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.616403] usbcore: registered new interface driver usbhid
+[    0.617104] NET: Registered PF_INET6 protocol family
+=== insmod virtio_blk ===
+[    1.032920] [rhcov] virtblk_probe
+[    1.046576] insmod (61) used greatest stack depth: 12184 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+[    0.031075] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031140] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.419334] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.423771] thermal_sys: Registered thermal governor 'step_wise'
+[    0.428446] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.430083] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.505117] ACPI: bus type USB registered
+[    0.505419] usbcore: registered new interface driver usbfs
+[    0.505620] usbcore: registered new interface driver hub
+[    0.505729] usbcore: registered new device driver usb
+[    0.505908] pps_core: LinuxPPS API ver. 1 registered
+[    0.506041] PTP clock support registered
+[    0.543259] NET: Registered PF_INET protocol family
+[    0.560965] Key type asymmetric registered
+[    0.561077] Asymmetric key parser 'x509' registered
+[    0.561586] io scheduler mq-deadline registered
+[    0.561647] io scheduler kyber registered
+[    0.611018] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.616403] usbcore: registered new interface driver usbhid
+[    0.617104] NET: Registered PF_INET6 protocol family
+[    1.032920] [rhcov] virtblk_probe
+EXERCISER_RC=0
+=== rmmod virtio_blk ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.330592] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=30 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: virtio_blk probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-virtio_blk-qemu.Az7N6h

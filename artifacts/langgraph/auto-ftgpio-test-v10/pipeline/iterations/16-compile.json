@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "689cc377c0b2f3567ff8711d6e68375b7d948c169db7b9033f056305f590c432",
+  "iteration": 4,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "result": {
+      "headers": [],
+      "kbuild_cmd": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v10/pipeline/candidate/.ftgpio010_gpio.o.cmd",
+      "module": "ftgpio010_gpio",
+      "path": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v10/pipeline/candidate/ftgpio010_gpio.ko",
+      "safety_receipt": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v10/pipeline/candidate/ftgpio010_gpio.c.safety.json",
+      "source": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v10/pipeline/candidate/ftgpio010_gpio.c",
+      "sources": [
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v10/pipeline/candidate/ftgpio010_gpio.c"
+      ]
+    }
+  },
+  "stage": "compile",
+  "status": "passed"
+}

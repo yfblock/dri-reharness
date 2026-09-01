@@ -1,0 +1,8 @@
+make: Entering directory '/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build'
+make[1]: Entering directory '/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2/edu/build/edu_drv'
+  CC [M]  edu_drv.o
+  MODPOST Module.symvers
+  LD [M]  edu_drv.ko
+make[1]: Leaving directory '/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2/edu/build/edu_drv'
+make: Leaving directory '/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build'
+

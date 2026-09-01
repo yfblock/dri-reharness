@@ -1,0 +1,207 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "gpio_ftgpio010",
+  "runtime": {
+    "adapter": "qemu-platform",
+    "qemu": {
+      "bus": "platform",
+      "device": "ftgpio010-gpio",
+      "machine": "pc",
+      "module": "ftgpio010_gpio",
+      "probe_pattern": "probed|registered|gpiochip",
+      "registrar": "ftgpio010-gpio",
+      "timeout_seconds": 90
+    },
+    "safety_policy": {
+      "action": "allow",
+      "failure_class": "safety",
+      "forbidden_tokens": []
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+    "sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
+  },
+  "test": {
+    "actions": [
+      {
+        "name": "get_direction"
+      },
+      {
+        "name": "direction_input"
+      },
+      {
+        "name": "direction_output"
+      },
+      {
+        "name": "get_value"
+      },
+      {
+        "name": "set_value"
+      }
+    ],
+    "args": [
+      "/dev/gpiochip0"
+    ],
+    "coverage": {
+      "callbacks": [
+        "gpio_chip.get",
+        "gpio_chip.get_multiple",
+        "gpio_chip.set",
+        "gpio_chip.set_multiple",
+        "gpio_chip.direction_input",
+        "gpio_chip.direction_output",
+        "gpio_chip.get_direction",
+        "gpio_chip.set_config",
+        "irq_chip.irq_ack",
+        "irq_chip.irq_mask",
+        "irq_chip.irq_unmask",
+        "irq_chip.irq_set_type",
+        "gpio_irq_chip.parent_handler"
+      ],
+      "required": [
+        "chip_info",
+        "line_info",
+        "v2_single_line",
+        "v2_multi_line",
+        "v2_values",
+        "v1_single_line",
+        "config_flags",
+        "config_debounce",
+        "error_paths",
+        "line_event",
+        "lifecycle"
+      ]
+    },
+    "executable": "qa/native-tests/gpio_trace_test",
+    "subsystem": {
+      "name": "gpio",
+      "tests": [
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_chip_info_test.c",
+          "name": "gpio-chip-info",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-chip-info"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_line_info_test.c",
+          "name": "gpio-line-info",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-line-info"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_v2_basic_test.c",
+          "name": "gpio-v2-basic",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-v2-basic"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_v2_multi_line_test.c",
+          "name": "gpio-v2-multi-line",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-v2-multi-line"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_v1_compat_test.c",
+          "name": "gpio-v1-compat",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-v1-compat"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_config_test.c",
+          "name": "gpio-config",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-config"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_error_test.c",
+          "name": "gpio-errors",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-errors"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0",
+            "/dev/reharness-gpio-control"
+          ],
+          "executable": "qa/native-tests/gpio_event_test.c",
+          "name": "gpio-events",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-events"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0"
+          ],
+          "executable": "qa/native-tests/gpio_lifecycle_test.c",
+          "name": "gpio-lifecycle",
+          "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-lifecycle"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0",
+            "num-lines"
+          ],
+          "executable": "vendor/linux/tools/testing/selftests/gpio/gpio-chip-info.c",
+          "name": "linux-gpio-chip-info"
+        },
+        {
+          "args": [
+            "/dev/gpiochip0",
+            "0"
+          ],
+          "executable": "vendor/linux/tools/testing/selftests/gpio/gpio-line-name.c",
+          "name": "linux-gpio-line-name"
+        }
+      ]
+    },
+    "success_pattern": "GPIO_TRACE_DONE"
+  },
+  "trace": {
+    "exercised_calls": [
+      "ftgpio_gpio_probe=ftgpio_gpio_probe",
+      "ftgpio_gpio_probe__gpio_generic_get_direction",
+      "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "ftgpio_gpio_probe__gpio_generic_get_multiple",
+      "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "ftgpio_gpio_probe__gpio_generic_direction_input"
+    ],
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence",
+      "source_op_id"
+    ],
+    "instrument": true,
+    "normalize_function": true,
+    "value_mask": "0xffffffff"
+  }
+}

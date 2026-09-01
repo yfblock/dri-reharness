@@ -1,0 +1,314 @@
+{
+  "class": "generic_mmio",
+  "functions": [
+    {
+      "binds": [
+        {
+          "from_expr": "priv",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "priv->mmio",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": null,
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "IO_IRQ_ACK"
+          },
+          "kind": "reg",
+          "text": "writes_register(IO_IRQ_ACK)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "handles_interrupt()"
+        }
+      ],
+      "ensures": [
+        "interrupt_serviced"
+      ],
+      "is_callback_entry": false,
+      "name": "edu_irq_handler",
+      "requires": [],
+      "ris_ref": "edu_irq_handler",
+      "role": "interrupt_handler",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "irq",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "data",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "edu.c:66"
+    },
+    {
+      "binds": [],
+      "callback_table": "file_operations.open",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "edu_open",
+      "requires": [],
+      "ris_ref": "edu_open",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "inode",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "filp",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "edu.c:81"
+    },
+    {
+      "binds": [],
+      "callback_table": "file_operations.read",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "edu_read",
+      "requires": [],
+      "ris_ref": "edu_read",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "filp",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "buf",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "len",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "off",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "edu.c:90"
+    },
+    {
+      "binds": [],
+      "callback_table": "file_operations.write",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "edu_write",
+      "requires": [],
+      "ris_ref": "edu_write",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "filp",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "buf",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "len",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "off",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "edu.c:108"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "priv",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "priv->mmio",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "pci_driver.probe",
+      "context": "boot",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "edu_pci_probe",
+      "requires": [
+        "resources_available"
+      ],
+      "ris_ref": "edu_pci_probe",
+      "role": "probe",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "id",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "edu.c:135"
+    }
+  ],
+  "invariants": [
+    "forall line: UInt. line < num_irqs -> valid_interrupt_line(line)"
+  ],
+  "name": "edu",
+  "registers": [
+    {
+      "base": "base",
+      "name": "IO_ID",
+      "offset": 0,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "IO_IRQ_STATUS",
+      "offset": 36,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "IO_IRQ_ACK",
+      "offset": 100,
+      "width": "B4"
+    }
+  ],
+  "resources": [
+    {
+      "bind": "base",
+      "name": "mmio0",
+      "required": true,
+      "type": "MmioResource"
+    },
+    {
+      "bind": null,
+      "name": "irq0",
+      "required": true,
+      "type": "IrqResource"
+    }
+  ],
+  "schema": 1,
+  "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c",
+  "state": [
+    {
+      "bind": null,
+      "name": "base",
+      "type": "MmioBase"
+    },
+    {
+      "bind": null,
+      "name": "num_irqs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "filp->private_data",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "priv->pdev",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "priv->irq",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "priv->mdev.minor",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "priv->mdev.name",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "priv->mdev.fops",
+      "type": "UInt"
+    }
+  ]
+}

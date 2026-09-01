@@ -6,6 +6,7 @@ themselves target functions with MMIO ops (depth-limited, recursion-safe).
 """
 from __future__ import annotations
 import copy
+import re
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from .ast_model import (
@@ -91,16 +92,34 @@ def _formal_calls(funcs: list[Func], indirect_targets: dict[str, str]) -> list[d
             order += 1
             location = call.cursor.location
             arguments = []
+            parameter_cursors = []
+            if callee.cursor is not None:
+                parameter_cursors = [
+                    child for child in callee.cursor.get_children()
+                    if child.kind.name == "PARM_DECL"]
             for index, expression in enumerate(call.arg_text):
                 parameter = callee.params[index] if index < len(callee.params) \
                     else (None, None)
+                parameter_cursor = (
+                    parameter_cursors[index]
+                    if index < len(parameter_cursors) else None)
+                parameter_canonical_type = (
+                    parameter_cursor.type.get_canonical().spelling
+                    if parameter_cursor is not None and parameter_cursor.type
+                    else parameter[1])
+                argument_canonical_type = (
+                    call.args[index].type.get_canonical().spelling
+                    if index < len(call.args) and call.args[index].type
+                    else "")
                 arguments.append({
                     "index": index,
                     "expression": expression.strip(),
                     "parameter": parameter[0],
                     "parameter_type": parameter[1],
+                    "parameter_canonical_type": parameter_canonical_type,
                     "argument_type": (
                         call.args[index].type.get_canonical().spelling),
+                    "argument_canonical_type": argument_canonical_type,
                 })
             direct_symbol = _callee_id(call)
             rows.append({
@@ -183,35 +202,10 @@ def _eligible_call_edges(calls: list[dict]) -> set[tuple[str, str]]:
         if isinstance(caller, str) and isinstance(callee, str):
             grouped[(caller, callee)].append(call)
 
-    def row_valid(call: dict) -> bool:
-        if call.get("resolution_authority") not in {
-                "direct_function_declaration", "static_indirect_target"}:
-            return False
-        if (call.get("return_binding") or {}).get("status") != "exact":
-            return False
-        multiplicity = call.get("multiplicity") or {}
-        if (multiplicity.get("kind") != "syntactic_callsite"
-                or multiplicity.get("per_caller_invocation") != 1):
-            return False
-        if any((frame or {}).get("kind") == "loop"
-               for frame in call.get("control") or []):
-            return False
-        arguments = call.get("argument_mapping")
-        if not isinstance(arguments, list):
-            return False
-        return all(
-            isinstance(argument, dict)
-            and isinstance(argument.get("parameter"), str)
-            and bool(argument.get("parameter"))
-            and isinstance(argument.get("parameter_type"), str)
-            and bool(argument.get("parameter_type"))
-            and isinstance(argument.get("argument_type"), str)
-            and bool(argument.get("argument_type"))
-            for argument in arguments)
-
     candidates = {
         edge for edge, rows in grouped.items()
-        if edge[0] != edge[1] and rows and all(row_valid(row) for row in rows)
+        if edge[0] != edge[1] and rows
+        and all(_call_row_is_proven(row) for row in rows)
     }
     adjacency: dict[str, set[str]] = defaultdict(set)
     for caller, callee in candidates:
@@ -233,6 +227,287 @@ def _eligible_call_edges(calls: list[dict]) -> set[tuple[str, str]]:
     return {
         edge for edge in candidates
         if not reaches(edge[1], edge[0])
+    }
+
+
+def _type_is_scalar(type_name: str) -> bool:
+    """Recognize C scalar types for which the call conversion is defined."""
+    normalized = " ".join(type_name.replace("*", " ").split())
+    return bool(re.fullmatch(
+        r"(?:(?:const|volatile|restrict|signed|unsigned|short|long|long long|\s)*)"
+        r"(?:void|_Bool|char|short|int|long|long long|float|double|long double|"
+        r"u(?:8|16|32|64)|s(?:8|16|32|64)|__u(?:8|16|32|64)|"
+        r"__le(?:16|32|64)|__be(?:16|32|64)|size_t)",
+        normalized))
+
+
+def _types_compatible(parameter_type: str, argument_type: str) -> bool:
+    """Return whether Clang's argument-to-parameter conversion is provable.
+
+    Canonical Clang types are equal for the common case.  C also defines the
+    conversion between arithmetic scalar types and between ``void *`` and an
+    object pointer; accepting only those standard conversions keeps argument
+    substitution precise without pretending that unrelated pointer types or
+    opaque aggregates are interchangeable.
+    """
+    parameter = " ".join(parameter_type.split())
+    argument = " ".join(argument_type.split())
+    if parameter == argument:
+        return True
+    parameter_pointer = "*" in parameter
+    argument_pointer = "*" in argument
+    if parameter_pointer and argument_pointer:
+        parameter_base = parameter.replace("*", " ").split()
+        argument_base = argument.replace("*", " ").split()
+        return "void" in parameter_base or "void" in argument_base
+    return (not parameter_pointer and not argument_pointer
+            and _type_is_scalar(parameter)
+            and _type_is_scalar(argument))
+
+
+_LOOP_INIT_RE = re.compile(
+    r"^\s*([A-Za-z_]\w*)\s*=\s*(-?(?:0[xX][0-9a-fA-F]+|\d+))\s*$")
+_LOOP_GUARD_RE = re.compile(
+    r"^\s*([A-Za-z_]\w*)\s*(<|<=)\s*(-?(?:0[xX][0-9a-fA-F]+|\d+))\s*$")
+_LOOP_STEP_RE = re.compile(
+    r"^\s*([A-Za-z_]\w*)\s*(\+\+|\+=\s*1)\s*$")
+
+
+def _literal_int(text: str) -> int | None:
+    try:
+        return int(text, 0)
+    except (TypeError, ValueError):
+        return None
+
+
+def _loop_executes_exactly_once(frame: dict) -> bool:
+    """Prove the narrow static loop shape that has one invocation."""
+    if frame.get("kind") != "loop" or frame.get("loop_kind") != "for":
+        return False
+    init = _LOOP_INIT_RE.fullmatch(frame.get("init", ""))
+    guard = _LOOP_GUARD_RE.fullmatch(frame.get("guard", ""))
+    step = _LOOP_STEP_RE.fullmatch(frame.get("step", ""))
+    if not init or not guard or not step:
+        return False
+    variable, start_text = init.groups()
+    guard_variable, relation, bound_text = guard.groups()
+    step_variable, _step = step.groups()
+    if variable != guard_variable or variable != step_variable:
+        return False
+    start = _literal_int(start_text)
+    bound = _literal_int(bound_text)
+    if start is None or bound is None:
+        return False
+    count = bound - start + (1 if relation == "<=" else 0)
+    return count == 1
+
+
+def _call_row_is_proven(call: dict, *, allow_structured_loops: bool = False) -> bool:
+    """Check one AST call row before it participates in a proof.
+
+    Frontier propagation needs a runtime-exact call count, so it keeps the
+    default strict loop rule.  Call-context ownership is a separate proof:
+    an operation inside a preserved structured loop has one static callsite
+    even when its runtime iteration count is data-dependent.
+    """
+    if call.get("resolution_authority") not in {
+            "direct_function_declaration", "static_indirect_target"}:
+        return False
+    if (call.get("return_binding") or {}).get("status") != "exact":
+        return False
+    multiplicity = call.get("multiplicity") or {}
+    if (multiplicity.get("kind") != "syntactic_callsite"
+            or multiplicity.get("per_caller_invocation") != 1):
+        return False
+    if any((frame or {}).get("kind") == "loop"
+           and not allow_structured_loops
+           and not _loop_executes_exactly_once(frame)
+           for frame in call.get("control") or []):
+        return False
+    arguments = call.get("argument_mapping")
+    if not isinstance(arguments, list):
+        return False
+    for argument in arguments:
+        if not isinstance(argument, dict):
+            return False
+        if not all(isinstance(argument.get(key), str)
+                   and bool(argument.get(key))
+                   for key in ("parameter", "parameter_type", "argument_type")):
+            return False
+        parameter_type = (argument.get("parameter_canonical_type")
+                          or argument["parameter_type"])
+        argument_type = (argument.get("argument_canonical_type")
+                         or argument["argument_type"])
+        if not _types_compatible(parameter_type, argument_type):
+            return False
+    return True
+
+
+def _definition_site(op) -> tuple[str, str] | None:
+    """Return the primitive definition site through wrapper summaries."""
+    evidence = op.evidence or {}
+    while isinstance(evidence.get("wrapper_definition"), dict):
+        evidence = evidence["wrapper_definition"]
+    owner = evidence.get("symbol")
+    site_id = evidence.get("site_id")
+    if not isinstance(owner, str) or not owner:
+        return None
+    if not isinstance(site_id, str) or not site_id:
+        return None
+    return owner, site_id
+
+
+def _register_ops(extraction: FuncExtraction | None) -> list:
+    if extraction is None:
+        return []
+    return [op for op in extraction.ops if op.kind in {
+        "Read", "Write", "ReadModifyWrite", "TransactionRead",
+        "TransactionWrite", "TransactionUpdate",
+    }]
+
+
+def _prove_inlined_call_context(
+        direct: dict[str, FuncExtraction], expanded: dict[str, FuncExtraction],
+        candidates: set[str], formal_calls: list[dict]) -> dict:
+    """Prove that every inlined source site has exactly its static contexts.
+
+    A source-site set is not enough: a bounded expansion can cover a site via
+    one shallow call while silently dropping another path to the same helper.
+    This proof counts static call paths in the AST call graph and compares
+    them with occurrences in the emitted (non-inlined) modules. Structured
+    loop frames remain attached to those occurrences; their runtime bounds
+    are validated by the separate control-flow gate.
+    """
+    candidates = set(candidates)
+    if not candidates:
+        return {"proven": True, "reason": "no_inlined_candidates"}
+
+    grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for row in formal_calls:
+        caller = row.get("caller_usr")
+        callee = row.get("callee_usr")
+        if isinstance(caller, str) and isinstance(callee, str):
+            grouped[(caller, callee)].append(row)
+    # This proof checks source-site ownership after structured control frames
+    # have been retained in the expanded Formal RIS.  It does not need a
+    # runtime loop bound; that stricter requirement belongs to frontier
+    # propagation in _eligible_call_edges().
+    grouped_edges = {
+        edge for edge, rows in grouped.items()
+        if edge[0] != edge[1] and rows
+        and all(_call_row_is_proven(row, allow_structured_loops=True)
+                for row in rows)
+    }
+    adjacency: dict[str, set[str]] = defaultdict(set)
+    for caller, callee in grouped_edges:
+        adjacency[caller].add(callee)
+
+    def reaches(start: str, target: str) -> bool:
+        pending = [start]
+        seen = set()
+        while pending:
+            node = pending.pop()
+            if node == target:
+                return True
+            if node in seen:
+                continue
+            seen.add(node)
+            pending.extend(adjacency.get(node, ()))
+        return False
+
+    eligible_edges = {
+        edge for edge in grouped_edges
+        if not reaches(edge[1], edge[0])
+    }
+
+    direct_sites: dict[str, set[tuple[str, str]]] = {
+        symbol: _evidence_sites(extraction, owner_filter=symbol)[0]
+        for symbol, extraction in direct.items() if symbol in candidates}
+    site_owners = {
+        symbol for symbol, sites in direct_sites.items() if sites}
+    if not site_owners:
+        return {"proven": False, "reason": "no_direct_site_owner"}
+
+    # Only calls on a path to a candidate's own source site are part of this
+    # proof.  Candidates also contain helpers used for non-register effects;
+    # their unrelated framework/lock calls must not poison MMIO call closure.
+    relevant_nodes = set(site_owners)
+    changed = True
+    while changed:
+        changed = False
+        for caller, callee in grouped:
+            if callee in relevant_nodes and caller not in relevant_nodes:
+                relevant_nodes.add(caller)
+                changed = True
+
+    # Any call touching an inlined candidate must be independently proven.
+    # Otherwise a valid shallow path could hide an unresolved or looped path.
+    invalid_edges = sorted(
+        edge for edge, rows in grouped.items()
+        if (edge[1] in relevant_nodes
+            or (edge[0] in relevant_nodes and edge[1] in relevant_nodes))
+        and edge not in eligible_edges)
+    if invalid_edges:
+        return {
+            "proven": False, "reason": "unproven_call_edge",
+            "invalid_edges": [list(edge) for edge in invalid_edges],
+        }
+
+    outgoing: dict[str, list[str]] = defaultdict(list)
+    for caller, callee in eligible_edges:
+        for _ in grouped[(caller, callee)]:
+            outgoing[caller].append(callee)
+
+    roots = {
+        symbol for symbol, extraction in expanded.items()
+        if symbol not in candidates and _register_ops(extraction)
+    }
+    if not roots:
+        return {"proven": False, "reason": "no_emitted_root"}
+
+    def path_count(start: str, target: str, seen: frozenset[str]) -> int | None:
+        if start == target:
+            return 1
+        if start in seen:
+            return None
+        total = 0
+        for child in outgoing.get(start, []):
+            nested = path_count(child, target, seen | {start})
+            if nested is None:
+                return None
+            total += nested
+        return total
+
+    actual: Counter = Counter()
+    for root in roots:
+        for op in _register_ops(expanded.get(root)):
+            site = _definition_site(op)
+            if site is not None and site[0] in candidates:
+                actual[site] += 1
+
+    mismatches = []
+    for symbol in sorted(candidates):
+        for site in sorted(direct_sites.get(symbol, set())):
+            expected = sum(
+                path_count(root, symbol, frozenset()) or 0
+                for root in roots)
+            observed = actual[site]
+            if expected != observed:
+                mismatches.append({
+                    "symbol": symbol, "site_id": site[1],
+                    "expected_contexts": expected,
+                    "observed_contexts": observed,
+                })
+    if mismatches:
+        return {
+            "proven": False, "reason": "call_path_occurrence_mismatch",
+            "mismatches": mismatches,
+            "roots": sorted(roots),
+        }
+    return {
+        "proven": True, "reason": "exact_static_call_contexts",
+        "eligible_edges": len(eligible_edges),
+        "roots": sorted(roots),
     }
 
 
@@ -473,8 +748,15 @@ def _evidence_sites(
                 "Read", "Write", "ReadModifyWrite", "TransactionRead",
                 "TransactionWrite", "TransactionUpdate"}:
             continue
-        site_id = (op.evidence or {}).get("site_id")
-        owner = (op.evidence or {}).get("symbol")
+        evidence = op.evidence or {}
+        # A summarized wrapper operation has callsite evidence at the current
+        # caller and definition evidence for the actual primitive access. For
+        # coverage/deduplication, only the latter identifies the hardware site;
+        # otherwise every wrapper layer appears to be a distinct register op.
+        while isinstance(evidence.get("wrapper_definition"), dict):
+            evidence = evidence["wrapper_definition"]
+        site_id = evidence.get("site_id")
+        owner = evidence.get("symbol")
         # Missing identity can never be proven covered by another module.
         # Count it before applying the owner filter; otherwise an empty
         # evidence object is silently skipped as if it belonged elsewhere.
@@ -655,8 +937,99 @@ def call_graph(funcs: list[Func]) -> dict[str, set[str]]:
     return g
 
 
+def _adaptive_inline_depth(
+        edges: set[tuple[str, str]], symbols: set[str]) -> int:
+    """Return the longest finite call path after collapsing recursive SCCs.
+
+    Inline expansion is an implementation detail; its default bound should
+    follow the input call graph rather than a driver-specific constant.  SCCs
+    are collapsed first so recursive helpers remain bounded and continue to
+    fail closed in the call-context proof.
+    """
+    nodes = set(symbols)
+    forward: dict[str, set[str]] = {node: set() for node in nodes}
+    reverse: dict[str, set[str]] = {node: set() for node in nodes}
+    for caller, callee in edges:
+        if caller not in nodes or callee not in nodes:
+            continue
+        forward[caller].add(callee)
+        reverse[callee].add(caller)
+
+    # Iterative Kosaraju avoids making Python recursion depth part of the
+    # extractor's behavior for large Linux translation units.
+    order: list[str] = []
+    visited: set[str] = set()
+    for start in sorted(nodes):
+        if start in visited:
+            continue
+        visited.add(start)
+        stack: list[tuple[str, bool]] = [(start, False)]
+        while stack:
+            node, exiting = stack.pop()
+            if exiting:
+                order.append(node)
+                continue
+            stack.append((node, True))
+            for child in sorted(forward[node], reverse=True):
+                if child not in visited:
+                    visited.add(child)
+                    stack.append((child, False))
+
+    components: list[set[str]] = []
+    assigned: set[str] = set()
+    for start in reversed(order):
+        if start in assigned:
+            continue
+        component: set[str] = set()
+        stack = [start]
+        assigned.add(start)
+        while stack:
+            node = stack.pop()
+            component.add(node)
+            for parent in sorted(reverse[node], reverse=True):
+                if parent not in assigned:
+                    assigned.add(parent)
+                    stack.append(parent)
+        components.append(component)
+
+    component_of = {
+        node: index
+        for index, component in enumerate(components)
+        for node in component
+    }
+    condensed: dict[int, set[int]] = {
+        index: set() for index in range(len(components))}
+    for caller, callees in forward.items():
+        source = component_of[caller]
+        for callee in callees:
+            target = component_of[callee]
+            if source != target:
+                condensed[source].add(target)
+
+    indegree = {index: 0 for index in condensed}
+    for targets in condensed.values():
+        for target in targets:
+            indegree[target] += 1
+    ready = sorted(index for index, degree in indegree.items() if degree == 0)
+    topological: list[int] = []
+    while ready:
+        current = ready.pop(0)
+        topological.append(current)
+        for target in sorted(condensed[current]):
+            indegree[target] -= 1
+            if indegree[target] == 0:
+                ready.append(target)
+                ready.sort()
+
+    distances = {index: 0 for index in condensed}
+    for source in topological:
+        for target in condensed[source]:
+            distances[target] = max(distances[target], distances[source] + 1)
+    return max(distances.values(), default=0)
+
+
 def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
-                          mmio_globals=None, max_depth: int = 3,
+                          mmio_globals=None, max_depth: int | None = None,
                           mmio_alias_facts=None,
                           include_framework: bool = False,
                           extra_blacklist: set[str] | None = None
@@ -672,6 +1045,11 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
     indirect_targets = infer_indirect_targets(
         "\n".join(source_lines), {func.name for func in funcs})
     symbols = {_func_id(f) for f in funcs}
+    if max_depth is None:
+        max_depth = _adaptive_inline_depth(
+            {(caller, callee)
+             for caller, callees in call_graph(funcs).items()
+             for callee in callees}, symbols)
     # Compute entry-point identity before direct extraction so wrapper
     # summaries cannot accidentally inline registered callbacks.
     callback_entries = callback_entry_symbols(tu, symbols)
@@ -725,7 +1103,7 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
     }
 
 
-def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
+def extract_multi_with_inlining(units: list[dict], max_depth: int | None = None,
                                 include_framework: bool = False,
                                 extra_blacklist: set[str] | None = None
                                 ) -> tuple[dict, set, set, dict]:
@@ -786,6 +1164,9 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
             elif cs.name in names:
                 unresolved_internal.add((caller, cs.name))
 
+    effective_depth = (max_depth if max_depth is not None else
+                       _adaptive_inline_depth(edges, symbols))
+
     def extract_one(symbol: str, inline_cache=None) -> FuncExtraction:
         f = func_by_id[symbol]
         unit = owner[symbol]
@@ -821,7 +1202,7 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
         "new_mmio_ops": sum(len(ex.ops) for ex in expanded.values()),
         "total_mmio_ops": sum(len(ex.ops) for ex in expanded.values()),
     }]
-    for depth in range(1, max(0, max_depth) + 1):
+    for depth in range(1, max(0, effective_depth) + 1):
         inline_cache = {
             name: ex for name, ex in expanded.items()
             if ex.ops or ex.return_expr}
@@ -856,6 +1237,11 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
         _coverage_aware_inlined_names(
             direct, expanded, inlined_into_caller - callback_entries))
     formal_calls = _formal_calls(funcs, indirect_targets)
+    call_context = _prove_inlined_call_context(
+        direct, expanded, inlined_names, formal_calls)
+    rescue_stats = dict(rescue_stats)
+    rescue_stats["call_semantics_proven"] = bool(call_context["proven"])
+    rescue_stats["call_context_proof"] = call_context
     (expanded, call_closed, closure_stats,
      closure_overlays) = _selective_frontier_call_closure(
         funcs, expanded, rescue_frontiers, callback_entries, formal_calls,
@@ -872,6 +1258,11 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int = 3,
         "resolved_cross_tu_call_edges": len(cross_tu_edges),
         "propagated_mmio_edges": len(propagated_edges),
         "propagation_by_depth": propagation_by_depth,
+        "inline_depth": {
+            "configured": max_depth,
+            "effective": effective_depth,
+            "adaptive": max_depth is None,
+        },
         "unresolved_internal_calls": len(unresolved_internal),
         "wrapper_summaries": sorted({
             summary["symbol"] for summary in wrapper_summaries.values()}),

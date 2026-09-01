@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-from generator.subsystem_runner import (
+from backends.subsystem_runner import (
     GPIO_CALLBACK_ORDER, SDHCI_CALLBACK_ORDER, subsystem_callback_plan,
     virtio_state_plan)
 
@@ -110,6 +110,10 @@ def _execute(ops: list[dict], env: dict[str, int], memory: bytearray,
              ) -> tuple[list[tuple[str, int, int]], int | None]:
     trace: list[tuple[str, int, int]] = []
     for op in ops:
+        if "ValueBind" in op:
+            body = op["ValueBind"]
+            env[body["var"]] = _eval(body.get("value"), _state_env(env, state))
+            continue
         if "Cond" in op:
             body = op["Cond"]
             branch = body["then_ops"] if _eval(

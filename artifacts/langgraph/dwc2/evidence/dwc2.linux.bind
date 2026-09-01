@@ -1,0 +1,58 @@
+backend linux for device dwc2 {
+  include <linux/io.h>
+  include <linux/platform_device.h>
+  type DeviceState -> "struct dwc2_priv"
+  type MmioBase -> "void __iomem *"
+  type LogicalIRQ -> "struct irq_data *"
+  type UInt -> "u32"
+  type UIntPtr -> "unsigned long *"
+  callback irq_handler.handler = dwc2_handle_common_intr
+  callback platform_driver.remove = dwc2_driver_remove
+  callback platform_driver.shutdown = dwc2_driver_shutdown
+  callback platform_driver.probe = dwc2_driver_probe
+  callback dev_pm_ops.suspend = dwc2_suspend
+  callback dev_pm_ops.resume = dwc2_resume
+  callback hc_driver.map_urb_for_dma = dwc2_map_urb_for_dma
+  callback hc_driver.unmap_urb_for_dma = dwc2_unmap_urb_for_dma
+  callback hc_driver.start = _dwc2_hcd_start
+  callback hc_driver.stop = _dwc2_hcd_stop
+  callback hc_driver.bus_suspend = _dwc2_hcd_suspend
+  callback hc_driver.bus_resume = _dwc2_hcd_resume
+  callback hc_driver.urb_enqueue = _dwc2_hcd_urb_enqueue
+  callback hc_driver.urb_dequeue = _dwc2_hcd_urb_dequeue
+  callback hc_driver.endpoint_disable = _dwc2_hcd_endpoint_disable
+  callback hc_driver.endpoint_reset = _dwc2_hcd_endpoint_reset
+  callback hc_driver.irq = _dwc2_hcd_irq
+  callback hc_driver.hub_control = _dwc2_hcd_hub_control
+  callback hc_driver.clear_tt_buffer_complete = _dwc2_hcd_clear_tt_buffer_complete
+  callback hc_driver.free_dev = dwc2_free_dev
+  callback hc_driver.reset_device = dwc2_reset_device
+  callback usb_ep_ops.queue = dwc2_hsotg_ep_queue_lock
+  callback irq_handler.handler = dwc2_hsotg_irq
+  callback usb_ep_ops.enable = dwc2_hsotg_ep_enable
+  callback usb_ep_ops.disable = dwc2_hsotg_ep_disable_lock
+  callback usb_ep_ops.dequeue = dwc2_hsotg_ep_dequeue
+  callback usb_ep_ops.set_wedge = dwc2_gadget_ep_set_wedge
+  callback usb_ep_ops.set_halt = dwc2_hsotg_ep_sethalt_lock
+  callback usb_gadget_ops.udc_start = dwc2_hsotg_udc_start
+  callback usb_gadget_ops.udc_stop = dwc2_hsotg_udc_stop
+  callback usb_gadget_ops.get_frame = dwc2_hsotg_gadget_getframe
+  callback usb_gadget_ops.set_selfpowered = dwc2_hsotg_set_selfpowered
+  callback usb_gadget_ops.pullup = dwc2_hsotg_pullup
+  callback usb_gadget_ops.vbus_session = dwc2_hsotg_vbus_session
+  callback usb_gadget_ops.udc_set_speed = dwc2_gadget_set_speed
+  map dev.base -> "hsotg->regs"
+  map MmioRead(B4) -> "readl"
+  map MmioWrite(B4) -> "writel"
+  map MmioRead(B2) -> "readw"
+  map MmioWrite(B2) -> "writew"
+  map MmioRead(B1) -> "readb"
+  map MmioWrite(B1) -> "writeb"
+  map MmioWriteW1C(B4) -> "writel"
+  map MmioWriteW1C(B2) -> "writew"
+  map MmioWriteW1C(B1) -> "writeb"
+  map MmioReadBE(B2) -> "ioread16be"
+  map MmioWriteBE(B2) -> "iowrite16be"
+  map MmioReadBE(B4) -> "ioread32be"
+  map MmioWriteBE(B4) -> "iowrite32be"
+}

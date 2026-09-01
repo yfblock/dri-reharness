@@ -1,0 +1,847 @@
+{
+  "claim_scope": {
+    "alias_analysis": "off",
+    "call_semantics_proven": false,
+    "callee_rescue_semantics_complete": false,
+    "claim": "recognized hardware-access and structured-control universe",
+    "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
+    "indirect_calls": "simple static initializer/assignment targets",
+    "register_accesses": "typed MMIO, regmap, I2C and public MFD helper transactions plus direct volatile and inline-asm detection",
+    "whole_program_complete": false
+  },
+  "driver": "sdhci-esdhc-mcf",
+  "policy": {
+    "cardinality": "exactly-once",
+    "required_disposition": "lowered",
+    "semantic_authority": "canonical-formal-ris",
+    "unknown_operations_allowed": false
+  },
+  "register_operations": [
+    {
+      "access_domain": "mmio",
+      "digest": "9ecde1c881742d5f",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readb",
+        "column": 12,
+        "effective_callee": "esdhc_mcf_writeb_be",
+        "function": "esdhc_mcf_writeb_be",
+        "library_callback": "sdhci_ops.write_b",
+        "line": 74,
+        "offset": 1688,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:74:12:1688:readb",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writeb_be",
+        "width_bytes": 1
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_writeb_be",
+      "op_id": "op_5",
+      "reliability": "Conservative",
+      "width": "B1"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "961cfac6ac62d355",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "effective_callee": "esdhc_mcf_writeb_be",
+        "function": "esdhc_mcf_writeb_be",
+        "library_callback": "sdhci_ops.write_b",
+        "line": 85,
+        "offset": 1940,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:85:3:1940:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writeb_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_writeb_be",
+      "op_id": "op_8",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "c99284f3804a9128",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "effective_callee": "esdhc_mcf_writeb_be",
+        "function": "esdhc_mcf_writeb_be",
+        "library_callback": "sdhci_ops.write_b",
+        "line": 90,
+        "offset": 2010,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:90:2:2010:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writeb_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_writeb_be",
+      "op_id": "op_9",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "6c9f416d4f47b6f9",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "effective_callee": "esdhc_mcf_writeb_be",
+        "function": "esdhc_mcf_writeb_be",
+        "library_callback": "sdhci_ops.write_b",
+        "line": 90,
+        "offset": 2018,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:90:10:2018:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writeb_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_writeb_be",
+      "op_id": "op_10",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "1d1fac13b54101f7",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "effective_callee": "esdhc_mcf_writew_be",
+        "function": "esdhc_mcf_writew_be",
+        "library_callback": "sdhci_ops.write_w",
+        "line": 113,
+        "offset": 2649,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:113:3:2649:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writew_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_writew_be",
+      "op_id": "op_16",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "c99284f3804a9128",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "effective_callee": "esdhc_mcf_writew_be",
+        "function": "esdhc_mcf_writew_be",
+        "library_callback": "sdhci_ops.write_w",
+        "line": 118,
+        "offset": 2746,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:118:2:2746:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writew_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_writew_be",
+      "op_id": "op_17",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "d5b04cd30104c665",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "effective_callee": "esdhc_mcf_writew_be",
+        "function": "esdhc_mcf_writew_be",
+        "library_callback": "sdhci_ops.write_w",
+        "line": 118,
+        "offset": 2754,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:118:10:2754:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writew_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_writew_be",
+      "op_id": "op_18",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "9b0cc3c7e2b9a027",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "effective_callee": "esdhc_mcf_writel_be",
+        "function": "esdhc_mcf_writel_be",
+        "library_callback": "sdhci_ops.write_l",
+        "line": 123,
+        "offset": 2880,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:123:2:2880:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_writel_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_writel_be",
+      "op_id": "op_19",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "86ccebf7c51e1714",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readw",
+        "column": 13,
+        "effective_callee": "esdhc_mcf_readb_be",
+        "function": "esdhc_mcf_readb_be",
+        "library_callback": "sdhci_ops.read_b",
+        "line": 130,
+        "offset": 3075,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:130:13:3075:readw",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_readb_be",
+        "width_bytes": 2
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_readb_be",
+      "op_id": "op_21",
+      "reliability": "Conservative",
+      "width": "B2"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "1313fbe3948d5b9f",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readb",
+        "column": 9,
+        "effective_callee": "esdhc_mcf_readb_be",
+        "function": "esdhc_mcf_readb_be",
+        "library_callback": "sdhci_ops.read_b",
+        "line": 140,
+        "offset": 3267,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:140:9:3267:readb",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_readb_be",
+        "width_bytes": 1
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_readb_be",
+      "op_id": "op_22",
+      "reliability": "Conservative",
+      "width": "B1"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "fe40c6c724eb0f28",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readw",
+        "column": 9,
+        "effective_callee": "esdhc_mcf_readw_be",
+        "function": "esdhc_mcf_readw_be",
+        "library_callback": "sdhci_ops.read_w",
+        "line": 152,
+        "offset": 3530,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:152:9:3530:readw",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_readw_be",
+        "width_bytes": 2
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_readw_be",
+      "op_id": "op_25",
+      "reliability": "Exact",
+      "width": "B2"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "875615729eeedb98",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "effective_callee": "esdhc_mcf_readl_be",
+        "function": "esdhc_mcf_readl_be",
+        "library_callback": "sdhci_ops.read_l",
+        "line": 159,
+        "offset": 3652,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:159:8:3652:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_readl_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_readl_be",
+      "op_id": "op_27",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "9b8079dc73cca66b",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_set_timeout",
+            "indirect_expression": null,
+            "line": 187
+          }
+        ],
+        "line": 58,
+        "offset": 1223,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:2:1223:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_set_timeout",
+      "op_id": "op_33",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "3cc803bfdd8f9e25",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_set_timeout",
+            "indirect_expression": null,
+            "line": 187
+          }
+        ],
+        "line": 58,
+        "offset": 1231,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:10:1231:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_set_timeout",
+      "op_id": "op_34",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "f08bbf322787fe45",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_reset",
+            "indirect_expression": null,
+            "line": 198
+          }
+        ],
+        "line": 58,
+        "offset": 1223,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:2:1223:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_reset",
+      "op_id": "op_39",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "30d123064c064b58",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_reset",
+            "indirect_expression": null,
+            "line": 198
+          }
+        ],
+        "line": 58,
+        "offset": 1231,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:10:1231:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_reset",
+      "op_id": "op_40",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "00589308c01aeb0c",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "sdhci_writel",
+        "column": 2,
+        "effective_callee": "sdhci_writel",
+        "function": "esdhc_mcf_reset",
+        "line": 201,
+        "offset": 4667,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:201:2:4667:sdhci_writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_reset",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_reset",
+      "op_id": "op_41",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "70de90cd6cdba8d3",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "sdhci_writel",
+        "column": 2,
+        "effective_callee": "sdhci_writel",
+        "function": "esdhc_mcf_reset",
+        "line": 202,
+        "offset": 4717,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:202:2:4717:sdhci_writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "subsystem_summary": "sdhci_accessor",
+        "summary_contract": "linux.sdhci_ops",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_reset",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_reset",
+      "op_id": "op_42",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "e000a8cfca0acb08",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 9,
+        "function": "esdhc_mcf_pltfm_set_clock",
+        "line": 248,
+        "offset": 5901,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:248:9:5901:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_mcf_pltfm_set_clock",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_pltfm_set_clock",
+      "op_id": "op_45",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "d676a0857bf22c38",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_pltfm_set_clock",
+            "indirect_expression": null,
+            "line": 274
+          }
+        ],
+        "line": 58,
+        "offset": 1223,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:2:1223:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_pltfm_set_clock",
+      "op_id": "op_51",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "d5b78f602cfd01dc",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_pltfm_set_clock",
+            "indirect_expression": null,
+            "line": 274
+          }
+        ],
+        "line": 58,
+        "offset": 1231,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:10:1231:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_pltfm_set_clock",
+      "op_id": "op_52",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a4c04456852f1c89",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_pltfm_set_bus_width",
+            "indirect_expression": null,
+            "line": 295
+          }
+        ],
+        "line": 58,
+        "offset": 1223,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:2:1223:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "esdhc_mcf_pltfm_set_bus_width",
+      "op_id": "op_62",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "9b926ebfe1e4e5a0",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 10,
+        "function": "esdhc_clrset_be",
+        "inlined_at": [
+          {
+            "callee": "esdhc_clrset_be",
+            "function": "esdhc_mcf_pltfm_set_bus_width",
+            "indirect_expression": null,
+            "line": 295
+          }
+        ],
+        "line": 58,
+        "offset": 1231,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58:10:1231:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c::esdhc_clrset_be",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "esdhc_mcf_pltfm_set_bus_width",
+      "op_id": "op_63",
+      "reliability": "Exact",
+      "width": "B4"
+    }
+  ],
+  "schema": 1,
+  "synthesis_readiness": {
+    "backend_bare_metal_ready": false,
+    "backend_harness_ready": false,
+    "backend_linux_ready": false,
+    "blockers": [
+      "3 inlined helper definition(s) lack call-context proof",
+      "9 subsystem library callback(s) lack semantic summary",
+      "missing role for: esdhc_mcf_set_timeout",
+      "generated backend compile/lowering/attestation results unavailable"
+    ],
+    "device_spec_quality": 0.812,
+    "facts_quality": 1.0,
+    "function_spec_quality": 0.9,
+    "llm_synthesis_ready": false,
+    "ris_quality": 0.802
+  },
+  "transaction_operations": []
+}

@@ -1,0 +1,49 @@
+% 补充图 C：DesignWare APB SSI 代码规模（学术风格：内刻度、黑描边、标签不越轴）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usepackage{xcolor}
+\definecolor{figblue}{HTML}{1D4ED8}
+\definecolor{figorange}{HTML}{F97316}
+\begin{document}
+\begin{tikzpicture}[x=0.0047cm,y=0.72cm,font=\footnotesize]
+  % 轴与刻度（向内）
+  \draw[line width=0.8pt] (0,0.25) -- (0,-4.7) -- (2120,-4.7);  \foreach \x in {0,500,1000,1500,2000} {
+    \draw[line width=0.5pt] (\x,-4.7) -- (\x,-4.56);
+    \node[below, font=\scriptsize] at (\x,-4.72) {\x};
+  }
+  \node[below=11pt, font=\scriptsize] at (1060,-4.72) {代码行数};
+
+  % 横条（黑描边；值标签置于柱内右端白色区或柱端外侧，不越轴）
+  \path[fill=figblue, draw=black, line width=0.5pt]
+    (0,-0.42) rectangle (1844,0.0);
+  \node[right, font=\scriptsize] at (1848,-0.21) {1{,}844};
+  \node[left, align=right, font=\footnotesize] at (-14,-0.21)
+    {Linux 源码（输入，固定）\\ {\scriptsize 核心 + MMIO 粘合 + 头文件}};
+
+  \path[fill=figorange, draw=black, line width=0.5pt]
+    (0,-1.5) rectangle (828,-1.08);
+  \node[right, font=\scriptsize] at (832,-1.29) {828};
+  \node[left, align=right, font=\footnotesize] at (-14,-1.29)
+    {生成 Linux C\\ {\scriptsize 源文件 + 头文件}};
+
+  \path[fill=figorange, draw=black, line width=0.5pt]
+    (0,-2.44) rectangle (581,-2.02);
+  \node[right, font=\scriptsize] at (585,-2.23) {581};
+  \node[left, align=right, font=\footnotesize] at (-14,-2.23)
+    {生成裸机 C\\ {\scriptsize 源文件 + 头文件}};
+
+  \path[fill=figorange, draw=black, line width=0.5pt]
+    (0,-3.38) rectangle (276,-2.96);
+  \node[right, font=\scriptsize] at (280,-3.17) {276};
+  \node[left, align=right, font=\footnotesize] at (-14,-3.17)
+    {生成 Rust \texttt{no\_std}\\ {\scriptsize tock-registers}};
+
+  % 注记（白底细框）
+  \node[draw=black, line width=0.5pt, fill=white, align=left, font=\scriptsize,
+    anchor=north west, inner sep=0.16cm, text width=10.6cm] at (-60,-5.85)
+  {缩减来自「提取的设备核心 + 该后端所需适配器」，不是删改源码，也不构成正确性论证；
+   它缩小的是 LLM 的语义与文本搜索空间（§1、§6.5）。};
+\end{tikzpicture}
+\end{document}

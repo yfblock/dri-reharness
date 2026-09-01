@@ -19,26 +19,35 @@ def run_driver_pipeline(res, args) -> int:
     from extractor.metrics import score as score_fn, format_score
     from extractor.spec import (default_bind, display_bind_set,
                        device_spec_to_dict)
-    from generator.subsystem_runner import (subsystem_callback_plan,
+    from backends.subsystem_runner import (subsystem_callback_plan,
                                             w1c_drain_plan)
+    import sys as _sys, os as _os
+    _vroot = _os.path.normpath(_os.path.join(
+        _os.path.dirname(_os.path.abspath(__file__)), '..',
+        'qa'))
+    if _vroot not in _sys.path:
+        _sys.path.insert(0, _vroot)
+    _vq = _os.path.join(_vroot, 'verification')
+    if _vq not in _sys.path:
+        _sys.path.insert(0, _vq)
     from verification.subsystem_callback_oracle import (
         verify_subsystem_callbacks)
-    from verification.gpio_mmio_source_oracle import (
+    from backends.linux.oracles.gpio_mmio_source_oracle import (
         verify_gpio_mmio_source_differential)
-    from verification.sdhci_accessor_oracle import (
+    from backends.oracles.sdhci_accessor_oracle import (
         verify_sdhci_accessor_source_contract)
-    from verification.virtio_state_oracle import (
+    from backends.oracles.virtio_state_oracle import (
         verify_virtio_state_contract)
-    from verification.w1c_drain_oracle import (
+    from backends.oracles.w1c_drain_oracle import (
         verify_w1c_drain_contract, verify_w1c_drain_runtime)
-    from verification.transaction_ir_oracle import (
+    from backends.oracles.transaction_ir_oracle import (
         verify_transaction_source)
     from verification.backend_lowering_oracle import (
         build_generation_contract, verify_backend_lowering)
     from verification.backend_lowering_plan import (
         verify_backend_lowering_plan)
     from verification.generated_c_ast_oracle import verify_generated_c_ast
-    from verification.linux_registration_ast_oracle import (
+    from backends.linux.oracles.linux_registration_ast_oracle import (
         linux_kbuild_compile_context,
         verify_linux_registration_ast)
 
@@ -113,7 +122,7 @@ def run_driver_pipeline(res, args) -> int:
     }, indent=2, sort_keys=True))
 
     # ── generated C + verification (derived) ──
-    from generator.registry import list_backends
+    from backends.registry import list_backends
     gens = {name: mod for name, mod in list_backends().items()
             if name in ("harness", "baremetal", "linux")}
     source_oracle = verify_gpio_mmio_source_differential(

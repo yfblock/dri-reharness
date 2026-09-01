@@ -1,0 +1,14 @@
+{
+  "evidence_digest": "3d9f93e6f4fd05ed851889fa622c92c042c6f45b35476bf127163921dbf8f134",
+  "iteration": 1,
+  "manifest_digest": "835470748b7572c22ecea869ceb1f50ebae43e2333529cebcd5ed0a1bce7a066",
+  "payload": {
+    "result": {
+      "divergence": null,
+      "equal": true,
+      "reason": null
+    }
+  },
+  "stage": "compare",
+  "status": "passed"
+}

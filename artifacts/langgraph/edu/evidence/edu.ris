@@ -1,0 +1,46 @@
+driver edu v0.1.0 {
+  module edu_irq_handler {
+    priv := VALUE(data) @op_1 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:68
+    status := R(B4, priv->mmio.IO_IRQ_STATUS) -- Interrupt @op_2 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:71
+    W(B4, priv->mmio.IO_IRQ_ACK) = status -- Interrupt @op_3 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:75
+  }
+  module edu_read {
+    priv := VALUE(filp->private_data) @op_4 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:93
+    val := R(B4, priv->mmio + *off[0x0]) -- Status @op_5 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:99
+    OUT(*off +) := 0x4 @op_6 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:104
+  }
+  module edu_write {
+    priv := VALUE(filp->private_data) @op_7 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:111
+    W(B4, priv->mmio + *off[0x0]) = val -- Config @op_8 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:120
+    OUT(*off +) := 0x4 @op_9 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:122
+  }
+  module edu_pci_probe {
+    STATE(priv->pdev) := pdev @op_10 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:146
+    IF ((priv->mmio == 0x0) == 0x0) {
+      IF (ret == 0x0) {
+        dev_id := R(B4, priv->mmio.IO_ID) -- Status @op_11 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:168
+      }
+    }
+    STATE(priv->irq) := pdev->irq @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:171
+    STATE(priv->mdev.minor) := MISC_DYNAMIC_MINOR @op_13 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:173
+    STATE(priv->mdev.name) := KBUILD_MODNAME @op_14 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:174
+    STATE(priv->mdev.fops) := &edu_fops @op_15 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c:175
+  }
+  accounting {
+    source_accesses 5
+    emitted 5
+    filtered 0
+    unsupported 0
+    unaccounted 0
+    ris_ops_without_evidence 0
+    strict_complete true
+  }
+  path_validation {
+    solver "Z3 4.16.0"
+    satisfiable 2
+    infeasible 0
+    unknown 0
+    intentionally_unreachable 0
+    complete true
+  }
+}

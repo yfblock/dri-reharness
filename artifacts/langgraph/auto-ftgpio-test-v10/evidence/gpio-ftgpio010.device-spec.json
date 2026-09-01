@@ -1,0 +1,984 @@
+{
+  "class": "gpio_controller",
+  "functions": [
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "irq_chip.irq_ack",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_INT_CLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_CLR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "clears_interrupt(line)"
+        }
+      ],
+      "ensures": [
+        "interrupt_pending[line] == false"
+      ],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_ack_irq",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_ack_irq",
+      "role": "interrupt_ack",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "d",
+            "type": "LogicalIRQ"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "gpio-ftgpio010.c:56"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "irq_chip.irq_mask",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_INT_EN"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_EN)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "masks_interrupt(line)"
+        }
+      ],
+      "ensures": [
+        "interrupt_enabled[line] == false"
+      ],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_mask_irq",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_mask_irq",
+      "role": "interrupt_mask",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "d",
+            "type": "LogicalIRQ"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "gpio-ftgpio010.c:64"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "irq_chip.irq_unmask",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_INT_EN"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_EN)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "unmasks_interrupt(line)"
+        }
+      ],
+      "ensures": [
+        "interrupt_enabled[line] == true"
+      ],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_unmask_irq",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_unmask_irq",
+      "role": "interrupt_unmask",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "d",
+            "type": "LogicalIRQ"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "gpio-ftgpio010.c:76"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "irq_chip.irq_set_type",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_INT_TYPE"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_TYPE)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_INT_LEVEL"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_LEVEL)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_INT_BOTH_EDGE"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_BOTH_EDGE)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_INT_CLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_CLR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "sets_irq_type(line)"
+        }
+      ],
+      "ensures": [
+        "irq_type[line] == configured"
+      ],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_set_irq_type",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_set_irq_type",
+      "role": "set_irq_type",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "d",
+            "type": "LogicalIRQ"
+          },
+          {
+            "from_expr": null,
+            "name": "type",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:88"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_irq_chip.parent_handler",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "handles_interrupt()"
+        }
+      ],
+      "ensures": [
+        "interrupt_serviced"
+      ],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_irq_handler",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_irq_handler",
+      "role": "interrupt_handler",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "desc",
+            "type": "LogicalIRQ"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "gpio-ftgpio010.c:141"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.set_config",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_DEBOUNCE_EN"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DEBOUNCE_EN)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_DEBOUNCE_PRESCALE"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DEBOUNCE_PRESCALE)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_set_config",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_set_config",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "offset",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "config",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:159"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "platform_driver.probe",
+      "context": "boot",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_INT_EN"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_EN)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_INT_MASK"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_MASK)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_INT_CLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_INT_CLR)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_DEBOUNCE_EN"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DEBOUNCE_EN)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe",
+      "requires": [
+        "resources_available"
+      ],
+      "ris_ref": "ftgpio_gpio_probe",
+      "role": "probe",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.get",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_get",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_get",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "offset",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.get_multiple",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "mask",
+            "type": "UIntPtr"
+          },
+          {
+            "from_expr": null,
+            "name": "bits",
+            "type": "UIntPtr"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.set",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_DATA_SET"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DATA_SET)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_DATA_CLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DATA_CLR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_set",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_set",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "offset",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "value",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.set_multiple",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_DATA_SET"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DATA_SET)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_DATA_CLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DATA_CLR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "mask",
+            "type": "UIntPtr"
+          },
+          {
+            "from_expr": null,
+            "name": "bits",
+            "type": "UIntPtr"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.direction_input",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_DIR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DIR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_direction_input",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_direction_input",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "offset",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.direction_output",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "GPIO_DATA_SET"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DATA_SET)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_DATA_CLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DATA_CLR)"
+        },
+        {
+          "detail": {
+            "register": "GPIO_DIR"
+          },
+          "kind": "reg",
+          "text": "writes_register(GPIO_DIR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "offset",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "value",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "g",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "g->base",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "gpio_chip.get_direction",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "ftgpio_gpio_probe__gpio_generic_get_direction",
+      "requires": [],
+      "ris_ref": "ftgpio_gpio_probe__gpio_generic_get_direction",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "gc",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "offset",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "gpio-ftgpio010.c:236"
+    }
+  ],
+  "invariants": [
+    "forall line: UInt. line < num_irqs -> valid_interrupt_line(line)"
+  ],
+  "name": "gpio-ftgpio010",
+  "registers": [
+    {
+      "base": "base",
+      "name": "GPIO_DATA_IN",
+      "offset": 4,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_DIR",
+      "offset": 8,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_DATA_SET",
+      "offset": 16,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_DATA_CLR",
+      "offset": 20,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_EN",
+      "offset": 32,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_STAT_RAW",
+      "offset": 36,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_MASK",
+      "offset": 44,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_CLR",
+      "offset": 48,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_TYPE",
+      "offset": 52,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_BOTH_EDGE",
+      "offset": 56,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_INT_LEVEL",
+      "offset": 60,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_DEBOUNCE_EN",
+      "offset": 64,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "GPIO_DEBOUNCE_PRESCALE",
+      "offset": 68,
+      "width": "B4"
+    }
+  ],
+  "resources": [
+    {
+      "bind": "base",
+      "name": "mmio0",
+      "required": true,
+      "type": "MmioResource"
+    },
+    {
+      "bind": "clk",
+      "name": "clk0",
+      "required": true,
+      "type": "ClockResource"
+    },
+    {
+      "bind": null,
+      "name": "irq0",
+      "required": true,
+      "type": "IrqResource"
+    }
+  ],
+  "schema": 1,
+  "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+  "state": [
+    {
+      "bind": null,
+      "name": "base",
+      "type": "MmioBase"
+    },
+    {
+      "bind": null,
+      "name": "clk",
+      "type": "Clock"
+    },
+    {
+      "bind": null,
+      "name": "num_irqs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "desc->handle_irq",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "g->dev",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "gpio_sdata",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "gpio_sdir",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "g->chip.gc.base",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "g->chip.gc.parent",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "g->chip.gc.owner",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "g->chip.gc.set_config",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "girq->parent_handler",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "girq->num_parents",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "girq->default_type",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "girq->handler",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "girq->chip",
+      "type": "UInt"
+    }
+  ]
+}

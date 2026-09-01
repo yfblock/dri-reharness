@@ -1,0 +1,73 @@
+=== QEMU run: module=reharness_virtio_sensor bus=virtio timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.030677] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030741] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073877] ftrace: allocating 38031 entries in 150 pages
+[    0.074136] ftrace: allocated 150 pages with 4 groups
+[    0.420845] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.425283] thermal_sys: Registered thermal governor 'step_wise'
+[    0.429948] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.431418] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.517580] ACPI: bus type USB registered
+[    0.517875] usbcore: registered new interface driver usbfs
+[    0.518078] usbcore: registered new interface driver hub
+[    0.518177] usbcore: registered new device driver usb
+[    0.518348] pps_core: LinuxPPS API ver. 1 registered
+[    0.518470] PTP clock support registered
+[    0.551804] NET: Registered PF_INET protocol family
+[    0.569112] Key type asymmetric registered
+[    0.569188] Asymmetric key parser 'x509' registered
+[    0.569619] io scheduler mq-deadline registered
+[    0.569684] io scheduler kyber registered
+[    0.618734] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.622256] usbcore: registered new interface driver usbhid
+[    0.623051] NET: Registered PF_INET6 protocol family
+=== insmod reharness_virtio_sensor ===
+[    1.031622] [rhcov] reharness_virtio_probe
+[    1.035321] reharness_virtio_sensor virtio0: REHARNESS_VIRTIO_DRIVER_PROBE capacity=2048
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    0.030677] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030741] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.420845] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.425283] thermal_sys: Registered thermal governor 'step_wise'
+[    0.429948] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.431418] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.517580] ACPI: bus type USB registered
+[    0.517875] usbcore: registered new interface driver usbfs
+[    0.518078] usbcore: registered new interface driver hub
+[    0.518177] usbcore: registered new device driver usb
+[    0.518348] pps_core: LinuxPPS API ver. 1 registered
+[    0.518470] PTP clock support registered
+[    0.551804] NET: Registered PF_INET protocol family
+[    0.569112] Key type asymmetric registered
+[    0.569188] Asymmetric key parser 'x509' registered
+[    0.569619] io scheduler mq-deadline registered
+[    0.569684] io scheduler kyber registered
+[    0.618734] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.622256] usbcore: registered new interface driver usbhid
+[    0.623051] NET: Registered PF_INET6 protocol family
+[    1.031622] [rhcov] reharness_virtio_probe
+[    1.035321] reharness_virtio_sensor virtio0: REHARNESS_VIRTIO_DRIVER_PROBE capacity=2048
+REHARNESS_SUBSYSTEM_TEST_0_NAME=virtio-queue-read
+REHARNESS_SUBSYSTEM_TEST_0_KIND=native
+REHARNESS_SUBSYSTEM_TEST_0_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_1_NAME=virtio-invalid-ioctl
+REHARNESS_SUBSYSTEM_TEST_1_KIND=native
+REHARNESS_SUBSYSTEM_TEST_1_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_1_RC=0
+REHARNESS_SUBSYSTEM_TEST_1_STATUS=pass
+=== rmmod reharness_virtio_sensor ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.314496] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1
+  done=1 probe=30 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: reharness_virtio_sensor probe 成功

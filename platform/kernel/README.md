@@ -1,7 +1,12 @@
 # Reproducible Linux kernel setup
 
 `../../vendor/linux/` is a populated Git submodule pinned to the exact upstream Linux
-commit used by the experiments.  Initialize it after cloning with:
+commit used by the experiments.  The preparation script applies the repository-owned
+`amba-compile-test.patch` before Kconfig evaluation so the x86 synthetic AMBA profile
+can exercise the generic bus core; this is an experiment-only compile-test enablement,
+not an assertion that x86 provides AMBA hardware.
+
+Initialize the submodule after cloning with:
 
 ```sh
 git submodule update --init --recursive

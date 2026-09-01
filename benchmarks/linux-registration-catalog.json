@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "builtin_driver_macros": {
+    "builtin_amba_driver": "module_amba_driver",
+    "builtin_i2c_driver": "module_i2c_driver",
+    "builtin_pci_driver": "module_pci_driver",
+    "builtin_platform_driver": "module_platform_driver",
+    "builtin_serdev_device_driver": "module_serdev_device_driver",
+    "builtin_spi_driver": "module_spi_driver"
+  },
+  "legacy_runtime_contracts": {
+    "platform": {
+      "root_table": "platform_driver",
+      "identity_field": "registrar",
+      "device_id_tables": []
+    },
+    "pci": {
+      "root_table": "pci_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "i2c": {
+      "root_table": "i2c_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": ["i2c_device_id"]
+    },
+    "spi": {
+      "root_table": "spi_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": ["spi_device_id"]
+    },
+    "usb": {
+      "root_table": "usb_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "virtio": {
+      "root_table": "virtio_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "amba": {
+      "root_table": "amba_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "serdev": {
+      "root_table": "serdev_device_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "mdio": {
+      "root_table": "mdio_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "network": {
+      "root_table": "net_device",
+      "identity_field": "none",
+      "device_id_tables": []
+    }
+  },
+  "irq_attach_apis": [
+    {"name": "gpio_irq_chip_set_chip", "parent_arg": 0, "child_arg": 1}
+  ],
+  "direct_irq_apis": [
+    {"name": "devm_request_threaded_irq", "handler_args": [2, 3], "data_arg": 5},
+    {"name": "request_threaded_irq", "handler_args": [1, 2], "data_arg": 4},
+    {"name": "devm_request_irq", "handler_args": [2], "data_arg": 4},
+    {"name": "request_irq", "handler_args": [1], "data_arg": 4}
+  ],
+  "tables": [
+    {"id": "platform_driver", "record": "platform_driver", "role": "root"},
+    {"id": "pci_driver", "record": "pci_driver", "role": "root"},
+    {"id": "i2c_driver", "record": "i2c_driver", "role": "root"},
+    {"id": "spi_driver", "record": "spi_driver", "role": "root"},
+    {"id": "usb_driver", "record": "usb_driver", "role": "root"},
+    {"id": "virtio_driver", "record": "virtio_driver", "role": "root"},
+    {"id": "amba_driver", "record": "amba_driver", "role": "root"},
+    {"id": "serdev_device_driver", "record": "serdev_device_driver", "role": "root"},
+    {"id": "mdio_driver", "record": "mdio_driver", "role": "root"},
+    {"id": "net_device", "record": "net_device", "role": "root"},
+    {"id": "i2c_device_id", "record": "i2c_device_id", "role": "device_id"},
+    {"id": "spi_device_id", "record": "spi_device_id", "role": "device_id"},
+    {"id": "gpio_chip", "record": "gpio_chip", "role": "callback"},
+    {"id": "gpio_irq_chip", "record": "gpio_irq_chip", "role": "callback"},
+    {"id": "irq_chip", "record": "irq_chip", "role": "callback"},
+    {"id": "net_device_ops", "record": "net_device_ops", "role": "callback"},
+    {"id": "irq_handler", "role": "callback"},
+    {"id": "dev_pm_ops", "record": "dev_pm_ops", "role": "callback"},
+    {"id": "clk_ops", "record": "clk_ops", "role": "callback"},
+    {"id": "sdhci_ops", "record": "sdhci_ops", "role": "callback"},
+    {"id": "hc_driver", "record": "hc_driver", "role": "callback"},
+    {"id": "usb_gadget_ops", "record": "usb_gadget_ops", "role": "callback"},
+    {"id": "usb_ep_ops", "record": "usb_ep_ops", "role": "callback"},
+    {"id": "file_operations", "record": "file_operations", "role": "callback"},
+    {"id": "clk_hw", "record": "clk_hw", "role": "object"},
+    {"id": "clk_init_data", "record": "clk_init_data", "role": "object"},
+    {"id": "sdhci_pltfm_data", "record": "sdhci_pltfm_data", "role": "object"},
+    {"id": "usb_gadget", "record": "usb_gadget", "role": "object"},
+    {"id": "usb_ep", "record": "usb_ep", "role": "object"},
+    {"id": "usb_hcd", "record": "usb_hcd", "role": "object"},
+    {"id": "miscdevice", "record": "miscdevice", "role": "object"},
+    {"id": "of_device_id", "record": "of_device_id", "role": "object"}
+  ],
+  "registration_apis": [
+    {"name": "__platform_driver_register", "kind": "driver_root", "argument": 0, "type": "struct platform_driver *", "table": "platform_driver"},
+    {"name": "platform_driver_register", "kind": "driver_root", "argument": 0, "type": "struct platform_driver *", "table": "platform_driver"},
+    {"name": "__pci_register_driver", "kind": "driver_root", "argument": 0, "type": "struct pci_driver *", "table": "pci_driver"},
+    {"name": "pci_register_driver", "kind": "driver_root", "argument": 0, "type": "struct pci_driver *", "table": "pci_driver"},
+    {"name": "i2c_register_driver", "kind": "driver_root", "argument": 1, "type": "struct i2c_driver *", "table": "i2c_driver"},
+    {"name": "__i2c_register_driver", "kind": "driver_root", "argument": 1, "type": "struct i2c_driver *", "table": "i2c_driver"},
+    {"name": "spi_register_driver", "kind": "driver_root", "argument": 0, "type": "struct spi_driver *", "table": "spi_driver"},
+    {"name": "__spi_register_driver", "kind": "driver_root", "argument": 1, "type": "struct spi_driver *", "table": "spi_driver"},
+    {"name": "usb_register_driver", "kind": "driver_root", "argument": 0, "type": "struct usb_driver *", "table": "usb_driver"},
+    {"name": "register_virtio_driver", "kind": "driver_root", "argument": 0, "type": "struct virtio_driver *", "table": "virtio_driver"},
+    {"name": "__amba_driver_register", "kind": "driver_root", "argument": 0, "type": "struct amba_driver *", "table": "amba_driver"},
+    {"name": "amba_driver_register", "kind": "driver_root", "argument": 0, "type": "struct amba_driver *", "table": "amba_driver"},
+    {"name": "__serdev_device_driver_register", "kind": "driver_root", "argument": 0, "type": "struct serdev_device_driver *", "table": "serdev_device_driver"},
+    {"name": "serdev_device_driver_register", "kind": "driver_root", "argument": 0, "type": "struct serdev_device_driver *", "table": "serdev_device_driver"},
+    {"name": "mdio_driver_register", "kind": "driver_root", "argument": 0, "type": "struct mdio_driver *", "table": "mdio_driver"},
+    {"name": "register_netdev", "kind": "object_root", "argument": 0, "type": "struct net_device *", "table": "net_device"},
+    {"name": "devm_gpiochip_add_data_with_key", "kind": "gpio_chip", "argument": 1, "type": "struct gpio_chip *", "table": "gpio_chip"},
+    {"name": "devm_gpiochip_add_data", "kind": "gpio_chip", "argument": 1, "type": "struct gpio_chip *", "table": "gpio_chip"},
+    {"name": "gpiochip_add_data_with_key", "kind": "gpio_chip", "argument": 0, "type": "struct gpio_chip *", "table": "gpio_chip"},
+    {"name": "gpiochip_add_data", "kind": "gpio_chip", "argument": 0, "type": "struct gpio_chip *", "table": "gpio_chip"},
+    {"name": "misc_register", "kind": "miscdevice", "argument": 0, "type": "struct miscdevice *", "table": "miscdevice"},
+    {"name": "devm_clk_hw_register", "kind": "clk_hw", "argument": 1, "type": "struct clk_hw *", "table": "clk_hw"}
+  ],
+  "links": [
+    {"owner_table": "platform_driver", "field": "pm", "target_table": "dev_pm_ops"},
+    {"owner_table": "pci_driver", "field": "pm", "target_table": "dev_pm_ops"},
+    {"owner_table": "platform_driver", "field": "of_match_table", "target_table": "of_device_id"},
+    {"owner_table": "clk_hw", "field": "init", "target_table": "clk_init_data"},
+    {"owner_table": "clk_init_data", "field": "ops", "target_table": "clk_ops"},
+    {"owner_table": "sdhci_pltfm_data", "field": "ops", "target_table": "sdhci_ops"},
+    {"owner_table": "usb_gadget", "field": "ops", "target_table": "usb_gadget_ops"},
+    {"owner_table": "usb_ep", "field": "ops", "target_table": "usb_ep_ops"},
+    {"owner_table": "miscdevice", "field": "fops", "target_table": "file_operations"},
+    {"owner_table": "net_device", "field": "netdev_ops", "target_table": "net_device_ops"}
+  ]
+}

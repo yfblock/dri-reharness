@@ -25,7 +25,7 @@
 - Test: `qa/tests/test_driver_profiles.py`
 - Test: `qa/tests/test_profile_matrix.py`
 
-- [ ] **Step 1: Add a failing test proving registered plugins are not built-in defaults.**
+- [x] **Step 1: Add a failing test proving registered plugins are not built-in defaults.**
 
 Add this test to `qa/tests/test_profile_matrix.py`:
 
@@ -55,7 +55,7 @@ def test_plugin_profiles_are_not_added_to_default_acceptance_set():
         _paths.REPO_ROOT, registry)
 ```
 
-- [ ] **Step 2: Add a failing test proving a plugin plan cannot change bus identity.**
+- [x] **Step 2: Add a failing test proving a plugin plan cannot change bus identity.**
 
 Add this test to `qa/tests/test_driver_profiles.py`:
 
@@ -80,14 +80,14 @@ def test_registry_rejects_plugin_plan_with_profile_bus_mismatch():
         ProfileRegistry((WrongBusProfile(),)).resolve({"bus": "declared-bus"})
 ```
 
-- [ ] **Step 3: Add a failing test for invalid plugin metadata.**
+- [x] **Step 3: Add a failing test for invalid plugin metadata.**
 
 Add a profile whose `profile_id` contains a slash and assert `register()` raises
 `ProfileMatchError` or `ProfileCatalogError` with `profile_id` in the message.
 Also add a plan with `runtime_overrides="not-a-mapping"` and assert `resolve()`
 rejects it before returning a `ProfileResolution`.
 
-- [ ] **Step 4: Run only the new tests and confirm the failures are behavioral.**
+- [x] **Step 4: Run only the new tests and confirm the failures are behavioral.**
 
 Run:
 
@@ -107,7 +107,7 @@ or validate `runtime_overrides`.
 - Modify: `src/driver_profiles.py`
 - Test: `qa/tests/test_driver_profiles.py`
 
-- [ ] **Step 1: Mark profiles present at registry construction as built-in and later registrations as plugins.**
+- [x] **Step 1: Mark profiles present at registry construction as built-in and later registrations as plugins.**
 
 Change `ProfileRegistry.__init__` to initialize:
 
@@ -134,7 +134,7 @@ Keep `register()` duplicate detection, but validate that `profile_id` and
 `register()` remain outside `builtin_profiles`, even when they set
 `matrix_required=True`.
 
-- [ ] **Step 2: Extend `_validate_plan()` with profile identity and mapping checks.**
+- [x] **Step 2: Extend `_validate_plan()` with profile identity and mapping checks.**
 
 After checking `plan.profile_id`, require `plan.bus == profile.bus`. Validate
 that `runtime_overrides` is a `Mapping`, `required_fixture_fields` is a tuple
@@ -143,7 +143,7 @@ validated by `_registration_contract()`. Raise `ProfileMatchError` naming the
 profile and field. Do not reject a missing `manifest_template`; that state is
 needed for a correct `inconclusive` result.
 
-- [ ] **Step 3: Run the registry tests and verify the minimal implementation.**
+- [x] **Step 3: Run the registry tests and verify the minimal implementation.**
 
 Run:
 
@@ -160,13 +160,13 @@ metadata, duplicate-capability, and fixture validation cases.
 - Modify: `qa/verification/run_profile_matrix.py`
 - Test: `qa/tests/test_profile_matrix.py`
 
-- [ ] **Step 1: Change `default_profile_ids()` to use `builtin_profiles`.**
+- [x] **Step 1: Change `default_profile_ids()` to use `builtin_profiles`.**
 
 When the selected registry exposes `builtin_profiles`, derive the sorted IDs
 only from that tuple and `matrix_required=True`. Preserve the fallback for a
 third-party registry object that exposes only `profiles`.
 
-- [ ] **Step 2: Prevent an empty implicit acceptance set.**
+- [x] **Step 2: Prevent an empty implicit acceptance set.**
 
 In `select_required_profiles()`, when `manifest_paths is None`, `explicit is
 None`, and the selected registry has no built-in runtime-ready profiles, return
@@ -174,7 +174,7 @@ None`, and the selected registry has no built-in runtime-ready profiles, return
 inconclusive rather than vacuously accepted. Explicit manifests and explicit
 `--required-profile plugin-only` continue to select the plugin profile.
 
-- [ ] **Step 3: Update the old custom-registry expectation.**
+- [x] **Step 3: Update the old custom-registry expectation.**
 
 Change the existing test that expects `plugin-runtime` from an injected
 registry to assert `default_profile_ids()` is empty for a registry containing
@@ -182,7 +182,7 @@ only a profile registered after construction, and assert
 `select_required_profiles([], manifest_paths=None, explicit=None)` returns
 `["runtime_profile"]`.
 
-- [ ] **Step 4: Run matrix unit tests.**
+- [x] **Step 4: Run matrix unit tests.**
 
 Run:
 
@@ -197,10 +197,11 @@ plugin-only implicit run is inconclusive.
 ### Task 4: Prove the shared plugin-to-manifest boundary
 
 **Files:**
+- Modify: `src/auto_driver.py`
 - Test: `qa/tests/test_auto_driver.py`
 - Test: `qa/tests/test_profile_matrix.py`
 
-- [ ] **Step 1: Add a plugin normalization test using the repository EDU template.**
+- [x] **Step 1: Add a plugin normalization test using the repository EDU template.**
 
 Create a temporary plugin whose `evidence_from_source()` recognizes
 `struct pci_driver`, whose `match()` returns `test-pci-plugin`, and whose
@@ -210,14 +211,14 @@ with `profile_registry=registry` and assert the generated manifest records
 `runtime.profile == "test-pci-plugin"`, the source digest is pinned, and all
 provider/executable paths remain repository-scoped.
 
-- [ ] **Step 2: Add invalid provider/template regression tests.**
+- [x] **Step 2: Add invalid provider/template regression tests.**
 
 Use a generated template containing a subsystem provider whose executable is
 outside the repository and assert `normalize_input()` raises `AutoDriverError`
 from manifest validation. Use a plan template path outside the trusted root and
 assert the normalization result is rejected before any pipeline call.
 
-- [ ] **Step 3: Run the plugin-focused tests.**
+- [x] **Step 3: Run the plugin-focused tests.**
 
 Run:
 
@@ -239,7 +240,7 @@ and provider injection are rejected.
 - Review: `src/auto_driver.py`
 - Review: `qa/verification/run_profile_matrix.py`
 
-- [ ] **Step 1: Run the existing repository-owned EDU fixture through a temporary plugin.**
+- [x] **Step 1: Run the existing repository-owned EDU fixture through a temporary plugin.**
 
 Generate a manifest with the plugin, then execute:
 
@@ -253,10 +254,13 @@ PYTHONPATH=src:qa:qa/verification python3 qa/verification/run_profile_matrix.py 
 
 Expected: `matrix.json` has one required profile, status `accepted`, one
 successful QEMU result, probe/binding evidence, declared test markers, unload
-success, and no Oops/warning markers. The runner source contains no plugin or
+success, and structured `real_oops=0`/`real_warning=0` evidence. The raw QEMU
+log may contain the known `Attempted to kill init! exitcode=0` shutdown trace;
+the runner must classify that shutdown sequence as expected and must not hide a
+non-shutdown Oops or warning. The runner source contains no plugin or
 driver-name conditional.
 
-- [ ] **Step 2: Update the support and extension documentation.**
+- [x] **Step 2: Update the support and extension documentation.**
 
 Replace stale six-profile statements with seven runtime-ready built-ins; state
 that plugins are explicit extensions, that no-argument matrix execution does

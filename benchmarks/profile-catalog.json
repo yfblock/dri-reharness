@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "profiles": [
+    {
+      "profile_id": "edu-pci",
+      "base_profile_id": "pci-generic",
+      "source": "benchmarks/drivers/baseline/edu.c",
+      "manifest": "benchmarks/experiments/edu.json"
+    },
+    {
+      "profile_id": "ftgpio010-gpio",
+      "base_profile_id": "platform-generic",
+      "source": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+      "manifest": "benchmarks/experiments/ftgpio010.json"
+    }
+  ]
+}

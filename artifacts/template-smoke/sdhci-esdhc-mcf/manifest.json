@@ -1,0 +1,107 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "sdhci_esdhc_mcf",
+  "runtime": {
+    "adapter": "qemu-platform",
+    "capabilities": {
+      "optional": [
+        "subsystem",
+        "trace"
+      ],
+      "required": [
+        "registration",
+        "probe",
+        "unload"
+      ]
+    },
+    "fixture": {
+      "config": {
+        "driver_name": "sdhci-esdhc-mcf",
+        "module_args": {
+          "device-registrar": [
+            "target=sdhci-esdhc-mcf"
+          ]
+        },
+        "registrar_target": "sdhci-esdhc-mcf"
+      },
+      "kind": "qemu-platform",
+      "module_sources": [
+        "qa/verification/device-registrar/device-registrar.c"
+      ]
+    },
+    "profile": "platform-generic",
+    "qemu": {
+      "binding": {
+        "bus": "platform",
+        "device_glob": "sdhci-esdhc-mcf"
+      },
+      "bus": "platform",
+      "device": "platform-virtual",
+      "machine": "pc",
+      "module": "sdhci_esdhc_mcf",
+      "probe_pattern": "probe|registered|PROFILE_PLATFORM_PROBE",
+      "registrar": "sdhci-esdhc-mcf",
+      "timeout_seconds": 90
+    },
+    "subsystem_contracts": [
+      {
+        "id": "sdhci-generic",
+        "optional_capabilities": [
+          "subsystem",
+          "trace"
+        ],
+        "reason": "sdhci source evidence",
+        "required_capabilities": [
+          "static_analysis",
+          "generation_contract"
+        ],
+        "score": 10,
+        "subsystem": "sdhci",
+        "summary_contracts": [
+          "linux.sdhci_ops"
+        ],
+        "summary_groups": [
+          "sdhci_ops"
+        ]
+      }
+    ]
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/baseline/sdhci-esdhc-mcf.c",
+    "sha256": "ce5969d4fec1413da40c1ac132c173bb26d867ba39b6593c4c05ef6b5bdd7396"
+  },
+  "test": {
+    "subsystem": {
+      "name": "platform-generic",
+      "tests": [
+        {
+          "args": [],
+          "executable": "qa/native-tests/profile_probe_test.c",
+          "name": "platform-generic-api",
+          "success_pattern": "PROFILE_PROBE_PASS"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ]
+  }
+}

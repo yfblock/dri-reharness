@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 
 
 if __package__:
@@ -15,7 +16,9 @@ else:
     from _bootstrap import QA_ROOT, SOURCE_ROOT
 
 from extractor.spec import DeviceSpec, FunctionSpec, Signature
-from verification.linux_registration_ast_oracle import (
+from backends.linux.oracles.linux_registration_ast_oracle import (
+    _resolve_local_alias,
+    _signature,
     registration_route_fingerprint,
     verify_linux_registration_ast,
 )
@@ -23,7 +26,79 @@ from verification.linux_registration_ast_oracle import (
 
 _PYTHON_ENV = os.environ.copy()
 _PYTHON_ENV["PYTHONPATH"] = os.pathsep.join(
-    (str(SOURCE_ROOT), str(QA_ROOT)))
+    (str(SOURCE_ROOT), str(QA_ROOT), str(QA_ROOT / "verification")))
+
+
+def test_signature_handles_non_functionproto_declarations():
+    class NonPrototypeType:
+        spelling = "bool ()"
+        kind = SimpleNamespace(name="FUNCTIONNOPROTO")
+
+        def get_canonical(self):
+            return self
+
+        def is_function_variadic(self):
+            raise AssertionError("FUNCTIONNOPROTO has no variadic query")
+
+    class Function:
+        type = NonPrototypeType()
+        result_type = NonPrototypeType()
+
+        @staticmethod
+        def get_arguments():
+            return []
+
+    assert _signature(Function()) == {
+        "canonical": "bool ()",
+        "result": "bool ()",
+        "params": [],
+        "variadic": False,
+    }
+
+
+def test_resolve_local_alias_merges_nested_fields_into_canonical_object():
+    def path(root_usr, root, fields=(), type_name="struct opaque"):
+        return {
+            "root_usr": root_usr,
+            "root": root,
+            "scope": "function:probe",
+            "fields": [{
+                "field_usr": field_usr,
+                "field": field,
+                "owner_usr": None,
+                "owner_type": None,
+            } for field_usr, field in fields],
+            "type": type_name,
+        }
+
+    priv_gc = path(
+        "priv", "priv", (("field_chip", "chip"), ("field_gc", "gc")),
+        "struct gpio_chip")
+    gc_irq = path(
+        "local_gc", "gc", (("field_irq", "irq"),), "struct gpio_irq_chip")
+    local_gc = path("local_gc", "gc", type_name="struct gpio_chip *")
+    local_girq = path("local_girq", "girq", type_name="struct gpio_irq_chip *")
+    edges = [
+        {
+            "kind": "assignment", "dst": local_gc, "src": priv_gc,
+            "function_usr": "probe", "control_depth": 0,
+            "location": {"offset": 10},
+        },
+        {
+            "kind": "assignment", "dst": local_girq, "src": gc_irq,
+            "function_usr": "probe", "control_depth": 0,
+            "location": {"offset": 20},
+        },
+    ]
+
+    resolved = _resolve_local_alias(
+        path("local_girq", "girq", (("field_parent", "parent_handler"),),
+             "void (*)(struct irq_desc *)"),
+        edges, "probe", 30)
+
+    assert resolved["root_usr"] == "priv"
+    assert [field["field"] for field in resolved["fields"]] == [
+        "chip", "gc", "irq", "parent_handler"]
 
 
 def _contract() -> dict:
@@ -398,6 +473,75 @@ static int (*__inittest(void))(void) { return generated_driver_init; }
 """
 
 
+MISC_HEADER = r"""
+struct module { int unused; };
+extern struct module __this_module;
+struct device { int unused; };
+struct platform_device { struct device dev; };
+struct file { int unused; };
+struct miscdevice {
+    const struct file_operations *fops;
+};
+struct file_operations {
+    long (*read)(struct file *, char *, unsigned long, long long *);
+    long (*write)(struct file *, const char *, unsigned long, long long *);
+};
+struct platform_driver {
+    int (*probe)(struct platform_device *);
+    struct { const char *name; } driver;
+};
+int __platform_driver_register(struct platform_driver *, struct module *);
+int misc_register(struct miscdevice *);
+unsigned int readl(void *);
+void writel(unsigned int, void *);
+"""
+
+
+MISC_SOURCE = r"""
+#include "kernel_stubs.h"
+struct module __this_module;
+struct priv { struct miscdevice misc; };
+
+static long generated_read(struct file *filp, char *buf,
+                           unsigned long count, long long *off)
+{
+    __rh_op_op_read: { (void)readl((void *)filp); }
+    return (long)count;
+}
+
+static long generated_write(struct file *filp, const char *buf,
+                            unsigned long count, long long *off)
+{
+    __rh_op_op_write: { writel((unsigned int)count, (void *)filp); }
+    return (long)count;
+}
+
+static const struct file_operations generated_fops = {
+    .read = generated_read,
+    .write = generated_write,
+};
+
+static int generated_probe(struct platform_device *pdev)
+{
+    static struct priv priv;
+    priv.misc.fops = &generated_fops;
+    return misc_register(&priv.misc);
+}
+
+static struct platform_driver generated_driver = {
+    .probe = generated_probe,
+    .driver = { .name = "misc-registration-test" },
+};
+
+static int generated_driver_init(void)
+{
+    return __platform_driver_register(&generated_driver, &__this_module);
+}
+
+static int (*__inittest(void))(void) { return generated_driver_init; }
+"""
+
+
 def _fixture(root: Path, source: str = SOURCE):
     header = root / "kernel_stubs.h"
     generated = root / "registration_test.c"
@@ -418,6 +562,460 @@ def _verify(root: Path, source: str = SOURCE) -> dict:
         kbuild_cmd=command)
 
 
+def test_linux_registration_accepts_misc_file_operations_registration(tmp_path):
+    header = tmp_path / "kernel_stubs.h"
+    generated = tmp_path / "registration_test.c"
+    command = tmp_path / ".registration_test.o.cmd"
+    header.write_text(MISC_HEADER, encoding="utf-8")
+    generated.write_text(MISC_SOURCE, encoding="utf-8")
+    command.write_text(
+        f"cmd_registration_test.o := cc -I{tmp_path} -std=gnu11 "
+        "-c registration_test.c -o registration_test.o\n",
+        encoding="utf-8")
+    contract = {
+        "schema": 1,
+        "driver": "misc-registration-test",
+        "register_operations": [
+            {"op_id": "op_read", "module": "source_read", "kind": "Read"},
+            {"op_id": "op_write", "module": "source_write", "kind": "Write"},
+        ],
+    }
+    device = DeviceSpec(
+        name="misc-registration-test",
+        functions=[
+            FunctionSpec(
+                name="source_read", signature=Signature(), role="read_config",
+                ris_ref="source_read", is_callback_entry=True,
+                callback_table="file_operations.read"),
+            FunctionSpec(
+                name="source_write", signature=Signature(), role="write_config",
+                ris_ref="source_write", is_callback_entry=True,
+                callback_table="file_operations.write"),
+            FunctionSpec(
+                name="source_probe", signature=Signature(), role="probe",
+                ris_ref="source_probe", is_callback_entry=True,
+                callback_table="platform_driver.probe"),
+        ],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "misc-registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": row["op_id"], "module": row["module"],
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        } for row in contract["register_operations"]],
+    }
+
+    report = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command)
+
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == ["op_read", "op_write"]
+    callbacks = {route["callback"] for route in report["registration_routes"]}
+    assert {"file_operations.read", "file_operations.write"} <= callbacks
+    assert "misc_file_operations_registration" in report["claim_scope"]["proves"]
+    assert "misc_file_operations_registration" not in report["claim_scope"]["does_not_prove"]
+
+
+def test_linux_registration_accepts_network_object_root_and_typed_ops_link(tmp_path):
+    header = tmp_path / "kernel_stubs.h"
+    generated = tmp_path / "registration_test.c"
+    command = tmp_path / ".registration_test.o.cmd"
+    header.write_text(
+        "struct module { int unused; };\n"
+        "extern struct module __this_module;\n"
+        "struct net_device;\n"
+        "struct net_device_ops {\n"
+        "    int (*ndo_open)(struct net_device *);\n"
+        "};\n"
+        "struct net_device {\n"
+        "    const struct net_device_ops *netdev_ops;\n"
+        "};\n"
+        "int register_netdev(struct net_device *);\n",
+        encoding="utf-8",
+    )
+    generated.write_text(
+        '#include "kernel_stubs.h"\n'
+        "struct module __this_module;\n"
+        "static int source_open(struct net_device *dev)\n"
+        "{\n"
+        "    __rh_op_op_open: { return dev ? 0 : -1; }\n"
+        "}\n"
+        "static const struct net_device_ops generated_ops = {\n"
+        "    .ndo_open = source_open,\n"
+        "};\n"
+        "static struct net_device generated_netdev;\n"
+        "static int generated_init(void)\n"
+        "{\n"
+        "    generated_netdev.netdev_ops = &generated_ops;\n"
+        "    return register_netdev(&generated_netdev);\n"
+        "}\n"
+        "static int (*__inittest(void))(void) { return generated_init; }\n",
+        encoding="utf-8",
+    )
+    command.write_text(
+        f"cmd_registration_test.o := cc -I{tmp_path} -std=gnu11 "
+        "-c registration_test.c -o registration_test.o\n",
+        encoding="utf-8",
+    )
+    registration = {
+        "root_table": "net_device",
+        "identity_field": "none",
+        "device_id_tables": [],
+    }
+    contract = {
+        "schema": 1,
+        "driver": "network-registration-test",
+        "register_operations": [{
+            "op_id": "op_open", "module": "source_open", "kind": "Read",
+        }],
+    }
+    device = DeviceSpec(
+        name="network-registration-test",
+        functions=[FunctionSpec(
+            name="source_open", signature=Signature(), role="probe",
+            ris_ref="source_open", is_callback_entry=True,
+            callback_table="net_device_ops.ndo_open")],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "network-registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": "op_open", "module": "source_open",
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        }],
+    }
+    runtime_identity = {"bus": "network", "registration": registration}
+
+    report = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity=runtime_identity)
+
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == ["op_open"]
+    assert "net_device_ops.ndo_open" in {
+        route["callback"] for route in report["registration_routes"]
+    }
+    assert "module_or_object_root_registration" in report["claim_scope"]["proves"]
+    assert "runtime_named_identity_when_requested" in report["claim_scope"]["proves"]
+
+    generated.write_text(
+        generated.read_text(encoding="utf-8").replace(
+            "generated_netdev.netdev_ops = &generated_ops;",
+            "generated_netdev.netdev_ops = 0;"),
+        encoding="utf-8")
+    rejected = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity=runtime_identity)
+    assert rejected["complete"] is False
+    assert rejected["runtime_unregistered_op_ids"] == ["op_open"]
+
+
+def test_linux_registration_accepts_exact_spi_driver_root(tmp_path):
+    header = tmp_path / "kernel_stubs.h"
+    generated = tmp_path / "registration_test.c"
+    command = tmp_path / ".registration_test.o.cmd"
+    header.write_text(
+        "struct module { int unused; };\n"
+        "extern struct module __this_module;\n"
+        "struct spi_device { int unused; };\n"
+        "struct device_driver { const char *name; };\n"
+        "struct spi_driver {\n"
+        "    struct device_driver driver;\n"
+        "    int (*probe)(struct spi_device *);\n"
+        "};\n"
+        "int __spi_register_driver(struct module *, struct spi_driver *);\n"
+        "void spi_unregister_driver(struct spi_driver *);\n",
+        encoding="utf-8",
+    )
+    generated.write_text(
+        '#include "kernel_stubs.h"\n'
+        "struct module __this_module;\n"
+        "static int source_probe(struct spi_device *spi)\n"
+        "{\n"
+        "    __rh_op_op_probe: { return spi ? 0 : -1; }\n"
+        "}\n"
+        "static struct spi_driver generated_driver = {\n"
+        '    .driver = { .name = "registration-test" },\n'
+        "    .probe = source_probe,\n"
+        "};\n"
+        "static int generated_driver_init(void)\n"
+        "{\n"
+        "    return __spi_register_driver(&__this_module, &generated_driver);\n"
+        "}\n"
+        "static void generated_driver_exit(void)\n"
+        "{\n"
+        "    spi_unregister_driver(&generated_driver);\n"
+        "}\n"
+        "static int (*__inittest(void))(void) { return generated_driver_init; }\n",
+        encoding="utf-8",
+    )
+    command.write_text(
+        f"cmd_registration_test.o := cc -I{tmp_path} -std=gnu11 "
+        "-c registration_test.c -o registration_test.o\n",
+        encoding="utf-8",
+    )
+    contract = {
+        "schema": 1,
+        "driver": "registration-test",
+        "register_operations": [
+            {"op_id": "op_probe", "module": "source_probe", "kind": "Read"},
+        ],
+    }
+    device = DeviceSpec(
+        name="registration-test",
+        functions=[FunctionSpec(
+            name="source_probe", signature=Signature(), role="probe",
+            ris_ref="source_probe", is_callback_entry=True,
+            callback_table="spi_driver.probe")],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": "op_probe", "module": "source_probe",
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        }],
+    }
+
+    report = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command)
+
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == ["op_probe"]
+    assert "spi_driver.probe" in {
+        route["callback"] for route in report["registration_routes"]
+    }
+
+    mismatch = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity={"bus": "spi", "driver_name": "wrong-name"},
+    )
+    assert mismatch["complete"] is False
+    assert "driver_name_mismatch" in mismatch["runtime_identity_errors"]
+
+    declared_mismatch = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity={
+            "registration": {
+                "root_table": "spi_driver",
+                "identity_field": "driver_name",
+                "device_id_tables": ["spi_device_id"],
+            },
+            "driver_name": "wrong-name",
+        },
+    )
+    assert declared_mismatch["complete"] is False
+    assert "driver_name_mismatch" in declared_mismatch["runtime_identity_errors"]
+
+
+def test_linux_registration_accepts_plugin_declared_root_shape(tmp_path):
+    header = tmp_path / "kernel_stubs.h"
+    generated = tmp_path / "registration_test.c"
+    command = tmp_path / ".registration_test.o.cmd"
+    header.write_text(
+        "struct module { int unused; };\n"
+        "extern struct module __this_module;\n"
+        "struct foo_device { int unused; };\n"
+        "struct foo_driver {\n"
+        "    struct { const char *name; } driver;\n"
+        "    int (*probe)(struct foo_device *);\n"
+        "};\n"
+        "int foo_register_driver(struct foo_driver *);\n",
+        encoding="utf-8",
+    )
+    generated.write_text(
+        '#include "kernel_stubs.h"\n'
+        "struct module __this_module;\n"
+        "static int source_probe(struct foo_device *device)\n"
+        "{\n"
+        "    __rh_op_op_probe: { return device ? 0 : -1; }\n"
+        "}\n"
+        "static struct foo_driver generated_driver = {\n"
+        '    .driver = { .name = "foo0" },\n'
+        "    .probe = source_probe,\n"
+        "};\n"
+        "static int generated_driver_init(void)\n"
+        "{\n"
+        "    return foo_register_driver(&generated_driver);\n"
+        "}\n"
+        "static int (*__inittest(void))(void) { return generated_driver_init; }\n",
+        encoding="utf-8",
+    )
+    command.write_text(
+        f"cmd_registration_test.o := cc -I{tmp_path} -std=gnu11 "
+        "-c registration_test.c -o registration_test.o\n",
+        encoding="utf-8",
+    )
+    contract = {
+        "schema": 1,
+        "driver": "registration-test",
+        "register_operations": [
+            {"op_id": "op_probe", "module": "source_probe", "kind": "Read"},
+        ],
+    }
+    device = DeviceSpec(
+        name="registration-test",
+        functions=[FunctionSpec(
+            name="source_probe", signature=Signature(), role="probe",
+            ris_ref="source_probe", is_callback_entry=True,
+            callback_table="foo_driver.probe")],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": "op_probe", "module": "source_probe",
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        }],
+    }
+    runtime_identity = {
+        "registration": {
+            "root_table": "foo_driver",
+            "identity_field": "driver_name",
+            "registration_apis": [{
+                "name": "foo_register_driver",
+                "kind": "driver_root",
+                "argument": 0,
+                "type": "struct foo_driver *",
+                "table": "foo_driver",
+            }],
+            "tables": [{
+                "id": "foo_driver", "record": "foo_driver", "role": "root",
+            }],
+            "links": [],
+        },
+        "driver_name": "foo0",
+    }
+
+    report = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity=runtime_identity)
+
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == ["op_probe"]
+    assert "foo_driver.probe" in {
+        route["callback"] for route in report["registration_routes"]
+    }
+
+    without_contract = dict(runtime_identity)
+    without_contract["registration"] = {
+        "root_table": "foo_driver",
+        "identity_field": "driver_name",
+    }
+    rejected = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity=without_contract)
+    assert rejected["complete"] is False
+
+
+def test_linux_registration_accepts_exact_i2c_driver_root(tmp_path):
+    header = tmp_path / "kernel_stubs.h"
+    generated = tmp_path / "registration_test.c"
+    command = tmp_path / ".registration_test.o.cmd"
+    header.write_text(
+        "struct module { int unused; };\n"
+        "extern struct module __this_module;\n"
+        "struct i2c_client { int unused; };\n"
+        "struct device_driver { const char *name; };\n"
+        "struct i2c_device_id { const char *name; unsigned long driver_data; };\n"
+        "struct i2c_driver {\n"
+        "    struct device_driver driver;\n"
+        "    int (*probe)(struct i2c_client *);\n"
+        "    const struct i2c_device_id *id_table;\n"
+        "};\n"
+        "int i2c_register_driver(struct module *, struct i2c_driver *);\n"
+        "void i2c_unregister_driver(struct i2c_driver *);\n",
+        encoding="utf-8",
+    )
+    generated.write_text(
+        '#include "kernel_stubs.h"\n'
+        "struct module __this_module;\n"
+        "static int source_probe(struct i2c_client *client)\n"
+        "{\n"
+        "    __rh_op_op_probe: { return client ? 0 : -1; }\n"
+        "}\n"
+        "static const struct i2c_device_id generated_ids[] = {\n"
+        '    { "registration-test", 0 },\n'
+        "    { }\n"
+        "};\n"
+        "static struct i2c_driver generated_driver = {\n"
+        '    .driver = { .name = "registration-test" },\n'
+        "    .probe = source_probe,\n"
+        "    .id_table = generated_ids,\n"
+        "};\n"
+        "static int generated_driver_init(void)\n"
+        "{\n"
+        "    return i2c_register_driver(&__this_module, &generated_driver);\n"
+        "}\n"
+        "static void generated_driver_exit(void)\n"
+        "{\n"
+        "    i2c_unregister_driver(&generated_driver);\n"
+        "}\n"
+        "static int (*__inittest(void))(void) { return generated_driver_init; }\n",
+        encoding="utf-8",
+    )
+    command.write_text(
+        f"cmd_registration_test.o := cc -I{tmp_path} -std=gnu11 "
+        "-c registration_test.c -o registration_test.o\n",
+        encoding="utf-8",
+    )
+    contract = {
+        "schema": 1,
+        "driver": "registration-test",
+        "register_operations": [
+            {"op_id": "op_probe", "module": "source_probe", "kind": "Read"},
+        ],
+    }
+    device = DeviceSpec(
+        name="registration-test",
+        functions=[FunctionSpec(
+            name="source_probe", signature=Signature(), role="probe",
+            ris_ref="source_probe", is_callback_entry=True,
+            callback_table="i2c_driver.probe")],
+    )
+    plan = {
+        "schema": 3,
+        "oracle": "backend-lowering-plan-v3",
+        "driver": "registration-test",
+        "backend": "linux",
+        "entries": [{
+            "op_id": "op_probe", "module": "source_probe",
+            "strict_eligible": True,
+            "disposition": "candidate_definition_emit",
+        }],
+    }
+
+    report = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command)
+
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == ["op_probe"]
+    assert "i2c_driver.probe" in {
+        route["callback"] for route in report["registration_routes"]
+    }
+
+    mismatch = verify_linux_registration_ast(
+        contract, device, generated, plan, kbuild_cmd=command,
+        runtime_identity={"bus": "i2c", "driver_name": "wrong-name"},
+    )
+    assert mismatch["complete"] is False
+    assert "driver_name_mismatch" in mismatch["runtime_identity_errors"]
+    assert "i2c_id_name_mismatch" in mismatch["runtime_identity_errors"]
+
+
 def test_linux_registration_accepts_exact_platform_gpio_irq_chain(tmp_path):
     report = _verify(tmp_path)
     assert report["complete"] is True, report
@@ -434,6 +1032,75 @@ def test_linux_registration_accepts_exact_platform_gpio_irq_chain(tmp_path):
         if isinstance(item.get("location"), dict):
             item["location"]["file"] = "/different/output/root/generated.c"
     assert registration_route_fingerprint(route) == original
+
+
+def test_linux_registration_rejects_platform_registrar_identity_mismatch(tmp_path):
+    generated, command = _fixture(tmp_path)
+
+    report = verify_linux_registration_ast(
+        _contract(), _device_spec(), generated, _plan(),
+        kbuild_cmd=command,
+        runtime_identity={"bus": "platform", "registrar": "wrong-name"},
+    )
+
+    assert report["complete"] is False
+    assert "registrar_name_mismatch" in report["runtime_identity_errors"]
+
+
+def test_linux_registration_accepts_exact_platform_registrar_identity(tmp_path):
+    generated, command = _fixture(tmp_path)
+
+    report = verify_linux_registration_ast(
+        _contract(), _device_spec(), generated, _plan(),
+        kbuild_cmd=command,
+        runtime_identity={"bus": "platform", "registrar": "registration-test"},
+    )
+
+    assert report["complete"] is True, report
+    assert report["runtime_identity_errors"] == []
+
+
+def test_linux_registration_accepts_callbacks_split_across_translation_units(
+        tmp_path):
+    header = tmp_path / "kernel_stubs.h"
+    header.write_text(
+        HEADER + "\n"
+        "int generated_get(struct gpio_chip *, unsigned int);\n"
+        "void generated_ack(struct irq_data *);\n"
+        "void generated_parent(struct irq_desc *);\n",
+        encoding="utf-8",
+    )
+    callback_start = SOURCE.index("static int generated_get")
+    probe_start = SOURCE.index("static int generated_probe")
+    helper_source = SOURCE[callback_start:probe_start].replace(
+        "static int generated_get", "int generated_get", 1).replace(
+        "static void generated_ack", "void generated_ack", 1).replace(
+        "static void generated_parent", "void generated_parent", 1)
+    helper = tmp_path / "helper.c"
+    helper.write_text('#include "kernel_stubs.h"\n' + helper_source,
+                      encoding="utf-8")
+    main = tmp_path / "main.c"
+    main.write_text(
+        '#include "kernel_stubs.h"\n'
+        "struct module __this_module;\n"
+        + SOURCE[SOURCE.index("struct priv"):callback_start]
+        + SOURCE[probe_start:],
+        encoding="utf-8",
+    )
+    command = tmp_path / ".registration_test.o.cmd"
+    command.write_text(
+        f"cmd_registration_test.o := cc -I{tmp_path} -std=gnu11 "
+        "-c main.c -o main.o\n",
+        encoding="utf-8",
+    )
+
+    report = verify_linux_registration_ast(
+        _contract(), _device_spec(), [main, helper], _plan(),
+        kbuild_cmd=command)
+
+    assert report["complete"] is True, report
+    assert report["runtime_registered_op_ids"] == [
+        "op_ack", "op_get", "op_parent", "op_probe"]
 
 
 def test_linux_registration_accepts_typed_pm_and_clock_object_chains(tmp_path):
@@ -629,6 +1296,39 @@ def test_linux_registration_rejects_usb_lifecycle_mutations(tmp_path):
         assert report["complete"] is False, (index, report)
         assert report["runtime_registered_op_ids"] == [], (index, report)
 
+
+def test_linux_registration_reports_operation_callback_ownership_mismatch(tmp_path):
+    # Move the operation anchor into the probe callback while keeping the
+    # DeviceSpec ownership on the gpio get callback.  The generated source is
+    # still syntactically valid, but repair needs an actionable location error.
+    wrong_owner = SOURCE
+    wrong_owner = wrong_owner.replace(
+        "static int generated_get(struct gpio_chip *gc, unsigned int line)\n"
+        "{\n"
+        "    __rh_op_op_get: { (void)readl((void *)gc); }\n"
+        "    return (int)line;\n"
+        "}\n",
+        "static int generated_get(struct gpio_chip *gc, unsigned int line)\n"
+        "{\n"
+        "    return 0;\n"
+        "}\n",
+    ).replace(
+        "    __rh_op_op_probe: { (void)readl((void *)pdev); }\n",
+        "    __rh_op_op_get: { (void)readl((void *)pdev); }\n"
+        "    __rh_op_op_probe: { (void)readl((void *)pdev); }\n",
+    )
+    generated, command = _fixture(tmp_path, wrong_owner)
+
+    report = verify_linux_registration_ast(
+        _contract(), _device_spec(), generated, _plan(),
+        kbuild_cmd=command)
+
+    operation = next(item for item in report["operations"]
+                     if item["op_id"] == "op_get")
+    assert operation["expected_function"] == "source_get"
+    assert operation["actual_function"] == "generated_probe"
+    assert "operation_callback_ownership_mismatch" in operation["errors"]
+
     gadget_mutations = [
         USB_GADGET_SOURCE.replace(
             "usb_del_gadget_udc(&generated_gadget);", "(void)pdev;"),
@@ -716,6 +1416,23 @@ def test_linux_registration_rejects_controlled_gpio_and_wrong_irq_attach(tmp_pat
     assert "op_parent" not in report["runtime_unregistered_op_ids"]
 
 
+def test_linux_registration_resolves_local_gpio_irq_alias(tmp_path):
+    aliased = SOURCE.replace(
+        "    g->irqchip.irq_ack = generated_ack;\n"
+        "    gpio_irq_chip_set_chip(&g->gc.irq, &g->irqchip);\n"
+        "    g->gc.irq.parent_handler = generated_parent;",
+        "    struct gpio_irq_chip *girq;\n"
+        "    struct irq_chip *irqchip;\n"
+        "    girq = &g->gc.irq;\n"
+        "    irqchip = &g->irqchip;\n"
+        "    irqchip->irq_ack = generated_ack;\n"
+        "    gpio_irq_chip_set_chip(girq, irqchip);\n"
+        "    girq->parent_handler = generated_parent;")
+    report = _verify(tmp_path, aliased)
+    assert report["complete"] is True
+    assert report["runtime_unregistered_op_ids"] == []
+
+
 def test_linux_registration_cli_requires_exact_context_and_writes_report(tmp_path):
     generated, command = _fixture(tmp_path)
     contract = tmp_path / "contract.json"
@@ -729,7 +1446,7 @@ def test_linux_registration_cli_requires_exact_context_and_writes_report(tmp_pat
     plan.write_text(json.dumps(_plan()), encoding="utf-8")
     process = subprocess.run([
         sys.executable,
-        str(QA_ROOT / "verification" / "linux_registration_ast_oracle.py"),
+        str(QA_ROOT.parent / "src" / "backends" / "linux" / "oracles" / "linux_registration_ast_oracle.py"),
         "--contract", str(contract),
         "--device-spec-json", str(device),
         "--lowering-plan", str(plan),
@@ -742,7 +1459,7 @@ def test_linux_registration_cli_requires_exact_context_and_writes_report(tmp_pat
 
     missing = subprocess.run([
         sys.executable,
-        str(QA_ROOT / "verification" / "linux_registration_ast_oracle.py"),
+        str(QA_ROOT.parent / "src" / "backends" / "linux" / "oracles" / "linux_registration_ast_oracle.py"),
         "--contract", str(contract),
         "--device-spec-json", str(device),
         "--lowering-plan", str(plan),

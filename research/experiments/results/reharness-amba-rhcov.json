@@ -1,0 +1,7 @@
+{
+  "functions": [
+    "reharness_amba_sensor_probe",
+    "reharness_amba_sensor_remove"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_amba_sensor/reharness_amba_sensor.c"
+}

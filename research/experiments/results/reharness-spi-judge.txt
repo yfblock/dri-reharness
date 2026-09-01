@@ -1,0 +1,66 @@
+=== QEMU run: module=reharness_spi_sensor bus=spi timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.030588] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030654] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.073431] ftrace: allocating 38031 entries in 150 pages
+[    0.073692] ftrace: allocated 150 pages with 4 groups
+[    0.420326] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.424538] thermal_sys: Registered thermal governor 'step_wise'
+[    0.429042] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.430455] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.516325] ACPI: bus type USB registered
+[    0.516620] usbcore: registered new interface driver usbfs
+[    0.516817] usbcore: registered new interface driver hub
+[    0.516913] usbcore: registered new device driver usb
+[    0.517130] pps_core: LinuxPPS API ver. 1 registered
+[    0.517256] PTP clock support registered
+[    0.550103] NET: Registered PF_INET protocol family
+[    0.567128] Key type asymmetric registered
+[    0.567204] Asymmetric key parser 'x509' registered
+[    0.567603] io scheduler mq-deadline registered
+[    0.567661] io scheduler kyber registered
+[    0.605461] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.610984] usbcore: registered new interface driver usbhid
+[    0.611633] NET: Registered PF_INET6 protocol family
+=== insmod required kernel module spidev ===
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod runtime fixture spi-registrar ===
+[    1.025865] insmod (62) used greatest stack depth: 13000 bytes left
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0
+=== insmod reharness_spi_sensor ===
+[    1.030419] [rhcov] reharness_spi_sensor_probe
+[    1.031315] reharness_spi_sens spi0.0: REHARNESS_SPI_DRIVER_PROBE register=0x10 value=0xa6
+REHARNESS_DRIVER_INSMOD_RC=0
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    1.030419] [rhcov] reharness_spi_sensor_probe
+[    1.031315] reharness_spi_sens spi0.0: REHARNESS_SPI_DRIVER_PROBE register=0x10 value=0xa6
+REHARNESS_SUBSYSTEM_TEST_0_NAME=spi-transfer
+REHARNESS_SUBSYSTEM_TEST_0_KIND=native
+REHARNESS_SUBSYSTEM_TEST_0_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_1_NAME=spi-invalid-chip-select
+REHARNESS_SUBSYSTEM_TEST_1_KIND=native
+REHARNESS_SUBSYSTEM_TEST_1_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_1_RC=0
+REHARNESS_SUBSYSTEM_TEST_1_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_2_NAME=linux-spidev-tool
+REHARNESS_SUBSYSTEM_TEST_2_KIND=tool
+REHARNESS_SUBSYSTEM_TEST_2_PROVIDER=linux-spidev
+REHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_2_RC=0
+REHARNESS_SUBSYSTEM_TEST_2_STATUS=pass
+=== rmmod reharness_spi_sensor ===
+REHARNESS_DRIVER_RMMOD_RC=0
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.326688] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1
+  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: reharness_spi_sensor probe 成功

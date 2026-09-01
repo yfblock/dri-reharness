@@ -275,6 +275,7 @@ def build_control_accounting(funcs) -> dict:
     modeled_returns = 0
     modeled_forward_gotos = 0
     assumed_error_gotos = 0
+    modeled_continues = 0
     for func in funcs:
         has_transfer = any(cursor.kind in _TRANSFERS
                            for cursor in func.cursor.walk_preorder())
@@ -336,7 +337,7 @@ def build_control_accounting(funcs) -> dict:
                 for call in function_calls(loop))
 
         def visit(cursor, ancestors):
-            nonlocal assumed_error_gotos, modeled_forward_gotos
+            nonlocal assumed_error_gotos, modeled_forward_gotos, modeled_continues
             offset = getattr(cursor.location, "offset", 0) or 0
             cursor_text = source_text(
                 func.cursor.translation_unit, cursor).strip()
@@ -358,7 +359,9 @@ def build_control_accounting(funcs) -> dict:
                         func, cursor, "goto",
                         "goto target/state merge is not represented by structured RIS"))
             elif cursor.kind == cx.CursorKind.CONTINUE_STMT:
-                if loop_has_register_access(ancestors):
+                if offset in modeled:
+                    modeled_continues += 1
+                elif loop_has_register_access(ancestors):
                     sites.append(_site(
                         func, cursor, "continue",
                         "loop continue requires CFG fixpoint semantics"))
@@ -394,6 +397,7 @@ def build_control_accounting(funcs) -> dict:
     cfg_complete = all(item["complete"] for item in cfg_functions)
     return {
         "modeled_early_returns": modeled_returns,
+        "modeled_continues": modeled_continues,
         "modeled_forward_gotos": modeled_forward_gotos,
         "modeled_sites": modeled_sites,
         "assumed_framework_error_gotos": assumed_error_gotos,

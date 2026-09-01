@@ -1,0 +1,72 @@
+{
+  "evidence_digest": "e8861b3ce672c33cfeb972db20d00665cd8dc7136725a5926e4acf8965607906",
+  "iteration": 2,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "feedback": {
+      "details": {
+        "driver_insmod_rc": 0,
+        "excerpt": "GPIO_TRACE_DONE\nREHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\n=== rmmod ftgpio010_gpio ===\n[    1.668279] device-registrar: 'ftgpio010-gpio' \u5df2\u6ce8\u9500\n=== QEMU_RUN_DONE ===\n[    1.877687] sysrq: Power Off\n[    1.878324] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000\n[    1.878680] CPU: 1 UID: 0 PID: 1 Comm: init Tainted: G           O        7.1.0-rc7-gacb7500801e9 #7 PREEMPT(lazy)\n[    1.878798] Tainted: [O]=OOT_MODULE\n[    1.878835] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014\n[    1.878983] Call Trace:\n[    1.879321]  <TASK>\n[    1.879450]  vpanic+0x32f/0x4b0\n[    1.879612]  panic+0x63/0x70\n[    1.879636]  do_exit+0x94a/0xaf0\n[    1.879663]  ? __schedule+0x4ab/0xf50\n[    1.879692]  do_group_exit+0x30/0x80\n[    1.879723]  __x64_sys_exit_group+0x18/0x20\n[    1.879756]  x64_sys_call+0x12e2/0x1880\n[    1.879783]  do_syscall_64+0x10e/0x4e0\n[    1.879810]  entry_SYSCALL_64_after_hwframe+0x77/0x7f\n[    1.879909] RIP: 0033:0x7efc4494131d\n[    1.880044] Code: 02 ba ff ff ff ff 89 d0 c3 0f 1f 40 00 f3 0f 1e fa 48 8b 35 ed 4a 11 00 ba e7 00 00 00 eb 07 66 0f 1f 44 00 00 f4 89 d0 0f 05 <48> 3d 00 f0 ff ff 76 f3 f7 d8 64 89 06 eb ec 0f 1f 40 00 f3 0f 1e\n[    1.880172] RSP: 002b:00007ffd1d11dca8 EFLAGS: 00000206 ORIG_RAX: 00000000000000e7\n[    1.880234] RAX: ffffffffffffffda RBX: 00007ffd1d11df30 RCX: 00007efc4494131d\n[    1.880277] RDX: 00000000000000e7 RSI: ffffffffffffff88 RDI: 0000000000000000\n[    1.880319] RBP: 00007ffd1d11dd80 R08: 0000556d8317e010 R09: 0000000000000007\n[    1.880361] R10: 0000556d83180ac0 R11: 0000000000000206 R12: 0000000000000000\n[    1.880402] R13: 00007ffd1d11df20 R14: 0000556d6d218dd8 R15: 00007efc44aa7000\n[    1.880467]  </TASK>\n[    1.880818] Kernel Offset: disabled\n[    1.880987] Rebooting in 1 seconds..\n=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.031654] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.031719] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.072114] ftrace: allocating 31848 entries in 126 pages\n[    0.072373] ftrace: allocated 126 pages with 6 groups\n[    0.403745] thermal_sys: Registered thermal governor 'step_wise'\n[    0.408141] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.409489] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.489041] pps_core: LinuxPPS API ver. 1 registered\n[    0.529668] Key type asymmetric registered\n[    0.529743] Asymmetric key parser 'x509' registered\n[    0.530170] io scheduler mq-deadline registered\n[    0.530232] io scheduler kyber registered\n[    0.571530] rtc_cmos PNP0B00:00: registered as rtc0\n=== insmod device-registrar target=ftgpio010-gpio ===\nREHARNESS_REGISTRAR_INSMOD_RC=0\n=== insmod ftgpio010_gpio ===\n[    1.296128] [rhfn] ftgpio_gpio_probe\n[    1.296897] [rh] W 0x20 0x0\n[    1.296934] [rh] W 0x2c 0x0\n[    1.296963] [rh] W 0x30 0xffffffff\n[    1.296993] [rh] W 0x40 0x0\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    0.031654] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.031719] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.403745] thermal_sys: Registered thermal governor 'step_wise'\n[    0.409489] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.489041] pps_core: LinuxPPS API ver. 1 registered\n[    0.529668] Key type asymmetric registered\n[    0.529743] Asymmetric key parser 'x509' registered\n[    0.530170] io scheduler mq-deadline registered\n[    0.530232] io scheduler kyber registered\n[    0.571530] rtc_cmos PNP0B00:00: registered as rtc0\nGPIO_TRACE_DONE\nREHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\n=== rmmod ftgpio010_gpio ===\n=== QEMU_RUN_DONE ===\n[    1.878983] Call Trace:\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\ndone=1 probe=14 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0\n=> \u6210\u529f: ftgpio010_gpio probe \u6210\u529f",
+        "observations": {
+          "done": true,
+          "driver_insmod_rc": 0,
+          "driver_probe_bound": true,
+          "exerciser": false,
+          "failed_kernel_modules": [],
+          "oops": true,
+          "probe": true,
+          "probe_required": true,
+          "registrar": "ftgpio010-gpio",
+          "registrar_insmod_rc": 0,
+          "subsystem_tests": [
+            {
+              "index": 0,
+              "name": "ftgpio010-gpio-api",
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            {
+              "index": 0,
+              "name": "ftgpio010-gpio-api",
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            }
+          ],
+          "success_pattern": null,
+          "unavailable_kernel_modules": []
+        },
+        "qemu_exit_code": 0,
+        "reason": "kernel_oops",
+        "registrar_insmod_rc": 0,
+        "return_code": 0,
+        "role": "baseline",
+        "subsystem_tests": [
+          {
+            "index": 0,
+            "name": "ftgpio010-gpio-api",
+            "return_code": 0,
+            "status": "pass",
+            "success": true
+          },
+          {
+            "index": 0,
+            "name": "ftgpio010-gpio-api",
+            "return_code": 0,
+            "status": "pass",
+            "success": true
+          }
+        ],
+        "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v8/pipeline/traces/baseline-05e1da2fd1024d7fa8a8f7dfae32a97f.trace"
+      },
+      "failure_class": "runtime",
+      "iteration": 2,
+      "message": "runtime adapter failed: kernel_oops",
+      "retryable": true,
+      "stage": "baseline"
+    }
+  },
+  "stage": "baseline",
+  "status": "failed"
+}

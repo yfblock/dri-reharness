@@ -1,0 +1,218 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1720" viewBox="0 0 1120 1720" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="1720" fill="#f8fafc"/>
+
+  <text x="560" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">LangGraph 替代 pipeline 后的目标拓扑</text>
+  <text x="560" y="58" text-anchor="middle" font-size="12" fill="#64748b">设计草图：展开 run_project_pipeline → generation 子图 + experiment 修复环（基于 driver_pipeline.py / experiment_runner.py）</text>
+
+  <!-- ================= edges: main chain ================= -->
+  <g stroke="#475569" stroke-width="1.8" fill="none">
+    <line x1="560" y1="116" x2="560" y2="152" marker-end="url(#arrow)"/>
+    <line x1="560" y1="210" x2="560" y2="252" marker-end="url(#arrow)"/>
+    <line x1="560" y1="310" x2="560" y2="352" marker-end="url(#arrow)"/>
+    <line x1="560" y1="410" x2="560" y2="452" marker-end="url(#arrow)"/>
+    <!-- plan -> generation container -->
+    <path d="M 560 510 C 420 540, 250 560, 250 610" marker-end="url(#arrow)"/>
+    <!-- plan -> experiment container -->
+    <path d="M 560 510 C 700 540, 870 560, 870 610" marker-end="url(#arrow)"/>
+    <!-- plan -> finalize (analysis / not eligible) -->
+    <path d="M 690 483 C 1110 560, 1115 1330, 705 1478" marker-end="url(#arrow)"/>
+  </g>
+  <text x="350" y="548" text-anchor="end" font-size="11" font-style="italic" fill="#64748b">mode = generation</text>
+  <text x="770" y="548" text-anchor="start" font-size="11" font-style="italic" fill="#64748b">mode = experiment</text>
+  <text x="1048" y="720" text-anchor="middle" font-size="11" font-style="italic" fill="#64748b" transform="rotate(83 1048 720)">mode = analysis / 门控未通过</text>
+
+  <!-- ================= START ================= -->
+  <rect x="500" y="80" width="120" height="36" rx="18" fill="#0f172a"/>
+  <text x="560" y="103" text-anchor="middle" font-size="14" font-weight="600" fill="#f8fafc">START</text>
+
+  <!-- ================= main chain nodes ================= -->
+  <rect x="430" y="156" width="260" height="54" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="560" y="178" text-anchor="middle" font-size="14" font-weight="600" fill="#312e81">normalize_input</text>
+  <text x="560" y="197" text-anchor="middle" font-size="11" fill="#6366f1">→ normalized</text>
+
+  <rect x="430" y="256" width="260" height="54" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="560" y="278" text-anchor="middle" font-size="14" font-weight="600" fill="#312e81">discover_driver_files</text>
+  <text x="560" y="297" text-anchor="middle" font-size="11" fill="#6366f1">→ inventory</text>
+
+  <rect x="430" y="356" width="260" height="54" rx="10" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="560" y="378" text-anchor="middle" font-size="14" font-weight="600" fill="#312e81">analyze_driver_files</text>
+  <text x="560" y="397" text-anchor="middle" font-size="11" fill="#6366f1">→ analysis（readiness / 契约验证）</text>
+
+  <rect x="430" y="456" width="260" height="54" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="560" y="478" text-anchor="middle" font-size="14" font-weight="600" fill="#78350f">build_pipeline_plan</text>
+  <text x="560" y="497" text-anchor="middle" font-size="11" fill="#b45309">→ pipeline_plan（三路条件路由）</text>
+
+  <!-- ================= ghost node ================= -->
+  <rect x="470" y="585" width="180" height="48" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="6 4"/>
+  <text x="560" y="605" text-anchor="middle" font-size="12" font-weight="600" fill="#64748b">run_project_pipeline ✕</text>
+  <text x="560" y="623" text-anchor="middle" font-size="10" fill="#94a3b8">黑盒节点被展开为左右子图</text>
+
+  <!-- ================= generation subgraph container ================= -->
+  <rect x="100" y="614" width="300" height="786" rx="14" fill="none" stroke="#0e7490" stroke-width="1.2" stroke-dasharray="7 5"/>
+  <text x="112" y="634" text-anchor="start" font-size="12" font-weight="700" fill="#0e7490">generation 子图</text>
+
+  <g stroke="#475569" stroke-width="1.8" fill="none">
+    <line x1="250" y1="702" x2="250" y2="720" marker-end="url(#arrow)"/>
+    <line x1="250" y1="782" x2="250" y2="804" marker-end="url(#arrow)"/>
+    <line x1="250" y1="952" x2="250" y2="978" marker-end="url(#arrow)"/>
+    <line x1="250" y1="1040" x2="250" y2="1062" marker-end="url(#arrow)"/>
+    <line x1="250" y1="1124" x2="250" y2="1146" marker-end="url(#arrow)"/>
+    <line x1="250" y1="1208" x2="250" y2="1230" marker-end="url(#arrow)"/>
+    <line x1="250" y1="1292" x2="250" y2="1314" marker-end="url(#arrow)"/>
+  </g>
+  <text x="262" y="798" text-anchor="start" font-size="10" fill="#0e7490">Send ×5</text>
+  <text x="262" y="972" text-anchor="start" font-size="10" fill="#0e7490">reducer 汇聚</text>
+  <text x="262" y="1056" text-anchor="start" font-size="10" fill="#0e7490">Send ×3（3 backend 并行）</text>
+
+  <rect x="130" y="648" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="670" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">extract_sources</text>
+  <text x="250" y="689" text-anchor="middle" font-size="11" fill="#0891b2">extract_ris + 事务 oracle</text>
+
+  <rect x="130" y="728" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="750" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">build_generation_contract</text>
+  <text x="250" y="769" text-anchor="middle" font-size="11" fill="#0891b2">契约 + readiness 评分</text>
+
+  <!-- oracles fan-out container -->
+  <rect x="110" y="812" width="280" height="140" rx="10" fill="#f0fdff" stroke="#0e7490" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="250" y="832" text-anchor="middle" font-size="11" font-weight="600" fill="#0e7490">verify_source_oracles · Send ×5</text>
+  <g font-size="10" fill="#164e63" text-anchor="middle">
+    <rect x="122" y="844" width="108" height="24" rx="12" fill="#cffafe" stroke="#0e7490"/>
+    <text x="176" y="860">gpio_mmio</text>
+    <rect x="250" y="844" width="108" height="24" rx="12" fill="#cffafe" stroke="#0e7490"/>
+    <text x="304" y="860">sdhci</text>
+    <rect x="122" y="876" width="108" height="24" rx="12" fill="#cffafe" stroke="#0e7490"/>
+    <text x="176" y="892">virtio</text>
+    <rect x="250" y="876" width="108" height="24" rx="12" fill="#cffafe" stroke="#0e7490"/>
+    <text x="304" y="892">w1c_drain</text>
+    <rect x="188" y="908" width="124" height="24" rx="12" fill="#cffafe" stroke="#0e7490"/>
+    <text x="250" y="924">transaction_ir</text>
+  </g>
+
+  <rect x="130" y="986" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="1008" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">aggregate_oracles</text>
+  <text x="250" y="1027" text-anchor="middle" font-size="11" fill="#0891b2">reducer 汇聚 oracle 结果</text>
+
+  <rect x="130" y="1070" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="1092" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">generate_backends</text>
+  <text x="250" y="1111" text-anchor="middle" font-size="11" fill="#0891b2">harness / baremetal / linux</text>
+
+  <rect x="130" y="1154" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="1176" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">verify_backend_lowering</text>
+  <text x="250" y="1195" text-anchor="middle" font-size="11" fill="#0891b2">lowering / plan / ast_leaf</text>
+
+  <rect x="130" y="1238" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="1260" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">compile_and_trace</text>
+  <text x="250" y="1279" text-anchor="middle" font-size="11" fill="#0891b2">cc 编译 + trace 子序列比对</text>
+
+  <rect x="130" y="1322" width="240" height="54" rx="10" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="250" y="1344" text-anchor="middle" font-size="14" font-weight="600" fill="#164e63">write_artifacts</text>
+  <text x="250" y="1363" text-anchor="middle" font-size="11" fill="#0891b2">产物落盘 + digest</text>
+
+  <!-- generation -> finalize -->
+  <path d="M 250 1376 C 250 1440, 340 1467, 426 1467" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <text x="300" y="1430" text-anchor="middle" font-size="11" font-style="italic" fill="#64748b">生成报告</text>
+
+  <!-- ================= experiment subgraph container ================= -->
+  <rect x="740" y="614" width="260" height="622" rx="14" fill="none" stroke="#7c3aed" stroke-width="1.2" stroke-dasharray="7 5"/>
+  <text x="752" y="634" text-anchor="start" font-size="12" font-weight="700" fill="#7c3aed">experiment 修复环</text>
+
+  <g stroke="#475569" stroke-width="1.8" fill="none">
+    <line x1="870" y1="702" x2="870" y2="720" marker-end="url(#arrow)"/>
+    <line x1="870" y1="782" x2="870" y2="804" marker-end="url(#arrow)"/>
+    <line x1="870" y1="866" x2="870" y2="874" marker-end="url(#arrow)"/>
+    <line x1="870" y1="936" x2="870" y2="944" marker-end="url(#arrow)"/>
+    <line x1="870" y1="1006" x2="870" y2="1014" marker-end="url(#arrow)"/>
+    <line x1="870" y1="1076" x2="870" y2="1084" marker-end="url(#arrow)"/>
+    <line x1="870" y1="1146" x2="870" y2="1154" marker-end="url(#arrow)"/>
+  </g>
+
+  <rect x="750" y="648" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="670" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">load_and_align_manifest</text>
+  <text x="870" y="689" text-anchor="middle" font-size="11" fill="#7c3aed">manifest + source digest 校验</text>
+
+  <rect x="750" y="728" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="750" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">synthesize</text>
+  <text x="870" y="769" text-anchor="middle" font-size="11" fill="#7c3aed">LLM 合成候选（bridge）</text>
+
+  <rect x="750" y="812" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="834" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">verify_contract</text>
+  <text x="870" y="853" text-anchor="middle" font-size="11" fill="#7c3aed">子系统 / 注册契约校验</text>
+
+  <rect x="750" y="882" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="904" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">compile</text>
+  <text x="870" y="923" text-anchor="middle" font-size="11" fill="#7c3aed">Kbuild 编译</text>
+
+  <rect x="750" y="952" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="974" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">register_check</text>
+  <text x="870" y="993" text-anchor="middle" font-size="11" fill="#7c3aed">注册契约（仅 linux）</text>
+
+  <!-- non-linux bypass around register_check -->
+  <path d="M 990 905 C 1025 935, 1025 1010, 990 1041" stroke="#94a3b8" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="1032" y="952" text-anchor="start" font-size="10" fill="#94a3b8">非 linux 跳过</text>
+
+  <rect x="750" y="1022" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="1044" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">baseline_run</text>
+  <text x="870" y="1063" text-anchor="middle" font-size="11" fill="#7c3aed">QEMU 基线 trace</text>
+
+  <rect x="750" y="1092" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="1114" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">candidate_run</text>
+  <text x="870" y="1133" text-anchor="middle" font-size="11" fill="#7c3aed">QEMU 候选 trace</text>
+
+  <rect x="750" y="1162" width="240" height="54" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="870" y="1184" text-anchor="middle" font-size="14" font-weight="600" fill="#4c1d95">compare</text>
+  <text x="870" y="1203" text-anchor="middle" font-size="11" fill="#7c3aed">trace 等价比较</text>
+
+  <!-- ================= repair cycle ================= -->
+  <g stroke="#f87171" stroke-width="1.4" fill="none" opacity="0.9">
+    <path d="M 750 835 C 705 880, 688 955, 695 1014" marker-end="url(#arrowred)"/>
+    <path d="M 750 905 C 715 940, 675 975, 668 1014" marker-end="url(#arrowred)"/>
+    <path d="M 750 975 C 712 988, 660 998, 646 1014" marker-end="url(#arrowred)"/>
+    <line x1="750" y1="1049" x2="719" y2="1049" marker-end="url(#arrowred)"/>
+    <path d="M 750 1115 C 710 1092, 675 1085, 668 1078" marker-end="url(#arrowred)"/>
+    <path d="M 750 1185 C 705 1140, 688 1112, 690 1078" marker-end="url(#arrowred)"/>
+  </g>
+  <text x="672" y="900" text-anchor="end" font-size="10" fill="#b91c1c">contract 失败</text>
+  <text x="668" y="1160" text-anchor="end" font-size="10" fill="#b91c1c">trace 不匹配</text>
+
+  <rect x="575" y="1018" width="140" height="54" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="645" y="1040" text-anchor="middle" font-size="14" font-weight="600" fill="#7f1d1d">repair</text>
+  <text x="645" y="1059" text-anchor="middle" font-size="11" fill="#dc2626">LLM 修复候选 + feedback</text>
+
+  <!-- repair -> verify_contract (cycle back edge) -->
+  <path d="M 575 1045 C 455 990, 620 845, 746 845" stroke="#dc2626" stroke-width="1.8" fill="none" marker-end="url(#arrowred)"/>
+  <text x="540" y="918" text-anchor="end" font-size="10" fill="#dc2626">修复后重试</text>
+
+  <!-- inconclusive exit -->
+  <path d="M 990 1049 C 1075 1150, 1075 1330, 705 1458" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <text x="1030" y="1243" text-anchor="start" font-size="10" fill="#64748b">INCONCLUSIVE</text>
+
+  <!-- accepted exit -->
+  <path d="M 990 1189 C 1010 1300, 800 1390, 640 1436" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <text x="860" y="1330" text-anchor="end" font-size="10" fill="#64748b">compare 相等 → accepted</text>
+
+  <!-- ================= finalize / END ================= -->
+  <rect x="430" y="1440" width="260" height="54" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="560" y="1462" text-anchor="middle" font-size="14" font-weight="600" fill="#14532d">finalize</text>
+  <text x="560" y="1481" text-anchor="middle" font-size="11" fill="#16a34a">→ status / translation_status / failure</text>
+
+  <line x1="560" y1="1494" x2="560" y2="1520" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="500" y="1524" width="120" height="36" rx="18" fill="#0f172a"/>
+  <text x="560" y="1547" text-anchor="middle" font-size="14" font-weight="600" fill="#f8fafc">END</text>
+
+  <!-- ================= footnotes ================= -->
+  <text x="560" y="1596" text-anchor="middle" font-size="11" fill="#64748b">修复环语义：contract / compile / register / baseline / candidate / compare 六类失败 → repair（LLM 修复）→ 回到 verify_contract；</text>
+  <text x="560" y="1614" text-anchor="middle" font-size="11" fill="#64748b">各阶段独立计数器与 manifest.limits 编码在条件路由函数中；INFRASTRUCTURE 快速失败至 finalize；节点间仅传 JSON 可序列化状态（checkpointer 可在环上任一点断点续跑）</text>
+  <text x="560" y="1646" text-anchor="middle" font-size="11" font-weight="600" fill="#0f172a">实现对照（2026-08-30 落地）：</text>
+  <text x="560" y="1664" text-anchor="middle" font-size="11" fill="#64748b">外层节点名 generation_pipeline / experiment_pipeline（事件名仍为 run_project_pipeline）；开关 REHARNESS_PIPELINE_BACKEND=graph|legacy，默认 legacy</text>
+  <text x="560" y="1682" text-anchor="middle" font-size="11" fill="#64748b">experiment 子图：prepare → verify_contract → compile → register_check(linux) → baseline_run → candidate_run → compare → finalize；repair → verify_contract 唯一回边</text>
+  <text x="560" y="1700" text-anchor="middle" font-size="11" fill="#64748b">generation 子图：prepare → run_oracle(Send×5) → collect_oracles → run_backend(Send×3) → write_artifacts；等价性由 qa/verification/shadow_compare.py 与同路径产物重放测试钉死</text>
+</svg>

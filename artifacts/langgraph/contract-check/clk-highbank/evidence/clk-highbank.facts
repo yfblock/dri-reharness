@@ -1,0 +1,130 @@
+source: /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c
+includes:
+  - linux/kernel.h
+  - linux/slab.h
+  - linux/err.h
+  - linux/clk-provider.h
+  - linux/io.h
+  - linux/of.h
+  - linux/of_address.h
+structs:
+  hb_clk:
+    fields:
+      hw: "struct clk_hw"
+      reg: "void *"
+constants:
+  CLK_SET_RATE_GATE: 0x1
+  CLK_SET_PARENT_GATE: 0x2
+  CLK_SET_RATE_PARENT: 0x4
+  CLK_IGNORE_UNUSED: 0x8
+  CLK_GET_RATE_NOCACHE: 0x40
+  CLK_SET_RATE_NO_REPARENT: 0x80
+  CLK_GET_ACCURACY_NOCACHE: 0x100
+  CLK_RECALC_NEW_RATES: 0x200
+  CLK_SET_RATE_UNGATE: 0x400
+  CLK_IS_CRITICAL: 0x800
+  CLK_OPS_PARENT_ENABLE: 0x1000
+  CLK_DUTY_CYCLE_PARENT: 0x2000
+  CLK_FIXED_RATE_PARENT_ACCURACY: 0x1
+  CLK_GATE_SET_TO_DISABLE: 0x1
+  CLK_GATE_HIWORD_MASK: 0x2
+  CLK_GATE_BIG_ENDIAN: 0x4
+  CLK_DIVIDER_ONE_BASED: 0x1
+  CLK_DIVIDER_POWER_OF_TWO: 0x2
+  CLK_DIVIDER_ALLOW_ZERO: 0x4
+  CLK_DIVIDER_HIWORD_MASK: 0x8
+  CLK_DIVIDER_ROUND_CLOSEST: 0x10
+  CLK_DIVIDER_READ_ONLY: 0x20
+  CLK_DIVIDER_MAX_AT_ZERO: 0x40
+  CLK_DIVIDER_BIG_ENDIAN: 0x80
+  CLK_DIVIDER_EVEN_INTEGERS: 0x100
+  CLK_MUX_INDEX_ONE: 0x1
+  CLK_MUX_INDEX_BIT: 0x2
+  CLK_MUX_HIWORD_MASK: 0x4
+  CLK_MUX_READ_ONLY: 0x8
+  CLK_MUX_ROUND_CLOSEST: 0x10
+  CLK_MUX_BIG_ENDIAN: 0x20
+  CLK_FIXED_FACTOR_FIXED_ACCURACY: 0x1
+  CLK_FRAC_DIVIDER_ZERO_BASED: 0x1
+  CLK_FRAC_DIVIDER_BIG_ENDIAN: 0x2
+  CLK_FRAC_DIVIDER_POWER_OF_TWO_PS: 0x4
+  CLK_MULTIPLIER_ZERO_BYPASS: 0x1
+  CLK_MULTIPLIER_ROUND_CLOSEST: 0x2
+  CLK_MULTIPLIER_BIG_ENDIAN: 0x4
+  HB_PLL_LOCK_500: 0x20000000
+  HB_PLL_LOCK: 0x10000000
+  HB_PLL_DIVF_SHIFT: 0x14
+  HB_PLL_DIVF_MASK: 0xff00000
+  HB_PLL_DIVQ_SHIFT: 0x10
+  HB_PLL_DIVQ_MASK: 0x70000
+  HB_PLL_DIVR_SHIFT: 0x8
+  HB_PLL_DIVR_MASK: 0x1f00
+  HB_PLL_RANGE_SHIFT: 0x4
+  HB_PLL_RANGE_MASK: 0x70
+  HB_PLL_BYPASS: 0x8
+  HB_PLL_RESET: 0x4
+  HB_PLL_EXT_BYPASS: 0x2
+  HB_PLL_EXT_ENA: 0x1
+  HB_PLL_VCO_MIN_FREQ: 0x7f22ff40
+  HB_PLL_MAX_FREQ: 0x7f22ff40
+  HB_A9_BCLK_DIV_MASK: 0x6
+  HB_A9_BCLK_DIV_SHIFT: 0x1
+  HB_A9_PCLK_DIV: 0x1
+callbacks:
+  clk_ops.prepare: clk_pll_prepare
+  clk_ops.unprepare: clk_pll_unprepare
+  clk_ops.enable: clk_pll_enable
+  clk_ops.disable: clk_pll_disable
+  clk_ops.recalc_rate: clk_periclk_recalc_rate
+  clk_ops.determine_rate: clk_periclk_determine_rate
+  clk_ops.set_rate: clk_periclk_set_rate
+  of_device_id.data: __hb_emmc_of_clk_init_declare
+callback_signatures:
+  clk_ops.prepare:
+    type: "int (*)(struct clk_hw *)"
+    return_type: "int"
+    params:
+      - "struct clk_hw *"
+    variadic: false
+  clk_ops.unprepare:
+    type: "void (*)(struct clk_hw *)"
+    return_type: "void"
+    params:
+      - "struct clk_hw *"
+    variadic: false
+  clk_ops.enable:
+    type: "int (*)(struct clk_hw *)"
+    return_type: "int"
+    params:
+      - "struct clk_hw *"
+    variadic: false
+  clk_ops.disable:
+    type: "void (*)(struct clk_hw *)"
+    return_type: "void"
+    params:
+      - "struct clk_hw *"
+    variadic: false
+  clk_ops.recalc_rate:
+    type: "unsigned long (*)(struct clk_hw *, unsigned long)"
+    return_type: "unsigned long"
+    params:
+      - "struct clk_hw *"
+      - "unsigned long"
+    variadic: false
+  clk_ops.determine_rate:
+    type: "int (*)(struct clk_hw *, struct clk_rate_request *)"
+    return_type: "int"
+    params:
+      - "struct clk_hw *"
+      - "struct clk_rate_request *"
+    variadic: false
+  clk_ops.set_rate:
+    type: "int (*)(struct clk_hw *, unsigned long, unsigned long)"
+    return_type: "int"
+    params:
+      - "struct clk_hw *"
+      - "unsigned long"
+      - "unsigned long"
+    variadic: false
+error_paths:
+  - "return -EINVAL"

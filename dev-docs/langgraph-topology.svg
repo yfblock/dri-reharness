@@ -1,0 +1,355 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2630" viewBox="0 0 1400 2630" font-family="'Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowgray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrowred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b91c1c"/>
+    </marker>
+    <marker id="arrowgreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="2630" fill="#ffffff"/>
+
+  <!-- ============ 标题 ============ -->
+  <text x="40" y="34" font-size="19" font-weight="bold" fill="#0f172a">reharness · LangGraph 工作流拓扑（三层）</text>
+  <text x="40" y="56" font-size="12.5" fill="#64748b">① 主图 graph.py · ② generation_graph.py · ③ experiment_graph.py · 接线 pipeline_entry.py · 更新 2026-08-30（Tasks 0–4 落地后，与代码同步）</text>
+  <line x1="40" y1="68" x2="1360" y2="68" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- ================================================================ -->
+  <!-- ① 主工作流 -->
+  <!-- ================================================================ -->
+  <rect x="40" y="124" width="1320" height="790" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="56" y="150" font-size="13.5" font-weight="bold" fill="#0f172a">① 主工作流 · src/langgraph_workflow/graph.py — build_graph()（三路条件路由）</text>
+
+  <ellipse cx="620" cy="192" rx="48" ry="18" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="620" y="197" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">START</text>
+  <line x1="620" y1="210" x2="620" y2="236" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="480" y="242" width="280" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="620" y="264" font-size="13.5" text-anchor="middle" fill="#0f172a" font-weight="bold">normalize_input</text>
+  <text x="620" y="284" font-size="11" text-anchor="middle" fill="#475569">mode / backend / 路径解析 / profile_registry</text>
+  <line x1="620" y1="298" x2="620" y2="324" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="480" y="330" width="280" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="620" y="352" font-size="13.5" text-anchor="middle" fill="#0f172a" font-weight="bold">discover_driver_files</text>
+  <text x="620" y="372" font-size="11" text-anchor="middle" fill="#475569">源文件清单 + SHA 摘要</text>
+  <line x1="620" y1="386" x2="620" y2="412" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="480" y="418" width="280" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="620" y="440" font-size="13.5" text-anchor="middle" fill="#0f172a" font-weight="bold">analyze_driver_files</text>
+  <text x="620" y="460" font-size="11" text-anchor="middle" fill="#475569">RIS / DeviceSpec / readiness（extractor）</text>
+  <rect x="790" y="428" width="132" height="28" rx="8" fill="none" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="856" y="446" font-size="11" text-anchor="middle" fill="#64748b">analyzer 可注入</text>
+  <line x1="760" y1="442" x2="790" y2="442" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="620" y1="474" x2="620" y2="500" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="480" y="506" width="280" height="88" rx="12" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+  <text x="620" y="530" font-size="13.5" text-anchor="middle" fill="#7c2d12" font-weight="bold">build_pipeline_plan</text>
+  <text x="620" y="550" font-size="11" text-anchor="middle" fill="#9a3412">translation_requested = mode ≠ analysis</text>
+  <text x="620" y="567" font-size="11" text-anchor="middle" fill="#9a3412">translation_eligible = llm_synthesis_ready（fail-closed）</text>
+  <text x="620" y="584" font-size="10.5" text-anchor="middle" fill="#9a3412" font-style="italic">run_pipeline = requested ∧ eligible · 缺证据即 false</text>
+
+  <!-- 三路分支 -->
+  <path d="M 540 594 C 520 616, 300 604, 285 630" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M 700 594 C 720 616, 940 604, 955 630" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="195" y="626" font-size="10.5" text-anchor="middle" fill="#475569">generation ∧ gate 过</text>
+  <text x="1045" y="626" font-size="10.5" text-anchor="middle" fill="#475569">experiment ∧ gate 过</text>
+
+  <!-- false 旁路 -->
+  <path d="M 480 550 H 80 V 790 H 476" fill="none" stroke="#64748b" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arrowgray)"/>
+  <text x="66" y="670" font-size="11" fill="#475569" transform="rotate(-90 66 670)" text-anchor="middle">run_pipeline = false</text>
+  <text x="48" y="670" font-size="10" fill="#94a3b8" transform="rotate(-90 48 670)" text-anchor="middle">纯分析 / 资格门不过</text>
+
+  <!-- pipeline_entry 开关徽标 -->
+  <rect x="490" y="636" width="300" height="72" rx="10" fill="none" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="640" y="660" font-size="11" text-anchor="middle" fill="#334155">pipeline_entry.run_pipeline_backend()</text>
+  <text x="640" y="676" font-size="11" text-anchor="middle" fill="#334155" font-weight="bold">REHARNESS_PIPELINE_BACKEND</text>
+  <text x="640" y="692" font-size="10.5" text-anchor="middle" fill="#64748b">= legacy（默认）｜ graph（子图 ② / ③）</text>
+  <line x1="490" y1="672" x2="434" y2="672" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="790" y1="672" x2="826" y2="672" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- generation_pipeline 复合节点 -->
+  <rect x="130" y="634" width="300" height="76" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <rect x="135" y="639" width="290" height="66" rx="7" fill="none" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="280" y="660" font-size="13.5" text-anchor="middle" fill="#0f172a" font-weight="bold">generation_pipeline</text>
+  <text x="280" y="680" font-size="10.5" text-anchor="middle" fill="#4c1d95">graph 开关开启时进入 ② generation 子图</text>
+  <text x="280" y="696" font-size="10.5" text-anchor="middle" fill="#64748b">legacy（默认）→ run_existing_pipeline</text>
+
+  <!-- experiment_pipeline 复合节点 -->
+  <rect x="830" y="634" width="300" height="76" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.8"/>
+  <rect x="835" y="639" width="290" height="66" rx="7" fill="none" stroke="#7c3aed" stroke-width="0.8"/>
+  <text x="980" y="660" font-size="13.5" text-anchor="middle" fill="#0f172a" font-weight="bold">experiment_pipeline</text>
+  <text x="980" y="680" font-size="10.5" text-anchor="middle" fill="#4c1d95">graph 开关开启时进入 ③ experiment 子图</text>
+  <text x="980" y="696" font-size="10.5" text-anchor="middle" fill="#64748b">legacy（默认）→ run_existing_pipeline</text>
+
+  <path d="M 285 710 C 285 738, 540 726, 560 750" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <path d="M 955 710 C 955 738, 700 726, 680 750" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="620" y="736" font-size="10" text-anchor="middle" fill="#64748b">pipeline_result（两后端同一 JSON 契约）</text>
+
+  <rect x="480" y="754" width="280" height="76" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="620" y="778" font-size="13.5" text-anchor="middle" fill="#0f172a" font-weight="bold">finalize</text>
+  <text x="620" y="798" font-size="10.5" text-anchor="middle" fill="#475569">终态仲裁：completed / accepted / failed /</text>
+  <text x="620" y="814" font-size="10.5" text-anchor="middle" fill="#475569">inconclusive / blocked / analysis_complete</text>
+  <text x="620" y="826" font-size="9.5" text-anchor="middle" fill="#94a3b8">（矩阵见 ④）</text>
+  <line x1="620" y1="830" x2="620" y2="856" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <ellipse cx="620" cy="878" rx="48" ry="18" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="620" y="883" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">END</text>
+
+  <!-- ================================================================ -->
+  <!-- ② generation 子图 -->
+  <!-- ================================================================ -->
+  <rect x="40" y="934" width="1320" height="340" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="56" y="960" font-size="13.5" font-weight="bold" fill="#0f172a">② generation 子图 · src/langgraph_workflow/generation_graph.py — build_generation_graph(result, args)（两段 Send fan-out）</text>
+
+  <ellipse cx="100" cy="1110" rx="38" ry="16" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="100" y="1115" font-size="11.5" text-anchor="middle" fill="#0f172a" font-weight="bold">START</text>
+  <line x1="138" y1="1110" x2="166" y2="1110" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="170" y="1078" width="120" height="64" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="230" y="1102" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">prepare</text>
+  <text x="230" y="1122" font-size="10" text-anchor="middle" fill="#475569">目录·契约·RIS·dspec·facts</text>
+  <line x1="290" y1="1110" x2="322" y2="1110" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- oracle fan-out（堆叠影 = 多并行实例） -->
+  <rect x="334" y="1090" width="214" height="64" rx="10" fill="#d1fae5" stroke="none"/>
+  <rect x="330" y="1086" width="214" height="64" rx="10" fill="#a7f3d0" stroke="none"/>
+  <rect x="326" y="1082" width="214" height="64" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.8"/>
+  <text x="433" y="1106" font-size="12.5" text-anchor="middle" fill="#064e3b" font-weight="bold">run_oracle · Send ×5</text>
+  <text x="433" y="1126" font-size="10" text-anchor="middle" fill="#047857">gpio·sdhci·virtio·w1c·transaction</text>
+  <line x1="540" y1="1110" x2="576" y2="1110" stroke="#059669" stroke-width="1.6" marker-end="url(#arrowgreen)"/>
+
+  <rect x="580" y="1078" width="170" height="64" rx="10" fill="#fffbeb" stroke="#ca8a04" stroke-width="1.8"/>
+  <text x="665" y="1102" font-size="12.5" text-anchor="middle" fill="#713f12" font-weight="bold">collect_oracles</text>
+  <text x="665" y="1122" font-size="10" text-anchor="middle" fill="#a16207">join barrier（×5 汇合）</text>
+  <line x1="750" y1="1110" x2="776" y2="1110" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- backend fan-out -->
+  <rect x="792" y="1090" width="230" height="64" rx="10" fill="#d1fae5" stroke="none"/>
+  <rect x="788" y="1086" width="230" height="64" rx="10" fill="#a7f3d0" stroke="none"/>
+  <rect x="784" y="1082" width="230" height="64" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="1.8"/>
+  <text x="899" y="1106" font-size="12.5" text-anchor="middle" fill="#064e3b" font-weight="bold">run_backend · Send ×3</text>
+  <text x="899" y="1126" font-size="10" text-anchor="middle" fill="#047857">harness · baremetal · linux（Kbuild）</text>
+  <line x1="1014" y1="1110" x2="1042" y2="1110" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="1046" y="1078" width="130" height="64" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="1111" y="1102" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">write_artifacts</text>
+  <text x="1111" y="1122" font-size="10" text-anchor="middle" fill="#475569">metrics·score·bind·汇总</text>
+  <line x1="1176" y1="1110" x2="1194" y2="1110" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <ellipse cx="1236" cy="1110" rx="38" ry="16" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="1236" y="1115" font-size="11.5" text-anchor="middle" fill="#0f172a" font-weight="bold">END</text>
+
+  <!-- 串行回退 -->
+  <rect x="326" y="1180" width="214" height="44" rx="8" fill="none" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="433" y="1206" font-size="10.5" text-anchor="middle" fill="#64748b">run_oracles_serial（false 回退）</text>
+  <path d="M 308 1110 C 308 1150, 420 1140, 433 1176" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+  <path d="M 540 1202 C 590 1202, 615 1160, 630 1146" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+
+  <rect x="780" y="1180" width="230" height="44" rx="8" fill="none" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5 3"/>
+  <text x="895" y="1206" font-size="10.5" text-anchor="middle" fill="#64748b">run_backends_serial（false 回退）</text>
+  <path d="M 665 1142 C 665 1165, 780 1155, 860 1176" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+  <path d="M 1010 1202 C 1060 1202, 1095 1160, 1111 1146" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+  <text x="433" y="1172" font-size="9.5" text-anchor="middle" fill="#94a3b8">parallel_oracles = false</text>
+  <text x="895" y="1172" font-size="9.5" text-anchor="middle" fill="#94a3b8">parallel_backends = false</text>
+
+  <text x="56" y="1248" font-size="10.5" fill="#475569">Send fan-out 之后必须接普通节点做 join barrier —— 条件边直接挂在 Send 目标上会以部分状态触发；parallel_* 开关可退化为串行且产物字节不变（C2）</text>
+  <text x="56" y="1264" font-size="10.5" fill="#64748b">共享文件（analysis.json / metrics.txt / score.txt / *.bind）只由 prepare 与 write_artifacts 写（C10）· 任一 backend 异常 = 整体失败（C11）· bind 按 legacy 顺序拼接</text>
+
+  <!-- ================================================================ -->
+  <!-- ③ experiment 子图（修复环） -->
+  <!-- ================================================================ -->
+  <rect x="40" y="1298" width="1320" height="560" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="56" y="1324" font-size="13.5" font-weight="bold" fill="#0f172a">③ experiment 子图 · src/langgraph_workflow/experiment_graph.py — build_experiment_graph(adapters)（修复环 · next_action 驱动全部条件边）</text>
+
+  <!-- Row A -->
+  <rect x="70" y="1372" width="130" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="135" y="1394" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">prepare</text>
+  <text x="135" y="1414" font-size="10" text-anchor="middle" fill="#475569">extract → synthesize</text>
+  <line x1="200" y1="1400" x2="236" y2="1400" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="240" y="1372" width="170" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="325" y="1394" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">verify_contract</text>
+  <text x="325" y="1414" font-size="10" text-anchor="middle" fill="#475569">环顶 · 总限检查 + 契约门</text>
+  <line x1="410" y1="1400" x2="446" y2="1400" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="450" y="1372" width="130" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="515" y="1394" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">compile</text>
+  <text x="515" y="1414" font-size="10" text-anchor="middle" fill="#475569">编译候选</text>
+  <line x1="580" y1="1400" x2="616" y2="1400" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="598" y="1390" font-size="9" text-anchor="middle" fill="#64748b">linux</text>
+  <path d="M 515 1372 C 515 1342, 895 1342, 895 1368" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+  <text x="705" y="1352" font-size="9.5" text-anchor="middle" fill="#94a3b8">非 linux 直行</text>
+
+  <rect x="620" y="1372" width="165" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="702" y="1394" font-size="12" text-anchor="middle" fill="#0f172a" font-weight="bold">register_check（仅 linux）</text>
+  <text x="702" y="1414" font-size="10" text-anchor="middle" fill="#475569">Linux 注册契约门</text>
+  <line x1="785" y1="1400" x2="816" y2="1400" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="820" y="1372" width="150" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="895" y="1394" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">baseline_run</text>
+  <text x="895" y="1414" font-size="10" text-anchor="middle" fill="#475569">基线运行</text>
+  <line x1="970" y1="1400" x2="1006" y2="1400" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="1010" y="1372" width="160" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="1090" y="1394" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">candidate_run</text>
+  <text x="1090" y="1414" font-size="10" text-anchor="middle" fill="#475569">候选运行（compiled）</text>
+  <line x1="1170" y1="1400" x2="1201" y2="1400" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="1205" y="1372" width="125" height="56" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="1267" y="1394" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">compare</text>
+  <text x="1267" y="1414" font-size="10" text-anchor="middle" fill="#475569">trace 对比</text>
+
+  <!-- repair bus -->
+  <g stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3">
+    <line x1="325" y1="1428" x2="325" y2="1482"/>
+    <line x1="515" y1="1428" x2="515" y2="1482"/>
+    <line x1="702" y1="1428" x2="702" y2="1482"/>
+    <line x1="895" y1="1428" x2="895" y2="1482"/>
+    <line x1="1090" y1="1428" x2="1090" y2="1482"/>
+    <line x1="1267" y1="1428" x2="1267" y2="1482"/>
+    <line x1="325" y1="1482" x2="1267" y2="1482"/>
+  </g>
+  <line x1="645" y1="1482" x2="645" y2="1518" stroke="#b91c1c" stroke-width="1.6" marker-end="url(#arrowred)"/>
+  <text x="660" y="1510" font-size="10" fill="#7f1d1d">各阶段可重试失败（限额内）</text>
+
+  <rect x="560" y="1522" width="170" height="64" rx="10" fill="#fef2f2" stroke="#b91c1c" stroke-width="1.8"/>
+  <text x="645" y="1546" font-size="12.5" text-anchor="middle" fill="#7f1d1d" font-weight="bold">repair</text>
+  <text x="645" y="1566" font-size="10" text-anchor="middle" fill="#991b1b">LLM 修复 · active_feedback</text>
+
+  <!-- 唯一回边 -->
+  <path d="M 560 1554 C 380 1602, 260 1562, 260 1470 V 1432" fill="none" stroke="#b91c1c" stroke-width="1.8" marker-end="url(#arrowred)"/>
+  <text x="400" y="1612" font-size="10.5" text-anchor="middle" fill="#b91c1c" font-weight="bold">唯一回边（修复后重入环顶）</text>
+
+  <!-- finalize(③) -->
+  <rect x="1120" y="1592" width="180" height="72" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="1210" y="1616" font-size="12.5" text-anchor="middle" fill="#0f172a" font-weight="bold">finalize</text>
+  <text x="1210" y="1636" font-size="10" text-anchor="middle" fill="#475569">终态持久化 experiment.json</text>
+  <text x="1210" y="1652" font-size="10" text-anchor="middle" fill="#475569">result 投影（accepted / …）</text>
+
+  <path d="M 1290 1428 C 1315 1472, 1250 1532, 1240 1588" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="1300" y="1500" font-size="10" fill="#475569">accepted</text>
+  <line x1="1150" y1="1482" x2="1150" y2="1588" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+  <text x="1138" y="1537" font-size="9.5" fill="#64748b" transform="rotate(-90 1138 1537)" text-anchor="middle">stop：不可重试 / 超限 / infra</text>
+  <path d="M 135 1428 V 1628 H 1116" fill="none" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arrowgray)"/>
+  <text x="430" y="1646" font-size="10" fill="#64748b">extract / synthesize 失败 → stop（不进环）</text>
+
+  <line x1="1210" y1="1664" x2="1210" y2="1690" stroke="#334155" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <ellipse cx="1210" cy="1710" rx="40" ry="16" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+  <text x="1210" y="1715" font-size="11.5" text-anchor="middle" fill="#0f172a" font-weight="bold">END</text>
+
+  <text x="56" y="1744" font-size="10.5" fill="#475569">计数器：used（manifest.limits.total 总限）· contract / registration / compile / runtime / trace_attempts 各自限额，对应阶段成功后归零</text>
+  <text x="56" y="1762" font-size="10.5" fill="#475569">失败三分法：INFRASTRUCTURE → failed（不重试）· INCONCLUSIVE → inconclusive · 不可重试或超限 → stop · 其余可重试 → repair</text>
+  <text x="56" y="1780" font-size="10.5" fill="#475569">断点续跑（Task 2）：checkpointer=SqliteSaver + interrupt_after；records 为 append-only reducer，续跑序号连续、不重复 extract / synthesize</text>
+  <text x="56" y="1798" font-size="10.5" fill="#475569">零重实现（C4）：_invoke / _feedback / _jsonable 直接 import；_verify_contract / _repair 经 _AdapterHost 以 unbound 方式复用 ExperimentRunner</text>
+  <text x="56" y="1816" font-size="10.5" fill="#64748b">stop 携带 comparison：contract / registration / compare / total 触发时携带 last_comparison；compile / baseline / candidate 不携带（与 legacy 调用点对齐）</text>
+
+  <!-- ================================================================ -->
+  <!-- ④ finalize 终态仲裁矩阵 + 状态与 reducer -->
+  <!-- ================================================================ -->
+  <rect x="40" y="1882" width="640" height="478" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="56" y="1908" font-size="13.5" font-weight="bold" fill="#0f172a">④ finalize 终态仲裁矩阵（主图 · 按序判定，先到先得）</text>
+
+  <rect x="54" y="1922" width="572" height="24" fill="#e2e8f0"/>
+  <text x="62" y="1938" font-size="11" font-weight="bold" fill="#334155">条件</text>
+  <text x="430" y="1938" font-size="11" font-weight="bold" fill="#334155">status</text>
+
+  <g font-size="10.5" fill="#0f172a">
+    <rect x="54" y="1946" width="572" height="30" fill="#ffffff"/>
+    <text x="62" y="1965">mode = analysis（未请求翻译）</text>
+    <text x="430" y="1965" fill="#1d4ed8" font-weight="bold">analysis_complete</text>
+
+    <rect x="54" y="1976" width="572" height="30" fill="#fff7ed"/>
+    <text x="62" y="1995">请求翻译，但资格门未过</text>
+    <text x="430" y="1995" fill="#c2410c" font-weight="bold">blocked</text>
+
+    <rect x="54" y="2006" width="572" height="30" fill="#ffffff"/>
+    <text x="62" y="2025">缺 runtime capability ∧ 管线 failed / rejected</text>
+    <text x="430" y="2025" fill="#b91c1c" font-weight="bold">failed</text>
+
+    <rect x="54" y="2036" width="572" height="30" fill="#fff7ed"/>
+    <text x="62" y="2055">缺 runtime ∧ 子系统契约 fail</text>
+    <text x="430" y="2055" fill="#b91c1c" font-weight="bold">failed</text>
+
+    <rect x="54" y="2066" width="572" height="30" fill="#ffffff"/>
+    <text x="62" y="2085">缺 runtime capability（其余情况）</text>
+    <text x="430" y="2085" fill="#64748b" font-weight="bold">inconclusive</text>
+
+    <rect x="54" y="2096" width="572" height="30" fill="#fff7ed"/>
+    <text x="62" y="2115">管线 failed / rejected</text>
+    <text x="430" y="2115" fill="#b91c1c" font-weight="bold">failed</text>
+
+    <rect x="54" y="2126" width="572" height="30" fill="#ffffff"/>
+    <text x="62" y="2145">子系统契约 status = fail</text>
+    <text x="430" y="2145" fill="#b91c1c" font-weight="bold">failed</text>
+
+    <rect x="54" y="2156" width="572" height="30" fill="#fff7ed"/>
+    <text x="62" y="2175">子系统契约 status ≠ pass</text>
+    <text x="430" y="2175" fill="#64748b" font-weight="bold">inconclusive</text>
+
+    <rect x="54" y="2186" width="572" height="30" fill="#ffffff"/>
+    <text x="62" y="2205">管线 status = inconclusive</text>
+    <text x="430" y="2205" fill="#64748b" font-weight="bold">inconclusive</text>
+
+    <rect x="54" y="2216" width="572" height="30" fill="#eff6ff"/>
+    <text x="62" y="2235">全部检查通过</text>
+    <text x="430" y="2235" fill="#1d4ed8" font-weight="bold">completed / accepted</text>
+  </g>
+  <text x="56" y="2270" font-size="10" fill="#94a3b8">缺 runtime 时管线仍会执行（静态翻译与 Kbuild 仍有价值），仅在 finalize 归为 inconclusive</text>
+  <text x="56" y="2286" font-size="10" fill="#94a3b8">translation_status 随行：eligible / blocked / accepted / failed / inconclusive</text>
+  <text x="56" y="2302" font-size="10" fill="#b91c1c">异常兜底：run_workflow 捕获节点异常 → status = failed（JSON 协议不破）</text>
+
+  <!-- 状态与 reducer -->
+  <rect x="700" y="1882" width="660" height="478" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="716" y="1908" font-size="13.5" font-weight="bold" fill="#0f172a">状态（TypedDict，total=False）与 reducer</text>
+
+  <rect x="716" y="1926" width="628" height="128" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="732" y="1950" font-size="12" font-weight="bold" fill="#1d4ed8">WorkflowState（① 主图）</text>
+  <text x="732" y="1972" font-size="10.5" fill="#334155">input → normalized → inventory → analysis → pipeline_plan → pipeline_result</text>
+  <text x="732" y="1990" font-size="10.5" fill="#334155">终态：status · translation_status · translation_eligible · failure</text>
+  <text x="732" y="2008" font-size="10.5" fill="#334155">events：每个节点追加审计事件（node, status）</text>
+  <text x="732" y="2026" font-size="10.5" fill="#334155">error：节点异常兜底字段（stage / exception / message）</text>
+
+  <rect x="716" y="2068" width="628" height="128" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="732" y="2092" font-size="12" font-weight="bold" fill="#059669">GenerationState（② generation 子图）</text>
+  <text x="732" y="2114" font-size="10.5" fill="#334155">oracle_reports / gen_results / backend_results / bind_displays → merge_dicts reducer</text>
+  <text x="732" y="2132" font-size="10.5" fill="#334155">prepare 写 generation_contract / device_spec_document / backend_order</text>
+  <text x="732" y="2150" font-size="10.5" fill="#334155">write_artifacts 汇总产出 return_code / status / result</text>
+  <text x="732" y="2168" font-size="10.5" fill="#334155">重提取对象 res 留在构建期闭包，不入 state（C3）</text>
+
+  <rect x="716" y="2210" width="628" height="128" rx="8" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="732" y="2234" font-size="12" font-weight="bold" fill="#b91c1c">PipelineState（③ experiment 子图）</text>
+  <text x="732" y="2256" font-size="10.5" fill="#334155">records → append_records（append-only，记录执行序）</text>
+  <text x="732" y="2274" font-size="10.5" fill="#334155">next_action 判别器驱动全部条件边；used / ×5 attempts 计数器</text>
+  <text x="732" y="2292" font-size="10.5" fill="#334155">stop { status, feedback, comparison } → finalize 消费；result 为最终投影</text>
+  <text x="732" y="2310" font-size="10.5" fill="#334155">全部值 JSON 可序列化（experiment_runner._jsonable 于节点边界归一化，C3）</text>
+
+  <!-- ================================================================ -->
+  <!-- ⑤ 设计不变量与开关 -->
+  <!-- ================================================================ -->
+  <rect x="40" y="2384" width="1320" height="216" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
+  <text x="56" y="2410" font-size="13.5" font-weight="bold" fill="#0f172a">⑤ 设计不变量与开关（贯穿三层）</text>
+
+  <g font-size="10.5">
+    <text x="60" y="2434" font-weight="bold" fill="#7c3aed">C2</text>
+    <text x="110" y="2434" fill="#334155">产物逐字节一致：legacy vs graph 影子对拍（同路径重放，含 digest）；bind 按 legacy 顺序 (baremetal, harness, linux) 拼接</text>
+    <text x="60" y="2457" font-weight="bold" fill="#7c3aed">C3</text>
+    <text x="110" y="2457" fill="#334155">state 全 JSON：重对象留构建期闭包；适配器值经 _jsonable 于节点边界归一化，live 对象不入 state</text>
+    <text x="60" y="2480" font-weight="bold" fill="#7c3aed">C4</text>
+    <text x="110" y="2480" fill="#334155">零重实现：失败分类 / 反馈 / _jsonable 直接 import；ExperimentRunner 私有方法经 _AdapterHost 以 unbound 方式复用</text>
+    <text x="60" y="2503" font-weight="bold" fill="#7c3aed">C8</text>
+    <text x="110" y="2503" fill="#334155">特性开关：REHARNESS_PIPELINE_BACKEND = legacy（默认）｜ graph；analysis 模式恒走 legacy run_existing_pipeline</text>
+    <text x="60" y="2526" font-weight="bold" fill="#7c3aed">C10</text>
+    <text x="110" y="2526" fill="#334155">IO 只在节点体内：route 函数与 reducer 不碰文件系统；共享文件仅由 prepare / write_artifacts 写</text>
+    <text x="60" y="2549" font-weight="bold" fill="#7c3aed">C11</text>
+    <text x="110" y="2549" fill="#334155">fail-fast：任一 backend 并行分支异常 = 整体运行失败（与 legacy 串行循环一致）</text>
+    <text x="60" y="2578" font-weight="bold" fill="#c2410c">Task 5 待办</text>
+    <text x="110" y="2578" fill="#c2410c">默认翻转为 graph 需 ≥3 个真实 driver 对拍证据 + 人工批准（当前默认仍为 legacy）</text>
+  </g>
+</svg>

@@ -1,0 +1,30 @@
+{
+  "evidence_digest": "403249d6af46a3f4be62068856d02c917d78d77bb99932a01e30ce58916e4326",
+  "iteration": 2,
+  "manifest_digest": "8430c3990f0e0fa0783b3e606d513fffcbf6ddb4ab17d00056022d00ecb9ccba",
+  "payload": {
+    "result": {
+      "complete": true,
+      "digest_mismatch": [],
+      "duplicate": [],
+      "duplicate_expected_ids": [],
+      "duplicate_transaction_markers": [],
+      "kind_mismatch": [],
+      "missing": [],
+      "missing_transaction_markers": [],
+      "receipts": 5,
+      "rejected": [],
+      "required_ops": 5,
+      "required_transactions": 0,
+      "schema": 1,
+      "transaction_accounting_complete": true,
+      "transaction_marker_mismatch": [],
+      "transaction_markers": 0,
+      "unknown": [],
+      "unknown_transaction_markers": [],
+      "unsupported_transactions": []
+    }
+  },
+  "stage": "contract",
+  "status": "passed"
+}

@@ -1,0 +1,22 @@
+{
+  "evidence_digest": "e1fa75bd04ba65addce70bdf119713cb6b98ee7784c2a3bdc57035d5600c0759",
+  "iteration": 6,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "result": {
+      "role": "baseline",
+      "subsystem_tests": [
+        {
+          "index": 0,
+          "name": "ftgpio010-gpio-api",
+          "return_code": 0,
+          "status": "pass",
+          "success": true
+        }
+      ],
+      "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v9/pipeline/traces/baseline-5f4e9d17ad754fac875325226a9864d6.trace"
+    }
+  },
+  "stage": "baseline",
+  "status": "passed"
+}

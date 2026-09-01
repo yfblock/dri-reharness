@@ -1,0 +1,33 @@
+{
+  "evidence_digest": "c1151da0a721ae2ebd79d25e781708756288b3587a960bcde780d0d0f618cdad",
+  "iteration": 3,
+  "manifest_digest": "8430c3990f0e0fa0783b3e606d513fffcbf6ddb4ab17d00056022d00ecb9ccba",
+  "payload": {
+    "feedback": {
+      "details": {
+        "excerpt": "=== QEMU run: module=edu_drv bus=pci timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.031142] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.031207] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.070994] ftrace: allocating 31573 entries in 124 pages\n[    0.071253] ftrace: allocated 124 pages with 5 groups\n[    0.403845] thermal_sys: Registered thermal governor 'step_wise'\n[    0.408305] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.409663] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.489224] pps_core: LinuxPPS API ver. 1 registered\n[    0.529549] Key type asymmetric registered\n[    0.529625] Asymmetric key parser 'x509' registered\n[    0.530054] io scheduler mq-deadline registered\n[    0.530114] io scheduler kyber registered\n[    0.572526] rtc_cmos PNP0B00:00: registered as rtc0\n=== insmod edu_drv ===\nEDU_TRACE_FAIL:open /dev/edu_drv\nEXERCISER_RC=2\n=== rmmod edu_drv ===\n=== QEMU_RUN_DONE ===\n[    1.526532] Call Trace:\n=== \u6210\u529f\u5224\u5b9a ===\ndone=1 probe=8 real_oops=0\n=> \u5931\u8d25: exerciser/\u8bed\u4e49\u68c0\u67e5\u672a\u901a\u8fc7",
+        "exerciser_rc": 2,
+        "observations": {
+          "done": true,
+          "exerciser": true,
+          "oops": false,
+          "probe": true,
+          "probe_required": false,
+          "success_pattern": false
+        },
+        "qemu_exit_code": 0,
+        "reason": "exerciser_failure",
+        "return_code": 3,
+        "role": "candidate",
+        "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu-experiment/pipeline/traces/candidate-89237a0da0534104b16bc74f509e7484.trace"
+      },
+      "failure_class": "runtime",
+      "iteration": 3,
+      "message": "runtime adapter failed: exerciser_failure",
+      "retryable": true,
+      "stage": "candidate"
+    }
+  },
+  "stage": "candidate",
+  "status": "failed"
+}

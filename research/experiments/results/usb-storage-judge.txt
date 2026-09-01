@@ -1,0 +1,75 @@
+=== QEMU run: module=usb_storage bus=usb timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031037] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031103] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.074505] ftrace: allocating 38351 entries in 152 pages
+[    0.074784] ftrace: allocated 152 pages with 3 groups
+[    0.427483] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.432383] thermal_sys: Registered thermal governor 'step_wise'
+[    0.437128] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.438628] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.534069] ACPI: bus type USB registered
+[    0.534372] usbcore: registered new interface driver usbfs
+[    0.534569] usbcore: registered new interface driver hub
+[    0.534672] usbcore: registered new device driver usb
+[    0.534845] pps_core: LinuxPPS API ver. 1 registered
+[    0.534981] PTP clock support registered
+[    0.567367] NET: Registered PF_INET protocol family
+[    0.591911] Key type asymmetric registered
+[    0.591996] Asymmetric key parser 'x509' registered
+[    0.592455] io scheduler mq-deadline registered
+[    0.592517] io scheduler kyber registered
+[    0.633362] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.636788] usbcore: registered new interface driver usbhid
+[    0.637790] NET: Registered PF_INET6 protocol family
+=== insmod required kernel module xhci-hcd ===
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod required kernel module xhci-pci ===
+[    1.073410] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.078740] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.088808] insmod (62) used greatest stack depth: 12000 bytes left
+REHARNESS_KERNEL_MODULE_1_INSMOD_RC=0
+=== insmod usb_storage ===
+[    1.096041] usbcore: registered new interface driver usb-storage
+REHARNESS_DRIVER_INSMOD_RC=0
+[    1.427734] [rhcov] storage_probe
+[    1.427797] [rhcov] storage_probe
+[    1.427824] [rhcov] storage_probe
+[    1.429471] [rhcov] usb_stor_probe2
+[    1.429498] [rhcov] usb_stor_probe2
+[    1.429524] [rhcov] usb_stor_probe2
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    0.437128] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.438628] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.534069] ACPI: bus type USB registered
+[    0.534372] usbcore: registered new interface driver usbfs
+[    0.534569] usbcore: registered new interface driver hub
+[    0.534672] usbcore: registered new device driver usb
+[    0.534845] pps_core: LinuxPPS API ver. 1 registered
+[    0.534981] PTP clock support registered
+[    0.567367] NET: Registered PF_INET protocol family
+[    0.591911] Key type asymmetric registered
+[    0.591996] Asymmetric key parser 'x509' registered
+[    0.592455] io scheduler mq-deadline registered
+[    0.592517] io scheduler kyber registered
+[    0.633362] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.636788] usbcore: registered new interface driver usbhid
+[    0.637790] NET: Registered PF_INET6 protocol family
+[    1.073410] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.078740] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.096041] usbcore: registered new interface driver usb-storage
+[    1.427734] [rhcov] storage_probe
+[    1.427797] [rhcov] storage_probe
+[    1.427824] [rhcov] storage_probe
+[    1.429471] [rhcov] usb_stor_probe2
+[    1.429498] [rhcov] usb_stor_probe2
+[    1.429524] [rhcov] usb_stor_probe2
+EXERCISER_RC=0
+=== rmmod usb_storage ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    2.769745] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=46 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: usb_storage probe 成功

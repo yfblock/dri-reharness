@@ -1,0 +1,191 @@
+% reharness - ASPLOS submission (sections_9_11.tex)
+% Discussion and Limitations, Conclusion, Bibliography.
+% Requires: \input{generated_results.tex} and \newcommand{\reharness}, \newcommand{\rislang} in preamble.
+
+% =====================================================================
+%  DISCUSSION AND LIMITATIONS
+% =====================================================================
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\subsection{Analysis and Subsystem Boundaries}
+
+\reharness{} models common GPIO, IRQ, platform, PCI, AMBA, virtio, clock,
+power-management, SPI, USB, file-operation, regmap, I2C/SMBus, and MFD paths.
+Network, DMA-engine, display, and regulator lifecycles still require models.
+Recursion, backward \texttt{goto}s, unbounded loops, and general abstract-store
+fixpoints remain readiness blockers; optional SVF is outside the default
+configuration.
+
+Computed register-bank addresses are retained as runtime expressions and lowered when every term is bound. Expressions containing unknown calls, unbound members, or \texttt{Top} remain blockers rather than being assigned fabricated symbolic names. Across the evaluation, \EvalComputed{} of \EvalOps{} operations use this computed-address representation.
+
+\subsection{What the Verification Gate Establishes}
+
+Compilation is separate from strict artifact readiness. Under the deterministic
+baseline, harness and bare-metal outputs compile for \HarnessCompileCount{}/\EvalDrivers{}
+drivers and Linux for \LinuxCompileCount{}/\EvalDrivers{}; only
+\LinuxReadyCount{}/\EvalDrivers{} Linux outputs satisfy modeled readiness.
+Unknown transforms, unsafe addresses, unbound state, and incomplete lifecycles
+are blockers, not source-level equivalence claims.
+
+LLM output may violate prompts or vary across models and samples. Compilation,
+receipt accounting, primitive-shape checks, and exercised traces constrain the
+reported scope only; they do not reject every extra side effect or prove guard
+equivalence and arbitrary hardware equivalence. The trusted base is the pinned
+toolchain, extractor, frozen JSON, receipt producer, and oracle; malicious
+devices, DMA corruption, interrupt races, and lifecycle failures are out of scope.
+
+Functional-state operations cover selected cursors, counters, and output stores,
+but the general MMIO oracle does not observe them; only the DesignWare artifact
+checks inspect this data flow. Interrupt-spanning state machines, DMA
+lifecycles, concurrency, and physical SPI validation remain open.
+
+\subsection{Scalability and Threats to Validity}
+
+Parsing kernel translation units dominates runtime (measured per-driver
+extraction takes \EvalSecondsMin--\EvalSecondsMax{} seconds, median
+\EvalSecondsMedian{}, on the evaluation machine; the three multi-source
+pipelines take 28.5--\MultiSourceDwcTwoSeconds{} seconds each). The
+multi-source evaluation covers \MultiSourceTUs{} units and
+\MultiSourceLines{} lines; whole-kernel analysis would need persistent caches
+and parallel execution.
+
+Internal validity depends on libclang, macro resolution, and IR merging; the
+\texttt{(function, offset)} key can collide for repeated same-address accesses.
+QEMU covers two deterministic protocol slices. The corpus lacks network
+drivers and physical-hardware validation, and the single LLM case lacks model
+and repeated-trial metadata. RIS quality, synthesis eligibility, and readiness
+are internal metrics, not precision/recall. Required follow-up evidence is
+listed in \texttt{EXPERIMENT\_DEBT.md}.
+
+A frozen zero-shot holdout (12 drivers excluded from all implementation
+work, enforced by an in-tree generalization guard) is versioned with the
+artifact and currently reports \ZeroShotCompile{}/\ZeroShotCases{} drivers
+compiling on all three deterministic backends, strict readiness of
+\ZeroShotHarnessStrict{}/\ZeroShotCases{} (harness and bare-metal) and
+\ZeroShotLinuxStrict{}/\ZeroShotCases{} (Linux), with \ZeroShotAllStrict{}
+cases strict on all backends and \ZeroShotHardwareCases{} cases containing
+modeled hardware interactions; these results are not yet integrated into the
+main evaluation and remain an artifact-side generalization datapoint.
+
+% =====================================================================
+%  CONCLUSION
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented \reharness{}, a constrained hybrid translator that extracts
+recognized device-core evidence from complete Linux drivers. AST--IR analysis
+recovers selected register, transaction, and state operations; an LLM emits
+four backend forms, which are accepted only within the stated compile, receipt,
+shape, and exercised-trace checks.
+
+Across \EvalDrivers{} drivers and \MultiSourceDrivers{} multi-source modules,
+the results support an evidence-boundary prototype, not whole-driver equivalence;
+stronger claims remain contingent on the deferred experiments recorded with the
+artifact.
+
+% =====================================================================
+%  BIBLIOGRAPHY
+% =====================================================================
+\vspace{-2.0em}
+\begin{thebibliography}{99}
+\tiny
+\setlength{\itemsep}{0pt}
+\setlength{\parsep}{0pt}
+
+\bibitem{chou2001empirical}
+A.~Chou, J.~Yang, B.~Chelf, S.~Hallem, and D.~Engler.
+\newblock An empirical study of operating system errors.
+\newblock In \emph{Proc. 18th ACM Symp. on Operating Systems Principles (SOSP)}, 2001.
+
+\bibitem{swift2005nexus}
+M.~M.~Swift, M.~Annamalai, B.~N.~Bershad, and H.~M.~Levy.
+\newblock Recovering device drivers.
+\newblock \emph{ACM Transactions on Computer Systems}, 24(4), 2006.
+\newblock doi:10.1145/1189256.1189257.
+
+\bibitem{ball2006thorough}
+T.~Ball, E.~Bounimova, B.~Cook, V.~Levin, J.~Lichtenberg, C.~McGarvey, B.~Ondrusek, S.~K.~Rajamani, and A.~Ustuner.
+\newblock Thorough static analysis of device drivers.
+\newblock In \emph{Proc. 1st ACM SIGOPS/EuroSys European Conf. on Computer Systems (EuroSys)}, 2006.
+
+\bibitem{ryzhyk2009dingo}
+L.~Ryzhyk, P.~Chubb, I.~Kuz, and G.~Heiser.
+\newblock Dingo: Taming device drivers.
+\newblock In \emph{Proc. 4th ACM European Conf. on Computer Systems (EuroSys)}, 2009.
+
+\bibitem{ryzhyk2009termite}
+L.~Ryzhyk, P.~Chubb, I.~Kuz, E.~Le~Sueur, and G.~Heiser.
+\newblock Automatic device driver synthesis with {Termite}.
+\newblock In \emph{Proc. 22nd ACM Symp. on Operating Systems Principles (SOSP)}, 2009.
+
+\bibitem{ryzhyk2014termite2}
+L.~Ryzhyk, A.~Walker, J.~Keys, A.~Legg, A.~Raghunath, M.~Stumm, and M.~Vij.
+\newblock User-guided device driver synthesis with {Termite}.
+\newblock In \emph{Proc. 11th USENIX Symp. on Operating Systems Design and Implementation (OSDI)}, 2014.
+
+\bibitem{cadar2008klee}
+C.~Cadar, D.~Dunbar, and D.~R.~Engler.
+\newblock {KLEE}: Unassisted and automatic generation of high-coverage tests for complex systems programs.
+\newblock In \emph{Proc. 8th USENIX Symp. on Operating Systems Design and Implementation (OSDI)}, 2008.
+
+\bibitem{chipounov2011s2e}
+V.~Chipounov, V.~Kuznetsov, and G.~Candea.
+\newblock {S2E}: A platform for in-vivo multi-path analysis of software systems.
+\newblock In \emph{Proc. 16th Int'l Conf. on Architectural Support for Programming Languages and Operating Systems (ASPLOS)}, 2011.
+
+\bibitem{emrath2021c2rust}
+M.~Emre, R.~Schroeder, K.~Dewey, and B.~Hardekopf.
+\newblock Translating {C} to safer {Rust}.
+\newblock In \emph{Proc. ACM on Programming Languages}, 5(OOPSLA), 2021.
+\newblock doi:10.1145/3485498.
+
+\bibitem{jana2024cotran}
+P.~Jana, P.~Jha, H.~Ju, G.~Kishore, A.~Mahajan, and V.~Ganesh.
+\newblock {CoTran}: An {LLM}-based code translator using reinforcement learning with feedback from compiler and symbolic execution.
+\newblock In \emph{Proc. 27th European Conference on Artificial Intelligence (ECAI)}, 2024.
+\newblock doi:10.3233/FAIA240968.
+
+\bibitem{yu2005devil}
+Y.~Yu, M.~Zhu, and S.~Chen.
+\newblock New approach for device driver development -- {Devil+} language.
+\newblock In \emph{Proc. 5th Int'l Conf. on Embedded Software and Systems}, 2005, pp.~418--422.
+\newblock doi:10.1007/11535409\_60.
+
+\bibitem{lattner2004llvm}
+C.~Lattner and V.~Adve.
+\newblock {LLVM}: A compilation framework for lifelong program analysis and transformation.
+\newblock In \emph{Proc. Int'l Symp. on Code Generation and Optimization (CGO)}, 2004, pp.~75--86.
+\newblock doi:10.1109/CGO.2004.1281665.
+
+\bibitem{barthe2009certificate}
+G.~Barthe, B.~Gregoire, C.~Kunz, and T.~Rezk.
+\newblock Certificate translation for optimizing compilers.
+\newblock \emph{ACM Transactions on Programming Languages and Systems}, 31(2), 2009, pp.~1--45.
+\newblock doi:10.1145/1538917.1538919.
+
+\bibitem{kang2018crellvm}
+J.~Kang, Y.~Kim, Y.~Song, J.~Lee, S.~Park, M.~D.~Shin, Y.~Kim, S.~Cho, J.~Choi, C.-K.~Hur, and K.~Yi.
+\newblock Crellvm: Verified credible compilation for {LLVM}.
+\newblock \emph{ACM SIGPLAN Notices}, 53(4), 2018, pp.~631--645.
+\newblock doi:10.1145/3296979.3192377.
+
+\bibitem{lopes2021alive2}
+N.~P.~Lopes, J.~Lee, C.-K.~Hur, Z.~Liu, and J.~Regehr.
+\newblock {Alive2}: Bounded translation validation for {LLVM}.
+\newblock In \emph{Proc. 42nd ACM SIGPLAN Int'l Conf. on Programming Language Design and Implementation (PLDI)}, 2021, pp.~65--79.
+\newblock doi:10.1145/3453483.3454030.
+
+\bibitem{lachaux2020transcoder}
+M.-A.~Lachaux, B.~Roziere, L.~Chanussot, and G.~Lample.
+\newblock Unsupervised translation of programming languages.
+\newblock arXiv:2006.03511, 2020.
+
+\bibitem{wang2021codet5}
+Y.~Wang, W.~Wang, S.~Joty, and S.~C.~H.~Hoi.
+\newblock {CodeT5}: Identifier-aware unified pre-trained encoder-decoder models for code understanding and generation.
+\newblock In \emph{EMNLP}, 2021, pp.~8696--8708.
+\newblock doi:10.18653/v1/2021.emnlp-main.685.
+
+\end{thebibliography}

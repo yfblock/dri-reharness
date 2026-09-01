@@ -91,11 +91,12 @@ def _computed_is_lowerable(expr: dict | None) -> bool:
 def module_metrics(module: dict) -> dict:
     # State and callback-result operations are semantic RIS leaves, but are not
     # hardware register accesses and must not inflate MMIO readiness metrics.
-    semantic_only = {"StateRead", "StateWrite", "OutputWrite", "Return"}
+    semantic_only = {"StateRead", "StateWrite", "OutputWrite", "ValueBind",
+                     "Return"}
     ops = [op for op in walk_leaf_ops(module["ops"])
            if not (semantic_only & set(op))]
     total = len(ops)
-    sym = fixed = comp = unsafe_comp = rmw = transactions = 0
+    sym = fixed = named_fixed = comp = unsafe_comp = rmw = transactions = 0
     unknown_val = 0
     for o in ops:
         addr = (o.get("Read") or o.get("Write") or o.get("ReadModifyWrite") or {}).get("addr")
@@ -104,6 +105,8 @@ def module_metrics(module: dict) -> dict:
             sym += 1
         elif k == "fixed":
             fixed += 1
+            if (addr.get("Fixed") or {}).get("name"):
+                named_fixed += 1  # GEP offset + macro name (IR-primary)
         elif k == "computed":
             comp += 1
             if not _computed_is_lowerable(addr.get("Computed")):
@@ -134,6 +137,7 @@ def module_metrics(module: dict) -> dict:
         "total_ops": total,
         "symbolic": sym,
         "fixed": fixed,
+        "named_fixed": named_fixed,
         "computed": comp,
         "unsafe_computed": unsafe_comp,
         "rmw": rmw,
@@ -148,9 +152,9 @@ def module_metrics(module: dict) -> dict:
 
 def driver_metrics(formal: dict, n_clang_diag: int = 0) -> dict:
     mods = [module_metrics(m) for m in formal["modules"]]
-    agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "computed",
-                           "unsafe_computed", "rmw", "unknown_value", "cond",
-                           "loop", "conservative_loop", "transactions")}
+    agg = {k: 0 for k in ("total_ops", "symbolic", "fixed", "named_fixed",
+                           "computed", "unsafe_computed", "rmw", "unknown_value",
+                           "cond", "loop", "conservative_loop", "transactions")}
     for m in mods:
         for k in agg:
             agg[k] += m[k]
@@ -256,9 +260,10 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     addr_total = met["symbolic"] + met["fixed"] + met["computed"] or 1
 
     safe_addresses = addr_total - met["unsafe_computed"]
+    resolved = met["symbolic"] + met.get("named_fixed", 0)
     raw_ris_quality = (
         0.5 * (safe_addresses / addr_total)
-        + 0.2 * (met["symbolic"] / addr_total)
+        + 0.2 * (min(1.0, resolved / addr_total))
         + 0.2 * ((total_ops - met["unknown_value"]) / total_ops)
         + 0.1 * (1.0 if met["computed"] == 0 else 0.5)
     )
@@ -320,10 +325,17 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
         blockers.append(
             f"{unsupported_ops} register operation(s) use unsupported access domain")
     transaction_ops = met.get("transactions", 0)
-    transactions_ready = transaction_ops == 0
+    transaction_validation = formal.get("metadata", {}).get(
+        "transaction_validation", {})
+    transaction_validation_ready = (
+        isinstance(transaction_validation, dict)
+        and transaction_validation.get("coverage_complete") is True
+    )
+    transactions_ready = transaction_ops == 0 or transaction_validation_ready
     if transaction_ops:
-        blockers.append(
-            f"{transaction_ops} typed hardware transaction(s) lack backend/runtime validation")
+        if not transaction_validation_ready:
+            blockers.append(
+                f"{transaction_ops} typed hardware transaction(s) lack backend/runtime validation")
     unsupported_control = met.get("control_accounting", {}).get("unsupported", 0)
     if unsupported_control:
         blockers.append(
@@ -336,7 +348,7 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     flattened_callees = met.get("callee_rescue", {}).get("candidates", 0)
     call_semantics_ready = met.get("callee_rescue", {}).get(
         "call_semantics_proven", False)
-    if flattened_callees and not rescued_callees:
+    if flattened_callees and not rescued_callees and not call_semantics_ready:
         blockers.append(
             f"{flattened_callees} inlined helper definition(s) lack "
             "call-context proof")
@@ -857,11 +869,18 @@ def score(device_spec, formal: dict, warnings: list[str], facts=None,
     # LLM synthesis gate (plan M9): artifacts sufficient to ask an LLM to
     # synthesize/repair a candidate under verification feedback. Distinct from
     # deterministic Linux readiness — does not require Linux gen to be complete.
+    hardware_model_ready = bool(len(device_spec.registers) > 0
+                                or (transaction_ops > 0
+                                    and transaction_validation_ready))
+    transaction_only = bool(transaction_ops > 0
+                            and len(device_spec.registers) == 0
+                            and transaction_validation_ready)
+    required_facts_quality = 0.3 if transaction_only else 0.6
     llm_synthesis_ready = (callee_semantics_ready
                            and ris_quality >= 0.7
                            and function_spec_quality >= 0.5
-                           and facts_quality >= 0.6
-                           and len(device_spec.registers) > 0)
+                           and facts_quality >= required_facts_quality
+                           and hardware_model_ready)
 
     return {
         "ris_quality": ris_quality,

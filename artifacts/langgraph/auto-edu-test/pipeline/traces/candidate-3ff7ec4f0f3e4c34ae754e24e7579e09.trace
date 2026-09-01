@@ -1,0 +1,43 @@
+=== QEMU run: module=edu_drv bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031228] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031294] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.071342] ftrace: allocating 31612 entries in 124 pages
+[    0.071604] ftrace: allocated 124 pages with 5 groups
+[    0.405063] thermal_sys: Registered thermal governor 'step_wise'
+[    0.409502] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.410800] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.493599] pps_core: LinuxPPS API ver. 1 registered
+[    0.535040] Key type asymmetric registered
+[    0.535117] Asymmetric key parser 'x509' registered
+[    0.535520] io scheduler mq-deadline registered
+[    0.535580] io scheduler kyber registered
+[    0.571837] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod edu_drv ===
+[    1.004092] [rhfn] edu_pci_probe
+[    1.009460] [rh] R 0x0 0x10000ed
+[    1.011377] insmod (55) used greatest stack depth: 13096 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+[    1.004092] [rhfn] edu_pci_probe
+[    1.009460] [rh] R 0x0 0x10000ed
+[    1.011377] insmod (55) used greatest stack depth: 13096 bytes left
+[    1.346952] [rh] R 0x0 0x10000ed
+TRACE id@0x00 = 0x010000ed OK
+[    1.348161] [rh] W 0x4 0xa5a5a5a5
+[    1.348244] [rh] R 0x4 0x5a5a5a5a
+TRACE live_check@0x04 write0xa5a5a5a5 read0x5a5a5a5a OK (~X)
+[    1.348418] [rh] W 0x8 0x5
+[    1.348461] [rh] R 0x20 0x0
+[    1.348503] [rh] R 0x8 0x78
+TRACE factorial@0x08(5)=120 OK
+EDU_TRACE_OK
+REHARNESS_SUBSYSTEM_TEST_0_NAME=edu-pci-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+=== rmmod edu_drv ===
+=== QEMU_RUN_DONE ===
+[    1.584545] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+  done=1 probe=10 real_oops=0
+  => 成功: edu_drv probe 成功

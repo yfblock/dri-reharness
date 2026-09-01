@@ -1,0 +1,109 @@
+{
+ "edu": {
+  "db": "ok",
+  "truth_sites": 5,
+  "codeql_sites": 5,
+  "matched": 5,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 0
+ },
+ "gpio-ftgpio010": {
+  "db": "ok",
+  "truth_sites": 22,
+  "codeql_sites": 22,
+  "matched": 22,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 2
+ },
+ "gpio-cadence": {
+  "db": "ok",
+  "truth_sites": 19,
+  "codeql_sites": 19,
+  "matched": 19,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 2
+ },
+ "ahci": {
+  "db": "ok",
+  "truth_sites": 14,
+  "codeql_sites": 11,
+  "matched": 11,
+  "missed_by_codeql": [
+   1670,
+   1680,
+   1681
+  ],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 8
+ },
+ "virtio_mmio": {
+  "db": "ok",
+  "truth_sites": 59,
+  "codeql_sites": 59,
+  "matched": 59,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 0
+ },
+ "gpio-pl061": {
+  "db": "failed",
+  "truth_sites": 31
+ },
+ "clk-highbank": {
+  "db": "ok",
+  "truth_sites": 25,
+  "codeql_sites": 25,
+  "matched": 25,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 0
+ },
+ "gpio-idt3243x": {
+  "db": "ok",
+  "truth_sites": 7,
+  "codeql_sites": 7,
+  "matched": 7,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 2
+ },
+ "gpio-mb86s7x": {
+  "db": "ok",
+  "truth_sites": 13,
+  "codeql_sites": 13,
+  "matched": 13,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 2
+ },
+ "gpio-sodaville": {
+  "db": "ok",
+  "truth_sites": 7,
+  "codeql_sites": 7,
+  "matched": 7,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 2
+ },
+ "sdhci-of-at91": {
+  "db": "ok",
+  "truth_sites": 13,
+  "codeql_sites": 13,
+  "matched": 13,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 6
+ },
+ "clk-nomadik": {
+  "db": "ok",
+  "truth_sites": 25,
+  "codeql_sites": 25,
+  "matched": 25,
+  "missed_by_codeql": [],
+  "extra_by_codeql": [],
+  "header_inline_accessors": 0
+ }
+}

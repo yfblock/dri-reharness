@@ -1,0 +1,10 @@
+make: Entering directory '/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build'
+make[1]: Entering directory '/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2-real/ftgpio010/build/ftgpio010_gpio'
+  CC [M]  ftgpio010_gpio.o
+  MODPOST Module.symvers
+  CC [M]  ftgpio010_gpio.mod.o
+  CC [M]  .module-common.o
+  LD [M]  ftgpio010_gpio.ko
+make[1]: Leaving directory '/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2-real/ftgpio010/build/ftgpio010_gpio'
+make: Leaving directory '/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build'
+

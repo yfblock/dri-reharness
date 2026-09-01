@@ -1,0 +1,464 @@
+source: /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c
+includes:
+  - linux/module.h
+  - linux/delay.h
+  - linux/platform_data/mmc-esdhc-mcf.h
+  - linux/mmc/mmc.h
+  - sdhci-pltfm.h
+  - sdhci-esdhc.h
+structs:
+  pltfm_mcf_data:
+    fields:
+      clk_ipg: "struct clk *"
+      clk_ahb: "struct clk *"
+      clk_per: "struct clk *"
+      aside: "int"
+      current_bus_width: "int"
+constants:
+  MMC_BUS_WIDTH_4: 0x2
+  SDHCI_DMA_ADDRESS: 0x0
+  SDHCI_ARGUMENT2: 0x0
+  SDHCI_32BIT_BLK_CNT: 0x0
+  SDHCI_BLOCK_SIZE: 0x4
+  SDHCI_BLOCK_COUNT: 0x6
+  SDHCI_ARGUMENT: 0x8
+  SDHCI_TRNS_DMA: 0x1
+  SDHCI_TRNS_BLK_CNT_EN: 0x2
+  SDHCI_TRNS_AUTO_CMD12: 0x4
+  SDHCI_TRNS_AUTO_CMD23: 0x8
+  SDHCI_TRNS_AUTO_SEL: 0xc
+  SDHCI_TRNS_READ: 0x10
+  SDHCI_TRNS_MULTI: 0x20
+  SDHCI_TRNS_RES_TYPE: 0x40
+  SDHCI_TRNS_RES_ERR_CHECK: 0x80
+  SDHCI_TRNS_RES_INT_DIS: 0x100
+  SDHCI_COMMAND: 0xe
+  SDHCI_CMD_RESP_MASK: 0x3
+  SDHCI_CMD_SUB_CMD: 0x4
+  SDHCI_CMD_CRC: 0x8
+  SDHCI_CMD_INDEX: 0x10
+  SDHCI_CMD_DATA: 0x20
+  SDHCI_CMD_ABORTCMD: 0xc0
+  SDHCI_CMD_RESP_NONE: 0x0
+  SDHCI_CMD_RESP_LONG: 0x1
+  SDHCI_CMD_RESP_SHORT: 0x2
+  SDHCI_CMD_RESP_SHORT_BUSY: 0x3
+  SDHCI_RESPONSE: 0x10
+  SDHCI_BUFFER: 0x20
+  SDHCI_PRESENT_STATE: 0x24
+  SDHCI_CMD_INHIBIT: 0x1
+  SDHCI_DATA_INHIBIT: 0x2
+  SDHCI_DAT_4_TO_7_LVL_MASK: 0xf0
+  SDHCI_DOING_WRITE: 0x100
+  SDHCI_DOING_READ: 0x200
+  SDHCI_SPACE_AVAILABLE: 0x400
+  SDHCI_DATA_AVAILABLE: 0x800
+  SDHCI_CARD_PRESENT: 0x10000
+  SDHCI_CARD_PRES_SHIFT: 0x10
+  SDHCI_CD_STABLE: 0x20000
+  SDHCI_CD_LVL: 0x40000
+  SDHCI_CD_LVL_SHIFT: 0x12
+  SDHCI_WRITE_PROTECT: 0x80000
+  SDHCI_DATA_LVL_MASK: 0xf00000
+  SDHCI_DATA_LVL_SHIFT: 0x14
+  SDHCI_DATA_0_LVL_MASK: 0x100000
+  SDHCI_CMD_LVL: 0x1000000
+  SDHCI_HOST_REGULATOR_STABLE: 0x2000000
+  SDHCI_CMD_NOT_ISSUED_ERR: 0x8000000
+  SDHCI_SUB_CMD_STATUS: 0x10000000
+  SDHCI_UHS2_IN_DORMANT_STATE: 0x20000000
+  SDHCI_UHS2_LANE_SYNC: 0x40000000
+  SDHCI_UHS2_IF_DETECT: 0x80000000
+  SDHCI_CTRL_LED: 0x1
+  SDHCI_CTRL_4BITBUS: 0x2
+  SDHCI_CTRL_HISPD: 0x4
+  SDHCI_CTRL_DMA_MASK: 0x18
+  SDHCI_CTRL_SDMA: 0x0
+  SDHCI_CTRL_ADMA1: 0x8
+  SDHCI_CTRL_ADMA32: 0x10
+  SDHCI_CTRL_ADMA64: 0x18
+  SDHCI_CTRL_ADMA3: 0x18
+  SDHCI_CTRL_8BITBUS: 0x20
+  SDHCI_CTRL_CDTEST_INS: 0x40
+  SDHCI_CTRL_CDTEST_EN: 0x80
+  SDHCI_POWER_CONTROL: 0x29
+  SDHCI_POWER_ON: 0x1
+  SDHCI_POWER_180: 0xa
+  SDHCI_POWER_300: 0xc
+  SDHCI_POWER_330: 0xe
+  SDHCI_VDD2_POWER_ON: 0x10
+  SDHCI_VDD2_POWER_120: 0x80
+  SDHCI_VDD2_POWER_180: 0xa0
+  SDHCI_BLOCK_GAP_CONTROL: 0x2a
+  SDHCI_WAKE_UP_CONTROL: 0x2b
+  SDHCI_WAKE_ON_INT: 0x1
+  SDHCI_WAKE_ON_INSERT: 0x2
+  SDHCI_WAKE_ON_REMOVE: 0x4
+  SDHCI_CLOCK_CONTROL: 0x2c
+  SDHCI_DIVIDER_SHIFT: 0x8
+  SDHCI_DIVIDER_HI_SHIFT: 0x6
+  SDHCI_DIV_MASK: 0xff
+  SDHCI_DIV_MASK_LEN: 0x8
+  SDHCI_DIV_HI_MASK: 0x300
+  SDHCI_PROG_CLOCK_MODE: 0x20
+  SDHCI_CLOCK_CARD_EN: 0x4
+  SDHCI_CLOCK_PLL_EN: 0x8
+  SDHCI_CLOCK_INT_STABLE: 0x2
+  SDHCI_CLOCK_INT_EN: 0x1
+  SDHCI_TIMEOUT_CONTROL: 0x2e
+  SDHCI_SOFTWARE_RESET: 0x2f
+  SDHCI_RESET_ALL: 0x1
+  SDHCI_RESET_CMD: 0x2
+  SDHCI_RESET_DATA: 0x4
+  SDHCI_INT_STATUS: 0x30
+  SDHCI_INT_RESPONSE: 0x1
+  SDHCI_INT_DATA_END: 0x2
+  SDHCI_INT_BLK_GAP: 0x4
+  SDHCI_INT_DMA_END: 0x8
+  SDHCI_INT_SPACE_AVAIL: 0x10
+  SDHCI_INT_DATA_AVAIL: 0x20
+  SDHCI_INT_CARD_INSERT: 0x40
+  SDHCI_INT_CARD_REMOVE: 0x80
+  SDHCI_INT_CARD_INT: 0x100
+  SDHCI_INT_RETUNE: 0x1000
+  SDHCI_INT_FX_EVENT: 0x2000
+  SDHCI_INT_CQE: 0x4000
+  SDHCI_INT_ERROR: 0x8000
+  SDHCI_INT_TIMEOUT: 0x10000
+  SDHCI_INT_CRC: 0x20000
+  SDHCI_INT_END_BIT: 0x40000
+  SDHCI_INT_INDEX: 0x80000
+  SDHCI_INT_DATA_TIMEOUT: 0x100000
+  SDHCI_INT_DATA_CRC: 0x200000
+  SDHCI_INT_DATA_END_BIT: 0x400000
+  SDHCI_INT_BUS_POWER: 0x800000
+  SDHCI_INT_AUTO_CMD_ERR: 0x1000000
+  SDHCI_INT_ADMA_ERROR: 0x2000000
+  SDHCI_INT_TUNING_ERROR: 0x4000000
+  SDHCI_INT_RESP_ERR: 0x8000000
+  SDHCI_INT_NORMAL_MASK: 0x7fff
+  SDHCI_INT_ERROR_MASK: 0xffff8000
+  SDHCI_INT_CMD_MASK: 0x10f0001
+  SDHCI_INT_DATA_MASK: 0x670003e
+  SDHCI_CQE_INT_ERR_MASK: 0x2ff0000
+  SDHCI_CQE_INT_MASK: 0x2ff4000
+  SDHCI_AUTO_CMD_STATUS: 0x3c
+  SDHCI_AUTO_CMD_TIMEOUT: 0x2
+  SDHCI_AUTO_CMD_CRC: 0x4
+  SDHCI_AUTO_CMD_END_BIT: 0x8
+  SDHCI_AUTO_CMD_INDEX: 0x10
+  SDHCI_AUTO_CMD_RESP_ERR: 0x20
+  SDHCI_HOST_CONTROL2: 0x3e
+  SDHCI_CTRL_UHS_MASK: 0x7
+  SDHCI_CTRL_UHS_SDR12: 0x0
+  SDHCI_CTRL_UHS_SDR25: 0x1
+  SDHCI_CTRL_UHS_SDR50: 0x2
+  SDHCI_CTRL_UHS_SDR104: 0x3
+  SDHCI_CTRL_UHS_DDR50: 0x4
+  SDHCI_CTRL_HS400: 0x5
+  SDHCI_CTRL_UHS2: 0x7
+  SDHCI_CTRL_VDD_180: 0x8
+  SDHCI_CTRL_DRV_TYPE_MASK: 0x30
+  SDHCI_CTRL_DRV_TYPE_B: 0x0
+  SDHCI_CTRL_DRV_TYPE_A: 0x10
+  SDHCI_CTRL_DRV_TYPE_C: 0x20
+  SDHCI_CTRL_DRV_TYPE_D: 0x30
+  SDHCI_CTRL_EXEC_TUNING: 0x40
+  SDHCI_CTRL_TUNED_CLK: 0x80
+  SDHCI_CTRL_UHS2_ENABLE: 0x100
+  SDHCI_CTRL_ADMA2_LEN_MODE: 0x400
+  SDHCI_CMD23_ENABLE: 0x800
+  SDHCI_CTRL_V4_MODE: 0x1000
+  SDHCI_CTRL_64BIT_ADDR: 0x2000
+  SDHCI_CTRL_ASYNC_INT_ENABLE: 0x4000
+  SDHCI_CTRL_PRESET_VAL_ENABLE: 0x8000
+  SDHCI_CAPABILITIES: 0x40
+  SDHCI_TIMEOUT_CLK_SHIFT: 0x0
+  SDHCI_TIMEOUT_CLK_UNIT: 0x80
+  SDHCI_CLOCK_BASE_SHIFT: 0x8
+  SDHCI_MAX_BLOCK_MASK: 0x30000
+  SDHCI_MAX_BLOCK_SHIFT: 0x10
+  SDHCI_CAN_DO_8BIT: 0x40000
+  SDHCI_CAN_DO_ADMA2: 0x80000
+  SDHCI_CAN_DO_ADMA1: 0x100000
+  SDHCI_CAN_DO_HISPD: 0x200000
+  SDHCI_CAN_DO_SDMA: 0x400000
+  SDHCI_CAN_DO_SUSPEND: 0x800000
+  SDHCI_CAN_VDD_330: 0x1000000
+  SDHCI_CAN_VDD_300: 0x2000000
+  SDHCI_CAN_VDD_180: 0x4000000
+  SDHCI_CAN_64BIT_V4: 0x8000000
+  SDHCI_CAN_64BIT: 0x10000000
+  SDHCI_CAN_ASYNC_INT: 0x20000000
+  SDHCI_CAPABILITIES_1: 0x44
+  SDHCI_SUPPORT_SDR50: 0x1
+  SDHCI_SUPPORT_SDR104: 0x2
+  SDHCI_SUPPORT_DDR50: 0x4
+  SDHCI_SUPPORT_UHS2: 0x8
+  SDHCI_DRIVER_TYPE_A: 0x10
+  SDHCI_DRIVER_TYPE_C: 0x20
+  SDHCI_DRIVER_TYPE_D: 0x40
+  SDHCI_USE_SDR50_TUNING: 0x2000
+  SDHCI_CAN_DO_ADMA3: 0x8000000
+  SDHCI_CAN_VDD2_180: 0x10000000
+  SDHCI_SUPPORT_HS400: 0x80000000
+  SDHCI_MAX_CURRENT: 0x48
+  SDHCI_MAX_CURRENT_1: 0x4c
+  SDHCI_MAX_CURRENT_MULTIPLIER: 0x4
+  SDHCI_SET_ACMD12_ERROR: 0x50
+  SDHCI_SET_INT_ERROR: 0x52
+  SDHCI_ADMA_ERROR: 0x54
+  SDHCI_ADMA_ADDRESS: 0x58
+  SDHCI_ADMA_ADDRESS_HI: 0x5c
+  SDHCI_PRESET_FOR_HIGH_SPEED: 0x64
+  SDHCI_PRESET_FOR_SDR12: 0x66
+  SDHCI_PRESET_FOR_SDR25: 0x68
+  SDHCI_PRESET_FOR_SDR50: 0x6a
+  SDHCI_PRESET_FOR_SDR104: 0x6c
+  SDHCI_PRESET_FOR_DDR50: 0x6e
+  SDHCI_PRESET_FOR_HS400: 0x74
+  SDHCI_PRESET_FOR_UHS2: 0x74
+  SDHCI_PRESET_CLKGEN_SEL: 0x400
+  SDHCI_ADMA3_ADDRESS: 0x78
+  SDHCI_SLOT_INT_STATUS: 0xfc
+  SDHCI_HOST_VERSION: 0xfe
+  SDHCI_VENDOR_VER_MASK: 0xff00
+  SDHCI_VENDOR_VER_SHIFT: 0x8
+  SDHCI_SPEC_VER_MASK: 0xff
+  SDHCI_SPEC_VER_SHIFT: 0x0
+  SDHCI_SPEC_100: 0x0
+  SDHCI_SPEC_200: 0x1
+  SDHCI_SPEC_300: 0x2
+  SDHCI_SPEC_400: 0x3
+  SDHCI_SPEC_410: 0x4
+  SDHCI_SPEC_420: 0x5
+  SDHCI_MAX_DIV_SPEC_200: 0x100
+  SDHCI_MAX_DIV_SPEC_300: 0x7fe
+  SDHCI_DEFAULT_BOUNDARY_SIZE: 0x80000
+  SDHCI_ADMA2_32_DESC_SZ: 0x8
+  SDHCI_ADMA2_ALIGN: 0x4
+  SDHCI_ADMA2_MASK: 0x3
+  SDHCI_ADMA2_DESC_ALIGN: 0x8
+  SDHCI_MAX_SEGS: 0x80
+  SDHCI_MAX_MRQS: 0x2
+  SDHCI_QUIRK_CLOCK_BEFORE_RESET: 0x1
+  SDHCI_QUIRK_FORCE_DMA: 0x2
+  SDHCI_QUIRK_NO_CARD_NO_RESET: 0x4
+  SDHCI_QUIRK_SINGLE_POWER_WRITE: 0x8
+  SDHCI_QUIRK_BROKEN_DMA: 0x20
+  SDHCI_QUIRK_BROKEN_ADMA: 0x40
+  SDHCI_QUIRK_32BIT_DMA_ADDR: 0x80
+  SDHCI_QUIRK_32BIT_DMA_SIZE: 0x100
+  SDHCI_QUIRK_32BIT_ADMA_SIZE: 0x200
+  SDHCI_QUIRK_RESET_AFTER_REQUEST: 0x400
+  SDHCI_QUIRK_NO_SIMULT_VDD_AND_POWER: 0x800
+  SDHCI_QUIRK_BROKEN_TIMEOUT_VAL: 0x1000
+  SDHCI_QUIRK_BROKEN_SMALL_PIO: 0x2000
+  SDHCI_QUIRK_NO_BUSY_IRQ: 0x4000
+  SDHCI_QUIRK_BROKEN_CARD_DETECTION: 0x8000
+  SDHCI_QUIRK_INVERTED_WRITE_PROTECT: 0x10000
+  SDHCI_QUIRK_BROKEN_CQE: 0x20000
+  SDHCI_QUIRK_PIO_NEEDS_DELAY: 0x40000
+  SDHCI_QUIRK_NO_LED: 0x80000
+  SDHCI_QUIRK_FORCE_BLK_SZ_2048: 0x100000
+  SDHCI_QUIRK_NO_MULTIBLOCK: 0x200000
+  SDHCI_QUIRK_FORCE_1_BIT_DATA: 0x400000
+  SDHCI_QUIRK_DELAY_AFTER_POWER: 0x800000
+  SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK: 0x1000000
+  SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN: 0x2000000
+  SDHCI_QUIRK_NO_ENDATTR_IN_NOPDESC: 0x4000000
+  SDHCI_QUIRK_MULTIBLOCK_READ_ACMD12: 0x10000000
+  SDHCI_QUIRK_NO_HISPD_BIT: 0x20000000
+  SDHCI_QUIRK_BROKEN_ADMA_ZEROLEN_DESC: 0x40000000
+  SDHCI_QUIRK2_HOST_OFF_CARD_ON: 0x1
+  SDHCI_QUIRK2_HOST_NO_CMD23: 0x2
+  SDHCI_QUIRK2_NO_1_8_V: 0x4
+  SDHCI_QUIRK2_PRESET_VALUE_BROKEN: 0x8
+  SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON: 0x10
+  SDHCI_QUIRK2_BROKEN_HOST_CONTROL: 0x20
+  SDHCI_QUIRK2_BROKEN_HS200: 0x40
+  SDHCI_QUIRK2_BROKEN_DDR50: 0x80
+  SDHCI_QUIRK2_STOP_WITH_TC: 0x100
+  SDHCI_QUIRK2_BROKEN_64_BIT_DMA: 0x200
+  SDHCI_QUIRK2_CLEAR_TRANSFERMODE_REG_BEFORE_CMD: 0x400
+  SDHCI_QUIRK2_CAPS_BIT63_FOR_HS400: 0x800
+  SDHCI_QUIRK2_TUNING_WORK_AROUND: 0x1000
+  SDHCI_QUIRK2_SUPPORT_SINGLE: 0x2000
+  SDHCI_QUIRK2_ACMD23_BROKEN: 0x4000
+  SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN: 0x8000
+  SDHCI_QUIRK2_RSP_136_HAS_CRC: 0x10000
+  SDHCI_QUIRK2_DISABLE_HW_TIMEOUT: 0x20000
+  SDHCI_QUIRK2_USE_32BIT_BLK_CNT: 0x40000
+  SDHCI_QUIRK2_ISSUE_CMD_DAT_RESET_TOGETHER: 0x80000
+  SDHCI_USE_SDMA: 0x1
+  SDHCI_USE_ADMA: 0x2
+  SDHCI_REQ_USE_DMA: 0x4
+  SDHCI_DEVICE_DEAD: 0x8
+  SDHCI_SDR50_NEEDS_TUNING: 0x10
+  SDHCI_AUTO_CMD12: 0x40
+  SDHCI_AUTO_CMD23: 0x80
+  SDHCI_PV_ENABLED: 0x100
+  SDHCI_USE_64_BIT_DMA: 0x1000
+  SDHCI_HS400_TUNING: 0x2000
+  SDHCI_SIGNALING_330: 0x4000
+  SDHCI_SIGNALING_180: 0x8000
+  SDHCI_SIGNALING_120: 0x10000
+  SDHCI_TUNING_MODE_1: 0x0
+  SDHCI_TUNING_MODE_2: 0x1
+  SDHCI_TUNING_MODE_3: 0x2
+  SDHCI_DBG_ANYWAY: 0x0
+  ESDHC_CTRL_BUSWIDTH_MASK: 0x6
+  ESDHC_PROCTL_D3CD: 0x8
+  ESDHC_SYS_CTRL_DTOCV_MASK: 0xf
+  ESDHC_DEFAULT_HOST_CONTROL: 0x28
+  ESDHC_INT_VENDOR_SPEC_DMA_ERR: 0x10000000
+callbacks:
+  sdhci_ops.reset: esdhc_mcf_reset
+  sdhci_ops.set_clock: esdhc_mcf_pltfm_set_clock
+  sdhci_ops.get_max_clock: esdhc_mcf_pltfm_get_max_clock
+  sdhci_ops.get_min_clock: esdhc_mcf_pltfm_get_min_clock
+  sdhci_ops.set_bus_width: esdhc_mcf_pltfm_set_bus_width
+  sdhci_ops.get_max_timeout_count: esdhc_mcf_get_max_timeout_count
+  sdhci_ops.set_timeout: esdhc_mcf_set_timeout
+  sdhci_ops.write_b: esdhc_mcf_writeb_be
+  sdhci_ops.write_w: esdhc_mcf_writew_be
+  sdhci_ops.write_l: esdhc_mcf_writel_be
+  sdhci_ops.read_b: esdhc_mcf_readb_be
+  sdhci_ops.read_w: esdhc_mcf_readw_be
+  sdhci_ops.read_l: esdhc_mcf_readl_be
+  sdhci_ops.copy_to_bounce_buffer: esdhc_mcf_copy_to_bounce_buffer
+  sdhci_ops.request_done: esdhc_mcf_request_done
+  platform_driver.probe: sdhci_esdhc_mcf_probe
+  platform_driver.remove: sdhci_esdhc_mcf_remove
+callback_signatures:
+  sdhci_ops.reset:
+    type: "void (*)(struct sdhci_host *, unsigned char)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "unsigned char"
+    variadic: false
+  sdhci_ops.set_clock:
+    type: "void (*)(struct sdhci_host *, unsigned int)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "unsigned int"
+    variadic: false
+  sdhci_ops.get_max_clock:
+    type: "unsigned int (*)(struct sdhci_host *)"
+    return_type: "unsigned int"
+    params:
+      - "struct sdhci_host *"
+    variadic: false
+  sdhci_ops.get_min_clock:
+    type: "unsigned int (*)(struct sdhci_host *)"
+    return_type: "unsigned int"
+    params:
+      - "struct sdhci_host *"
+    variadic: false
+  sdhci_ops.set_bus_width:
+    type: "void (*)(struct sdhci_host *, int)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "int"
+    variadic: false
+  sdhci_ops.get_max_timeout_count:
+    type: "unsigned int (*)(struct sdhci_host *)"
+    return_type: "unsigned int"
+    params:
+      - "struct sdhci_host *"
+    variadic: false
+  sdhci_ops.set_timeout:
+    type: "void (*)(struct sdhci_host *, struct mmc_command *)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "struct mmc_command *"
+    variadic: false
+  sdhci_ops.write_b:
+    type: "void (*)(struct sdhci_host *, unsigned char, int)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "unsigned char"
+      - "int"
+    variadic: false
+  sdhci_ops.write_w:
+    type: "void (*)(struct sdhci_host *, unsigned short, int)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "unsigned short"
+      - "int"
+    variadic: false
+  sdhci_ops.write_l:
+    type: "void (*)(struct sdhci_host *, unsigned int, int)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "unsigned int"
+      - "int"
+    variadic: false
+  sdhci_ops.read_b:
+    type: "unsigned char (*)(struct sdhci_host *, int)"
+    return_type: "unsigned char"
+    params:
+      - "struct sdhci_host *"
+      - "int"
+    variadic: false
+  sdhci_ops.read_w:
+    type: "unsigned short (*)(struct sdhci_host *, int)"
+    return_type: "unsigned short"
+    params:
+      - "struct sdhci_host *"
+      - "int"
+    variadic: false
+  sdhci_ops.read_l:
+    type: "unsigned int (*)(struct sdhci_host *, int)"
+    return_type: "unsigned int"
+    params:
+      - "struct sdhci_host *"
+      - "int"
+    variadic: false
+  sdhci_ops.copy_to_bounce_buffer:
+    type: "void (*)(struct sdhci_host *, struct mmc_data *, unsigned int)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "struct mmc_data *"
+      - "unsigned int"
+    variadic: false
+  sdhci_ops.request_done:
+    type: "void (*)(struct sdhci_host *, struct mmc_request *)"
+    return_type: "void"
+    params:
+      - "struct sdhci_host *"
+      - "struct mmc_request *"
+    variadic: false
+  platform_driver.probe:
+    type: "int (*)(struct platform_device *)"
+    return_type: "int"
+    params:
+      - "struct platform_device *"
+    variadic: false
+  platform_driver.remove:
+    type: "void (*)(struct platform_device *)"
+    return_type: "void"
+    params:
+      - "struct platform_device *"
+    variadic: false
+resources:
+  cloc6:
+    acquisition: "devm_clk_get"
+    binds_to: "g->clk"
+error_paths:
+  - "return -EINVAL"
+  - "return PTR_ERR(host)"
+  - "return PTR_ERR(mcf_data->clk_ahb)"
+  - "return PTR_ERR(mcf_data->clk_ipg)"
+  - "return PTR_ERR(mcf_data->clk_per)"
+helper_calls:
+  - "clk_disable_unprepare"
+  - "clk_prepare_enable"

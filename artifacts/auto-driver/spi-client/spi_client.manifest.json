@@ -1,0 +1,111 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "spi-generic",
+  "runtime": {
+    "adapter": "qemu-profile",
+    "capabilities": {
+      "required": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ]
+    },
+    "fixture": {
+      "config": {
+        "driver_name": "fixture_spi_client",
+        "module_args": {
+          "spi-registrar": [
+            "modalias=fixture_spi_client"
+          ]
+        }
+      },
+      "kind": "qemu-spi"
+    },
+    "profile": "spi-generic",
+    "qemu": {
+      "binding": {
+        "bus": "spi",
+        "device_glob": "*"
+      },
+      "bus": "spi",
+      "device": "spi-virtual",
+      "kernel_modules": [
+        "spidev"
+      ],
+      "machine": "pc",
+      "module": "spi_generic",
+      "probe_pattern": "REHARNESS_SPI_DRIVER_PROBE",
+      "timeout_seconds": 90
+    },
+    "registration": {
+      "device_id_tables": [
+        "spi_device_id"
+      ],
+      "identity_field": "driver_name",
+      "root_table": "spi_driver"
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "/home/yfblock/Code/dri-trans-paper/reharness/qa/tests/fixtures/spi-client.c",
+    "sha256": "6040729171ff35b41ccaa8ee3631b214caab74fc3171bc0a206a390d1ae77e72"
+  },
+  "test": {
+    "subsystem": {
+      "name": "spi",
+      "tests": [
+        {
+          "args": [
+            "/dev/reharness-spi-control"
+          ],
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "name": "spi-transfer",
+          "success_pattern": "SPI_TRANSFER_PASS"
+        },
+        {
+          "args": [
+            "/dev/reharness-spi-control"
+          ],
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "name": "spi-invalid-chip-select",
+          "success_pattern": "SPI_INVALID_CHIP_SELECT_PASS"
+        },
+        {
+          "args": [
+            "-D",
+            "/dev/spidev0.1",
+            "-p",
+            "01020304",
+            "-S",
+            "4",
+            "-I",
+            "1"
+          ],
+          "name": "linux-spidev-tool",
+          "provider": "linux-spidev"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ]
+  }
+}

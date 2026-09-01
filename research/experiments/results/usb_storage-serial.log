@@ -1,0 +1,2047 @@
+c[?7l[2J[0mSeaBIOS (version rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org)
+
+
+iPXE (http://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+0EFD1C40+0EF31C40 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...
+
+
+Booting from ROM..c[?7l[2JNo EFI environment detected.
+early console in extract_kernel
+input_data: 0x000000000266d2c4
+input_len: 0x000000000094b4db
+output: 0x0000000001000000
+output_len: 0x0000000001f78348
+kernel_total_size: 0x0000000001d7d000
+needed_size: 0x0000000002000000
+trampoline_32bit: 0x0000000000000000
+
+
+KASLR disabled: 'nokaslr' on cmdline.
+
+
+Decompressing Linux... Parsing ELF... No relocation needed... done.
+Booting the kernel (entry_offset: 0x0000000001a0e3b0).
+[    0.000000] Linux version 7.1.0-rc7+ (yfblock@9950x) (gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #17 SMP PREEMPT_DYNAMIC Tue Aug 25 17:24:02 CST 2026
+[    0.000000] Command line: console=ttyS0 nokaslr panic=1 ignore_loglevel earlyprintk=serial,ttyS0,115200
+[    0.000000] BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x00000000000a0000-0x00000000000effff]
+[    0.000000] BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff]  device reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x000000000ffdefff]  System RAM
+[    0.000000] BIOS-e820: [mem 0x000000000ffdf000-0x000000000fffffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x0000000010000000-0x00000000fffbffff]
+[    0.000000] BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff]  device reserved
+[    0.000000] BIOS-e820: [gap 0x0000000100000000-0x000000fcffffffff]
+[    0.000000] BIOS-e820: [mem 0x000000fd00000000-0x000000ffffffffff]  device reserved
+[    0.000000] printk: debug: ignoring loglevel setting.
+[    0.000000] printk: legacy bootconsole [earlyser0] enabled
+[    0.000000] NX (Execute Disable) protection: active
+[    0.000000] APIC: Static calls initialized
+[    0.000000] DMI: SMBIOS 2.8 present.
+[    0.000000] DMI: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[    0.000000] DMI: Memory slots populated: 1/1
+[    0.000000] tsc: Fast TSC calibration using PIT
+[    0.000000] tsc: Detected 4299.863 MHz processor
+[    0.007946] e820: update [mem 0x00000000-0x00000fff] System RAM ==> device reserved
+[    0.008127] e820: remove [mem 0x000a0000-0x000fffff] System RAM
+[    0.008282] last_pfn = 0xffdf max_arch_pfn = 0x400000000
+[    0.008726] MTRR map: 4 entries (3 fixed + 1 variable; max 19), built from 8 variable MTRRs
+[    0.008889] x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT
+[    0.020575] found SMP MP-table at [mem 0x000f54b0-0x000f54bf]
+[    0.023598] RAMDISK: [mem 0x0f7f1000-0x0ffcffff]
+[    0.023875] ACPI: Early table checksum verification disabled
+[    0.024209] ACPI: RSDP 0x00000000000F52D0 000014 (v00 BOCHS )
+[    0.024409] ACPI: RSDT 0x000000000FFE2389 000034 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.024910] ACPI: FACP 0x000000000FFE2235 000074 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025365] ACPI: DSDT 0x000000000FFE0040 0021F5 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025464] ACPI: FACS 0x000000000FFE0000 000040
+[    0.025526] ACPI: APIC 0x000000000FFE22A9 000080 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025592] ACPI: HPET 0x000000000FFE2329 000038 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025657] ACPI: WAET 0x000000000FFE2361 000028 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.025763] ACPI: Reserving FACP table memory at [mem 0xffe2235-0xffe22a8]
+[    0.025815] ACPI: Reserving DSDT table memory at [mem 0xffe0040-0xffe2234]
+[    0.025859] ACPI: Reserving FACS table memory at [mem 0xffe0000-0xffe003f]
+[    0.025905] ACPI: Reserving APIC table memory at [mem 0xffe22a9-0xffe2328]
+[    0.025948] ACPI: Reserving HPET table memory at [mem 0xffe2329-0xffe2360]
+[    0.025998] ACPI: Reserving WAET table memory at [mem 0xffe2361-0xffe2388]
+[    0.027270] No NUMA configuration found
+[    0.027311] Faking a node at [mem 0x0000000000000000-0x000000000ffdefff]
+[    0.027709] NODE_DATA(0) allocated [mem 0x0ffdb680-0x0ffdefff]
+[    0.028218] ACPI: PM-Timer IO Port: 0x608
+[    0.028492] ACPI: LAPIC_NMI (acpi_id[0xff] dfl dfl lint[0x1])
+[    0.028753] IOAPIC[0]: apic_id 0, version 32, address 0xfec00000, GSI 0-23
+[    0.028865] ACPI: INT_SRC_OVR (bus 0 bus_irq 0 global_irq 2 dfl dfl)
+[    0.029060] ACPI: INT_SRC_OVR (bus 0 bus_irq 5 global_irq 5 high level)
+[    0.029125] ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)
+[    0.029220] ACPI: INT_SRC_OVR (bus 0 bus_irq 10 global_irq 10 high level)
+[    0.029266] ACPI: INT_SRC_OVR (bus 0 bus_irq 11 global_irq 11 high level)
+[    0.029415] ACPI: Using ACPI (MADT) for SMP configuration information
+[    0.029477] ACPI: HPET id: 0x8086a201 base: 0xfed00000
+[    0.029748] CPU topo: Max. logical packages:   1
+[    0.029799] CPU topo: Max. logical nodes:      1
+[    0.029833] CPU topo: Num. nodes per package:  1
+[    0.029899] CPU topo: Max. logical dies:       1
+[    0.029933] CPU topo: Max. dies per package:   1
+[    0.029994] CPU topo: Max. threads per core:   1
+[    0.030104] CPU topo: Num. cores per package:     2
+[    0.030144] CPU topo: Num. threads per package:   2
+[    0.030178] CPU topo: Allowing 2 present CPUs plus 0 hotplug CPUs
+[    0.030684] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.030749] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.030860] [gap 0x10000000-0xfffbffff] available for PCI devices
+[    0.030932] Booting paravirtualized kernel on bare hardware
+[    0.031153] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1910969940391419 ns
+[    0.038481] Zone ranges:
+[    0.038518]   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
+[    0.038595]   DMA32    [mem 0x0000000001000000-0x000000000ffdefff]
+[    0.038639]   Normal   empty
+[    0.038672] Movable zone start for each node
+[    0.038712] Early memory node ranges
+[    0.038752]   node   0: [mem 0x0000000000001000-0x000000000009efff]
+[    0.038864]   node   0: [mem 0x0000000000100000-0x000000000ffdefff]
+[    0.038978] Initmem setup node 0 [mem 0x0000000000001000-0x000000000ffdefff]
+[    0.039547] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.039761] On node 0, zone DMA: 97 pages in unavailable ranges
+[    0.040969] On node 0, zone DMA32: 33 pages in unavailable ranges
+[    0.041131] setup_percpu: NR_CPUS:64 nr_cpumask_bits:2 nr_cpu_ids:2 nr_node_ids:1
+[    0.042197] percpu: Embedded 52 pages/cpu s175064 r8192 d29736 u1048576
+[    0.042473] pcpu-alloc: s175064 r8192 d29736 u1048576 alloc=1*2097152
+[    0.042559] pcpu-alloc: [0] 0 1
+[    0.043430] Kernel command line: console=ttyS0 nokaslr panic=1 ignore_loglevel earlyprintk=serial,ttyS0,115200
+[    0.044159] Unknown kernel command line parameters "nokaslr", will be passed to user space.
+[    0.044331] printk: log buffer data + meta data: 262144 + 917504 = 1179648 bytes
+[    0.044577] Dentry cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.044706] Inode-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.046253] Fallback order for Node 0: 0
+[    0.046514] Built 1 zonelists, mobility grouping on.  Total pages: 65405
+[    0.046595] Policy zone: DMA32
+[    0.046761] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[    0.052095] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+Poking KASLR using RDTSC...
+[    0.073758] ftrace: allocating 38031 entries in 150 pages
+[    0.074018] ftrace: allocated 150 pages with 4 groups
+[    0.078566] Dynamic Preempt: lazy
+[    0.080319] rcu: Preemptible hierarchical RCU implementation.
+[    0.080364] rcu: 	RCU event tracing is enabled.
+[    0.080406] rcu: 	RCU restricting CPUs from NR_CPUS=64 to nr_cpu_ids=2.
+[    0.080532] 	Trampoline variant of Tasks RCU enabled.
+[    0.080566] 	Rude variant of Tasks RCU enabled.
+[    0.080596] 	Tracing variant of Tasks RCU enabled.
+[    0.080683] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.080740] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.081460] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.081522] RCU Tasks Rude: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[    0.096176] NR_IRQS: 4352, nr_irqs: 440, preallocated irqs: 16
+[    0.101624] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.106173] Console: colour VGA+ 80x25
+[    0.107320] printk: legacy console [ttyS0] enabled
+[    0.107320] printk: legacy console [ttyS0] enabled
+[    0.107611] printk: legacy bootconsole [earlyser0] disabled
+[    0.107611] printk: legacy bootconsole [earlyser0] disabled
+[    0.108502] ACPI: Core revision 20251212
+[    0.111714] clocksource: hpet: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 19112604467 ns
+[    0.114610] APIC: Switch to symmetric I/O mode setup
+[    0.117306] ..TIMER: vector=0x30 apic1=0 pin1=2 apic2=-1 pin2=-1
+[    0.122561] clocksource: tsc-early: mask: 0xffffffffffffffff max_cycles: 0x3dfae26e15c, max_idle_ns: 440795252442 ns
+[    0.122840] Calibrating delay loop (skipped), value calculated using timer frequency.. 8599.72 BogoMIPS (lpj=4299863)
+[    0.125078] Last level iTLB entries: 4KB 512, 2MB 255, 4MB 127
+[    0.125137] Last level dTLB entries: 4KB 512, 2MB 255, 4MB 127, 1GB 0
+[    0.125320] mitigations: Enabled attack vectors: user_kernel, user_user, SMT mitigations: auto
+[    0.125586] Spectre V2 : Mitigation: Retpolines
+[    0.125689] Spectre V1 : Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+[    0.125767] Spectre V2 : Spectre v2 / SpectreRSB: Filling RSB on context switch and VMEXIT
+[    0.126246] x86/fpu: x87 FPU will use FXSAVE
+[    0.190026] pid_max: default: 32768 minimum: 301
+[    0.198292] Mount-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+[    0.198414] Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+[    0.203283] VFS: Finished mounting rootfs on nullfs
+[    0.318711] smpboot: CPU0: AMD QEMU Virtual CPU version 2.5+ (family: 0xf, model: 0x6b, stepping: 0x1)
+[    0.324176] Performance Events: PMU not available due to virtualization, using software events only.
+[    0.324783] signal: max sigframe size: 1440
+[    0.325446] rcu: Hierarchical SRCU implementation.
+[    0.325497] rcu: 	Max phase no-delay instances is 400.
+[    0.326151] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.328550] smp: Bringing up secondary CPUs ...
+[    0.332413] smpboot: x86: Booting SMP configuration:
+[    0.332473] .... node  #0, CPUs:      #1
+[    0.401049] smp: Brought up 1 node, 2 CPUs
+[    0.401196] smpboot: Total of 2 processors activated (17200.56 BogoMIPS)
+[    0.406461] Memory: 214460K/261620K available (12659K kernel code, 2337K rwdata, 5116K rodata, 2792K init, 544K bss, 43724K reserved, 0K cma-reserved)
+[    0.411064] devtmpfs: initialized
+[    0.416948] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.416948] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.416948] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[    0.419719] PM: RTC time: 16:15:00, date: 2026-08-30
+[    0.421810] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.426216] thermal_sys: Registered thermal governor 'step_wise'
+[    0.427012] cpuidle: using governor menu
+[    0.427971] Freeing SMP alternatives memory: 36K
+[    0.429401] PCI: Using configuration type 1 for base access
+[    0.429671] mtrr: your CPUs had inconsistent fixed MTRR settings
+[    0.429727] mtrr: your CPUs had inconsistent variable MTRR settings
+[    0.429774] mtrr: your CPUs had inconsistent MTRRdefType settings
+[    0.429821] mtrr: probably your BIOS does not setup all CPUs.
+[    0.429860] mtrr: corrected configuration.
+[    0.431183] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.432624] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.432697] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.435270] ACPI: Added _OSI(Module Device)
+[    0.435320] ACPI: Added _OSI(Processor Device)
+[    0.435353] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.447083] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.460955] ACPI: \_SB_: platform _OSC: OS support mask [002a7eee]
+[    0.467506] ACPI: Interpreter enabled
+[    0.468147] ACPI: PM: (supports S0 S3 S4 S5)
+[    0.468201] ACPI: Using IOAPIC for interrupt routing
+[    0.468436] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.468508] PCI: Using E820 reservations for host bridge windows
+[    0.469341] ACPI: Enabled 2 GPEs in block 00 to 0F
+[    0.498372] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.498847] acpi PNP0A03:00: _OSC: OS supports [ASPM ClockPM Segments MSI HPX-Type3]
+[    0.498982] acpi PNP0A03:00: _OSC: not requesting OS control; OS requires [ExtendedConfig ASPM ClockPM MSI]
+[    0.499218] acpi PNP0A03:00: _OSC: platform retains control of PCIe features (AE_ERROR)
+[    0.499528] acpi PNP0A03:00: fail to add MMCONFIG information, can't access extended configuration space under this bridge
+[    0.501429] PCI host bridge to bus 0000:00
+[    0.501585] pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7 window]
+[    0.501697] pci_bus 0000:00: root bus resource [io  0x0d00-0xffff window]
+[    0.501717] pci_bus 0000:00: root bus resource [mem 0x000a0000-0x000bffff window]
+[    0.501785] pci_bus 0000:00: root bus resource [mem 0x10000000-0xfebfffff window]
+[    0.501834] pci_bus 0000:00: root bus resource [mem 0x100000000-0x17fffffff window]
+[    0.501952] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.502817] pci 0000:00:00.0: [8086:1237] type 00 class 0x060000 conventional PCI endpoint
+[    0.505283] pci 0000:00:01.0: [8086:7000] type 00 class 0x060100 conventional PCI endpoint
+[    0.505644] pci 0000:00:01.1: [8086:7010] type 00 class 0x010180 conventional PCI endpoint
+[    0.506295] pci 0000:00:01.1: BAR 4 [io  0xc040-0xc04f]
+[    0.506379] pci 0000:00:01.1: BAR 0 [io  0x01f0-0x01f7]: legacy IDE quirk
+[    0.506434] pci 0000:00:01.1: BAR 1 [io  0x03f6]: legacy IDE quirk
+[    0.506490] pci 0000:00:01.1: BAR 2 [io  0x0170-0x0177]: legacy IDE quirk
+[    0.506542] pci 0000:00:01.1: BAR 3 [io  0x0376]: legacy IDE quirk
+[    0.506961] pci 0000:00:01.3: [8086:7113] type 00 class 0x068000 conventional PCI endpoint
+[    0.507221] pci 0000:00:01.3: quirk: [io  0x0600-0x063f] claimed by PIIX4 ACPI
+[    0.507292] pci 0000:00:01.3: quirk: [io  0x0700-0x070f] claimed by PIIX4 SMB
+[    0.507613] pci 0000:00:02.0: [1234:1111] type 00 class 0x030000 conventional PCI endpoint
+[    0.507957] pci 0000:00:02.0: BAR 0 [mem 0xfd000000-0xfdffffff pref]
+[    0.508041] pci 0000:00:02.0: BAR 2 [mem 0xfebf4000-0xfebf4fff]
+[    0.508091] pci 0000:00:02.0: ROM [mem 0xfebe0000-0xfebeffff pref]
+[    0.508273] pci 0000:00:02.0: Video device with shadowed ROM at [mem 0x000c0000-0x000dffff]
+[    0.508872] pci 0000:00:03.0: [8086:100e] type 00 class 0x020000 conventional PCI endpoint
+[    0.509613] pci 0000:00:03.0: BAR 0 [mem 0xfebc0000-0xfebdffff]
+[    0.509668] pci 0000:00:03.0: BAR 1 [io  0xc000-0xc03f]
+[    0.509723] pci 0000:00:03.0: ROM [mem 0xfeb80000-0xfebbffff pref]
+[    0.513052] pci 0000:00:04.0: [1b36:000d] type 00 class 0x0c0330 conventional PCI endpoint
+[    0.513385] pci 0000:00:04.0: BAR 0 [mem 0xfebf0000-0xfebf3fff 64bit]
+[    0.518950] ACPI: PCI: Interrupt link LNKA configured for IRQ 10
+[    0.519411] ACPI: PCI: Interrupt link LNKB configured for IRQ 10
+[    0.519751] ACPI: PCI: Interrupt link LNKC configured for IRQ 11
+[    0.520062] ACPI: PCI: Interrupt link LNKD configured for IRQ 11
+[    0.520223] ACPI: PCI: Interrupt link LNKS configured for IRQ 9
+[    0.522082] iommu: Default domain type: Translated
+[    0.522140] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.523003] SCSI subsystem initialized
+[    0.523096] libata version 3.00 loaded.
+[    0.523862] ACPI: bus type USB registered
+[    0.524155] usbcore: registered new interface driver usbfs
+[    0.524353] usbcore: registered new interface driver hub
+[    0.524456] usbcore: registered new device driver usb
+[    0.524623] pps_core: LinuxPPS API ver. 1 registered
+[    0.524659] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.524741] PTP clock support registered
+[    0.529224] PCI: Using ACPI for IRQ routing
+[    0.529332] PCI: pci_cache_line_size set to 64 bytes
+[    0.529570] e820: register RAM buffer resource [mem 0x0009fc00-0x0009ffff]
+[    0.529702] e820: register RAM buffer resource [mem 0x0ffdf000-0x0fffffff]
+[    0.532007] pci 0000:00:02.0: vgaarb: setting as boot VGA device
+[    0.532083] pci 0000:00:02.0: vgaarb: bridge control possible
+[    0.532144] pci 0000:00:02.0: vgaarb: VGA device added: decodes=io+mem,owns=io+mem,locks=none
+[    0.532211] vgaarb: loaded
+[    0.532833] hpet: 3 channels of 0 reserved for per-cpu timers
+[    0.533003] hpet0: at MMIO 0xfed00000, IRQs 2, 8, 0
+[    0.533081] hpet0: 3 comparators, 64-bit 100.000000 MHz counter
+[    0.536064] clocksource: Switched to clocksource tsc-early
+[    0.537103] VFS: Disk quotas dquot_6.6.0
+[    0.537197] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.538490] pnp: PnP ACPI init
+[    0.539745] pnp 00:02: [dma 2]
+[    0.540751] pnp: PnP ACPI: found 5 devices
+[    0.554221] clocksource: acpi_pm: mask: 0xffffff max_cycles: 0xffffff, max_idle_ns: 2085701024 ns
+[    0.554632] NET: Registered PF_INET protocol family
+[    0.555194] IP idents hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.556694] tcp_listen_portaddr_hash hash table entries: 256 (order: 0, 4096 bytes, linear)
+[    0.556905] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.556986] TCP established hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.557121] TCP bind hash table entries: 2048 (order: 4, 65536 bytes, linear)
+[    0.557249] TCP: Hash tables configured (established 2048 bind 2048)
+[    0.558029] UDP hash table entries: 256 (order: 2, 16384 bytes, linear)
+[    0.559062] pci_bus 0000:00: resource 4 [io  0x0000-0x0cf7 window]
+[    0.559113] pci_bus 0000:00: resource 5 [io  0x0d00-0xffff window]
+[    0.559155] pci_bus 0000:00: resource 6 [mem 0x000a0000-0x000bffff window]
+[    0.559199] pci_bus 0000:00: resource 7 [mem 0x10000000-0xfebfffff window]
+[    0.559243] pci_bus 0000:00: resource 8 [mem 0x100000000-0x17fffffff window]
+[    0.559558] pci 0000:00:01.0: PIIX3: Enabling Passive Release
+[    0.559642] pci 0000:00:00.0: Limiting direct PCI/PCI transfers
+[    0.564693] ACPI: \_SB_.LNKD: Enabled at IRQ 11
+[    0.568688] PCI: CLS 0 bytes, default 64
+[    0.571112] Unpacking initramfs...
+[    0.577228] Initialise system trusted keyrings
+[    0.578100] workingset: timestamp_bits=56 (anon: 52) max_order=16 bucket_order=0 (anon: 0)
+[    0.580461] Key type asymmetric registered
+[    0.580536] Asymmetric key parser 'x509' registered
+[    0.580687] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 250)
+[    0.580958] io scheduler mq-deadline registered
+[    0.581016] io scheduler kyber registered
+[    0.583685] input: Power Button as /devices/platform/LNXPWRBN:00/input/input0
+[    0.584285] ACPI: button: Power Button [PWRF]
+[    0.587524] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.589819] 00:04: ttyS0 at I/O 0x3f8 (irq = 4, base_baud = 115200) is a 16550A
+[    0.594968] Non-volatile memory driver v1.3
+[    0.605073] loop: module loaded
+[    0.609916] scsi host0: ata_piix
+[    0.611482] scsi host1: ata_piix
+[    0.611777] ata1: PATA max MWDMA2 cmd 0x1f0 ctl 0x3f6 bmdma 0xc040 irq 14 lpm-pol 0
+[    0.611851] ata2: PATA max MWDMA2 cmd 0x170 ctl 0x376 bmdma 0xc048 irq 15 lpm-pol 0
+[    0.614713] i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+[    0.616518] serio: i8042 KBD port at 0x60,0x64 irq 1
+[    0.616677] serio: i8042 AUX port at 0x60,0x64 irq 12
+[    0.617931] rtc_cmos PNP0B00:00: RTC can wake from S4
+[    0.619597] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input1
+[    0.621721] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.622613] rtc_cmos PNP0B00:00: alarms up to one day, y3k, 242 bytes nvram, hpet irqs
+[    0.623290] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[    0.623552] amd_pstate: the _CPC object is not present in SBIOS or ACPI disabled
+[    0.623723] hid: raw HID events driver (C) Jiri Kosina
+[    0.624134] usbcore: registered new interface driver usbhid
+[    0.624181] usbhid: USB HID core driver
+[    0.624832] NET: Registered PF_INET6 protocol family
+[    0.629741] Segment Routing with IPv6
+[    0.629889] In-situ OAM (IOAM) with IPv6
+[    0.631845] IPI shorthand broadcast: enabled
+[    0.639465] sched_clock: Marking stable (628749492, 10630017)->(642990986, -3611477)
+[    0.640739] Loading compiled-in X.509 certificates
+[    0.647519] Demotion targets for Node 0: null
+[    0.649493] PM:   Magic number: 6:684:288
+[    0.649627] tty tty21: hash matches
+[    0.650322] clk: Disabling unused clocks
+[    0.650566] KTAP version 1
+[    0.650593] 1..0
+[    0.737713] Freeing initrd memory: 8060K
+[    0.767972] ata2: found unknown device (class 0)
+[    0.770707] ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
+[    0.776759] scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
+[    0.790312] sr 1:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    0.800593] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    0.807085] sr 1:0:0:0: Attached scsi CD-ROM sr0
+[    0.808088] sr 1:0:0:0: Attached scsi generic sg0 type 5
+[    0.845028] Freeing unused kernel image (initmem) memory: 2792K
+[    0.845181] Write protecting the kernel read-only data: 20480k
+[    0.847079] Freeing unused kernel image (text/rodata gap) memory: 1676K
+[    0.847539] Freeing unused kernel image (rodata/data gap) memory: 1028K
+[    0.934503] x86/mm: Checked W+X mappings: passed, no W+X pages found.
+[    0.934677] Run /init as init process
+[    0.934705]   with arguments:
+[    0.934740]     /init
+[    0.934761]     nokaslr
+[    0.934779]   with environment:
+[    0.934802]     HOME=/
+[    0.934824]     TERM=linux
+[    0.992497] mount (55) used greatest stack depth: 13208 bytes left
+[    1.000193] mount (56) used greatest stack depth: 13120 bytes left
+=== insmod required kernel module xhci-hcd ===
+[    1.041241] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
+REHARNESS_KERNEL_MODULE_0_NAME=xhci-hcd
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod required kernel module xhci-pci ===
+[    1.052557] xhci_hcd 0000:00:04.0: xHCI Host Controller
+[    1.052845] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.054749] xhci_hcd 0000:00:04.0: hcc params 0x00087001 hci version 0x100 quirks 0x0000000000000010
+[    1.059737] xhci_hcd 0000:00:04.0: xHCI Host Controller
+[    1.059790] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.059872] xhci_hcd 0000:00:04.0: Host supports USB 3.0 SuperSpeed
+[    1.063664] hub 1-0:1.0: USB hub found
+[    1.064036] hub 1-0:1.0: 4 ports detected
+[    1.065844] usb usb2: We don't know the algorithms for LPM for this host, disabling LPM.
+[    1.066443] hub 2-0:1.0: USB hub found
+[    1.066572] hub 2-0:1.0: 4 ports detected
+[    1.068039] insmod (63) used greatest stack depth: 12008 bytes left
+REHARNESS_KERNEL_MODULE_1_NAME=xhci-pci
+REHARNESS_KERNEL_MODULE_1_INSMOD_RC=0
+=== insmod usb_storage ===
+[    1.074888] [rhcov] usb_stor_host_template_init
+[    1.074941] [rhcov] usb_stor_host_template_init
+[    1.074979] [rhcov] usb_stor_host_template_init
+[    1.075006] [rhcov] usb_stor_host_template_init
+[    1.075033] [rhcov] usb_stor_host_template_init
+[    1.075060] [rhcov] usb_stor_host_template_init
+[    1.075086] [rhcov] usb_stor_host_template_init
+[    1.075232] usbcore: registered new interface driver usb-storage
+REHARNESS_DRIVER_INSMOD_RC=0
+[    1.389867] usb 2-1: new SuperSpeed USB device number 2 using xhci_hcd
+[    1.405442] [rhcov] storage_probe
+[    1.405494] [rhcov] storage_probe
+[    1.405518] [rhcov] storage_probe
+[    1.405539] [rhcov] storage_probe
+[    1.405560] [rhcov] storage_probe
+[    1.405580] [rhcov] storage_probe
+[    1.405600] [rhcov] storage_probe
+[    1.405658] [rhcov] usb_usual_ignore_device
+[    1.405688] [rhcov] usb_usual_ignore_device
+[    1.405713] [rhcov] usb_usual_ignore_device
+[    1.405737] [rhcov] usb_usual_ignore_device
+[    1.405762] [rhcov] usb_usual_ignore_device
+[    1.405786] [rhcov] usb_usual_ignore_device
+[    1.405810] [rhcov] usb_usual_ignore_device
+[    1.405859] usb-storage 2-1:1.0: USB Mass Storage device detected
+[    1.406274] [rhcov] usb_stor_sg_tablesize
+[    1.406311] [rhcov] usb_stor_sg_tablesize
+[    1.406336] [rhcov] usb_stor_sg_tablesize
+[    1.406359] [rhcov] usb_stor_sg_tablesize
+[    1.406383] [rhcov] usb_stor_sg_tablesize
+[    1.406406] [rhcov] usb_stor_sg_tablesize
+[    1.406430] [rhcov] usb_stor_sg_tablesize
+[    1.406461] [rhcov] us_set_lock_class
+[    1.406483] [rhcov] us_set_lock_class
+[    1.406505] [rhcov] us_set_lock_class
+[    1.406527] [rhcov] us_set_lock_class
+[    1.406549] [rhcov] us_set_lock_class
+[    1.406571] [rhcov] us_set_lock_class
+[    1.406593] [rhcov] us_set_lock_class
+[    1.406656] [rhcov] associate_dev
+[    1.406681] [rhcov] associate_dev
+[    1.406702] [rhcov] associate_dev
+[    1.406723] [rhcov] associate_dev
+[    1.406743] [rhcov] associate_dev
+[    1.406764] [rhcov] associate_dev
+[    1.406785] [rhcov] associate_dev
+[    1.406863] [rhcov] get_device_info
+[    1.406884] [rhcov] get_device_info
+[    1.406906] [rhcov] get_device_info
+[    1.406927] [rhcov] get_device_info
+[    1.406948] [rhcov] get_device_info
+[    1.406969] [rhcov] get_device_info
+[    1.406990] [rhcov] get_device_info
+[    1.407043] [rhcov] usb_stor_adjust_quirks
+[    1.407069] [rhcov] usb_stor_adjust_quirks
+[    1.407093] [rhcov] usb_stor_adjust_quirks
+[    1.407117] [rhcov] usb_stor_adjust_quirks
+[    1.407142] [rhcov] usb_stor_adjust_quirks
+[    1.407166] [rhcov] usb_stor_adjust_quirks
+[    1.407189] [rhcov] usb_stor_adjust_quirks
+[    1.407238] [rhcov] get_transport
+[    1.407259] [rhcov] get_transport
+[    1.407279] [rhcov] get_transport
+[    1.407304] [rhcov] get_transport
+[    1.407325] [rhcov] get_transport
+[    1.407345] [rhcov] get_transport
+[    1.407366] [rhcov] get_transport
+[    1.407395] [rhcov] get_protocol
+[    1.407415] [rhcov] get_protocol
+[    1.407435] [rhcov] get_protocol
+[    1.407455] [rhcov] get_protocol
+[    1.407475] [rhcov] get_protocol
+[    1.407495] [rhcov] get_protocol
+[    1.407516] [rhcov] get_protocol
+[    1.407613] [rhcov] usb_stor_probe2
+[    1.407657] [rhcov] usb_stor_probe2
+[    1.407680] [rhcov] usb_stor_probe2
+[    1.407702] [rhcov] usb_stor_probe2
+[    1.407723] [rhcov] usb_stor_probe2
+[    1.407744] [rhcov] usb_stor_probe2
+[    1.407765] [rhcov] usb_stor_probe2
+[    1.407804] [rhcov] get_pipes
+[    1.407823] [rhcov] get_pipes
+[    1.407842] [rhcov] get_pipes
+[    1.407861] [rhcov] get_pipes
+[    1.407880] [rhcov] get_pipes
+[    1.407899] [rhcov] get_pipes
+[    1.407918] [rhcov] get_pipes
+[    1.408062] [rhcov] usb_stor_acquire_resources
+[    1.408089] [rhcov] usb_stor_acquire_resources
+[    1.408115] [rhcov] usb_stor_acquire_resources
+[    1.408140] [rhcov] usb_stor_acquire_resources
+[    1.408166] [rhcov] usb_stor_acquire_resources
+[    1.408191] [rhcov] usb_stor_acquire_resources
+[    1.408216] [rhcov] usb_stor_acquire_resources
+[    1.408389] [rhcov] host_info
+[    1.408414] [rhcov] host_info
+[    1.408434] [rhcov] host_info
+[    1.408460] [rhcov] host_info
+[    1.408479] [rhcov] host_info
+[    1.408499] [rhcov] host_info
+[    1.408518] [rhcov] host_info
+[    1.408545] scsi host2: usb-storage 2-1:1.0
+[    1.408676] [rhcov] usb_stor_control_thread
+[    1.408708] [rhcov] usb_stor_control_thread
+[    1.408733] [rhcov] usb_stor_control_thread
+[    1.408757] [rhcov] usb_stor_control_thread
+[    1.408781] [rhcov] usb_stor_control_thread
+[    1.408806] [rhcov] usb_stor_control_thread
+[    1.408830] [rhcov] usb_stor_control_thread
+REHARNESS_DRIVER_PROBE_BOUND=1
+=== dmesg ===
+[    0.554632] NET: Registered PF_INET protocol family
+[    0.580461] Key type asymmetric registered
+[    0.580536] Asymmetric key parser 'x509' registered
+[    0.580958] io scheduler mq-deadline registered
+[    0.581016] io scheduler kyber registered
+[    0.621721] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.624134] usbcore: registered new interface driver usbhid
+[    0.624832] NET: Registered PF_INET6 protocol family
+[    1.052845] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.059790] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.075232] usbcore: registered new interface driver usb-storage
+[    1.405442] [rhcov] storage_probe
+[    1.405494] [rhcov] storage_probe
+[    1.405518] [rhcov] storage_probe
+[    1.405539] [rhcov] storage_probe
+[    1.405560] [rhcov] storage_probe
+[    1.405580] [rhcov] storage_probe
+[    1.405600] [rhcov] storage_probe
+[    1.407613] [rhcov] usb_stor_probe2
+[    1.407657] [rhcov] usb_stor_probe2
+[    1.407680] [rhcov] usb_stor_probe2
+[    1.407702] [rhcov] usb_stor_probe2
+[    1.407723] [rhcov] usb_stor_probe2
+[    1.407744] [rhcov] usb_stor_probe2
+[    1.407765] [rhcov] usb_stor_probe2
+=== exerciser ===
+[    1.617903] tsc: Refined TSC clocksource calibration: 4299.885 MHz
+[    1.618366] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x3dfaf710349, max_idle_ns: 440795206700 ns
+[    1.619435] clocksource: Switched to clocksource tsc
+[    2.450141] [rhcov] usb_stor_scan_dwork
+[    2.450219] [rhcov] usb_stor_scan_dwork
+[    2.450258] [rhcov] usb_stor_scan_dwork
+[    2.450305] [rhcov] usb_stor_scan_dwork
+[    2.450342] [rhcov] usb_stor_scan_dwork
+[    2.450378] [rhcov] usb_stor_scan_dwork
+[    2.450414] [rhcov] usb_stor_scan_dwork
+[    2.450479] [rhcov] usb_stor_Bulk_max_lun
+[    2.450519] [rhcov] usb_stor_Bulk_max_lun
+[    2.450557] [rhcov] usb_stor_Bulk_max_lun
+[    2.450594] [rhcov] usb_stor_Bulk_max_lun
+[    2.450626] [rhcov] usb_stor_Bulk_max_lun
+[    2.450657] [rhcov] usb_stor_Bulk_max_lun
+[    2.450716] [rhcov] usb_stor_Bulk_max_lun
+[    2.450815] [rhcov] usb_stor_control_msg
+[    2.450852] [rhcov] usb_stor_control_msg
+[    2.450882] [rhcov] usb_stor_control_msg
+[    2.450913] [rhcov] usb_stor_control_msg
+[    2.450943] [rhcov] usb_stor_control_msg
+[    2.450975] [rhcov] usb_stor_control_msg
+[    2.451006] [rhcov] usb_stor_control_msg
+[    2.451066] [rhcov] usb_stor_msg_common
+[    2.451097] [rhcov] usb_stor_msg_common
+[    2.451128] [rhcov] usb_stor_msg_common
+[    2.451158] [rhcov] usb_stor_msg_common
+[    2.451188] [rhcov] usb_stor_msg_common
+[    2.451218] [rhcov] usb_stor_msg_common
+[    2.451248] [rhcov] usb_stor_msg_common
+[    2.451456] [rhcov] usb_stor_blocking_completion
+[    2.451511] [rhcov] usb_stor_blocking_completion
+[    2.451565] [rhcov] usb_stor_blocking_completion
+[    2.451599] [rhcov] usb_stor_blocking_completion
+[    2.451633] [rhcov] usb_stor_blocking_completion
+[    2.451666] [rhcov] usb_stor_blocking_completion
+[    2.451719] [rhcov] usb_stor_blocking_completion
+[    2.452073] [rhcov] target_alloc
+[    2.452105] [rhcov] target_alloc
+[    2.452131] [rhcov] target_alloc
+[    2.452157] [rhcov] target_alloc
+[    2.452182] [rhcov] target_alloc
+[    2.452208] [rhcov] target_alloc
+[    2.452233] [rhcov] target_alloc
+[    2.452508] [rhcov] sdev_init
+[    2.452539] [rhcov] sdev_init
+[    2.452564] [rhcov] sdev_init
+[    2.452588] [rhcov] sdev_init
+[    2.452613] [rhcov] sdev_init
+[    2.452645] [rhcov] sdev_init
+[    2.452669] [rhcov] sdev_init
+[    2.452814] [rhcov] queuecommand_lck
+[    2.452844] [rhcov] queuecommand_lck
+[    2.452872] [rhcov] queuecommand_lck
+[    2.452899] [rhcov] queuecommand_lck
+[    2.452928] [rhcov] queuecommand_lck
+[    2.452955] [rhcov] queuecommand_lck
+[    2.452982] [rhcov] queuecommand_lck
+[    2.453254] [rhcov] usb_stor_transparent_scsi_command
+[    2.453398] [rhcov] usb_stor_transparent_scsi_command
+[    2.453480] [rhcov] usb_stor_transparent_scsi_command
+[    2.453526] [rhcov] usb_stor_transparent_scsi_command
+[    2.453564] [rhcov] usb_stor_transparent_scsi_command
+[    2.453602] [rhcov] usb_stor_transparent_scsi_command
+[    2.453639] [rhcov] usb_stor_transparent_scsi_command
+[    2.453727] [rhcov] usb_stor_invoke_transport
+[    2.453764] [rhcov] usb_stor_invoke_transport
+[    2.453797] [rhcov] usb_stor_invoke_transport
+[    2.453832] [rhcov] usb_stor_invoke_transport
+[    2.453866] [rhcov] usb_stor_invoke_transport
+[    2.453900] [rhcov] usb_stor_invoke_transport
+[    2.453933] [rhcov] usb_stor_invoke_transport
+[    2.453997] [rhcov] usb_stor_Bulk_transport
+[    2.454033] [rhcov] usb_stor_Bulk_transport
+[    2.454066] [rhcov] usb_stor_Bulk_transport
+[    2.454099] [rhcov] usb_stor_Bulk_transport
+[    2.454131] [rhcov] usb_stor_Bulk_transport
+[    2.454163] [rhcov] usb_stor_Bulk_transport
+[    2.454195] [rhcov] usb_stor_Bulk_transport
+[    2.454286] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454325] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454360] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454395] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454429] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454462] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454497] [rhcov] usb_stor_bulk_transfer_buf
+[    2.454538] [rhcov] usb_stor_msg_common
+[    2.454566] [rhcov] usb_stor_msg_common
+[    2.454594] [rhcov] usb_stor_msg_common
+[    2.454622] [rhcov] usb_stor_msg_common
+[    2.454650] [rhcov] usb_stor_msg_common
+[    2.454706] [rhcov] usb_stor_msg_common
+[    2.454736] [rhcov] usb_stor_msg_common
+[    2.455162] [rhcov] usb_stor_blocking_completion
+[    2.455208] [rhcov] usb_stor_blocking_completion
+[    2.455242] [rhcov] usb_stor_blocking_completion
+[    2.455274] [rhcov] usb_stor_blocking_completion
+[    2.455312] [rhcov] usb_stor_blocking_completion
+[    2.455345] [rhcov] usb_stor_blocking_completion
+[    2.455377] [rhcov] usb_stor_blocking_completion
+[    2.455475] [rhcov] interpret_urb_result
+[    2.455549] [rhcov] interpret_urb_result
+[    2.455614] [rhcov] interpret_urb_result
+[    2.455727] [rhcov] interpret_urb_result
+[    2.455793] [rhcov] interpret_urb_result
+[    2.455855] [rhcov] interpret_urb_result
+[    2.455921] [rhcov] interpret_urb_result
+[    2.456081] [rhcov] usb_stor_bulk_srb
+[    2.456143] [rhcov] usb_stor_bulk_srb
+[    2.456203] [rhcov] usb_stor_bulk_srb
+[    2.456265] [rhcov] usb_stor_bulk_srb
+[    2.456333] [rhcov] usb_stor_bulk_srb
+[    2.456392] [rhcov] usb_stor_bulk_srb
+[    2.456451] [rhcov] usb_stor_bulk_srb
+[    2.456517] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.456554] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.456590] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.456624] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.456660] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.456710] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.456746] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.457205] [rhcov] interpret_urb_result
+[    2.457240] [rhcov] interpret_urb_result
+[    2.457269] [rhcov] interpret_urb_result
+[    2.457300] [rhcov] interpret_urb_result
+[    2.457332] [rhcov] interpret_urb_result
+[    2.457361] [rhcov] interpret_urb_result
+[    2.457390] [rhcov] interpret_urb_result
+[    2.457446] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457478] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457510] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457542] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457574] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457606] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457643] [rhcov] usb_stor_bulk_transfer_buf
+[    2.457676] [rhcov] usb_stor_msg_common
+[    2.457727] [rhcov] usb_stor_msg_common
+[    2.457756] [rhcov] usb_stor_msg_common
+[    2.457784] [rhcov] usb_stor_msg_common
+[    2.457812] [rhcov] usb_stor_msg_common
+[    2.457840] [rhcov] usb_stor_msg_common
+[    2.457868] [rhcov] usb_stor_msg_common
+[    2.457917] [rhcov] usb_stor_blocking_completion
+[    2.457954] [rhcov] usb_stor_blocking_completion
+[    2.457986] [rhcov] usb_stor_blocking_completion
+[    2.458018] [rhcov] usb_stor_blocking_completion
+[    2.458050] [rhcov] usb_stor_blocking_completion
+[    2.458082] [rhcov] usb_stor_blocking_completion
+[    2.458114] [rhcov] usb_stor_blocking_completion
+[    2.458174] [rhcov] interpret_urb_result
+[    2.458207] [rhcov] interpret_urb_result
+[    2.458236] [rhcov] interpret_urb_result
+[    2.458264] [rhcov] interpret_urb_result
+[    2.458292] [rhcov] interpret_urb_result
+[    2.458325] [rhcov] interpret_urb_result
+[    2.458354] [rhcov] interpret_urb_result
+[    2.458493] [rhcov] last_sector_hacks
+[    2.458524] [rhcov] last_sector_hacks
+[    2.458554] [rhcov] last_sector_hacks
+[    2.458583] [rhcov] last_sector_hacks
+[    2.458613] [rhcov] last_sector_hacks
+[    2.458643] [rhcov] last_sector_hacks
+[    2.458691] [rhcov] last_sector_hacks
+[    2.458925] scsi 2:0:0:0: Direct-Access     QEMU     QEMU HARDDISK    2.5+ PQ: 0 ANSI: 5
+[    2.459007] [rhcov] sdev_configure
+[    2.459037] [rhcov] sdev_configure
+[    2.459065] [rhcov] sdev_configure
+[    2.459093] [rhcov] sdev_configure
+[    2.459121] [rhcov] sdev_configure
+[    2.459149] [rhcov] sdev_configure
+[    2.459177] [rhcov] sdev_configure
+[    2.460531] [rhcov] queuecommand_lck
+[    2.460574] [rhcov] queuecommand_lck
+[    2.460601] [rhcov] queuecommand_lck
+[    2.460626] [rhcov] queuecommand_lck
+[    2.460652] [rhcov] queuecommand_lck
+[    2.460686] [rhcov] queuecommand_lck
+[    2.460721] [rhcov] queuecommand_lck
+[    2.460775] [rhcov] usb_stor_transparent_scsi_command
+[    2.460832] [rhcov] usb_stor_transparent_scsi_command
+[    2.460867] [rhcov] usb_stor_transparent_scsi_command
+[    2.460903] [rhcov] usb_stor_transparent_scsi_command
+[    2.460905] sd 2:0:0:0: Attached scsi generic sg1 type 0
+[    2.461006] [rhcov] usb_stor_transparent_scsi_command
+[    2.461041] [rhcov] usb_stor_transparent_scsi_command
+[    2.461075] [rhcov] usb_stor_transparent_scsi_command
+[    2.461110] [rhcov] usb_stor_invoke_transport
+[    2.461159] [rhcov] usb_stor_invoke_transport
+[    2.461189] [rhcov] usb_stor_invoke_transport
+[    2.461219] [rhcov] usb_stor_invoke_transport
+[    2.461249] [rhcov] usb_stor_invoke_transport
+[    2.461279] [rhcov] usb_stor_invoke_transport
+[    2.461314] [rhcov] usb_stor_invoke_transport
+[    2.461345] [rhcov] usb_stor_Bulk_transport
+[    2.461374] [rhcov] usb_stor_Bulk_transport
+[    2.461403] [rhcov] usb_stor_Bulk_transport
+[    2.461432] [rhcov] usb_stor_Bulk_transport
+[    2.461461] [rhcov] usb_stor_Bulk_transport
+[    2.461490] [rhcov] usb_stor_Bulk_transport
+[    2.461519] [rhcov] usb_stor_Bulk_transport
+[    2.461548] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461579] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461609] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461640] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461696] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461729] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461761] [rhcov] usb_stor_bulk_transfer_buf
+[    2.461791] [rhcov] usb_stor_msg_common
+[    2.461819] [rhcov] usb_stor_msg_common
+[    2.461845] [rhcov] usb_stor_msg_common
+[    2.461872] [rhcov] usb_stor_msg_common
+[    2.461899] [rhcov] usb_stor_msg_common
+[    2.461926] [rhcov] usb_stor_msg_common
+[    2.461953] [rhcov] usb_stor_msg_common
+[    2.462033] [rhcov] usb_stor_blocking_completion
+[    2.462097] [rhcov] usb_stor_blocking_completion
+[    2.462131] [rhcov] usb_stor_blocking_completion
+[    2.462163] [rhcov] usb_stor_blocking_completion
+[    2.462208] [rhcov] usb_stor_blocking_completion
+[    2.462240] [rhcov] usb_stor_blocking_completion
+[    2.462278] [rhcov] usb_stor_blocking_completion
+[    2.462337] [rhcov] interpret_urb_result
+[    2.462372] [rhcov] interpret_urb_result
+[    2.462400] [rhcov] interpret_urb_result
+[    2.462428] [rhcov] interpret_urb_result
+[    2.462455] [rhcov] interpret_urb_result
+[    2.462482] [rhcov] interpret_urb_result
+[    2.462510] [rhcov] interpret_urb_result
+[    2.462546] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462576] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462607] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462637] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462668] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462735] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462766] [rhcov] usb_stor_bulk_transfer_buf
+[    2.462797] [rhcov] usb_stor_msg_common
+[    2.462824] [rhcov] usb_stor_msg_common
+[    2.462851] [rhcov] usb_stor_msg_common
+[    2.462878] [rhcov] usb_stor_msg_common
+[    2.462906] [rhcov] usb_stor_msg_common
+[    2.462932] [rhcov] usb_stor_msg_common
+[    2.462959] [rhcov] usb_stor_msg_common
+[    2.463017] [rhcov] usb_stor_blocking_completion
+[    2.463062] [rhcov] usb_stor_blocking_completion
+[    2.463094] [rhcov] usb_stor_blocking_completion
+[    2.463125] [rhcov] usb_stor_blocking_completion
+[    2.463156] [rhcov] usb_stor_blocking_completion
+[    2.463187] [rhcov] usb_stor_blocking_completion
+[    2.463217] [rhcov] usb_stor_blocking_completion
+[    2.463267] [rhcov] interpret_urb_result
+[    2.463303] [rhcov] interpret_urb_result
+[    2.463330] [rhcov] interpret_urb_result
+[    2.463357] [rhcov] interpret_urb_result
+[    2.463385] [rhcov] interpret_urb_result
+[    2.463412] [rhcov] interpret_urb_result
+[    2.463439] [rhcov] interpret_urb_result
+[    2.463472] [rhcov] last_sector_hacks
+[    2.463498] [rhcov] last_sector_hacks
+[    2.463524] [rhcov] last_sector_hacks
+[    2.463550] [rhcov] last_sector_hacks
+[    2.463575] [rhcov] last_sector_hacks
+[    2.463601] [rhcov] last_sector_hacks
+[    2.463639] [rhcov] last_sector_hacks
+[    2.464648] [rhcov] sdev_init
+[    2.464739] [rhcov] sdev_init
+[    2.464765] [rhcov] sdev_init
+[    2.464778] [rhcov] queuecommand_lck
+[    2.464788] [rhcov] sdev_init
+[    2.464809] [rhcov] sdev_init
+[    2.464827] [rhcov] queuecommand_lck
+[    2.464830] [rhcov] queuecommand_lck
+[    2.464832] [rhcov] queuecommand_lck
+[    2.464834] [rhcov] queuecommand_lck
+[    2.464860] [rhcov] sdev_init
+[    2.464862] [rhcov] sdev_init
+[    2.465015] [rhcov] queuecommand_lck
+[    2.465041] [rhcov] queuecommand_lck
+[    2.465101] [rhcov] usb_stor_transparent_scsi_command
+[    2.465142] [rhcov] usb_stor_transparent_scsi_command
+[    2.465177] [rhcov] usb_stor_transparent_scsi_command
+[    2.465212] [rhcov] usb_stor_transparent_scsi_command
+[    2.465246] [rhcov] usb_stor_transparent_scsi_command
+[    2.465280] [rhcov] usb_stor_transparent_scsi_command
+[    2.465320] [rhcov] usb_stor_transparent_scsi_command
+[    2.465355] [rhcov] usb_stor_invoke_transport
+[    2.465386] [rhcov] usb_stor_invoke_transport
+[    2.465417] [rhcov] usb_stor_invoke_transport
+[    2.465447] [rhcov] usb_stor_invoke_transport
+[    2.465477] [rhcov] usb_stor_invoke_transport
+[    2.465508] [rhcov] usb_stor_invoke_transport
+[    2.465538] [rhcov] usb_stor_invoke_transport
+[    2.465569] [rhcov] usb_stor_Bulk_transport
+[    2.465599] [rhcov] usb_stor_Bulk_transport
+[    2.465628] [rhcov] usb_stor_Bulk_transport
+[    2.465657] [rhcov] usb_stor_Bulk_transport
+[    2.465719] [rhcov] usb_stor_Bulk_transport
+[    2.465750] [rhcov] usb_stor_Bulk_transport
+[    2.465779] [rhcov] usb_stor_Bulk_transport
+[    2.465833] [rhcov] usb_stor_bulk_transfer_buf
+[    2.465864] [rhcov] usb_stor_bulk_transfer_buf
+[    2.465895] [rhcov] usb_stor_bulk_transfer_buf
+[    2.465926] [rhcov] usb_stor_bulk_transfer_buf
+[    2.465957] [rhcov] usb_stor_bulk_transfer_buf
+[    2.465987] [rhcov] usb_stor_bulk_transfer_buf
+[    2.466018] [rhcov] usb_stor_bulk_transfer_buf
+[    2.466049] [rhcov] usb_stor_msg_common
+[    2.466076] [rhcov] usb_stor_msg_common
+[    2.466109] [rhcov] usb_stor_msg_common
+[    2.466136] [rhcov] usb_stor_msg_common
+[    2.466164] [rhcov] usb_stor_msg_common
+[    2.466191] [rhcov] usb_stor_msg_common
+[    2.466218] [rhcov] usb_stor_msg_common
+[    2.466290] [rhcov] usb_stor_blocking_completion
+[    2.466329] [rhcov] usb_stor_blocking_completion
+[    2.466361] [rhcov] usb_stor_blocking_completion
+[    2.466393] [rhcov] usb_stor_blocking_completion
+[    2.466425] [rhcov] usb_stor_blocking_completion
+[    2.466457] [rhcov] usb_stor_blocking_completion
+[    2.466489] [rhcov] usb_stor_blocking_completion
+[    2.466526] [rhcov] interpret_urb_result
+[    2.466554] [rhcov] interpret_urb_result
+[    2.466582] [rhcov] interpret_urb_result
+[    2.466610] [rhcov] interpret_urb_result
+[    2.466638] [rhcov] interpret_urb_result
+[    2.466665] [rhcov] interpret_urb_result
+[    2.466717] [rhcov] interpret_urb_result
+[    2.466747] [rhcov] usb_stor_bulk_srb
+[    2.466773] [rhcov] usb_stor_bulk_srb
+[    2.466799] [rhcov] usb_stor_bulk_srb
+[    2.466826] [rhcov] usb_stor_bulk_srb
+[    2.466852] [rhcov] usb_stor_bulk_srb
+[    2.466878] [rhcov] usb_stor_bulk_srb
+[    2.466905] [rhcov] usb_stor_bulk_srb
+[    2.466931] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.466964] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.466996] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.467028] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.467061] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.467093] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.467126] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.467202] [rhcov] interpret_urb_result
+[    2.467231] [rhcov] interpret_urb_result
+[    2.467259] [rhcov] interpret_urb_result
+[    2.467286] [rhcov] interpret_urb_result
+[    2.467321] [rhcov] interpret_urb_result
+[    2.467349] [rhcov] interpret_urb_result
+[    2.467376] [rhcov] interpret_urb_result
+[    2.467405] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467436] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467467] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467498] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467529] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467560] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467591] [rhcov] usb_stor_bulk_transfer_buf
+[    2.467622] [rhcov] usb_stor_msg_common
+[    2.467649] [rhcov] usb_stor_msg_common
+[    2.467691] [rhcov] usb_stor_msg_common
+[    2.467719] [rhcov] usb_stor_msg_common
+[    2.467746] [rhcov] usb_stor_msg_common
+[    2.467773] [rhcov] usb_stor_msg_common
+[    2.467800] [rhcov] usb_stor_msg_common
+[    2.467841] [rhcov] usb_stor_blocking_completion
+[    2.467874] [rhcov] usb_stor_blocking_completion
+[    2.467906] [rhcov] usb_stor_blocking_completion
+[    2.467938] [rhcov] usb_stor_blocking_completion
+[    2.467970] [rhcov] usb_stor_blocking_completion
+[    2.468001] [rhcov] usb_stor_blocking_completion
+[    2.468033] [rhcov] usb_stor_blocking_completion
+[    2.468068] [rhcov] interpret_urb_result
+[    2.468095] [rhcov] interpret_urb_result
+[    2.468123] [rhcov] interpret_urb_result
+[    2.468151] [rhcov] interpret_urb_result
+[    2.468179] [rhcov] interpret_urb_result
+[    2.468207] [rhcov] interpret_urb_result
+[    2.468235] [rhcov] interpret_urb_result
+[    2.468263] [rhcov] last_sector_hacks
+[    2.468290] [rhcov] last_sector_hacks
+[    2.468320] [rhcov] last_sector_hacks
+[    2.468346] [rhcov] last_sector_hacks
+[    2.468372] [rhcov] last_sector_hacks
+[    2.468399] [rhcov] last_sector_hacks
+[    2.468425] [rhcov] last_sector_hacks
+[    2.468781] [rhcov] queuecommand_lck
+[    2.468814] [rhcov] queuecommand_lck
+[    2.468840] [rhcov] queuecommand_lck
+[    2.468865] [rhcov] queuecommand_lck
+[    2.468891] [rhcov] queuecommand_lck
+[    2.468916] [rhcov] queuecommand_lck
+[    2.468942] [rhcov] queuecommand_lck
+[    2.469154] [rhcov] queuecommand_lck
+[    2.469225] [rhcov] queuecommand_lck
+[    2.469276] [rhcov] queuecommand_lck
+[    2.469339] [rhcov] queuecommand_lck
+[    2.469391] [rhcov] queuecommand_lck
+[    2.469443] [rhcov] queuecommand_lck
+[    2.469497] [rhcov] queuecommand_lck
+[    2.469659] [rhcov] usb_stor_transparent_scsi_command
+[    2.469736] [rhcov] usb_stor_transparent_scsi_command
+[    2.469774] [rhcov] usb_stor_transparent_scsi_command
+[    2.469809] [rhcov] usb_stor_transparent_scsi_command
+[    2.469844] [rhcov] usb_stor_transparent_scsi_command
+[    2.469878] [rhcov] usb_stor_transparent_scsi_command
+[    2.469913] [rhcov] usb_stor_transparent_scsi_command
+[    2.469947] [rhcov] usb_stor_invoke_transport
+[    2.469978] [rhcov] usb_stor_invoke_transport
+[    2.470009] [rhcov] usb_stor_invoke_transport
+[    2.470040] [rhcov] usb_stor_invoke_transport
+[    2.470070] [rhcov] usb_stor_invoke_transport
+[    2.470101] [rhcov] usb_stor_invoke_transport
+[    2.470131] [rhcov] usb_stor_invoke_transport
+[    2.470162] [rhcov] usb_stor_Bulk_transport
+[    2.470191] [rhcov] usb_stor_Bulk_transport
+[    2.470221] [rhcov] usb_stor_Bulk_transport
+[    2.470250] [rhcov] usb_stor_Bulk_transport
+[    2.470280] [rhcov] usb_stor_Bulk_transport
+[    2.470314] [rhcov] usb_stor_Bulk_transport
+[    2.470344] [rhcov] usb_stor_Bulk_transport
+[    2.470373] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470405] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470436] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470467] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470498] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470529] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470560] [rhcov] usb_stor_bulk_transfer_buf
+[    2.470592] [rhcov] usb_stor_msg_common
+[    2.470619] [rhcov] usb_stor_msg_common
+[    2.470646] [rhcov] usb_stor_msg_common
+[    2.470675] [rhcov] usb_stor_msg_common
+[    2.470729] [rhcov] usb_stor_msg_common
+[    2.470757] [rhcov] usb_stor_msg_common
+[    2.470784] [rhcov] usb_stor_msg_common
+[    2.470853] [rhcov] usb_stor_blocking_completion
+[    2.470900] [rhcov] usb_stor_blocking_completion
+[    2.470933] [rhcov] usb_stor_blocking_completion
+[    2.470965] [rhcov] usb_stor_blocking_completion
+[    2.470997] [rhcov] usb_stor_blocking_completion
+[    2.471042] [rhcov] usb_stor_blocking_completion
+[    2.471074] [rhcov] usb_stor_blocking_completion
+[    2.471163] [rhcov] interpret_urb_result
+[    2.471194] [rhcov] interpret_urb_result
+[    2.471222] [rhcov] interpret_urb_result
+[    2.471250] [rhcov] interpret_urb_result
+[    2.471279] [rhcov] interpret_urb_result
+[    2.471312] [rhcov] interpret_urb_result
+[    2.471340] [rhcov] interpret_urb_result
+[    2.471369] [rhcov] usb_stor_bulk_srb
+[    2.471396] [rhcov] usb_stor_bulk_srb
+[    2.471422] [rhcov] usb_stor_bulk_srb
+[    2.471449] [rhcov] usb_stor_bulk_srb
+[    2.471475] [rhcov] usb_stor_bulk_srb
+[    2.471502] [rhcov] usb_stor_bulk_srb
+[    2.471528] [rhcov] usb_stor_bulk_srb
+[    2.471555] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471588] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471621] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471653] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471704] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471737] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471770] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.471835] [rhcov] interpret_urb_result
+[    2.471864] [rhcov] interpret_urb_result
+[    2.471892] [rhcov] interpret_urb_result
+[    2.471920] [rhcov] interpret_urb_result
+[    2.471947] [rhcov] interpret_urb_result
+[    2.471975] [rhcov] interpret_urb_result
+[    2.472003] [rhcov] interpret_urb_result
+[    2.472031] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472062] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472093] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472124] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472155] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472186] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472217] [rhcov] usb_stor_bulk_transfer_buf
+[    2.472248] [rhcov] usb_stor_msg_common
+[    2.472275] [rhcov] usb_stor_msg_common
+[    2.472303] [rhcov] usb_stor_msg_common
+[    2.472334] [rhcov] usb_stor_msg_common
+[    2.472362] [rhcov] usb_stor_msg_common
+[    2.472389] [rhcov] usb_stor_msg_common
+[    2.472420] [rhcov] usb_stor_msg_common
+[    2.472459] [rhcov] usb_stor_blocking_completion
+[    2.472492] [rhcov] usb_stor_blocking_completion
+[    2.472534] [rhcov] usb_stor_blocking_completion
+[    2.472566] [rhcov] usb_stor_blocking_completion
+[    2.472598] [rhcov] usb_stor_blocking_completion
+[    2.472630] [rhcov] usb_stor_blocking_completion
+[    2.472662] [rhcov] usb_stor_blocking_completion
+[    2.472782] [rhcov] interpret_urb_result
+[    2.472813] [rhcov] interpret_urb_result
+[    2.472840] [rhcov] interpret_urb_result
+[    2.472868] [rhcov] interpret_urb_result
+[    2.472896] [rhcov] interpret_urb_result
+[    2.472924] [rhcov] interpret_urb_result
+[    2.472952] [rhcov] interpret_urb_result
+[    2.472981] [rhcov] last_sector_hacks
+[    2.473007] [rhcov] last_sector_hacks
+[    2.473034] [rhcov] last_sector_hacks
+[    2.473060] [rhcov] last_sector_hacks
+[    2.473087] [rhcov] last_sector_hacks
+[    2.473114] [rhcov] last_sector_hacks
+[    2.473140] [rhcov] last_sector_hacks
+[    2.473362] sd 2:0:0:0: [sda] 131072 512-byte logical blocks: (67.1 MB/64.0 MiB)
+[    2.473499] [rhcov] queuecommand_lck
+[    2.473527] [rhcov] queuecommand_lck
+[    2.473553] [rhcov] queuecommand_lck
+[    2.473579] [rhcov] queuecommand_lck
+[    2.473604] [rhcov] queuecommand_lck
+[    2.473630] [rhcov] queuecommand_lck
+[    2.473655] [rhcov] queuecommand_lck
+[    2.473768] [rhcov] usb_stor_transparent_scsi_command
+[    2.473809] [rhcov] usb_stor_transparent_scsi_command
+[    2.473844] [rhcov] usb_stor_transparent_scsi_command
+[    2.473880] [rhcov] usb_stor_transparent_scsi_command
+[    2.473915] [rhcov] usb_stor_transparent_scsi_command
+[    2.473950] [rhcov] usb_stor_transparent_scsi_command
+[    2.473985] [rhcov] usb_stor_transparent_scsi_command
+[    2.474020] [rhcov] usb_stor_invoke_transport
+[    2.474051] [rhcov] usb_stor_invoke_transport
+[    2.474082] [rhcov] usb_stor_invoke_transport
+[    2.474112] [rhcov] usb_stor_invoke_transport
+[    2.474143] [rhcov] usb_stor_invoke_transport
+[    2.474174] [rhcov] usb_stor_invoke_transport
+[    2.474204] [rhcov] usb_stor_invoke_transport
+[    2.474236] [rhcov] usb_stor_Bulk_transport
+[    2.474265] [rhcov] usb_stor_Bulk_transport
+[    2.474298] [rhcov] usb_stor_Bulk_transport
+[    2.474329] [rhcov] usb_stor_Bulk_transport
+[    2.474358] [rhcov] usb_stor_Bulk_transport
+[    2.474388] [rhcov] usb_stor_Bulk_transport
+[    2.474418] [rhcov] usb_stor_Bulk_transport
+[    2.474448] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474480] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474511] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474542] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474574] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474605] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474639] [rhcov] usb_stor_bulk_transfer_buf
+[    2.474693] [rhcov] usb_stor_msg_common
+[    2.474722] [rhcov] usb_stor_msg_common
+[    2.474750] [rhcov] usb_stor_msg_common
+[    2.474777] [rhcov] usb_stor_msg_common
+[    2.474805] [rhcov] usb_stor_msg_common
+[    2.474832] [rhcov] usb_stor_msg_common
+[    2.474860] [rhcov] usb_stor_msg_common
+[    2.474930] [rhcov] usb_stor_blocking_completion
+[    2.474974] [rhcov] usb_stor_blocking_completion
+[    2.475007] [rhcov] usb_stor_blocking_completion
+[    2.475039] [rhcov] usb_stor_blocking_completion
+[    2.475072] [rhcov] usb_stor_blocking_completion
+[    2.475104] [rhcov] usb_stor_blocking_completion
+[    2.475136] [rhcov] usb_stor_blocking_completion
+[    2.475186] [rhcov] interpret_urb_result
+[    2.475216] [rhcov] interpret_urb_result
+[    2.475243] [rhcov] interpret_urb_result
+[    2.475270] [rhcov] interpret_urb_result
+[    2.475299] [rhcov] interpret_urb_result
+[    2.475327] [rhcov] interpret_urb_result
+[    2.475354] [rhcov] interpret_urb_result
+[    2.475382] [rhcov] usb_stor_bulk_srb
+[    2.475407] [rhcov] usb_stor_bulk_srb
+[    2.475433] [rhcov] usb_stor_bulk_srb
+[    2.475459] [rhcov] usb_stor_bulk_srb
+[    2.475484] [rhcov] usb_stor_bulk_srb
+[    2.475510] [rhcov] usb_stor_bulk_srb
+[    2.475536] [rhcov] usb_stor_bulk_srb
+[    2.475565] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475597] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475628] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475660] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475713] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475745] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475777] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.475850] [rhcov] interpret_urb_result
+[    2.475879] [rhcov] interpret_urb_result
+[    2.475906] [rhcov] interpret_urb_result
+[    2.475934] [rhcov] interpret_urb_result
+[    2.475961] [rhcov] interpret_urb_result
+[    2.475988] [rhcov] interpret_urb_result
+[    2.476015] [rhcov] interpret_urb_result
+[    2.476042] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476073] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476103] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476134] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476164] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476194] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476224] [rhcov] usb_stor_bulk_transfer_buf
+[    2.476254] [rhcov] usb_stor_msg_common
+[    2.476281] [rhcov] usb_stor_msg_common
+[    2.476310] [rhcov] usb_stor_msg_common
+[    2.476336] [rhcov] usb_stor_msg_common
+[    2.476363] [rhcov] usb_stor_msg_common
+[    2.476390] [rhcov] usb_stor_msg_common
+[    2.476416] [rhcov] usb_stor_msg_common
+[    2.476459] [rhcov] usb_stor_blocking_completion
+[    2.476495] [rhcov] usb_stor_blocking_completion
+[    2.476528] [rhcov] usb_stor_blocking_completion
+[    2.476560] [rhcov] usb_stor_blocking_completion
+[    2.476592] [rhcov] usb_stor_blocking_completion
+[    2.476624] [rhcov] usb_stor_blocking_completion
+[    2.476657] [rhcov] usb_stor_blocking_completion
+[    2.476753] [rhcov] interpret_urb_result
+[    2.476786] [rhcov] interpret_urb_result
+[    2.476814] [rhcov] interpret_urb_result
+[    2.476841] [rhcov] interpret_urb_result
+[    2.476868] [rhcov] interpret_urb_result
+[    2.476895] [rhcov] interpret_urb_result
+[    2.476923] [rhcov] interpret_urb_result
+[    2.476951] [rhcov] last_sector_hacks
+[    2.476977] [rhcov] last_sector_hacks
+[    2.477002] [rhcov] last_sector_hacks
+[    2.477028] [rhcov] last_sector_hacks
+[    2.477054] [rhcov] last_sector_hacks
+[    2.477079] [rhcov] last_sector_hacks
+[    2.477105] [rhcov] last_sector_hacks
+[    2.477245] sd 2:0:0:0: [sda] Write Protect is off
+[    2.477317] sd 2:0:0:0: [sda] Mode Sense: 63 00 10 08
+[    2.477441] [rhcov] queuecommand_lck
+[    2.477470] [rhcov] queuecommand_lck
+[    2.477496] [rhcov] queuecommand_lck
+[    2.477521] [rhcov] queuecommand_lck
+[    2.477547] [rhcov] queuecommand_lck
+[    2.477572] [rhcov] queuecommand_lck
+[    2.477598] [rhcov] queuecommand_lck
+[    2.477641] [rhcov] usb_stor_transparent_scsi_command
+[    2.477695] [rhcov] usb_stor_transparent_scsi_command
+[    2.477729] [rhcov] usb_stor_transparent_scsi_command
+[    2.477763] [rhcov] usb_stor_transparent_scsi_command
+[    2.477796] [rhcov] usb_stor_transparent_scsi_command
+[    2.477830] [rhcov] usb_stor_transparent_scsi_command
+[    2.477863] [rhcov] usb_stor_transparent_scsi_command
+[    2.477897] [rhcov] usb_stor_invoke_transport
+[    2.477927] [rhcov] usb_stor_invoke_transport
+[    2.477956] [rhcov] usb_stor_invoke_transport
+[    2.477986] [rhcov] usb_stor_invoke_transport
+[    2.478016] [rhcov] usb_stor_invoke_transport
+[    2.478045] [rhcov] usb_stor_invoke_transport
+[    2.478075] [rhcov] usb_stor_invoke_transport
+[    2.478105] [rhcov] usb_stor_Bulk_transport
+[    2.478133] [rhcov] usb_stor_Bulk_transport
+[    2.478162] [rhcov] usb_stor_Bulk_transport
+[    2.478191] [rhcov] usb_stor_Bulk_transport
+[    2.478219] [rhcov] usb_stor_Bulk_transport
+[    2.478247] [rhcov] usb_stor_Bulk_transport
+[    2.478276] [rhcov] usb_stor_Bulk_transport
+[    2.478309] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478339] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478369] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478400] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478430] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478463] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478492] [rhcov] usb_stor_bulk_transfer_buf
+[    2.478523] [rhcov] usb_stor_msg_common
+[    2.478549] [rhcov] usb_stor_msg_common
+[    2.478576] [rhcov] usb_stor_msg_common
+[    2.478602] [rhcov] usb_stor_msg_common
+[    2.478629] [rhcov] usb_stor_msg_common
+[    2.478655] [rhcov] usb_stor_msg_common
+[    2.478704] [rhcov] usb_stor_msg_common
+[    2.478796] [rhcov] usb_stor_blocking_completion
+[    2.478835] [rhcov] usb_stor_blocking_completion
+[    2.478867] [rhcov] usb_stor_blocking_completion
+[    2.478897] [rhcov] usb_stor_blocking_completion
+[    2.478928] [rhcov] usb_stor_blocking_completion
+[    2.478959] [rhcov] usb_stor_blocking_completion
+[    2.478990] [rhcov] usb_stor_blocking_completion
+[    2.479037] [rhcov] interpret_urb_result
+[    2.479070] [rhcov] interpret_urb_result
+[    2.479097] [rhcov] interpret_urb_result
+[    2.479124] [rhcov] interpret_urb_result
+[    2.479152] [rhcov] interpret_urb_result
+[    2.479179] [rhcov] interpret_urb_result
+[    2.479206] [rhcov] interpret_urb_result
+[    2.479233] [rhcov] usb_stor_bulk_srb
+[    2.479259] [rhcov] usb_stor_bulk_srb
+[    2.479285] [rhcov] usb_stor_bulk_srb
+[    2.479313] [rhcov] usb_stor_bulk_srb
+[    2.479339] [rhcov] usb_stor_bulk_srb
+[    2.479365] [rhcov] usb_stor_bulk_srb
+[    2.479390] [rhcov] usb_stor_bulk_srb
+[    2.479416] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479448] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479480] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479511] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479543] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479575] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479606] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.479701] [rhcov] interpret_urb_result
+[    2.479732] [rhcov] interpret_urb_result
+[    2.479759] [rhcov] interpret_urb_result
+[    2.479787] [rhcov] interpret_urb_result
+[    2.479814] [rhcov] interpret_urb_result
+[    2.479841] [rhcov] interpret_urb_result
+[    2.479868] [rhcov] interpret_urb_result
+[    2.479895] [rhcov] usb_stor_bulk_transfer_buf
+[    2.479926] [rhcov] usb_stor_bulk_transfer_buf
+[    2.479956] [rhcov] usb_stor_bulk_transfer_buf
+[    2.479986] [rhcov] usb_stor_bulk_transfer_buf
+[    2.480016] [rhcov] usb_stor_bulk_transfer_buf
+[    2.480047] [rhcov] usb_stor_bulk_transfer_buf
+[    2.480077] [rhcov] usb_stor_bulk_transfer_buf
+[    2.480107] [rhcov] usb_stor_msg_common
+[    2.480134] [rhcov] usb_stor_msg_common
+[    2.480160] [rhcov] usb_stor_msg_common
+[    2.480187] [rhcov] usb_stor_msg_common
+[    2.480214] [rhcov] usb_stor_msg_common
+[    2.480240] [rhcov] usb_stor_msg_common
+[    2.480267] [rhcov] usb_stor_msg_common
+[    2.480314] [rhcov] usb_stor_blocking_completion
+[    2.480351] [rhcov] usb_stor_blocking_completion
+[    2.480383] [rhcov] usb_stor_blocking_completion
+[    2.480413] [rhcov] usb_stor_blocking_completion
+[    2.480444] [rhcov] usb_stor_blocking_completion
+[    2.480475] [rhcov] usb_stor_blocking_completion
+[    2.480506] [rhcov] usb_stor_blocking_completion
+[    2.480550] [rhcov] interpret_urb_result
+[    2.480580] [rhcov] interpret_urb_result
+[    2.480607] [rhcov] interpret_urb_result
+[    2.480634] [rhcov] interpret_urb_result
+[    2.480661] [rhcov] interpret_urb_result
+[    2.480704] [rhcov] interpret_urb_result
+[    2.480733] [rhcov] interpret_urb_result
+[    2.480762] [rhcov] last_sector_hacks
+[    2.480788] [rhcov] last_sector_hacks
+[    2.480815] [rhcov] last_sector_hacks
+[    2.480841] [rhcov] last_sector_hacks
+[    2.480868] [rhcov] last_sector_hacks
+[    2.480894] [rhcov] last_sector_hacks
+[    2.480920] [rhcov] last_sector_hacks
+[    2.481114] sd 2:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    2.485359] block device autoloading is deprecated and will be removed.
+[    2.485508] [rhcov] queuecommand_lck
+[    2.485558] [rhcov] queuecommand_lck
+[    2.485592] [rhcov] queuecommand_lck
+[    2.485628] [rhcov] queuecommand_lck
+[    2.485659] [rhcov] queuecommand_lck
+[    2.485707] [rhcov] queuecommand_lck
+[    2.485750] [rhcov] queuecommand_lck
+[    2.485847] [rhcov] usb_stor_transparent_scsi_command
+[    2.485886] [rhcov] usb_stor_transparent_scsi_command
+[    2.485920] [rhcov] usb_stor_transparent_scsi_command
+[    2.485954] [rhcov] usb_stor_transparent_scsi_command
+[    2.485988] [rhcov] usb_stor_transparent_scsi_command
+[    2.486021] [rhcov] usb_stor_transparent_scsi_command
+[    2.486055] [rhcov] usb_stor_transparent_scsi_command
+[    2.486089] [rhcov] usb_stor_invoke_transport
+[    2.486119] [rhcov] usb_stor_invoke_transport
+[    2.486149] [rhcov] usb_stor_invoke_transport
+[    2.486178] [rhcov] usb_stor_invoke_transport
+[    2.486226] [rhcov] usb_stor_invoke_transport
+[    2.486257] [rhcov] usb_stor_invoke_transport
+[    2.486288] [rhcov] usb_stor_invoke_transport
+[    2.486326] [rhcov] usb_stor_Bulk_transport
+[    2.486356] [rhcov] usb_stor_Bulk_transport
+[    2.486386] [rhcov] usb_stor_Bulk_transport
+[    2.486416] [rhcov] usb_stor_Bulk_transport
+[    2.486446] [rhcov] usb_stor_Bulk_transport
+[    2.486476] [rhcov] usb_stor_Bulk_transport
+[    2.486506] [rhcov] usb_stor_Bulk_transport
+[    2.486536] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486568] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486600] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486631] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486663] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486728] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486762] [rhcov] usb_stor_bulk_transfer_buf
+[    2.486793] [rhcov] usb_stor_msg_common
+[    2.486822] [rhcov] usb_stor_msg_common
+[    2.486850] [rhcov] usb_stor_msg_common
+[    2.486877] [rhcov] usb_stor_msg_common
+[    2.486905] [rhcov] usb_stor_msg_common
+[    2.486933] [rhcov] usb_stor_msg_common
+[    2.486961] [rhcov] usb_stor_msg_common
+[    2.487046] [rhcov] usb_stor_blocking_completion
+[    2.487088] [rhcov] usb_stor_blocking_completion
+[    2.487120] [rhcov] usb_stor_blocking_completion
+[    2.487152] [rhcov] usb_stor_blocking_completion
+[    2.487184] [rhcov] usb_stor_blocking_completion
+[    2.487216] [rhcov] usb_stor_blocking_completion
+[    2.487248] [rhcov] usb_stor_blocking_completion
+[    2.487316] [rhcov] interpret_urb_result
+[    2.487349] [rhcov] interpret_urb_result
+[    2.487376] [rhcov] interpret_urb_result
+[    2.487404] [rhcov] interpret_urb_result
+[    2.487431] [rhcov] interpret_urb_result
+[    2.487458] [rhcov] interpret_urb_result
+[    2.487485] [rhcov] interpret_urb_result
+[    2.487512] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487542] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487572] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487603] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487633] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487663] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487736] [rhcov] usb_stor_bulk_transfer_buf
+[    2.487768] [rhcov] usb_stor_msg_common
+[    2.487794] [rhcov] usb_stor_msg_common
+[    2.487821] [rhcov] usb_stor_msg_common
+[    2.487848] [rhcov] usb_stor_msg_common
+[    2.487874] [rhcov] usb_stor_msg_common
+[    2.487901] [rhcov] usb_stor_msg_common
+[    2.487927] [rhcov] usb_stor_msg_common
+[    2.487978] [rhcov] usb_stor_blocking_completion
+[    2.488014] [rhcov] usb_stor_blocking_completion
+[    2.488046] [rhcov] usb_stor_blocking_completion
+[    2.488078] [rhcov] usb_stor_blocking_completion
+[    2.488110] [rhcov] usb_stor_blocking_completion
+[    2.488142] [rhcov] usb_stor_blocking_completion
+[    2.488174] [rhcov] usb_stor_blocking_completion
+[    2.488218] [rhcov] interpret_urb_result
+[    2.488248] [rhcov] interpret_urb_result
+[    2.488275] [rhcov] interpret_urb_result
+[    2.488303] [rhcov] interpret_urb_result
+[    2.488332] [rhcov] interpret_urb_result
+[    2.488359] [rhcov] interpret_urb_result
+[    2.488386] [rhcov] interpret_urb_result
+[    2.488415] [rhcov] last_sector_hacks
+[    2.488440] [rhcov] last_sector_hacks
+[    2.488466] [rhcov] last_sector_hacks
+[    2.488492] [rhcov] last_sector_hacks
+[    2.488517] [rhcov] last_sector_hacks
+[    2.488546] [rhcov] last_sector_hacks
+[    2.488572] [rhcov] last_sector_hacks
+[    2.488816] [rhcov] queuecommand_lck
+[    2.488846] [rhcov] queuecommand_lck
+[    2.488872] [rhcov] queuecommand_lck
+[    2.488898] [rhcov] queuecommand_lck
+[    2.488924] [rhcov] queuecommand_lck
+[    2.488950] [rhcov] queuecommand_lck
+[    2.488975] [rhcov] queuecommand_lck
+[    2.489017] [rhcov] usb_stor_transparent_scsi_command
+[    2.489057] [rhcov] usb_stor_transparent_scsi_command
+[    2.489093] [rhcov] usb_stor_transparent_scsi_command
+[    2.489127] [rhcov] usb_stor_transparent_scsi_command
+[    2.489162] [rhcov] usb_stor_transparent_scsi_command
+[    2.489197] [rhcov] usb_stor_transparent_scsi_command
+[    2.489231] [rhcov] usb_stor_transparent_scsi_command
+[    2.489266] [rhcov] usb_stor_invoke_transport
+[    2.489299] [rhcov] usb_stor_invoke_transport
+[    2.489332] [rhcov] usb_stor_invoke_transport
+[    2.489363] [rhcov] usb_stor_invoke_transport
+[    2.489394] [rhcov] usb_stor_invoke_transport
+[    2.489425] [rhcov] usb_stor_invoke_transport
+[    2.489455] [rhcov] usb_stor_invoke_transport
+[    2.489486] [rhcov] usb_stor_Bulk_transport
+[    2.489516] [rhcov] usb_stor_Bulk_transport
+[    2.489546] [rhcov] usb_stor_Bulk_transport
+[    2.489575] [rhcov] usb_stor_Bulk_transport
+[    2.489605] [rhcov] usb_stor_Bulk_transport
+[    2.489635] [rhcov] usb_stor_Bulk_transport
+[    2.489664] [rhcov] usb_stor_Bulk_transport
+[    2.489719] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489754] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489786] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489818] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489849] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489881] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489912] [rhcov] usb_stor_bulk_transfer_buf
+[    2.489943] [rhcov] usb_stor_msg_common
+[    2.489971] [rhcov] usb_stor_msg_common
+[    2.489999] [rhcov] usb_stor_msg_common
+[    2.490027] [rhcov] usb_stor_msg_common
+[    2.490055] [rhcov] usb_stor_msg_common
+[    2.490083] [rhcov] usb_stor_msg_common
+[    2.490110] [rhcov] usb_stor_msg_common
+[    2.490167] [rhcov] usb_stor_blocking_completion
+[    2.490204] [rhcov] usb_stor_blocking_completion
+[    2.490237] [rhcov] usb_stor_blocking_completion
+[    2.490269] [rhcov] usb_stor_blocking_completion
+[    2.490305] [rhcov] usb_stor_blocking_completion
+[    2.490338] [rhcov] usb_stor_blocking_completion
+[    2.490370] [rhcov] usb_stor_blocking_completion
+[    2.490418] [rhcov] interpret_urb_result
+[    2.490450] [rhcov] interpret_urb_result
+[    2.490479] [rhcov] interpret_urb_result
+[    2.490508] [rhcov] interpret_urb_result
+[    2.490536] [rhcov] interpret_urb_result
+[    2.490565] [rhcov] interpret_urb_result
+[    2.490593] [rhcov] interpret_urb_result
+[    2.490621] [rhcov] usb_stor_bulk_srb
+[    2.490648] [rhcov] usb_stor_bulk_srb
+[    2.490709] [rhcov] usb_stor_bulk_srb
+[    2.490736] [rhcov] usb_stor_bulk_srb
+[    2.490763] [rhcov] usb_stor_bulk_srb
+[    2.490790] [rhcov] usb_stor_bulk_srb
+[    2.490816] [rhcov] usb_stor_bulk_srb
+[    2.490843] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.490876] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.490909] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.490942] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.490975] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.491008] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.491041] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.491117] [rhcov] interpret_urb_result
+[    2.491148] [rhcov] interpret_urb_result
+[    2.491176] [rhcov] interpret_urb_result
+[    2.491204] [rhcov] interpret_urb_result
+[    2.491232] [rhcov] interpret_urb_result
+[    2.491261] [rhcov] interpret_urb_result
+[    2.491289] [rhcov] interpret_urb_result
+[    2.491321] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491352] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491384] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491415] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491447] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491478] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491513] [rhcov] usb_stor_bulk_transfer_buf
+[    2.491544] [rhcov] usb_stor_msg_common
+[    2.491572] [rhcov] usb_stor_msg_common
+[    2.491600] [rhcov] usb_stor_msg_common
+[    2.491627] [rhcov] usb_stor_msg_common
+[    2.491655] [rhcov] usb_stor_msg_common
+[    2.491709] [rhcov] usb_stor_msg_common
+[    2.491738] [rhcov] usb_stor_msg_common
+[    2.491781] [rhcov] usb_stor_blocking_completion
+[    2.491816] [rhcov] usb_stor_blocking_completion
+[    2.491848] [rhcov] usb_stor_blocking_completion
+[    2.491880] [rhcov] usb_stor_blocking_completion
+[    2.491912] [rhcov] usb_stor_blocking_completion
+[    2.491944] [rhcov] usb_stor_blocking_completion
+[    2.491976] [rhcov] usb_stor_blocking_completion
+[    2.492021] [rhcov] interpret_urb_result
+[    2.492051] [rhcov] interpret_urb_result
+[    2.492080] [rhcov] interpret_urb_result
+[    2.492108] [rhcov] interpret_urb_result
+[    2.492137] [rhcov] interpret_urb_result
+[    2.492165] [rhcov] interpret_urb_result
+[    2.492193] [rhcov] interpret_urb_result
+[    2.492222] [rhcov] last_sector_hacks
+[    2.492249] [rhcov] last_sector_hacks
+[    2.492275] [rhcov] last_sector_hacks
+[    2.492304] [rhcov] last_sector_hacks
+[    2.492331] [rhcov] last_sector_hacks
+[    2.492357] [rhcov] last_sector_hacks
+[    2.492384] [rhcov] last_sector_hacks
+[    2.492476] [rhcov] queuecommand_lck
+[    2.492506] [rhcov] queuecommand_lck
+[    2.492532] [rhcov] queuecommand_lck
+[    2.492558] [rhcov] queuecommand_lck
+[    2.492584] [rhcov] queuecommand_lck
+[    2.492609] [rhcov] queuecommand_lck
+[    2.492635] [rhcov] queuecommand_lck
+[    2.492691] [rhcov] usb_stor_transparent_scsi_command
+[    2.492729] [rhcov] usb_stor_transparent_scsi_command
+[    2.492764] [rhcov] usb_stor_transparent_scsi_command
+[    2.492799] [rhcov] usb_stor_transparent_scsi_command
+[    2.492834] [rhcov] usb_stor_transparent_scsi_command
+[    2.492869] [rhcov] usb_stor_transparent_scsi_command
+[    2.492903] [rhcov] usb_stor_transparent_scsi_command
+[    2.492938] [rhcov] usb_stor_invoke_transport
+[    2.492969] [rhcov] usb_stor_invoke_transport
+[    2.493000] [rhcov] usb_stor_invoke_transport
+[    2.493031] [rhcov] usb_stor_invoke_transport
+[    2.493062] [rhcov] usb_stor_invoke_transport
+[    2.493093] [rhcov] usb_stor_invoke_transport
+[    2.493124] [rhcov] usb_stor_invoke_transport
+[    2.493155] [rhcov] usb_stor_Bulk_transport
+[    2.493185] [rhcov] usb_stor_Bulk_transport
+[    2.493214] [rhcov] usb_stor_Bulk_transport
+[    2.493244] [rhcov] usb_stor_Bulk_transport
+[    2.493274] [rhcov] usb_stor_Bulk_transport
+[    2.493307] [rhcov] usb_stor_Bulk_transport
+[    2.493336] [rhcov] usb_stor_Bulk_transport
+[    2.493367] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493398] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493430] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493461] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493493] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493524] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493555] [rhcov] usb_stor_bulk_transfer_buf
+[    2.493586] [rhcov] usb_stor_msg_common
+[    2.493614] [rhcov] usb_stor_msg_common
+[    2.493641] [rhcov] usb_stor_msg_common
+[    2.493669] [rhcov] usb_stor_msg_common
+[    2.493724] [rhcov] usb_stor_msg_common
+[    2.493752] [rhcov] usb_stor_msg_common
+[    2.493780] [rhcov] usb_stor_msg_common
+[    2.493838] [rhcov] usb_stor_blocking_completion
+[    2.493886] [rhcov] usb_stor_blocking_completion
+[    2.493918] [rhcov] usb_stor_blocking_completion
+[    2.493950] [rhcov] usb_stor_blocking_completion
+[    2.493983] [rhcov] usb_stor_blocking_completion
+[    2.494015] [rhcov] usb_stor_blocking_completion
+[    2.494047] [rhcov] usb_stor_blocking_completion
+[    2.494094] [rhcov] interpret_urb_result
+[    2.494126] [rhcov] interpret_urb_result
+[    2.494154] [rhcov] interpret_urb_result
+[    2.494183] [rhcov] interpret_urb_result
+[    2.494211] [rhcov] interpret_urb_result
+[    2.494239] [rhcov] interpret_urb_result
+[    2.494267] [rhcov] interpret_urb_result
+[    2.494299] [rhcov] usb_stor_bulk_srb
+[    2.494328] [rhcov] usb_stor_bulk_srb
+[    2.494354] [rhcov] usb_stor_bulk_srb
+[    2.494381] [rhcov] usb_stor_bulk_srb
+[    2.494408] [rhcov] usb_stor_bulk_srb
+[    2.494434] [rhcov] usb_stor_bulk_srb
+[    2.494461] [rhcov] usb_stor_bulk_srb
+[    2.494488] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494521] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494554] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494587] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494620] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494653] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494702] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.494773] [rhcov] interpret_urb_result
+[    2.494803] [rhcov] interpret_urb_result
+[    2.494831] [rhcov] interpret_urb_result
+[    2.494860] [rhcov] interpret_urb_result
+[    2.494888] [rhcov] interpret_urb_result
+[    2.494916] [rhcov] interpret_urb_result
+[    2.494945] [rhcov] interpret_urb_result
+[    2.494973] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495005] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495036] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495068] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495099] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495130] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495162] [rhcov] usb_stor_bulk_transfer_buf
+[    2.495193] [rhcov] usb_stor_msg_common
+[    2.495221] [rhcov] usb_stor_msg_common
+[    2.495249] [rhcov] usb_stor_msg_common
+[    2.495276] [rhcov] usb_stor_msg_common
+[    2.495307] [rhcov] usb_stor_msg_common
+[    2.495334] [rhcov] usb_stor_msg_common
+[    2.495362] [rhcov] usb_stor_msg_common
+[    2.495404] [rhcov] usb_stor_blocking_completion
+[    2.495438] [rhcov] usb_stor_blocking_completion
+[    2.495470] [rhcov] usb_stor_blocking_completion
+[    2.495502] [rhcov] usb_stor_blocking_completion
+[    2.495534] [rhcov] usb_stor_blocking_completion
+[    2.495566] [rhcov] usb_stor_blocking_completion
+[    2.495598] [rhcov] usb_stor_blocking_completion
+[    2.495643] [rhcov] interpret_urb_result
+[    2.495696] [rhcov] interpret_urb_result
+[    2.495726] [rhcov] interpret_urb_result
+[    2.495755] [rhcov] interpret_urb_result
+[    2.495783] [rhcov] interpret_urb_result
+[    2.495811] [rhcov] interpret_urb_result
+[    2.495839] [rhcov] interpret_urb_result
+[    2.495868] [rhcov] last_sector_hacks
+[    2.495896] [rhcov] last_sector_hacks
+[    2.495922] [rhcov] last_sector_hacks
+[    2.495949] [rhcov] last_sector_hacks
+[    2.495976] [rhcov] last_sector_hacks
+[    2.496003] [rhcov] last_sector_hacks
+[    2.496029] [rhcov] last_sector_hacks
+[    2.496106] [rhcov] queuecommand_lck
+[    2.496135] [rhcov] queuecommand_lck
+[    2.496161] [rhcov] queuecommand_lck
+[    2.496187] [rhcov] queuecommand_lck
+[    2.496212] [rhcov] queuecommand_lck
+[    2.496238] [rhcov] queuecommand_lck
+[    2.496264] [rhcov] queuecommand_lck
+[    2.496303] [rhcov] usb_stor_transparent_scsi_command
+[    2.496341] [rhcov] usb_stor_transparent_scsi_command
+[    2.496377] [rhcov] usb_stor_transparent_scsi_command
+[    2.496412] [rhcov] usb_stor_transparent_scsi_command
+[    2.496448] [rhcov] usb_stor_transparent_scsi_command
+[    2.496483] [rhcov] usb_stor_transparent_scsi_command
+[    2.496518] [rhcov] usb_stor_transparent_scsi_command
+[    2.496553] [rhcov] usb_stor_invoke_transport
+[    2.496584] [rhcov] usb_stor_invoke_transport
+[    2.496615] [rhcov] usb_stor_invoke_transport
+[    2.496646] [rhcov] usb_stor_invoke_transport
+[    2.496693] [rhcov] usb_stor_invoke_transport
+[    2.496730] [rhcov] usb_stor_invoke_transport
+[    2.496761] [rhcov] usb_stor_invoke_transport
+[    2.496792] [rhcov] usb_stor_Bulk_transport
+[    2.496822] [rhcov] usb_stor_Bulk_transport
+[    2.496852] [rhcov] usb_stor_Bulk_transport
+[    2.496882] [rhcov] usb_stor_Bulk_transport
+[    2.496912] [rhcov] usb_stor_Bulk_transport
+[    2.496941] [rhcov] usb_stor_Bulk_transport
+[    2.496971] [rhcov] usb_stor_Bulk_transport
+[    2.497002] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497033] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497067] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497098] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497130] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497161] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497193] [rhcov] usb_stor_bulk_transfer_buf
+[    2.497224] [rhcov] usb_stor_msg_common
+[    2.497252] [rhcov] usb_stor_msg_common
+[    2.497280] [rhcov] usb_stor_msg_common
+[    2.497310] [rhcov] usb_stor_msg_common
+[    2.497338] [rhcov] usb_stor_msg_common
+[    2.497365] [rhcov] usb_stor_msg_common
+[    2.497393] [rhcov] usb_stor_msg_common
+[    2.497444] [rhcov] usb_stor_blocking_completion
+[    2.497480] [rhcov] usb_stor_blocking_completion
+[    2.497512] [rhcov] usb_stor_blocking_completion
+[    2.497544] [rhcov] usb_stor_blocking_completion
+[    2.497577] [rhcov] usb_stor_blocking_completion
+[    2.497609] [rhcov] usb_stor_blocking_completion
+[    2.497642] [rhcov] usb_stor_blocking_completion
+[    2.497699] [rhcov] interpret_urb_result
+[    2.497731] [rhcov] interpret_urb_result
+[    2.497760] [rhcov] interpret_urb_result
+[    2.497789] [rhcov] interpret_urb_result
+[    2.497817] [rhcov] interpret_urb_result
+[    2.497845] [rhcov] interpret_urb_result
+[    2.497873] [rhcov] interpret_urb_result
+[    2.497902] [rhcov] usb_stor_bulk_srb
+[    2.497928] [rhcov] usb_stor_bulk_srb
+[    2.497955] [rhcov] usb_stor_bulk_srb
+[    2.497982] [rhcov] usb_stor_bulk_srb
+[    2.498009] [rhcov] usb_stor_bulk_srb
+[    2.498035] [rhcov] usb_stor_bulk_srb
+[    2.498062] [rhcov] usb_stor_bulk_srb
+[    2.498089] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498122] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498155] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498188] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498221] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498254] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498287] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.498358] [rhcov] interpret_urb_result
+[    2.498389] [rhcov] interpret_urb_result
+[    2.498417] [rhcov] interpret_urb_result
+[    2.498445] [rhcov] interpret_urb_result
+[    2.498474] [rhcov] interpret_urb_result
+[    2.498502] [rhcov] interpret_urb_result
+[    2.498530] [rhcov] interpret_urb_result
+[    2.498558] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498590] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498621] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498653] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498702] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498734] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498765] [rhcov] usb_stor_bulk_transfer_buf
+[    2.498797] [rhcov] usb_stor_msg_common
+[    2.498824] [rhcov] usb_stor_msg_common
+[    2.498852] [rhcov] usb_stor_msg_common
+[    2.498880] [rhcov] usb_stor_msg_common
+[    2.498907] [rhcov] usb_stor_msg_common
+[    2.498935] [rhcov] usb_stor_msg_common
+[    2.498963] [rhcov] usb_stor_msg_common
+[    2.499005] [rhcov] usb_stor_blocking_completion
+[    2.499039] [rhcov] usb_stor_blocking_completion
+[    2.499072] [rhcov] usb_stor_blocking_completion
+[    2.499104] [rhcov] usb_stor_blocking_completion
+[    2.499136] [rhcov] usb_stor_blocking_completion
+[    2.499168] [rhcov] usb_stor_blocking_completion
+[    2.499201] [rhcov] usb_stor_blocking_completion
+[    2.499245] [rhcov] interpret_urb_result
+[    2.499276] [rhcov] interpret_urb_result
+[    2.499307] [rhcov] interpret_urb_result
+[    2.499336] [rhcov] interpret_urb_result
+[    2.499364] [rhcov] interpret_urb_result
+[    2.499393] [rhcov] interpret_urb_result
+[    2.499421] [rhcov] interpret_urb_result
+[    2.499450] [rhcov] last_sector_hacks
+[    2.499477] [rhcov] last_sector_hacks
+[    2.499504] [rhcov] last_sector_hacks
+[    2.499530] [rhcov] last_sector_hacks
+[    2.499557] [rhcov] last_sector_hacks
+[    2.499584] [rhcov] last_sector_hacks
+[    2.499611] [rhcov] last_sector_hacks
+[    2.499720] [rhcov] queuecommand_lck
+[    2.499751] [rhcov] queuecommand_lck
+[    2.499777] [rhcov] queuecommand_lck
+[    2.499802] [rhcov] queuecommand_lck
+[    2.499828] [rhcov] queuecommand_lck
+[    2.499858] [rhcov] queuecommand_lck
+[    2.499883] [rhcov] queuecommand_lck
+[    2.499930] [rhcov] usb_stor_transparent_scsi_command
+[    2.499970] [rhcov] usb_stor_transparent_scsi_command
+[    2.500006] [rhcov] usb_stor_transparent_scsi_command
+[    2.500041] [rhcov] usb_stor_transparent_scsi_command
+[    2.500076] [rhcov] usb_stor_transparent_scsi_command
+[    2.500111] [rhcov] usb_stor_transparent_scsi_command
+[    2.500146] [rhcov] usb_stor_transparent_scsi_command
+[    2.500181] [rhcov] usb_stor_invoke_transport
+[    2.500213] [rhcov] usb_stor_invoke_transport
+[    2.500244] [rhcov] usb_stor_invoke_transport
+[    2.500275] [rhcov] usb_stor_invoke_transport
+[    2.500308] [rhcov] usb_stor_invoke_transport
+[    2.500339] [rhcov] usb_stor_invoke_transport
+[    2.500370] [rhcov] usb_stor_invoke_transport
+[    2.500402] [rhcov] usb_stor_Bulk_transport
+[    2.500432] [rhcov] usb_stor_Bulk_transport
+[    2.500461] [rhcov] usb_stor_Bulk_transport
+[    2.500491] [rhcov] usb_stor_Bulk_transport
+[    2.500521] [rhcov] usb_stor_Bulk_transport
+[    2.500551] [rhcov] usb_stor_Bulk_transport
+[    2.500581] [rhcov] usb_stor_Bulk_transport
+[    2.500612] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500643] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500677] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500728] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500760] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500791] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500823] [rhcov] usb_stor_bulk_transfer_buf
+[    2.500855] [rhcov] usb_stor_msg_common
+[    2.500883] [rhcov] usb_stor_msg_common
+[    2.500911] [rhcov] usb_stor_msg_common
+[    2.500938] [rhcov] usb_stor_msg_common
+[    2.500966] [rhcov] usb_stor_msg_common
+[    2.500994] [rhcov] usb_stor_msg_common
+[    2.501022] [rhcov] usb_stor_msg_common
+[    2.501074] [rhcov] usb_stor_blocking_completion
+[    2.501111] [rhcov] usb_stor_blocking_completion
+[    2.501144] [rhcov] usb_stor_blocking_completion
+[    2.501176] [rhcov] usb_stor_blocking_completion
+[    2.501208] [rhcov] usb_stor_blocking_completion
+[    2.501241] [rhcov] usb_stor_blocking_completion
+[    2.501273] [rhcov] usb_stor_blocking_completion
+[    2.501323] [rhcov] interpret_urb_result
+[    2.501354] [rhcov] interpret_urb_result
+[    2.501383] [rhcov] interpret_urb_result
+[    2.501411] [rhcov] interpret_urb_result
+[    2.501440] [rhcov] interpret_urb_result
+[    2.501469] [rhcov] interpret_urb_result
+[    2.501497] [rhcov] interpret_urb_result
+[    2.501526] [rhcov] usb_stor_bulk_srb
+[    2.501553] [rhcov] usb_stor_bulk_srb
+[    2.501579] [rhcov] usb_stor_bulk_srb
+[    2.501606] [rhcov] usb_stor_bulk_srb
+[    2.501633] [rhcov] usb_stor_bulk_srb
+[    2.501660] [rhcov] usb_stor_bulk_srb
+[    2.501701] [rhcov] usb_stor_bulk_srb
+[    2.501730] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501763] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501797] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501830] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501863] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501896] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501928] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.501995] [rhcov] interpret_urb_result
+[    2.502026] [rhcov] interpret_urb_result
+[    2.502054] [rhcov] interpret_urb_result
+[    2.502082] [rhcov] interpret_urb_result
+[    2.502110] [rhcov] interpret_urb_result
+[    2.502139] [rhcov] interpret_urb_result
+[    2.502167] [rhcov] interpret_urb_result
+[    2.502196] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502227] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502259] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502291] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502327] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502359] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502390] [rhcov] usb_stor_bulk_transfer_buf
+[    2.502422] [rhcov] usb_stor_msg_common
+[    2.502450] [rhcov] usb_stor_msg_common
+[    2.502478] [rhcov] usb_stor_msg_common
+[    2.502506] [rhcov] usb_stor_msg_common
+[    2.502534] [rhcov] usb_stor_msg_common
+[    2.502564] [rhcov] usb_stor_msg_common
+[    2.502592] [rhcov] usb_stor_msg_common
+[    2.502635] [rhcov] usb_stor_blocking_completion
+[    2.502670] [rhcov] usb_stor_blocking_completion
+[    2.502718] [rhcov] usb_stor_blocking_completion
+[    2.502751] [rhcov] usb_stor_blocking_completion
+[    2.502783] [rhcov] usb_stor_blocking_completion
+[    2.502816] [rhcov] usb_stor_blocking_completion
+[    2.502848] [rhcov] usb_stor_blocking_completion
+[    2.502895] [rhcov] interpret_urb_result
+[    2.502927] [rhcov] interpret_urb_result
+[    2.502956] [rhcov] interpret_urb_result
+[    2.502985] [rhcov] interpret_urb_result
+[    2.503013] [rhcov] interpret_urb_result
+[    2.503042] [rhcov] interpret_urb_result
+[    2.503070] [rhcov] interpret_urb_result
+[    2.503099] [rhcov] last_sector_hacks
+[    2.503126] [rhcov] last_sector_hacks
+[    2.503153] [rhcov] last_sector_hacks
+[    2.503180] [rhcov] last_sector_hacks
+[    2.503207] [rhcov] last_sector_hacks
+[    2.503234] [rhcov] last_sector_hacks
+[    2.503261] [rhcov] last_sector_hacks
+[    2.511769] [rhcov] queuecommand_lck
+[    2.511813] [rhcov] queuecommand_lck
+[    2.511840] [rhcov] queuecommand_lck
+[    2.511866] [rhcov] queuecommand_lck
+[    2.511892] [rhcov] queuecommand_lck
+[    2.511917] [rhcov] queuecommand_lck
+[    2.511943] [rhcov] queuecommand_lck
+[    2.512001] [rhcov] usb_stor_transparent_scsi_command
+[    2.512081] [rhcov] usb_stor_transparent_scsi_command
+[    2.512152] [rhcov] usb_stor_transparent_scsi_command
+[    2.512229] [rhcov] usb_stor_transparent_scsi_command
+[    2.512302] [rhcov] usb_stor_transparent_scsi_command
+[    2.512373] [rhcov] usb_stor_transparent_scsi_command
+[    2.512442] [rhcov] usb_stor_transparent_scsi_command
+[    2.512503] [rhcov] usb_stor_invoke_transport
+[    2.512534] [rhcov] usb_stor_invoke_transport
+[    2.512565] [rhcov] usb_stor_invoke_transport
+[    2.512596] [rhcov] usb_stor_invoke_transport
+[    2.512626] [rhcov] usb_stor_invoke_transport
+[    2.512657] [rhcov] usb_stor_invoke_transport
+[    2.512717] [rhcov] usb_stor_invoke_transport
+[    2.512749] [rhcov] usb_stor_Bulk_transport
+[    2.512778] [rhcov] usb_stor_Bulk_transport
+[    2.512808] [rhcov] usb_stor_Bulk_transport
+[    2.512838] [rhcov] usb_stor_Bulk_transport
+[    2.512867] [rhcov] usb_stor_Bulk_transport
+[    2.512897] [rhcov] usb_stor_Bulk_transport
+[    2.512927] [rhcov] usb_stor_Bulk_transport
+[    2.512957] [rhcov] usb_stor_bulk_transfer_buf
+[    2.512988] [rhcov] usb_stor_bulk_transfer_buf
+[    2.513019] [rhcov] usb_stor_bulk_transfer_buf
+[    2.513050] [rhcov] usb_stor_bulk_transfer_buf
+[    2.513082] [rhcov] usb_stor_bulk_transfer_buf
+[    2.513113] [rhcov] usb_stor_bulk_transfer_buf
+[    2.513144] [rhcov] usb_stor_bulk_transfer_buf
+[    2.513175] [rhcov] usb_stor_msg_common
+[    2.513203] [rhcov] usb_stor_msg_common
+[    2.513230] [rhcov] usb_stor_msg_common
+[    2.513258] [rhcov] usb_stor_msg_common
+[    2.513286] [rhcov] usb_stor_msg_common
+[    2.513316] [rhcov] usb_stor_msg_common
+[    2.513343] [rhcov] usb_stor_msg_common
+[    2.513440] [rhcov] usb_stor_blocking_completion
+[    2.513480] [rhcov] usb_stor_blocking_completion
+[    2.513512] [rhcov] usb_stor_blocking_completion
+[    2.513543] [rhcov] usb_stor_blocking_completion
+[    2.513574] [rhcov] usb_stor_blocking_completion
+[    2.513605] [rhcov] usb_stor_blocking_completion
+[    2.513636] [rhcov] usb_stor_blocking_completion
+[    2.513709] [rhcov] interpret_urb_result
+[    2.513741] [rhcov] interpret_urb_result
+[    2.513770] [rhcov] interpret_urb_result
+[    2.513799] [rhcov] interpret_urb_result
+[    2.513827] [rhcov] interpret_urb_result
+[    2.513856] [rhcov] interpret_urb_result
+[    2.513884] [rhcov] interpret_urb_result
+[    2.513913] [rhcov] usb_stor_bulk_srb
+[    2.513940] [rhcov] usb_stor_bulk_srb
+[    2.513967] [rhcov] usb_stor_bulk_srb
+[    2.513994] [rhcov] usb_stor_bulk_srb
+[    2.514021] [rhcov] usb_stor_bulk_srb
+[    2.514048] [rhcov] usb_stor_bulk_srb
+[    2.514075] [rhcov] usb_stor_bulk_srb
+[    2.514106] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514140] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514173] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514207] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514240] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514273] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514311] [rhcov] usb_stor_bulk_transfer_sglist
+[    2.514386] [rhcov] interpret_urb_result
+[    2.514417] [rhcov] interpret_urb_result
+[    2.514446] [rhcov] interpret_urb_result
+[    2.514474] [rhcov] interpret_urb_result
+[    2.514503] [rhcov] interpret_urb_result
+[    2.514531] [rhcov] interpret_urb_result
+[    2.514560] [rhcov] interpret_urb_result
+[    2.514588] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514620] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514652] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514698] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514731] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514763] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514794] [rhcov] usb_stor_bulk_transfer_buf
+[    2.514826] [rhcov] usb_stor_msg_common
+[    2.514854] [rhcov] usb_stor_msg_common
+[    2.514882] [rhcov] usb_stor_msg_common
+[    2.514910] [rhcov] usb_stor_msg_common
+[    2.514938] [rhcov] usb_stor_msg_common
+[    2.514966] [rhcov] usb_stor_msg_common
+[    2.514994] [rhcov] usb_stor_msg_common
+[    2.515038] [rhcov] usb_stor_blocking_completion
+[    2.515072] [rhcov] usb_stor_blocking_completion
+[    2.515104] [rhcov] usb_stor_blocking_completion
+[    2.515135] [rhcov] usb_stor_blocking_completion
+[    2.515166] [rhcov] usb_stor_blocking_completion
+[    2.515197] [rhcov] usb_stor_blocking_completion
+[    2.515228] [rhcov] usb_stor_blocking_completion
+[    2.515271] [rhcov] interpret_urb_result
+[    2.515305] [rhcov] interpret_urb_result
+[    2.515333] [rhcov] interpret_urb_result
+[    2.515362] [rhcov] interpret_urb_result
+[    2.515391] [rhcov] interpret_urb_result
+[    2.515419] [rhcov] interpret_urb_result
+[    2.515448] [rhcov] interpret_urb_result
+[    2.515477] [rhcov] last_sector_hacks
+[    2.515504] [rhcov] last_sector_hacks
+[    2.515531] [rhcov] last_sector_hacks
+[    2.515558] [rhcov] last_sector_hacks
+[    2.515585] [rhcov] last_sector_hacks
+[    2.515612] [rhcov] last_sector_hacks
+[    2.515639] [rhcov] last_sector_hacks
+[    2.516495] sd 2:0:0:0: [sda] Attached SCSI disk
+REHARNESS_STORAGE_OK read=512 bytes
+EXERCISER_RC=0
+=== rmmod usb_storage ===
+[    2.527764] usbcore: deregistering interface driver usb-storage
+[    2.528105] [rhcov] usb_stor_disconnect
+[    2.528142] [rhcov] usb_stor_disconnect
+[    2.528174] [rhcov] usb_stor_disconnect
+[    2.528205] [rhcov] usb_stor_disconnect
+[    2.528235] [rhcov] usb_stor_disconnect
+[    2.528266] [rhcov] usb_stor_disconnect
+[    2.528297] [rhcov] usb_stor_disconnect
+[    2.528333] [rhcov] quiesce_and_remove_host
+[    2.528366] [rhcov] quiesce_and_remove_host
+[    2.528400] [rhcov] quiesce_and_remove_host
+[    2.528433] [rhcov] quiesce_and_remove_host
+[    2.528466] [rhcov] quiesce_and_remove_host
+[    2.528498] [rhcov] quiesce_and_remove_host
+[    2.528531] [rhcov] quiesce_and_remove_host
+[    2.543238] sd 2:0:0:0: [sda] Synchronizing SCSI cache
+[    2.543430] [rhcov] queuecommand_lck
+[    2.543460] [rhcov] queuecommand_lck
+[    2.543486] [rhcov] queuecommand_lck
+[    2.543511] [rhcov] queuecommand_lck
+[    2.543536] [rhcov] queuecommand_lck
+[    2.543561] [rhcov] queuecommand_lck
+[    2.543586] [rhcov] queuecommand_lck
+[    2.543635] [rhcov] usb_stor_transparent_scsi_command
+[    2.543729] [rhcov] usb_stor_transparent_scsi_command
+[    2.543768] [rhcov] usb_stor_transparent_scsi_command
+[    2.543803] [rhcov] usb_stor_transparent_scsi_command
+[    2.543838] [rhcov] usb_stor_transparent_scsi_command
+[    2.543873] [rhcov] usb_stor_transparent_scsi_command
+[    2.543908] [rhcov] usb_stor_transparent_scsi_command
+[    2.543943] [rhcov] usb_stor_invoke_transport
+[    2.543974] [rhcov] usb_stor_invoke_transport
+[    2.544005] [rhcov] usb_stor_invoke_transport
+[    2.544036] [rhcov] usb_stor_invoke_transport
+[    2.544072] [rhcov] usb_stor_invoke_transport
+[    2.544103] [rhcov] usb_stor_invoke_transport
+[    2.544135] [rhcov] usb_stor_invoke_transport
+[    2.544167] [rhcov] usb_stor_Bulk_transport
+[    2.544197] [rhcov] usb_stor_Bulk_transport
+[    2.544227] [rhcov] usb_stor_Bulk_transport
+[    2.544257] [rhcov] usb_stor_Bulk_transport
+[    2.544286] [rhcov] usb_stor_Bulk_transport
+[    2.544321] [rhcov] usb_stor_Bulk_transport
+[    2.544351] [rhcov] usb_stor_Bulk_transport
+[    2.544381] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544413] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544444] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544476] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544507] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544538] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544569] [rhcov] usb_stor_bulk_transfer_buf
+[    2.544600] [rhcov] usb_stor_msg_common
+[    2.544628] [rhcov] usb_stor_msg_common
+[    2.544656] [rhcov] usb_stor_msg_common
+[    2.544704] [rhcov] usb_stor_msg_common
+[    2.544732] [rhcov] usb_stor_msg_common
+[    2.544760] [rhcov] usb_stor_msg_common
+[    2.544788] [rhcov] usb_stor_msg_common
+[    2.544906] [rhcov] usb_stor_blocking_completion
+[    2.544947] [rhcov] usb_stor_blocking_completion
+[    2.544980] [rhcov] usb_stor_blocking_completion
+[    2.545012] [rhcov] usb_stor_blocking_completion
+[    2.545044] [rhcov] usb_stor_blocking_completion
+[    2.545077] [rhcov] usb_stor_blocking_completion
+[    2.545109] [rhcov] usb_stor_blocking_completion
+[    2.545160] [rhcov] interpret_urb_result
+[    2.545193] [rhcov] interpret_urb_result
+[    2.545221] [rhcov] interpret_urb_result
+[    2.545250] [rhcov] interpret_urb_result
+[    2.545278] [rhcov] interpret_urb_result
+[    2.545309] [rhcov] interpret_urb_result
+[    2.545337] [rhcov] interpret_urb_result
+[    2.545366] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545397] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545428] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545460] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545491] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545522] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545553] [rhcov] usb_stor_bulk_transfer_buf
+[    2.545584] [rhcov] usb_stor_msg_common
+[    2.545612] [rhcov] usb_stor_msg_common
+[    2.545639] [rhcov] usb_stor_msg_common
+[    2.545668] [rhcov] usb_stor_msg_common
+[    2.545726] [rhcov] usb_stor_msg_common
+[    2.545754] [rhcov] usb_stor_msg_common
+[    2.545781] [rhcov] usb_stor_msg_common
+[    2.545836] [rhcov] usb_stor_blocking_completion
+[    2.545873] [rhcov] usb_stor_blocking_completion
+[    2.545905] [rhcov] usb_stor_blocking_completion
+[    2.545937] [rhcov] usb_stor_blocking_completion
+[    2.545969] [rhcov] usb_stor_blocking_completion
+[    2.546001] [rhcov] usb_stor_blocking_completion
+[    2.546034] [rhcov] usb_stor_blocking_completion
+[    2.546081] [rhcov] interpret_urb_result
+[    2.546112] [rhcov] interpret_urb_result
+[    2.546141] [rhcov] interpret_urb_result
+[    2.546169] [rhcov] interpret_urb_result
+[    2.546197] [rhcov] interpret_urb_result
+[    2.546225] [rhcov] interpret_urb_result
+[    2.546253] [rhcov] interpret_urb_result
+[    2.546282] [rhcov] last_sector_hacks
+[    2.546312] [rhcov] last_sector_hacks
+[    2.546339] [rhcov] last_sector_hacks
+[    2.546366] [rhcov] last_sector_hacks
+[    2.546392] [rhcov] last_sector_hacks
+[    2.546418] [rhcov] last_sector_hacks
+[    2.546445] [rhcov] last_sector_hacks
+[    2.551180] [rhcov] release_everything
+[    2.551231] [rhcov] release_everything
+[    2.551263] [rhcov] release_everything
+[    2.551293] [rhcov] release_everything
+[    2.551328] [rhcov] release_everything
+[    2.551358] [rhcov] release_everything
+[    2.551387] [rhcov] release_everything
+[    2.551417] [rhcov] usb_stor_release_resources
+[    2.551451] [rhcov] usb_stor_release_resources
+[    2.551485] [rhcov] usb_stor_release_resources
+[    2.551522] [rhcov] usb_stor_release_resources
+[    2.551556] [rhcov] usb_stor_release_resources
+[    2.551590] [rhcov] usb_stor_release_resources
+[    2.551627] [rhcov] usb_stor_release_resources
+[    2.552002] [rhcov] dissociate_dev
+[    2.552039] [rhcov] dissociate_dev
+[    2.552067] [rhcov] dissociate_dev
+[    2.552095] [rhcov] dissociate_dev
+[    2.552123] [rhcov] dissociate_dev
+[    2.552167] [rhcov] dissociate_dev
+[    2.552195] [rhcov] dissociate_dev
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    2.785407] sysrq: Power Off
+[    2.785805] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000000
+[    2.786174] CPU: 1 UID: 0 PID: 1 Comm: init Not tainted 7.1.0-rc7+ #17 PREEMPT(lazy)
+[    2.786282] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.17.0-0-gb52ca86e094d-prebuilt.qemu.org 04/01/2014
+[    2.786453] Call Trace:
+[    2.786904]  <TASK>
+[    2.786998]  vpanic+0x32f/0x4b0
+[    2.787202]  panic+0x63/0x70
+[    2.787239]  do_exit+0x952/0xaf0
+[    2.787273]  do_group_exit+0x30/0x80
+[    2.787311]  __x64_sys_exit_group+0x18/0x20
+[    2.787351]  x64_sys_call+0x12e2/0x1880
+[    2.787386]  do_syscall_64+0x10e/0x4e0
+[    2.787423]  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+[    2.787552] RIP: 0033:0x7ff903d2d31d
+[    2.787741] Code: 02 ba ff ff ff ff 89 d0 c3 0f 1f 40 00 f3 0f 1e fa 48 8b 35 ed 4a 11 00 ba e7 00 00 00 eb 07 66 0f 1f 44 00 00 f4 89 d0 0f 05 <48> 3d 00 f0 ff ff 76 f3 f7 d8 64 89 06 eb ec 0f 1f 40 00 f3 0f 1e
+[    2.787887] RSP: 002b:00007ffe4e4d8568 EFLAGS: 00000202 ORIG_RAX: 00000000000000e7
+[    2.787966] RAX: ffffffffffffffda RBX: 00007ffe4e4d87f0 RCX: 00007ff903d2d31d
+[    2.788019] RDX: 00000000000000e7 RSI: ffffffffffffff88 RDI: 0000000000000000
+[    2.788071] RBP: 00007ffe4e4d8640 R08: 000055ae5d82d010 R09: 0000000000000007
+[    2.788123] R10: 000055ae5d8306d0 R11: 0000000000000202 R12: 0000000000000000
+[    2.788174] R13: 00007ffe4e4d87e0 R14: 000055ae2d4dadd8 R15: 00007ff903e93000
+[    2.788251]  </TASK>
+[    2.788999] Kernel Offset: disabled
+[    2.789220] Rebooting in 1 seconds..

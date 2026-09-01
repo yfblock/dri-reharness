@@ -1,0 +1,45 @@
+=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031602] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031667] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.079203] ftrace: allocating 31612 entries in 124 pages
+[    0.079469] ftrace: allocated 124 pages with 5 groups
+[    0.423158] thermal_sys: Registered thermal governor 'step_wise'
+[    0.427649] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.429078] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.527916] pps_core: LinuxPPS API ver. 1 registered
+[    0.575821] Key type asymmetric registered
+[    0.575955] Asymmetric key parser 'x509' registered
+[    0.576540] io scheduler mq-deadline registered
+[    0.576606] io scheduler kyber registered
+[    0.626183] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod device-registrar target=ftgpio010-gpio ===
+REHARNESS_REGISTRAR_INSMOD_RC=0
+=== insmod ftgpio010_gpio ===
+[    1.345577] [rhfn] ftgpio_gpio_probe
+[    1.346358] [rh] W 0x20 0x0
+[    1.346391] [rh] W 0x2c 0x0
+[    1.346419] [rh] W 0x30 0xffffffff
+[    1.346450] [rh] W 0x40 0x0
+REHARNESS_DRIVER_INSMOD_RC=0
+[    0.031602] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031667] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.423158] thermal_sys: Registered thermal governor 'step_wise'
+[    0.429078] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.527916] pps_core: LinuxPPS API ver. 1 registered
+[    0.575821] Key type asymmetric registered
+[    0.575955] Asymmetric key parser 'x509' registered
+[    0.576540] io scheduler mq-deadline registered
+[    0.576606] io scheduler kyber registered
+[    0.626183] rtc_cmos PNP0B00:00: registered as rtc0
+GPIO_TRACE_DONE
+REHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=0
+=== rmmod ftgpio010_gpio ===
+=== QEMU_RUN_DONE ===
+[    1.944228] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+  done=1 probe=14 real_oops=0
+  => 成功: ftgpio010_gpio probe 成功

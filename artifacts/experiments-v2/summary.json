@@ -1,0 +1,33 @@
+[
+  {
+    "accepted": true,
+    "baseline_coverage": {
+      "covered": [
+        "edu_open",
+        "edu_pci_probe",
+        "edu_pci_remove",
+        "edu_read",
+        "edu_write"
+      ],
+      "covered_count": 5,
+      "pct": 83.3,
+      "total": 6
+    },
+    "candidate_coverage": {
+      "covered": [
+        "edu_open",
+        "edu_pci_probe",
+        "edu_pci_remove",
+        "edu_read",
+        "edu_write"
+      ],
+      "covered_count": 5,
+      "pct": 83.3,
+      "total": 6
+    },
+    "name": "edu",
+    "output_dir": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/experiments-v2/edu",
+    "repair_count": 0,
+    "status": "accepted"
+  }
+]

@@ -1,0 +1,75 @@
+{
+  "schema": 2,
+  "name": "i2c-generic",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-i2c-sensor.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "i2c-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "transaction", "unload"]
+    },
+    "fixture": {
+      "kind": "qemu-i2c",
+      "config": {
+        "address": "0x50",
+        "register": "0x10",
+        "expected_value": "0x5a"
+      },
+      "module_sources": [
+        "qa/verification/device-registrar/i2c-registrar.c"
+      ]
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "i2c-virtual",
+      "bus": "i2c",
+      "module": "i2c_generic",
+      "timeout_seconds": 90,
+      "probe_pattern": "REHARNESS_I2C_DRIVER_PROBE",
+      "kernel_modules": ["i2c-dev"],
+      "binding": {
+        "bus": "i2c",
+        "device_glob": "*"
+      }
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "i2c",
+      "tests": [
+        {
+          "name": "i2c-transaction",
+          "executable": "qa/native-tests/i2c_transaction_test.c",
+          "args": ["/dev/reharness-i2c-control"],
+          "success_pattern": "I2C_TRANSACTION_PASS"
+        },
+        {
+          "name": "i2c-invalid-address",
+          "executable": "qa/native-tests/i2c_transaction_test.c",
+          "args": ["/dev/reharness-i2c-control"],
+          "success_pattern": "I2C_INVALID_ADDRESS_PASS"
+        },
+        {
+          "name": "linux-i2c-dev-tool",
+          "provider": "linux-i2c-dev",
+          "args": ["/dev/i2c-0"]
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: reharness <reharness@localhost>
+Date: Tue, 25 Aug 2026 00:00:00 +0800
+Subject: [PATCH] drivers: amba: allow compile-test framework on x86
+
+The AMBA core is architecture-independent enough for the synthetic QEMU
+registration fixture.  Keep the normal ARM/ARM64 selection semantics while
+allowing the pinned experiment kernel to build it under COMPILE_TEST.
+---
+ drivers/amba/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/amba/Kconfig b/drivers/amba/Kconfig
+index 3f58a0000000..3f58a0000001 100644
+--- a/drivers/amba/Kconfig
++++ b/drivers/amba/Kconfig
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ config ARM_AMBA
+ 	bool
++	default y if COMPILE_TEST
+ 
+ if ARM_AMBA
+-- 
+2.39.5

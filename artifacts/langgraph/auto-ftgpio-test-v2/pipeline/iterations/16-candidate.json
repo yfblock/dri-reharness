@@ -1,0 +1,51 @@
+{
+  "evidence_digest": "e81c3c017be079f41aad026111e07b30d6022fcc9bd41653499ba10ee8a21b8b",
+  "iteration": 3,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "feedback": {
+      "details": {
+        "driver_insmod_rc": 137,
+        "excerpt": "[    1.336690] [rh] R 0x8 0x0\n[    1.336707] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.336760] [rh] R 0x8 0x0\n[    1.336776] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.336829] [rh] R 0x8 0x0\n[    1.336846] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.336895] [rh] R 0x8 0x0\n[    1.336912] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.336962] [rh] R 0x8 0x0\n[    1.336978] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337028] [rh] R 0x8 0x0\n[    1.337044] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337094] [rh] R 0x8 0x0\n[    1.337111] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337160] [rh] R 0x8 0x0\n[    1.337177] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337226] [rh] R 0x8 0x0\n[    1.337243] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337292] [rh] R 0x8 0x0\n[    1.337309] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337358] [rh] R 0x8 0x0\n[    1.337375] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337425] [rh] R 0x8 0x0\n[    1.337441] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337491] [rh] R 0x8 0x0\n[    1.337507] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337569] [rh] R 0x8 0x0\n[    1.337586] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337636] [rh] R 0x8 0x0\n[    1.337653] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction\n[    1.337703] [rh] R 0x8 0x0\n[    1.339028] CPU: 0 UID: 0 PID: 58 Comm: insmod Tainted: G           O        7.1.0-rc7-gacb7500801e9 #6 PREEMPT(lazy)\n[    1.340031] Call Trace:\n[    1.340646]  ftgpio_gpio_probe+0x25f/0x280 [ftgpio010_gpio]\n[    1.340739]  platform_probe+0x3c/0x70\n[    1.340766]  really_probe+0xc3/0x2c0\n[    1.340818]  __driver_probe_device+0x82/0x160\n[    1.340846]  driver_probe_device+0x1f/0xe0\n[    1.342270] ---[ end trace 0000000000000000 ]---\n[    1.343213] note: insmod[58] exited with irqs disabled\n[    1.343689] insmod (58) used greatest stack depth: 12648 bytes left\nREHARNESS_DRIVER_INSMOD_RC=137\n[    0.031615] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.031680] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.411632] thermal_sys: Registered thermal governor 'step_wise'\n[    0.417663] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.498025] pps_core: LinuxPPS API ver. 1 registered\n[    0.541784] Key type asymmetric registered\n[    0.541871] Asymmetric key parser 'x509' registered\n[    0.542313] io scheduler mq-deadline registered\n[    0.542374] io scheduler kyber registered\n[    0.581628] rtc_cmos PNP0B00:00: registered as rtc0\n[    1.340646]  ftgpio_gpio_probe+0x25f/0x280 [ftgpio010_gpio]\nGPIO_TRACE_FAIL:open /dev/gpiochip0\nREHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api\nREHARNESS_SUBSYSTEM_TEST_0_RC=2\n=== rmmod ftgpio010_gpio ===\nrmmod: ERROR: Module ftgpio010_gpio is in use\n=== kernel failure diagnostics ===\n[    0.000000] printk: debug: ignoring loglevel setting.\n[    1.338414] BUG: unable to handle page fault for address: ffffffffc02074d0\n[    1.338484] #PF: supervisor write access in kernel mode\n[    1.338524] #PF: error_code(0x0003) - permissions violation\n[    1.338768] Oops: Oops: 0003 [#1] SMP NOPTI\n[    1.339268] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070\n[    1.339950] CR2: ffffffffc02074d0 CR3: 000000000373f000 CR4: 00000000000006f0\n[    1.340031] Call Trace:\n[    1.341276] RIP: 0033:0x7fbaa7d4138d\n[    1.341922] Modules linked in: ftgpio010_gpio(O+) device_registrar(O)\n[    1.342123] CR2: ffffffffc02074d0\n[    1.342270] ---[ end trace 0000000000000000 ]---\n[    1.342706] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070\n[    1.343142] CR2: ffffffffc02074d0 CR3: 000000000373f000 CR4: 00000000000006f0\n[    1.339268] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070\n[    1.341922] Modules linked in: ftgpio010_gpio(O+) device_registrar(O)\n[    1.342706] RIP: 0010:gpiochip_add_data_with_key+0xe30/0x1070\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=0\ndone=0 probe=23 real_oops=2\n=> \u5931\u8d25: \u5d29\u6e83/oops",
+        "observations": {
+          "done": false,
+          "driver_insmod_rc": 137,
+          "exerciser": false,
+          "oops": true,
+          "probe": true,
+          "probe_required": true,
+          "registrar_insmod_rc": null,
+          "subsystem_tests": [
+            {
+              "index": 0,
+              "name": "ftgpio010-gpio-api",
+              "return_code": 2,
+              "success": false
+            }
+          ],
+          "success_pattern": null
+        },
+        "qemu_exit_code": 0,
+        "reason": "kernel_oops",
+        "return_code": 2,
+        "role": "candidate",
+        "subsystem_tests": [
+          {
+            "index": 0,
+            "name": "ftgpio010-gpio-api",
+            "return_code": 2,
+            "success": false
+          }
+        ],
+        "trace": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v2/pipeline/traces/candidate-7746da16d3064403be0cf791e5df83bf.trace"
+      },
+      "failure_class": "runtime",
+      "iteration": 3,
+      "message": "runtime adapter failed: kernel_oops",
+      "retryable": true,
+      "stage": "candidate"
+    }
+  },
+  "stage": "candidate",
+  "status": "failed"
+}

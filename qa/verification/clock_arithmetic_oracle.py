@@ -39,18 +39,18 @@ EINVAL = 22
 def generated_highbank_code() -> str:
     from extractor import ExtractorConfig, extract_ris
     from extractor.spec import default_bind
-    from generator import linux as linux_gen
+    from backends import linux as linux_gen
 
     source = os.path.join(
         ROOT, "benchmarks", "drivers", "baseline", "clk-highbank.c")
     result = extract_ris(ExtractorConfig(source=source))
     return linux_gen.generate(
         result.formal, result.device_spec,
-        default_bind(result.device_spec, "linux"), result.facts)
+        default_bind(result.device_spec, "linux"), facts=result.facts)
 
 
 def _extract_function(code: str, name: str) -> str:
-    from generator.linux import _source_function
+    from source_function import source_function as _source_function
 
     function = _source_function(code, name)
     if function is None:

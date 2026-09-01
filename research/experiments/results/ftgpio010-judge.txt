@@ -1,36 +1,108 @@
 === QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
 === QEMU 退出码: 0 ===
-[    1.313728] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.313778] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.313828] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.313878] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.313972] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.314035] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.314090] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.315438] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
-[    0.031385] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
-[    0.031452] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
-[    0.409010] thermal_sys: Registered thermal governor 'step_wise'
-[    0.415089] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-[    0.494994] pps_core: LinuxPPS API ver. 1 registered
-[    0.541515] Key type asymmetric registered
-[    0.541590] Asymmetric key parser 'x509' registered
-[    0.541991] io scheduler mq-deadline registered
-[    0.542051] io scheduler kyber registered
-[    0.584119] rtc_cmos PNP0B00:00: registered as rtc0
-[    1.315438] gpio-ftgpio010 gpio-ftgpio010: gpio-ftgpio010 probed
-[    1.653507] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
-[    1.654282] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_output
-[    1.654818] [rhfn] ftgpio_gpio_probe__gpio_generic_get_multiple
-[    1.657068] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
-[    1.657271] [rhfn] ftgpio_gpio_probe__gpio_generic_set_multiple
-[    1.657488] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
-GPIO_TRACE_DONE
-EXERCISER_RC=0
+REHARNESS_SUBSYSTEM_TEST_6_RC=0
+REHARNESS_SUBSYSTEM_TEST_6_STATUS=pass
+[    1.157685] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.157744] [rh] R 0x8 0x0
+[    1.157774] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.157808] [rh] W 0x8 0x2
+[    1.158113] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.158171] [rh] R 0x8 0x0
+[    1.158233] [rh] R 0x34 0x0
+[    1.158252] [rh] R 0x3c 0x0
+[    1.158269] [rh] R 0x38 0x0
+[    1.158286] [rh] W 0x34 0x0
+[    1.158303] [rh] W 0x3c 0x0
+[    1.158320] [rh] W 0x38 0x0
+[    1.158337] [rh] W 0x30 0x1
+[    1.158401] [rh] R 0x20 0x0
+[    1.158418] [rh] W 0x20 0x1
+[    1.159899] [rh] R 0x20 0x0
+[    1.159918] [rh] W 0x20 0x0
+REHARNESS_SUBSYSTEM_TEST_7_NAME=gpio-events
+REHARNESS_SUBSYSTEM_TEST_7_KIND=native
+REHARNESS_SUBSYSTEM_TEST_7_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_7_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_7_RC=0
+REHARNESS_SUBSYSTEM_TEST_7_STATUS=pass
+[    1.168186] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.168246] [rh] R 0x8 0x0
+[    1.168271] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.168305] [rh] W 0x8 0x2
+[    1.168433] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.168470] [rh] R 0x8 0x0
+[    1.168495] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.168528] [rh] W 0x8 0x2
+[    1.168564] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.168597] [rh] R 0x8 0x0
+[    1.168615] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.168648] [rh] W 0x8 0x2
+[    1.168681] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.168714] [rh] R 0x8 0x0
+[    1.168732] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.168765] [rh] W 0x8 0x2
+[    1.168790] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.168823] [rh] R 0x8 0x0
+[    1.168841] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.168874] [rh] W 0x8 0x2
+[    1.168898] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.168931] [rh] R 0x8 0x0
+[    1.168949] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.168982] [rh] W 0x8 0x2
+[    1.169006] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.169039] [rh] R 0x8 0x0
+[    1.169057] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.169097] [rh] W 0x8 0x2
+[    1.169121] [rhfn] ftgpio_gpio_probe__gpio_generic_get_direction
+[    1.169154] [rh] R 0x8 0x0
+[    1.169172] [rhfn] ftgpio_gpio_probe__gpio_generic_direction_input
+[    1.169205] [rh] W 0x8 0x2
+REHARNESS_SUBSYSTEM_TEST_8_NAME=gpio-lifecycle
+REHARNESS_SUBSYSTEM_TEST_8_KIND=native
+REHARNESS_SUBSYSTEM_TEST_8_PROVIDER=
+REHARNESS_SUBSYSTEM_TEST_8_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_8_RC=0
+REHARNESS_SUBSYSTEM_TEST_8_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_9_NAME=linux-gpio-chip-info
+REHARNESS_SUBSYSTEM_TEST_9_KIND=kselftest
+REHARNESS_SUBSYSTEM_TEST_9_PROVIDER=linux-gpio-chip-info
+REHARNESS_SUBSYSTEM_TEST_9_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_9_RC=0
+REHARNESS_SUBSYSTEM_TEST_9_STATUS=pass
+REHARNESS_SUBSYSTEM_TEST_10_NAME=linux-gpio-line-name
+REHARNESS_SUBSYSTEM_TEST_10_KIND=kselftest
+REHARNESS_SUBSYSTEM_TEST_10_PROVIDER=linux-gpio-line-name
+REHARNESS_SUBSYSTEM_TEST_10_REQUIRED=1
+REHARNESS_SUBSYSTEM_TEST_10_RC=0
+REHARNESS_SUBSYSTEM_TEST_10_STATUS=pass
 === rmmod ftgpio010_gpio ===
+REHARNESS_DRIVER_RMMOD_RC=0
+REHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0
 === QEMU_RUN_DONE ===
-[    1.906376] Call Trace:
+[    1.440593] Call Trace:
 
 === 成功判定 ===
-  done=1 probe=18 real_oops=0
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_3_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_4_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_5_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_6_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_7_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_8_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_9_SUCCESS=1
+REHARNESS_SUBSYSTEM_TEST_10_SUCCESS=1
+REHARNESS_COVERAGE_chip_info_STATUS=pass
+REHARNESS_COVERAGE_line_info_STATUS=pass
+REHARNESS_COVERAGE_v2_single_line_STATUS=pass
+REHARNESS_COVERAGE_v2_multi_line_STATUS=pass
+REHARNESS_COVERAGE_v2_values_STATUS=pass
+REHARNESS_COVERAGE_v1_single_line_STATUS=pass
+REHARNESS_COVERAGE_config_flags_STATUS=pass
+REHARNESS_COVERAGE_config_debounce_STATUS=pass
+REHARNESS_COVERAGE_error_paths_STATUS=pass
+REHARNESS_COVERAGE_line_event_STATUS=pass
+REHARNESS_COVERAGE_lifecycle_STATUS=pass
+  done=1 probe=30 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
   => 成功: ftgpio010_gpio probe 成功

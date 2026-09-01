@@ -1,0 +1,1477 @@
+{
+  "evidence_digest": "7df0e96b13cccc0336e493698af9aa274237c4b6165dda93ec1d024d0fbac2a0",
+  "iteration": 1,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "result": {
+      "bind": {
+        "callbacks": {
+          "gpio_chip.direction_input": "ftgpio_gpio_probe__gpio_generic_direction_input",
+          "gpio_chip.direction_output": "ftgpio_gpio_probe__gpio_generic_direction_output",
+          "gpio_chip.get": "ftgpio_gpio_probe__gpio_generic_get",
+          "gpio_chip.get_direction": "ftgpio_gpio_probe__gpio_generic_get_direction",
+          "gpio_chip.get_multiple": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+          "gpio_chip.set": "ftgpio_gpio_probe__gpio_generic_set",
+          "gpio_chip.set_config": "ftgpio_gpio_set_config",
+          "gpio_chip.set_multiple": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+          "gpio_irq_chip.parent_handler": "ftgpio_gpio_irq_handler",
+          "irq_chip.irq_ack": "ftgpio_gpio_ack_irq",
+          "irq_chip.irq_mask": "ftgpio_gpio_mask_irq",
+          "irq_chip.irq_set_type": "ftgpio_gpio_set_irq_type",
+          "irq_chip.irq_unmask": "ftgpio_gpio_unmask_irq",
+          "platform_driver.probe": "ftgpio_gpio_probe"
+        },
+        "includes": [
+          "<linux/io.h>",
+          "<linux/platform_device.h>"
+        ],
+        "primitives": {
+          "MmioRead(B1)": "readb",
+          "MmioRead(B2)": "readw",
+          "MmioRead(B4)": "readl",
+          "MmioReadBE(B2)": "ioread16be",
+          "MmioReadBE(B4)": "ioread32be",
+          "MmioWrite(B1)": "writeb",
+          "MmioWrite(B2)": "writew",
+          "MmioWrite(B4)": "writel",
+          "MmioWriteBE(B2)": "iowrite16be",
+          "MmioWriteBE(B4)": "iowrite32be",
+          "MmioWriteW1C(B1)": "writeb",
+          "MmioWriteW1C(B2)": "writew",
+          "MmioWriteW1C(B4)": "writel"
+        },
+        "state": {
+          "dev.base": "g->base"
+        },
+        "types": {
+          "DeviceState": "struct gpio_ftgpio010",
+          "LogicalIRQ": "struct irq_data *",
+          "MmioBase": "void __iomem *",
+          "UInt": "u32",
+          "UIntPtr": "unsigned long *"
+        }
+      },
+      "bundle": {
+        "digest": "7df0e96b13cccc0336e493698af9aa274237c4b6165dda93ec1d024d0fbac2a0",
+        "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v4/evidence"
+      },
+      "constants": {
+        "GPIO_BYPASS_IN": 12,
+        "GPIO_DATA_OUT": 0,
+        "GPIO_GENERIC_BIG_ENDIAN": 1,
+        "GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER": 8,
+        "GPIO_GENERIC_NO_INPUT": 256,
+        "GPIO_GENERIC_NO_OUTPUT": 32,
+        "GPIO_GENERIC_NO_SET_ON_INPUT": 64,
+        "GPIO_GENERIC_PINCTRL_BACKEND": 128,
+        "GPIO_GENERIC_READ_OUTPUT_REG_SET": 16,
+        "GPIO_GENERIC_UNREADABLE_REG_DIR": 4,
+        "GPIO_GENERIC_UNREADABLE_REG_SET": 2,
+        "GPIO_INT_STAT_MASKED": 40,
+        "GPIO_LINE_DIRECTION_IN": 1,
+        "GPIO_LINE_DIRECTION_OUT": 0,
+        "GPIO_PULL_EN": 24,
+        "GPIO_PULL_TYPE": 28,
+        "IRQ_TYPE_EDGE_BOTH": 3,
+        "IRQ_TYPE_EDGE_FALLING": 2,
+        "IRQ_TYPE_EDGE_RISING": 1,
+        "IRQ_TYPE_LEVEL_HIGH": 4,
+        "IRQ_TYPE_LEVEL_LOW": 8
+      },
+      "device_class": "gpio_controller",
+      "digest": "7df0e96b13cccc0336e493698af9aa274237c4b6165dda93ec1d024d0fbac2a0",
+      "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/auto-ftgpio-test-v4/evidence",
+      "driver": "gpio-ftgpio010",
+      "framework": {
+        "callback_signatures": {
+          "gpio_chip.direction_input": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned int"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned int)",
+            "variadic": false
+          },
+          "gpio_chip.direction_output": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned int"
+              },
+              {
+                "type": "int"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned int, int)",
+            "variadic": false
+          },
+          "gpio_chip.get": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned int"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned int)",
+            "variadic": false
+          },
+          "gpio_chip.get_direction": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned int"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned int)",
+            "variadic": false
+          },
+          "gpio_chip.get_multiple": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned long *"
+              },
+              {
+                "type": "unsigned long *"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned long *, unsigned long *)",
+            "variadic": false
+          },
+          "gpio_chip.set": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned int"
+              },
+              {
+                "type": "int"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned int, int)",
+            "variadic": false
+          },
+          "gpio_chip.set_config": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned int"
+              },
+              {
+                "type": "unsigned long"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned int, unsigned long)",
+            "variadic": false
+          },
+          "gpio_chip.set_multiple": {
+            "params": [
+              {
+                "type": "struct gpio_chip *"
+              },
+              {
+                "type": "unsigned long *"
+              },
+              {
+                "type": "unsigned long *"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct gpio_chip *, unsigned long *, unsigned long *)",
+            "variadic": false
+          },
+          "gpio_irq_chip.parent_handler": {
+            "params": [
+              {
+                "type": "struct irq_desc *"
+              }
+            ],
+            "return_type": "void",
+            "type": "void (*)(struct irq_desc *)",
+            "variadic": false
+          },
+          "irq_chip.irq_ack": {
+            "params": [
+              {
+                "type": "struct irq_data *"
+              }
+            ],
+            "return_type": "void",
+            "type": "void (*)(struct irq_data *)",
+            "variadic": false
+          },
+          "irq_chip.irq_mask": {
+            "params": [
+              {
+                "type": "struct irq_data *"
+              }
+            ],
+            "return_type": "void",
+            "type": "void (*)(struct irq_data *)",
+            "variadic": false
+          },
+          "irq_chip.irq_set_type": {
+            "params": [
+              {
+                "type": "struct irq_data *"
+              },
+              {
+                "type": "unsigned int"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct irq_data *, unsigned int)",
+            "variadic": false
+          },
+          "irq_chip.irq_unmask": {
+            "params": [
+              {
+                "type": "struct irq_data *"
+              }
+            ],
+            "return_type": "void",
+            "type": "void (*)(struct irq_data *)",
+            "variadic": false
+          },
+          "platform_driver.probe": {
+            "params": [
+              {
+                "type": "struct platform_device *"
+              }
+            ],
+            "return_type": "int",
+            "type": "int (*)(struct platform_device *)",
+            "variadic": false
+          }
+        },
+        "callbacks": {
+          "gpio_chip.direction_input": "ftgpio_gpio_probe__gpio_generic_direction_input",
+          "gpio_chip.direction_output": "ftgpio_gpio_probe__gpio_generic_direction_output",
+          "gpio_chip.get": "ftgpio_gpio_probe__gpio_generic_get",
+          "gpio_chip.get_direction": "ftgpio_gpio_probe__gpio_generic_get_direction",
+          "gpio_chip.get_multiple": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+          "gpio_chip.set": "ftgpio_gpio_probe__gpio_generic_set",
+          "gpio_chip.set_config": "ftgpio_gpio_set_config",
+          "gpio_chip.set_multiple": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+          "gpio_irq_chip.parent_handler": "ftgpio_gpio_irq_handler",
+          "irq_chip.irq_ack": "ftgpio_gpio_ack_irq",
+          "irq_chip.irq_mask": "ftgpio_gpio_mask_irq",
+          "irq_chip.irq_set_type": "ftgpio_gpio_set_irq_type",
+          "irq_chip.irq_unmask": "ftgpio_gpio_unmask_irq",
+          "platform_driver.probe": "ftgpio_gpio_probe"
+        },
+        "error_paths": [
+          "return -EINVAL",
+          "return -ENOMEM",
+          "return -ENOTSUPP",
+          "return PTR_ERR(g->base)",
+          "return PTR_ERR(g->clk)"
+        ],
+        "helper_calls": [
+          "devm_gpiochip_add_data",
+          "gpio_generic_chip_init",
+          "gpio_irq_chip_set_chip"
+        ],
+        "source_snippets": {}
+      },
+      "functions": [
+        {
+          "callback_table": "irq_chip.irq_ack",
+          "context": "irq",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_ack_irq",
+          "ris_ref": "ftgpio_gpio_ack_irq",
+          "role": "interrupt_ack",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "d",
+                "type": "LogicalIRQ"
+              }
+            ],
+            "return_type": "Void"
+          },
+          "source": "gpio-ftgpio010.c:56"
+        },
+        {
+          "callback_table": "irq_chip.irq_mask",
+          "context": "irq",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_mask_irq",
+          "ris_ref": "ftgpio_gpio_mask_irq",
+          "role": "interrupt_mask",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "d",
+                "type": "LogicalIRQ"
+              }
+            ],
+            "return_type": "Void"
+          },
+          "source": "gpio-ftgpio010.c:64"
+        },
+        {
+          "callback_table": "irq_chip.irq_unmask",
+          "context": "irq",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_unmask_irq",
+          "ris_ref": "ftgpio_gpio_unmask_irq",
+          "role": "interrupt_unmask",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "d",
+                "type": "LogicalIRQ"
+              }
+            ],
+            "return_type": "Void"
+          },
+          "source": "gpio-ftgpio010.c:76"
+        },
+        {
+          "callback_table": "irq_chip.irq_set_type",
+          "context": "irq",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_set_irq_type",
+          "ris_ref": "ftgpio_gpio_set_irq_type",
+          "role": "set_irq_type",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "d",
+                "type": "LogicalIRQ"
+              },
+              {
+                "from_expr": null,
+                "name": "type",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:88"
+        },
+        {
+          "callback_table": "gpio_irq_chip.parent_handler",
+          "context": "irq",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_irq_handler",
+          "ris_ref": "ftgpio_gpio_irq_handler",
+          "role": "interrupt_handler",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "desc",
+                "type": "LogicalIRQ"
+              }
+            ],
+            "return_type": "Void"
+          },
+          "source": "gpio-ftgpio010.c:141"
+        },
+        {
+          "callback_table": "gpio_chip.set_config",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_set_config",
+          "ris_ref": "ftgpio_gpio_set_config",
+          "role": "write_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "offset",
+                "type": "UInt"
+              },
+              {
+                "from_expr": null,
+                "name": "config",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:159"
+        },
+        {
+          "callback_table": "platform_driver.probe",
+          "context": "boot",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe",
+          "ris_ref": "ftgpio_gpio_probe",
+          "role": "probe",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "pdev",
+                "type": "DeviceState"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.get",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_get",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_get",
+          "role": "read_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "offset",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.get_multiple",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+          "role": "read_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "mask",
+                "type": "UIntPtr"
+              },
+              {
+                "from_expr": null,
+                "name": "bits",
+                "type": "UIntPtr"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.set",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_set",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_set",
+          "role": "write_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "offset",
+                "type": "UInt"
+              },
+              {
+                "from_expr": null,
+                "name": "value",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.set_multiple",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+          "role": "write_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "mask",
+                "type": "UIntPtr"
+              },
+              {
+                "from_expr": null,
+                "name": "bits",
+                "type": "UIntPtr"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.direction_input",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_direction_input",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_direction_input",
+          "role": "write_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "offset",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.direction_output",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_direction_output",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_direction_output",
+          "role": "write_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "offset",
+                "type": "UInt"
+              },
+              {
+                "from_expr": null,
+                "name": "value",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        },
+        {
+          "callback_table": "gpio_chip.get_direction",
+          "context": "thread",
+          "is_callback_entry": true,
+          "name": "ftgpio_gpio_probe__gpio_generic_get_direction",
+          "ris_ref": "ftgpio_gpio_probe__gpio_generic_get_direction",
+          "role": "read_config",
+          "signature": {
+            "params": [
+              {
+                "from_expr": null,
+                "name": "gc",
+                "type": "DeviceState"
+              },
+              {
+                "from_expr": null,
+                "name": "offset",
+                "type": "UInt"
+              }
+            ],
+            "return_type": "UInt"
+          },
+          "source": "gpio-ftgpio010.c:236"
+        }
+      ],
+      "modules": [
+        {
+          "name": "ftgpio_gpio_ack_irq",
+          "ops": [
+            {
+              "addr": "base + GPIO_INT_CLR",
+              "digest": "5dd3bb35656acca9",
+              "kind": "write",
+              "op_id": "op_1",
+              "value": "(0x1 << d->hwirq)"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_mask_irq",
+          "ops": [
+            {
+              "addr": "base + GPIO_INT_EN",
+              "digest": "67a27c7ab6f431e2",
+              "kind": "read",
+              "op_id": "op_2",
+              "var": "val",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_INT_EN",
+              "digest": "35b8bf6436435508",
+              "kind": "rmw",
+              "op_id": "op_3",
+              "transform": "(val & (~(0x1 << irqd_to_hwirq(d))))"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_unmask_irq",
+          "ops": [
+            {
+              "addr": "base + GPIO_INT_EN",
+              "digest": "67a27c7ab6f431e2",
+              "kind": "read",
+              "op_id": "op_4",
+              "var": "val",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_INT_EN",
+              "digest": "d8ab399a3e165c09",
+              "kind": "rmw",
+              "op_id": "op_5",
+              "transform": "(val | (0x1 << irqd_to_hwirq(d)))"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_set_irq_type",
+          "ops": [
+            {
+              "addr": "base + GPIO_INT_TYPE",
+              "digest": "b359d00e3d754d3e",
+              "kind": "read",
+              "op_id": "op_6",
+              "var": "reg_type",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_INT_LEVEL",
+              "digest": "85db95e4e47b9e4c",
+              "kind": "read",
+              "op_id": "op_7",
+              "var": "reg_level",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_INT_BOTH_EDGE",
+              "digest": "6642efb8949d9184",
+              "kind": "read",
+              "op_id": "op_8",
+              "var": "reg_both",
+              "width": "B4"
+            },
+            {
+              "else": [],
+              "guard": "(type == 0x3)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "desc->handle_irq",
+                  "kind": "state_write",
+                  "op_id": "op_9",
+                  "value": "handle_edge_irq",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_10",
+                  "value": "(reg_type & (~mask))",
+                  "var": "reg_type"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_11",
+                  "value": "(reg_both | mask)",
+                  "var": "reg_both"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(type == 0x1)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "desc->handle_irq",
+                  "kind": "state_write",
+                  "op_id": "op_12",
+                  "value": "handle_edge_irq",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_13",
+                  "value": "(reg_type & (~mask))",
+                  "var": "reg_type"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_14",
+                  "value": "(reg_both & (~mask))",
+                  "var": "reg_both"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_15",
+                  "value": "(reg_level & (~mask))",
+                  "var": "reg_level"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(type == 0x2)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "desc->handle_irq",
+                  "kind": "state_write",
+                  "op_id": "op_16",
+                  "value": "handle_edge_irq",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_17",
+                  "value": "(reg_type & (~mask))",
+                  "var": "reg_type"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_18",
+                  "value": "(reg_both & (~mask))",
+                  "var": "reg_both"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_19",
+                  "value": "(reg_level | mask)",
+                  "var": "reg_level"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(type == 0x4)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "desc->handle_irq",
+                  "kind": "state_write",
+                  "op_id": "op_20",
+                  "value": "handle_level_irq",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_21",
+                  "value": "(reg_type | mask)",
+                  "var": "reg_type"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_22",
+                  "value": "(reg_level & (~mask))",
+                  "var": "reg_level"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(type == 0x8)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "desc->handle_irq",
+                  "kind": "state_write",
+                  "op_id": "op_23",
+                  "value": "handle_level_irq",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_24",
+                  "value": "(reg_type | mask)",
+                  "var": "reg_type"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_25",
+                  "value": "(reg_level | mask)",
+                  "var": "reg_level"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "((((((type == 0x3) || (type == 0x1)) || (type == 0x2)) || (type == 0x4)) || (type == 0x8)) == 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "desc->handle_irq",
+                  "kind": "state_write",
+                  "op_id": "op_26",
+                  "value": "handle_bad_irq",
+                  "width": "B4"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(((((type == 0x3) || (type == 0x1)) || (type == 0x2)) || (type == 0x4)) || (type == 0x8))",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_INT_TYPE",
+                  "digest": "d1c746cb513851b5",
+                  "kind": "rmw",
+                  "op_id": "op_27",
+                  "transform": "((type == IRQ_TYPE_EDGE_BOTH) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_type & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_type | mask) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_type | mask) : reg_type)))))"
+                },
+                {
+                  "addr": "base + GPIO_INT_LEVEL",
+                  "digest": "26d436ff936be225",
+                  "kind": "rmw",
+                  "op_id": "op_28",
+                  "transform": "((type == IRQ_TYPE_EDGE_BOTH) ? reg_level : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_level | mask) : ((type == IRQ_TYPE_LEVEL_HIGH) ? (reg_level & (~mask)) : ((type == IRQ_TYPE_LEVEL_LOW) ? (reg_level | mask) : reg_level)))))"
+                },
+                {
+                  "addr": "base + GPIO_INT_BOTH_EDGE",
+                  "digest": "64b0966d1739dce7",
+                  "kind": "rmw",
+                  "op_id": "op_29",
+                  "transform": "((type == IRQ_TYPE_EDGE_BOTH) ? (reg_both | mask) : ((type == IRQ_TYPE_EDGE_RISING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_EDGE_FALLING) ? (reg_both & (~mask)) : ((type == IRQ_TYPE_LEVEL_HIGH) ? reg_both : ((type == IRQ_TYPE_LEVEL_LOW) ? reg_both : reg_both)))))"
+                },
+                {
+                  "addr": "base + GPIO_INT_CLR",
+                  "digest": "f3139a9d8d4fcbca",
+                  "kind": "write",
+                  "op_id": "op_30",
+                  "value": "(0x1 << irqd_to_hwirq(d))"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_irq_handler",
+          "ops": [
+            {
+              "addr": "base + GPIO_INT_STAT_RAW",
+              "digest": "e74749be940967d5",
+              "kind": "read",
+              "op_id": "op_31",
+              "var": "stat",
+              "width": "B4"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_set_config",
+          "ops": [
+            {
+              "addr": "base + GPIO_DEBOUNCE_PRESCALE",
+              "digest": "8eb491b0c0634ba7",
+              "kind": "read",
+              "op_id": "op_32",
+              "var": "val",
+              "width": "B4"
+            },
+            {
+              "else": [],
+              "guard": "(val == deb_div)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DEBOUNCE_EN",
+                  "digest": "48230cd8ed117ec6",
+                  "kind": "read",
+                  "op_id": "op_33",
+                  "var": "val",
+                  "width": "B4"
+                },
+                {
+                  "kind": "value_bind",
+                  "op_id": "op_34",
+                  "value": "(val | (0x1 << offset))",
+                  "var": "val"
+                },
+                {
+                  "addr": "base + GPIO_DEBOUNCE_EN",
+                  "digest": "81000a354c140fe1",
+                  "kind": "rmw",
+                  "op_id": "op_35",
+                  "transform": "((val == deb_div) ? (val | (0x1 << offset)) : val)"
+                }
+              ]
+            },
+            {
+              "addr": "base + GPIO_DEBOUNCE_EN",
+              "digest": "339408230d26d326",
+              "kind": "read",
+              "op_id": "op_36",
+              "var": "val",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_DEBOUNCE_PRESCALE",
+              "digest": "a89c06a8b813ae48",
+              "kind": "write",
+              "op_id": "op_37",
+              "value": "deb_div"
+            },
+            {
+              "kind": "value_bind",
+              "op_id": "op_38",
+              "value": "(val | (0x1 << offset))",
+              "var": "val"
+            },
+            {
+              "addr": "base + GPIO_DEBOUNCE_EN",
+              "digest": "a6b3f48cd0fe1e05",
+              "kind": "rmw",
+              "op_id": "op_39",
+              "transform": "(val | (0x1 << offset))"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe",
+          "ops": [
+            {
+              "kind": "value_bind",
+              "op_id": "op_40",
+              "value": "&pdev->dev",
+              "var": "dev"
+            },
+            {
+              "field": "g->dev",
+              "kind": "state_write",
+              "op_id": "op_41",
+              "value": "dev",
+              "width": "B4"
+            },
+            {
+              "kind": "value_bind",
+              "op_id": "op_42",
+              "value": "(((((struct gpio_generic_chip_config) {\n\t\t.dev = dev,\n\t\t.sz = 4,\n\t\t.dat = g->base + GPIO_DATA_IN,\n\t\t.set = g->base) + GPIO_DATA_SET,\n\t\t.clr = g->base) + GPIO_DATA_CLR,\n\t\t.dirout = g->base) + GPIO_DIR,\n\t})",
+              "var": "config"
+            },
+            {
+              "addr": "base + GPIO_DATA_IN",
+              "digest": "16d85024e558eaef",
+              "kind": "read",
+              "op_id": "op_43",
+              "var": "gpio_initial_data",
+              "width": "B4"
+            },
+            {
+              "field": "gpio_sdata",
+              "kind": "state_write",
+              "op_id": "op_44",
+              "value": "gpio_initial_data",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_DIR",
+              "digest": "e9b515951bfad9ea",
+              "kind": "read",
+              "op_id": "op_45",
+              "var": "gpio_initial_direction",
+              "width": "B4"
+            },
+            {
+              "field": "gpio_sdir",
+              "kind": "state_write",
+              "op_id": "op_46",
+              "value": "gpio_initial_direction",
+              "width": "B4"
+            },
+            {
+              "field": "g->chip.gc.base",
+              "kind": "state_write",
+              "op_id": "op_47",
+              "value": "-1",
+              "width": "B4"
+            },
+            {
+              "field": "g->chip.gc.parent",
+              "kind": "state_write",
+              "op_id": "op_48",
+              "value": "dev",
+              "width": "B4"
+            },
+            {
+              "field": "g->chip.gc.owner",
+              "kind": "state_write",
+              "op_id": "op_49",
+              "value": "THIS_MODULE",
+              "width": "B4"
+            },
+            {
+              "else": [],
+              "guard": "(IS_ERR(g->clk) == 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "field": "g->chip.gc.set_config",
+                  "kind": "state_write",
+                  "op_id": "op_50",
+                  "value": "ftgpio_gpio_set_config",
+                  "width": "B4"
+                }
+              ]
+            },
+            {
+              "kind": "value_bind",
+              "op_id": "op_51",
+              "value": "&g->chip.gc.irq",
+              "var": "girq"
+            },
+            {
+              "field": "girq->parent_handler",
+              "kind": "state_write",
+              "op_id": "op_52",
+              "value": "ftgpio_gpio_irq_handler",
+              "width": "B4"
+            },
+            {
+              "field": "girq->num_parents",
+              "kind": "state_write",
+              "op_id": "op_53",
+              "value": "0x1",
+              "width": "B4"
+            },
+            {
+              "field": "girq->default_type",
+              "kind": "state_write",
+              "op_id": "op_54",
+              "value": "IRQ_TYPE_NONE",
+              "width": "B4"
+            },
+            {
+              "field": "girq->handler",
+              "kind": "state_write",
+              "op_id": "op_55",
+              "value": "handle_bad_irq",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_INT_EN",
+              "digest": "7443390abf8fb623",
+              "kind": "write",
+              "op_id": "op_56",
+              "value": "0x0"
+            },
+            {
+              "addr": "base + GPIO_INT_MASK",
+              "digest": "015d9e37bb50b02a",
+              "kind": "write",
+              "op_id": "op_57",
+              "value": "0x0"
+            },
+            {
+              "addr": "base + GPIO_INT_CLR",
+              "digest": "153d39994bb1ba88",
+              "kind": "write",
+              "op_id": "op_58",
+              "value": "0xffffffff"
+            },
+            {
+              "addr": "base + GPIO_DEBOUNCE_EN",
+              "digest": "92b66149c6b53a4a",
+              "kind": "write",
+              "op_id": "op_59",
+              "value": "0x0"
+            },
+            {
+              "field": "girq->chip",
+              "kind": "state_write",
+              "op_id": "op_60",
+              "value": "(struct irq_chip * & ftgpio_irq_chip)",
+              "width": "B4"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_get",
+          "ops": [
+            {
+              "addr": "base + GPIO_DATA_IN",
+              "digest": "a2dc39d9a87e4bf7",
+              "kind": "read",
+              "op_id": "op_61",
+              "var": "value",
+              "width": "B4"
+            },
+            {
+              "kind": "return",
+              "value": "((value & (0x1 << offset)) != 0x0)"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+          "ops": [
+            {
+              "addr": "base + GPIO_DATA_IN",
+              "digest": "a2dc39d9a87e4bf7",
+              "kind": "read",
+              "op_id": "op_63",
+              "var": "value",
+              "width": "B4"
+            },
+            {
+              "kind": "output_write",
+              "op_id": "op_64",
+              "target": "bits",
+              "value": "((*bits & (~*mask)) | (value & *mask))"
+            },
+            {
+              "kind": "return",
+              "value": "0x0"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_set",
+          "ops": [
+            {
+              "else": [],
+              "guard": "(value != 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DATA_SET",
+                  "digest": "b36eb49659ebc50a",
+                  "kind": "write",
+                  "op_id": "op_66",
+                  "value": "(0x1 << offset)"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(value == 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DATA_CLR",
+                  "digest": "3834a18c428720bf",
+                  "kind": "write",
+                  "op_id": "op_67",
+                  "value": "(0x1 << offset)"
+                }
+              ]
+            },
+            {
+              "kind": "return",
+              "value": "0x0"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+          "ops": [
+            {
+              "else": [],
+              "guard": "((*bits & *mask) != 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DATA_SET",
+                  "digest": "ab8d874dfdeeade8",
+                  "kind": "write",
+                  "op_id": "op_69",
+                  "value": "(*bits & *mask)"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(((~*bits) & *mask) != 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DATA_CLR",
+                  "digest": "5f32f4874eb9aabb",
+                  "kind": "write",
+                  "op_id": "op_70",
+                  "value": "((~*bits) & *mask)"
+                }
+              ]
+            },
+            {
+              "kind": "return",
+              "value": "0x0"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_direction_input",
+          "ops": [
+            {
+              "field": "gpio_sdir",
+              "kind": "state_read",
+              "op_id": "op_72",
+              "var": "__shadow_dir",
+              "width": "B4"
+            },
+            {
+              "field": "gpio_sdir",
+              "kind": "state_write",
+              "op_id": "op_73",
+              "value": "(__shadow_dir & (~(0x1 << offset)))",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_DIR",
+              "digest": "b949672343e78260",
+              "kind": "write",
+              "op_id": "op_74",
+              "value": "(__shadow_dir & (~(0x1 << offset)))"
+            },
+            {
+              "kind": "return",
+              "value": "0x0"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_direction_output",
+          "ops": [
+            {
+              "else": [],
+              "guard": "(value != 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DATA_SET",
+                  "digest": "b36eb49659ebc50a",
+                  "kind": "write",
+                  "op_id": "op_76",
+                  "value": "(0x1 << offset)"
+                }
+              ]
+            },
+            {
+              "else": [],
+              "guard": "(value == 0x0)",
+              "kind": "cond",
+              "then": [
+                {
+                  "addr": "base + GPIO_DATA_CLR",
+                  "digest": "3834a18c428720bf",
+                  "kind": "write",
+                  "op_id": "op_77",
+                  "value": "(0x1 << offset)"
+                }
+              ]
+            },
+            {
+              "field": "gpio_sdir",
+              "kind": "state_read",
+              "op_id": "op_78",
+              "var": "__shadow_dir",
+              "width": "B4"
+            },
+            {
+              "field": "gpio_sdir",
+              "kind": "state_write",
+              "op_id": "op_79",
+              "value": "(__shadow_dir | (0x1 << offset))",
+              "width": "B4"
+            },
+            {
+              "addr": "base + GPIO_DIR",
+              "digest": "43d76c2e0b3f2385",
+              "kind": "write",
+              "op_id": "op_80",
+              "value": "(__shadow_dir | (0x1 << offset))"
+            },
+            {
+              "kind": "return",
+              "value": "0x0"
+            }
+          ]
+        },
+        {
+          "name": "ftgpio_gpio_probe__gpio_generic_get_direction",
+          "ops": [
+            {
+              "addr": "base + GPIO_DIR",
+              "digest": "9d0c4bdae3641bba",
+              "kind": "read",
+              "op_id": "op_82",
+              "var": "direction",
+              "width": "B4"
+            },
+            {
+              "kind": "return",
+              "value": "(((direction & (0x1 << offset)) != 0x0) ? 0x0 : 0x1)"
+            }
+          ]
+        }
+      ],
+      "readiness": {
+        "backend_bare_metal_ready": false,
+        "backend_harness_ready": false,
+        "backend_linux_ready": false,
+        "blockers": [
+          "generated backend compile/lowering/attestation results unavailable",
+          "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+        ],
+        "device_spec_quality": 1.0,
+        "facts_quality": 1.0,
+        "function_spec_quality": 1.0,
+        "llm_synthesis_ready": true,
+        "ris_quality": 1.0
+      },
+      "registers": {
+        "GPIO_DATA_CLR": {
+          "offset": 20,
+          "width": "B4"
+        },
+        "GPIO_DATA_IN": {
+          "offset": 4,
+          "width": "B4"
+        },
+        "GPIO_DATA_SET": {
+          "offset": 16,
+          "width": "B4"
+        },
+        "GPIO_DEBOUNCE_EN": {
+          "offset": 64,
+          "width": "B4"
+        },
+        "GPIO_DEBOUNCE_PRESCALE": {
+          "offset": 68,
+          "width": "B4"
+        },
+        "GPIO_DIR": {
+          "offset": 8,
+          "width": "B4"
+        },
+        "GPIO_INT_BOTH_EDGE": {
+          "offset": 56,
+          "width": "B4"
+        },
+        "GPIO_INT_CLR": {
+          "offset": 48,
+          "width": "B4"
+        },
+        "GPIO_INT_EN": {
+          "offset": 32,
+          "width": "B4"
+        },
+        "GPIO_INT_LEVEL": {
+          "offset": 60,
+          "width": "B4"
+        },
+        "GPIO_INT_MASK": {
+          "offset": 44,
+          "width": "B4"
+        },
+        "GPIO_INT_STAT_RAW": {
+          "offset": 36,
+          "width": "B4"
+        },
+        "GPIO_INT_TYPE": {
+          "offset": 52,
+          "width": "B4"
+        }
+      },
+      "resources": [
+        {
+          "acquisition": "devm_platform_ioremap_resource",
+          "binds_to": "g->base",
+          "name": "mmio0",
+          "type": null
+        },
+        {
+          "acquisition": "devm_clk_get_enabled",
+          "binds_to": "g->clk",
+          "failure_policy": "probe_defer_only",
+          "name": "cloc5",
+          "required": false,
+          "type": null
+        },
+        {
+          "acquisition": "platform_get_irq",
+          "binds_to": null,
+          "name": "irqr8",
+          "type": null
+        }
+      ],
+      "source_digest": "e4c31ea817a6862ea8b76a973974e38e9a7e8f0cf3f1a8e997ad15d1e2ce8448",
+      "source_files": [
+        "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c"
+      ],
+      "structs": {
+        "ftgpio_gpio": {
+          "base": "void *",
+          "chip": "struct gpio_generic_chip",
+          "clk": "struct clk *",
+          "dev": "struct device *"
+        }
+      }
+    }
+  },
+  "stage": "extract",
+  "status": "passed"
+}

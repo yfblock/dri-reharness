@@ -1,0 +1,363 @@
+{
+  "class": "clock",
+  "functions": [
+    {
+      "binds": [],
+      "callback_table": "clk_ops.prepare",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "clk_pll_prepare",
+      "requires": [],
+      "ris_ref": "clk_pll_prepare",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:43"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.unprepare",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "releases_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == OFF"
+      ],
+      "is_callback_entry": true,
+      "name": "clk_pll_unprepare",
+      "requires": [],
+      "ris_ref": "clk_pll_unprepare",
+      "role": "remove",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "clk-highbank.c:60"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.enable",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "clk_pll_enable",
+      "requires": [],
+      "ris_ref": "clk_pll_enable",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:70"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.disable",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "releases_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == OFF"
+      ],
+      "is_callback_entry": true,
+      "name": "clk_pll_disable",
+      "requires": [],
+      "ris_ref": "clk_pll_disable",
+      "role": "remove",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "clk-highbank.c:82"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.recalc_rate",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "clk_pll_recalc_rate",
+      "requires": [],
+      "ris_ref": "clk_pll_recalc_rate",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "parent_rate",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:92"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.set_rate",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "clk_pll_set_rate",
+      "requires": [],
+      "ris_ref": "clk_pll_set_rate",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "rate",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "parent_rate",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:146"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.recalc_rate",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "clk_cpu_periphclk_recalc_rate",
+      "requires": [],
+      "ris_ref": "clk_cpu_periphclk_recalc_rate",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "parent_rate",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:194"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.recalc_rate",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "clk_cpu_a9bclk_recalc_rate",
+      "requires": [],
+      "ris_ref": "clk_cpu_a9bclk_recalc_rate",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "parent_rate",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:206"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.recalc_rate",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "reads_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "clk_periclk_recalc_rate",
+      "requires": [],
+      "ris_ref": "clk_periclk_recalc_rate",
+      "role": "read_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "parent_rate",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:219"
+    },
+    {
+      "binds": [],
+      "callback_table": "clk_ops.set_rate",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "clk_periclk_set_rate",
+      "requires": [],
+      "ris_ref": "clk_periclk_set_rate",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "hwclk",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "rate",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "parent_rate",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "clk-highbank.c:246"
+    }
+  ],
+  "invariants": [],
+  "name": "clk-highbank",
+  "registers": [],
+  "resources": [
+    {
+      "bind": "base",
+      "name": "mmio0",
+      "required": true,
+      "type": "MmioResource"
+    }
+  ],
+  "schema": 1,
+  "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/clk-highbank.c",
+  "state": [
+    {
+      "bind": null,
+      "name": "base",
+      "type": "MmioBase"
+    }
+  ]
+}

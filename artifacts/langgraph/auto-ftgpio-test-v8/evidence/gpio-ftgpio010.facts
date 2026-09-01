@@ -1,0 +1,173 @@
+source: /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c
+includes:
+  - linux/bitops.h
+  - linux/clk.h
+  - linux/gpio/driver.h
+  - linux/gpio/generic.h
+  - linux/interrupt.h
+  - linux/io.h
+  - linux/platform_device.h
+structs:
+  ftgpio_gpio:
+    fields:
+      dev: "struct device *"
+      chip: "struct gpio_generic_chip"
+      base: "void *"
+      clk: "struct clk *"
+constants:
+  GPIO_LINE_DIRECTION_IN: 0x1
+  GPIO_LINE_DIRECTION_OUT: 0x0
+  GPIO_GENERIC_BIG_ENDIAN: 0x1
+  GPIO_GENERIC_UNREADABLE_REG_SET: 0x2
+  GPIO_GENERIC_UNREADABLE_REG_DIR: 0x4
+  GPIO_GENERIC_BIG_ENDIAN_BYTE_ORDER: 0x8
+  GPIO_GENERIC_READ_OUTPUT_REG_SET: 0x10
+  GPIO_GENERIC_NO_OUTPUT: 0x20
+  GPIO_GENERIC_NO_SET_ON_INPUT: 0x40
+  GPIO_GENERIC_PINCTRL_BACKEND: 0x80
+  GPIO_GENERIC_NO_INPUT: 0x100
+  GPIO_DATA_OUT: 0x0
+  GPIO_BYPASS_IN: 0xc
+  GPIO_PULL_EN: 0x18
+  GPIO_PULL_TYPE: 0x1c
+  GPIO_INT_STAT_MASKED: 0x28
+  IRQ_TYPE_EDGE_RISING: 0x1
+  IRQ_TYPE_EDGE_FALLING: 0x2
+  IRQ_TYPE_EDGE_BOTH: 0x3
+  IRQ_TYPE_LEVEL_HIGH: 0x4
+  IRQ_TYPE_LEVEL_LOW: 0x8
+callbacks:
+  irq_chip.irq_ack: ftgpio_gpio_ack_irq
+  irq_chip.irq_mask: ftgpio_gpio_mask_irq
+  irq_chip.irq_unmask: ftgpio_gpio_unmask_irq
+  irq_chip.irq_set_type: ftgpio_gpio_set_irq_type
+  gpio_chip.set_config: ftgpio_gpio_set_config
+  gpio_irq_chip.parent_handler: ftgpio_gpio_irq_handler
+  platform_driver.probe: ftgpio_gpio_probe
+  gpio_chip.get: ftgpio_gpio_probe__gpio_generic_get
+  gpio_chip.get_multiple: ftgpio_gpio_probe__gpio_generic_get_multiple
+  gpio_chip.set: ftgpio_gpio_probe__gpio_generic_set
+  gpio_chip.set_multiple: ftgpio_gpio_probe__gpio_generic_set_multiple
+  gpio_chip.direction_input: ftgpio_gpio_probe__gpio_generic_direction_input
+  gpio_chip.direction_output: ftgpio_gpio_probe__gpio_generic_direction_output
+  gpio_chip.get_direction: ftgpio_gpio_probe__gpio_generic_get_direction
+callback_signatures:
+  irq_chip.irq_ack:
+    type: "void (*)(struct irq_data *)"
+    return_type: "void"
+    params:
+      - "struct irq_data *"
+    variadic: false
+  irq_chip.irq_mask:
+    type: "void (*)(struct irq_data *)"
+    return_type: "void"
+    params:
+      - "struct irq_data *"
+    variadic: false
+  irq_chip.irq_unmask:
+    type: "void (*)(struct irq_data *)"
+    return_type: "void"
+    params:
+      - "struct irq_data *"
+    variadic: false
+  irq_chip.irq_set_type:
+    type: "int (*)(struct irq_data *, unsigned int)"
+    return_type: "int"
+    params:
+      - "struct irq_data *"
+      - "unsigned int"
+    variadic: false
+  gpio_chip.set_config:
+    type: "int (*)(struct gpio_chip *, unsigned int, unsigned long)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned int"
+      - "unsigned long"
+    variadic: false
+  gpio_irq_chip.parent_handler:
+    type: "void (*)(struct irq_desc *)"
+    return_type: "void"
+    params:
+      - "struct irq_desc *"
+    variadic: false
+  platform_driver.probe:
+    type: "int (*)(struct platform_device *)"
+    return_type: "int"
+    params:
+      - "struct platform_device *"
+    variadic: false
+  gpio_chip.get_direction:
+    type: "int (*)(struct gpio_chip *, unsigned int)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned int"
+    variadic: false
+  gpio_chip.direction_input:
+    type: "int (*)(struct gpio_chip *, unsigned int)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned int"
+    variadic: false
+  gpio_chip.direction_output:
+    type: "int (*)(struct gpio_chip *, unsigned int, int)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned int"
+      - "int"
+    variadic: false
+  gpio_chip.get:
+    type: "int (*)(struct gpio_chip *, unsigned int)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned int"
+    variadic: false
+  gpio_chip.get_multiple:
+    type: "int (*)(struct gpio_chip *, unsigned long *, unsigned long *)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned long *"
+      - "unsigned long *"
+    variadic: false
+  gpio_chip.set:
+    type: "int (*)(struct gpio_chip *, unsigned int, int)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned int"
+      - "int"
+    variadic: false
+  gpio_chip.set_multiple:
+    type: "int (*)(struct gpio_chip *, unsigned long *, unsigned long *)"
+    return_type: "int"
+    params:
+      - "struct gpio_chip *"
+      - "unsigned long *"
+      - "unsigned long *"
+    variadic: false
+resources:
+  mmio0:
+    acquisition: "devm_platform_ioremap_resource"
+    binds_to: "g->base"
+  cloc5:
+    acquisition: "devm_clk_get_enabled"
+    binds_to: "g->clk"
+    required: false
+    failure_policy: "probe_defer_only"
+  irqr8:
+    acquisition: "platform_get_irq"
+error_paths:
+  - "return -EINVAL"
+  - "return -ENOMEM"
+  - "return -ENOTSUPP"
+  - "return PTR_ERR(g->base)"
+  - "return PTR_ERR(g->clk)"
+helper_calls:
+  - "devm_gpiochip_add_data"
+  - "gpio_generic_chip_init"
+  - "gpio_irq_chip_set_chip"

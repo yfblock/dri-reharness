@@ -1,0 +1,64 @@
+{
+  "schema": 2,
+  "name": "reharness-amba",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-amba-sensor.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "amba-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "subsystem", "unload"]
+    },
+    "registration": {
+      "root_table": "amba_driver",
+      "identity_field": "driver_name"
+    },
+    "fixture": {
+      "kind": "qemu-amba",
+      "config": {},
+      "module_sources": [
+        "qa/verification/device-registrar/amba-registrar.c"
+      ]
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "none",
+      "bus": "amba",
+      "module": "reharness_amba_sensor",
+      "timeout_seconds": 90,
+      "launch_device": false,
+      "probe_pattern": "REHARNESS_AMBA_DRIVER_PROBE",
+      "binding": {
+        "bus": "amba",
+        "device_glob": "*"
+      }
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "amba",
+      "tests": [
+        {
+          "name": "amba-device-lifecycle",
+          "executable": "qa/native-tests/amba_device_test.c",
+          "args": ["reharness-amba"],
+          "success_pattern": "AMBA_DEVICE_LIFECYCLE_PASS"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

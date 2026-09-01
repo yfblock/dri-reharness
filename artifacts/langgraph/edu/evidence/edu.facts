@@ -1,0 +1,86 @@
+source: /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/edu.c
+includes:
+  - linux/fs.h
+  - linux/init.h
+  - linux/interrupt.h
+  - linux/kernel.h
+  - linux/module.h
+  - linux/pci.h
+  - linux/uaccess.h
+  - linux/io.h
+  - linux/miscdevice.h
+structs:
+  edu_priv:
+    fields:
+      mmio: "void *"
+      irq: "int"
+      pdev: "struct pci_dev *"
+      mdev: "struct miscdevice"
+constants:
+  IO_BITMAP_BITS: 0x10000
+  IO_APIC_DEFAULT_PHYS_BASE: 0xfec00000
+  IO_APIC_SLOT_SIZE: 0x400
+  IO_INTEGRITY_CHK_GUARD: 0x1
+  IO_INTEGRITY_CHK_REFTAG: 0x2
+  IO_INTEGRITY_CHK_APPTAG: 0x4
+  IO_INTEGRITY_VALID_FLAGS: 0x7
+  IO_APIC_VECTOR_LIMIT: 0x1000
+  IO_SPACE_LIMIT: 0xffff
+  EDU_VENDOR_ID: 0x1234
+  EDU_DEVICE_ID: 0x11e8
+  IO_DMA_SRC: 0x80
+  IO_DMA_DST: 0x88
+  IO_DMA_CNT: 0x90
+  IO_DMA_CMD: 0x98
+  DMA_BASE: 0x40000
+  DMA_CMD: 0x1
+  DMA_IRQ: 0x4
+callbacks:
+  file_operations.open: edu_open
+  file_operations.read: edu_read
+  file_operations.write: edu_write
+  pci_driver.probe: edu_pci_probe
+  pci_driver.remove: edu_pci_remove
+callback_signatures:
+  file_operations.open:
+    type: "int (*)(struct inode *, struct file *)"
+    return_type: "int"
+    params:
+      - "struct inode *"
+      - "struct file *"
+    variadic: false
+  file_operations.read:
+    type: "long (*)(struct file *, char *, unsigned long, long long *)"
+    return_type: "long"
+    params:
+      - "struct file *"
+      - "char *"
+      - "unsigned long"
+      - "long long *"
+    variadic: false
+  file_operations.write:
+    type: "long (*)(struct file *, const char *, unsigned long, long long *)"
+    return_type: "long"
+    params:
+      - "struct file *"
+      - "const char *"
+      - "unsigned long"
+      - "long long *"
+    variadic: false
+  pci_driver.probe:
+    type: "int (*)(struct pci_dev *, const struct pci_device_id *)"
+    return_type: "int"
+    params:
+      - "struct pci_dev *"
+      - "const struct pci_device_id *"
+    variadic: false
+  pci_driver.remove:
+    type: "void (*)(struct pci_dev *)"
+    return_type: "void"
+    params:
+      - "struct pci_dev *"
+    variadic: false
+error_paths:
+  - "return -EFAULT"
+  - "return -EINVAL"
+  - "return -ENOMEM"

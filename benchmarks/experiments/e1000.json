@@ -1,0 +1,52 @@
+{
+  "schema": 2,
+  "name": "e1000",
+  "source": {
+    "path": "vendor/linux/drivers/net/ethernet/intel/e1000/e1000_main.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "qemu": {
+      "machine": "pc",
+      "device": "e1000",
+      "bus": "pci",
+      "module": "e1000",
+      "timeout_seconds": 90,
+      "launch_device": true,
+      "qemu_args": []
+    },
+    "pci_identity": {
+      "vendor": "0x8086",
+      "device": "0x100e"
+    }
+  },
+  "test": {
+    "executable": "qa/native-tests/e1000_bind",
+    "args": [
+      "eth0"
+    ],
+    "success_pattern": "REHARNESS_E1000_OK"
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ],
+    "instrument": false
+  },
+  "limits": {
+    "compile": 1,
+    "runtime": 1,
+    "trace": 1
+  }
+}

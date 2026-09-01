@@ -1,0 +1,57 @@
+{
+  "schema": 2,
+  "name": "edu-subsystem-fixture",
+  "source": {
+    "path": "benchmarks/drivers/baseline/edu.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu",
+    "pci_identity": {
+      "vendor": "0x1234",
+      "device": "0x11e8"
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "edu",
+      "bus": "pci",
+      "module": "edu_drv",
+      "timeout_seconds": 90
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "misc",
+      "tests": [
+        {
+          "name": "edu-misc-api",
+          "executable": "qa/native-tests/edu_trace_test",
+          "args": ["/dev/edu_drv"],
+          "success_pattern": "EDU_TRACE_OK"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ],
+    "value_mask": "0xffffffff",
+    "instrument": true
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

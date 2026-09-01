@@ -1,0 +1,139 @@
+driver sdhci-esdhc-mcf v0.1.0 {
+  module esdhc_mcf_writeb_be {
+    base := VALUE((host->ioaddr + (reg & (0x3 ^ 0xffffffff)))) @op_1 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:67
+    shift := VALUE(((reg & 0x3) << 0x3)) @op_2 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:68
+    mask := VALUE(((0xff << shift) ^ 0xffffffff)) @op_3 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:69
+    IF (reg == 0x28) {
+      host_ctrl := VALUE(ESDHC_DEFAULT_HOST_CONTROL) @op_4 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:72
+      tmp := R(B1, host->ioaddr.SDHCI_HOST_CONTROL) -- Status @op_5 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:74
+      host_ctrl := VALUE((host_ctrl | val)) @op_6 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:83
+      host_ctrl := VALUE((host_ctrl | (dma_bits << 0x8))) @op_7 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:84
+      W(B4, host->ioaddr.SDHCI_HOST_CONTROL) = host_ctrl -- Config @op_8 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:85
+    }
+    IF ((reg == 0x28) == 0x0) {
+      W(B4, [(host->ioaddr + (reg & 0xfffffffc))]) = ((readl(base) & mask) | (val << shift)) -- Config @op_9 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:90
+      r10 := R(B4, [(host->ioaddr + (reg & 0xfffffffc))]) -- Status @op_10 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:90
+    }
+  }
+  module esdhc_mcf_writew_be {
+    base := VALUE((host->ioaddr + (reg & (0x3 ^ 0xffffffff)))) @op_11 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:97
+    shift := VALUE(((reg & 0x3) << 0x3)) @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:98
+    mask := VALUE(((0xffff << shift) ^ 0xffffffff)) @op_13 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:99
+    IF (reg == 0xc) {
+      STATE(mcf_data->aside) := val @op_14 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:103
+    }
+    IF (reg == 0xe) {
+      IF (host->cmd->opcode == 0xc) {
+        val := VALUE((val | SDHCI_CMD_ABORTCMD)) @op_15 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:107
+      }
+      W(B4, host->ioaddr.SDHCI_TRANSFER_MODE) = ((val << 0x10) | mcf_data->aside) -- Config @op_16 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:113
+    }
+    IF (((reg == 0xc) || (reg == 0xe)) == 0x0) {
+      W(B4, [(host->ioaddr + (reg & 0xfffffffc))]) = ((readl(base) & mask) | (val << shift)) -- Config @op_17 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:118
+      r18 := R(B4, [(host->ioaddr + (reg & 0xfffffffc))]) -- Status @op_18 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:118
+    }
+  }
+  module esdhc_mcf_writel_be {
+    W(B4, [(host->ioaddr + reg)]) = val -- Config @op_19 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:123
+  }
+  module esdhc_mcf_readb_be {
+    IF (reg == 0x28) {
+      base := VALUE((host->ioaddr + (reg & (0x3 ^ 0xffffffff)))) @op_20 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:129
+      val := R(B2, base + 2[0x0]) -- Status @op_21 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:130
+    }
+    IF ((reg == 0x28) == 0x0) {
+      __return_read_0 := R(B1, [(host->ioaddr + (reg ^ 0x3))]) -- Status @op_22 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:140
+    }
+    RETURN ((reg == SDHCI_HOST_CONTROL) ? ((reg == SDHCI_HOST_CONTROL) ? (((reg == SDHCI_HOST_CONTROL) ? (((reg == SDHCI_HOST_CONTROL) ? (val & 0xff) : host_ctrl) & (SDHCI_CTRL_DMA_MASK ^ 0xffffffff)) : ((reg == SDHCI_HOST_CONTROL) ? (val & 0xff) : host_ctrl)) | ((reg == SDHCI_HOST_CONTROL) ? ((val >> 0x5) & SDHCI_CTRL_DMA_MASK) : dma_bits)) : ((reg == SDHCI_HOST_CONTROL) ? (((reg == SDHCI_HOST_CONTROL) ? (val & 0xff) : host_ctrl) & (SDHCI_CTRL_DMA_MASK ^ 0xffffffff)) : ((reg == SDHCI_HOST_CONTROL) ? (val & 0xff) : host_ctrl))) : __return_read_0) @op_23 [Exact]
+  }
+  module esdhc_mcf_readw_be {
+    IF (reg == 0xfe) {
+      reg := VALUE((reg - 0x2)) @op_24 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:150
+    }
+    __return_read_0 := R(B2, [(host->ioaddr + (reg ^ 0x2))]) -- Status @op_25 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:152
+    RETURN __return_read_0 @op_26 [Exact]
+  }
+  module esdhc_mcf_readl_be {
+    val := R(B4, [(host->ioaddr + reg)]) -- Status @op_27 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:159
+    RETURN val @op_28 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:349
+  }
+  module esdhc_mcf_set_timeout {
+    base := VALUE((host->ioaddr + (SDHCI_TIMEOUT_CONTROL & (0x3 ^ 0xffffffff)))) @op_29 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:49
+    ESDHC_SYS_CTRL_DTOCV_MASK := VALUE((ESDHC_SYS_CTRL_DTOCV_MASK << shift)) @op_30 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:52
+    0xe := VALUE((0xe << shift)) @op_31 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:53
+    IF (0x2e == 0x28) {
+      0xe := VALUE((0xe | ESDHC_PROCTL_D3CD)) @op_32 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:56
+    }
+    W(B4, [(host->ioaddr + (SDHCI_TIMEOUT_CONTROL & 0xfffffffc))]) = ((readl(base) & (ESDHC_SYS_CTRL_DTOCV_MASK ^ 0xffffffff)) | 0xe) -- Config @op_33 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+    r34 := R(B4, [(host->ioaddr + (SDHCI_TIMEOUT_CONTROL & 0xfffffffc))]) -- Status @op_34 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+  }
+  module esdhc_mcf_reset {
+    base := VALUE((host->ioaddr + (SDHCI_HOST_CONTROL & (0x3 ^ 0xffffffff)))) @op_35 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:49
+    ESDHC_CTRL_BUSWIDTH_MASK := VALUE((ESDHC_CTRL_BUSWIDTH_MASK << shift)) @op_36 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:52
+    mcf_data->current_bus_width := VALUE((mcf_data->current_bus_width << shift)) @op_37 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:53
+    IF (0x28 == 0x28) {
+      mcf_data->current_bus_width := VALUE((mcf_data->current_bus_width | ESDHC_PROCTL_D3CD)) @op_38 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:56
+    }
+    W(B4, [(host->ioaddr + (SDHCI_HOST_CONTROL & 0xfffffffc))]) = ((readl(base) & (ESDHC_CTRL_BUSWIDTH_MASK ^ 0xffffffff)) | mcf_data->current_bus_width) -- Config @op_39 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+    r40 := R(B4, [(host->ioaddr + (SDHCI_HOST_CONTROL & 0xfffffffc))]) -- Status @op_40 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+    W(B4, host->ioaddr.SDHCI_INT_ENABLE) = host->ier -- Interrupt @op_41 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:201
+    W(B4, host->ioaddr.SDHCI_SIGNAL_ENABLE) = host->ier -- Config @op_42 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:202
+  }
+  module esdhc_mcf_pltfm_set_clock {
+    pll_dr := VALUE(MCF_PLL_DR) @op_43 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:223
+    IF (clock == 0x0) {
+      STATE(host->mmc->actual_clock) := 0x0 @op_44 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:230
+    }
+    IF ((clock == 0x0) == 0x0) {
+      temp := R(B4, MCF_PLL_DR) -- Status @op_45 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:248
+    }
+    temp := VALUE(((((sdclkfs[ri] >> 0x1) << 0x8) | ((rq - 0x1) << 0x4)) | ((ESDHC_CLOCK_IPGEN | ESDHC_CLOCK_HCKEN) | ESDHC_CLOCK_PEREN))) @op_46 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:272
+    IF ((clock == 0x0) == 0x0) {
+      base := VALUE((host->ioaddr + (SDHCI_CLOCK_CONTROL & (0x3 ^ 0xffffffff)))) @op_47 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:49
+      0xfff7 := VALUE((0xfff7 << shift)) @op_48 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:52
+      temp := VALUE((temp << shift)) @op_49 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:53
+      IF (0x2c == 0x28) {
+        temp := VALUE((temp | ESDHC_PROCTL_D3CD)) @op_50 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:56
+      }
+      W(B4, [(host->ioaddr + (SDHCI_CLOCK_CONTROL & 0xfffffffc))]) = ((readl(base) & (0xfff7 ^ 0xffffffff)) | temp) -- Config @op_51 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+      r52 := R(B4, [(host->ioaddr + (SDHCI_CLOCK_CONTROL & 0xfffffffc))]) -- Status @op_52 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+    }
+    STATE(host->mmc->actual_clock) := clock @op_53 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:276
+    IF ((clock == 0x0) == 0x0) {
+      DELAY(0xf4240)
+    }
+  }
+  module esdhc_mcf_pltfm_set_bus_width {
+    IF (width == 0x2) {
+      STATE(mcf_data->current_bus_width) := ESDHC_CTRL_4BITBUS @op_56 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:288
+    }
+    IF ((width == 0x2) == 0x0) {
+      STATE(mcf_data->current_bus_width) := 0x0 @op_57 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:291
+    }
+    base := VALUE((host->ioaddr + (SDHCI_HOST_CONTROL & (0x3 ^ 0xffffffff)))) @op_58 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:49
+    ESDHC_CTRL_BUSWIDTH_MASK := VALUE((ESDHC_CTRL_BUSWIDTH_MASK << shift)) @op_59 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:52
+    (((!(((width) == (MMC_BUS_WIDTH_4))))) ? (0x0) : ((((((width) == (MMC_BUS_WIDTH_4)))) ? (2) : (mcf_data->current_bus_width)))) := VALUE(((((width == MMC_BUS_WIDTH_4) == 0x0) ? 0x0 : ((width == MMC_BUS_WIDTH_4) ? 0x2 : mcf_data->current_bus_width)) << shift)) @op_60 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:53
+    IF (0x28 == 0x28) {
+      (((!(((width) == (MMC_BUS_WIDTH_4))))) ? (0x0) : ((((((width) == (MMC_BUS_WIDTH_4)))) ? (2) : (mcf_data->current_bus_width)))) := VALUE(((((width == MMC_BUS_WIDTH_4) == 0x0) ? 0x0 : ((width == MMC_BUS_WIDTH_4) ? 0x2 : mcf_data->current_bus_width)) | ESDHC_PROCTL_D3CD)) @op_61 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:56
+    }
+    W(B4, [(host->ioaddr + (SDHCI_HOST_CONTROL & 0xfffffffc))]) = ((readl(base) & (ESDHC_CTRL_BUSWIDTH_MASK ^ 0xffffffff)) | (((width == MMC_BUS_WIDTH_4) == 0x0) ? 0x0 : ((width == MMC_BUS_WIDTH_4) ? 0x2 : mcf_data->current_bus_width))) -- Config @op_62 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+    r63 := R(B4, [(host->ioaddr + (SDHCI_HOST_CONTROL & 0xfffffffc))]) -- Status @op_63 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/sdhci-esdhc-mcf.c:58
+  }
+  accounting {
+    source_accesses 17
+    emitted 17
+    filtered 0
+    unsupported 0
+    unaccounted 0
+    ris_ops_without_evidence 0
+    strict_complete true
+  }
+  path_validation {
+    solver "Z3 4.16.0"
+    satisfiable 17
+    infeasible 0
+    unknown 0
+    intentionally_unreachable 2
+    complete true
+  }
+}

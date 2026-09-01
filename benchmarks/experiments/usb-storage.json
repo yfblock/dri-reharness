@@ -1,0 +1,70 @@
+{
+  "schema": 2,
+  "name": "usb-storage",
+  "source": {
+    "path": "vendor/linux/drivers/usb/storage/usb.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "fixture": {
+      "kind": "qemu-usb-storage",
+      "config": {
+        "backing_file": "/tmp/reharness-usbstick.img",
+        "backing_size": "64M"
+      }
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "none",
+      "bus": "usb",
+      "module": "usb_storage",
+      "timeout_seconds": 90,
+      "launch_device": false,
+      "kernel_modules": [
+        "xhci-hcd",
+        "xhci-pci"
+      ],
+      "qemu_args": [
+        "-device",
+        "qemu-xhci,id=xhci",
+        "-drive",
+        "file=/tmp/reharness-usbstick.img,if=none,id=usbstick,format=raw",
+        "-device",
+        "usb-storage,bus=xhci.0,drive=usbstick"
+      ],
+      "binding": {
+        "bus": "usb",
+        "device_glob": "*"
+      }
+    }
+  },
+  "test": {
+    "executable": "qa/native-tests/usb_storage_read",
+    "args": [
+      "/dev/sda"
+    ],
+    "success_pattern": "REHARNESS_STORAGE_OK"
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ],
+    "instrument": false
+  },
+  "limits": {
+    "compile": 1,
+    "runtime": 1,
+    "trace": 1
+  }
+}

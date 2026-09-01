@@ -1,0 +1,51 @@
+% 图 4：多源 MMIO 证据扩展（学术风格：对数轴、内刻度、黑描边柱、带框图例、无网格）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usepackage{xcolor}
+\definecolor{figblue}{HTML}{1D4ED8}
+\definecolor{figorange}{HTML}{F97316}
+\begin{document}
+\begin{tikzpicture}[x=1.05cm,y=1.15cm,font=\footnotesize]
+  \pgfmathsetmacro{\asrc}{ln(101)/ln(10)}
+  \pgfmathsetmacro{\aris}{ln(154)/ln(10)}
+  \pgfmathsetmacro{\csrc}{ln(2)/ln(10)}
+  \pgfmathsetmacro{\cris}{ln(32)/ln(10)}
+  \pgfmathsetmacro{\dsrc}{ln(804)/ln(10)}
+  \pgfmathsetmacro{\dris}{ln(3608)/ln(10)}
+
+  % 轴（L 形，刻度向内）
+  \draw[line width=0.8pt] (0,4.05) -- (0,0) -- (6.7,0);
+  \foreach \y/\yl in {0/1,1/10,2/100,3/{1{,}000}} {
+    \draw[line width=0.5pt] (0,\y) -- (-0.14,\y);
+    \node[left, font=\scriptsize] at (-0.22,\y) {\yl};
+  }
+  \node[rotate=90, font=\scriptsize] at (-1.0,1.95) {MMIO 操作数（$\log_{10}$）};
+
+  \path[fill=figblue,   draw=black, line width=0.5pt] (0.75,0) rectangle (1.15,\asrc);
+  \path[fill=figorange, draw=black, line width=0.5pt] (1.20,0) rectangle (1.60,\aris);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (2.65,0) rectangle (3.05,\csrc);
+  \path[fill=figorange, draw=black, line width=0.5pt] (3.10,0) rectangle (3.50,\cris);
+  \path[fill=figblue,   draw=black, line width=0.5pt] (4.55,0) rectangle (4.95,\dsrc);
+  \path[fill=figorange, draw=black, line width=0.5pt] (5.00,0) rectangle (5.40,\dris);
+
+  \node[font=\scriptsize, above=1pt] at (0.95,\asrc) {101};
+  \node[font=\scriptsize, above=1pt] at (1.40,\aris) {154};
+  \node[font=\scriptsize, above=1pt] at (2.85,\csrc) {2};
+  \node[font=\scriptsize, above=1pt] at (3.30,\cris) {32};
+  \node[font=\scriptsize, above=1pt] at (4.75,\dsrc) {804};
+  \node[font=\scriptsize, above=1pt] at (5.20,\dris) {3{,}608};
+
+  \node[below=3pt, font=\footnotesize] at (1.175,0) {aspeed-vhub};
+  \node[below=3pt, font=\footnotesize] at (3.075,0) {c67x00};
+  \node[below=3pt, font=\footnotesize] at (4.975,0) {dwc2};
+
+  % 图例（带框，左上空白区）
+  \draw[black, line width=0.4pt, fill=white] (0.55,2.62) rectangle (2.45,3.72);
+  \path[fill=figblue, draw=black, line width=0.5pt] (0.7,3.28) rectangle (0.95,3.54);
+  \node[right, font=\scriptsize] at (1.05,3.41) {源码 MMIO};
+  \path[fill=figorange, draw=black, line width=0.5pt] (0.7,2.82) rectangle (0.95,3.08);
+  \node[right, font=\scriptsize] at (1.05,2.95) {RIS MMIO};
+\end{tikzpicture}
+\end{document}

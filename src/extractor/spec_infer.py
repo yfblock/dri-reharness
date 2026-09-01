@@ -193,7 +193,8 @@ def infer_function_spec(func: Func, module: dict, role: str, context: str,
 def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
                          source_path: str,
                          callback_entries: set[str],
-                         callback_bindings: dict[str, dict] | None = None
+                         callback_bindings: dict[str, dict] | None = None,
+                         callback_signatures: dict[str, dict] | None = None
                          ) -> tuple[list[FunctionSpec], dict]:
     cb_bindings = dict(callback_bindings or {})
     func_by_module = {(f.module_name or f.name): f for f in funcs}
@@ -215,6 +216,10 @@ def infer_function_specs(formal: dict, funcs: list[Func], source_text: str,
                 "function": fn.name,
                 "binding_kind": "synthetic",
             }
+            signature = (callback_signatures or {}).get(
+                f"{cb['table']}.{cb['field']}")
+            if signature is not None:
+                cb["signature"] = signature
             cb_bindings[fn.symbol_id or fn.name] = cb
         else:
             cb = cb_bindings.get(fn.symbol_id or fn.name)
@@ -599,6 +604,22 @@ OWNER_FIELD_ROLE: dict[str, dict[str, tuple[str, str]]] = {
         "request": ("setup_queue", "thread"),
         "request_atomic": ("setup_queue", "atomic"),
     },
+    "spi_controller": {
+        "setup": ("init", "thread"),
+        "cleanup": ("remove", "thread"),
+        "prepare_transfer_hardware": ("init", "thread"),
+        "unprepare_transfer_hardware": ("remove", "thread"),
+        "transfer_one": ("setup_queue", "thread"),
+        "transfer_one_message": ("setup_queue", "thread"),
+        "handle_err": ("reset", "thread"),
+        "set_cs": ("write_config", "thread"),
+        "target_abort": ("reset", "thread"),
+    },
+    "spi_controller_mem_ops": {
+        "adjust_op_size": ("write_config", "thread"),
+        "supports_op": ("read_config", "thread"),
+        "exec_op": ("write_config", "thread"),
+    },
 }
 
 
@@ -629,6 +650,69 @@ def _is_function_pointer(ctype) -> bool:
             _cx.TypeKind.FUNCTIONPROTO, _cx.TypeKind.FUNCTIONNOPROTO}
     except Exception:
         return False
+
+
+def _function_pointer_signature(ctype) -> dict | None:
+    """Return the canonical C ABI represented by a function-pointer type."""
+    try:
+        canonical = ctype.get_canonical()
+        if canonical.kind != _cx.TypeKind.POINTER:
+            return None
+        function_type = canonical.get_pointee().get_canonical()
+        if function_type.kind not in {
+                _cx.TypeKind.FUNCTIONPROTO, _cx.TypeKind.FUNCTIONNOPROTO}:
+            return None
+        params = []
+        arguments = (function_type.argument_types()
+                     if callable(function_type.argument_types)
+                     else function_type.argument_types)
+        for argument in arguments:
+            param_type = argument.get_canonical()
+            params.append({"type": param_type.spelling})
+        return {
+            "type": canonical.spelling,
+            "return_type": function_type.get_result().get_canonical().spelling,
+            "params": params,
+            "variadic": bool(function_type.is_function_variadic()),
+        }
+    except Exception:
+        return None
+
+
+def infer_callback_signatures(
+        tu, fields: set[str] | None = None,
+        bindings: dict[str, dict] | None = None) -> dict[str, dict]:
+    """Collect public framework callback field ABIs from the parsed AST."""
+    requested = set(fields) if fields is not None else None
+    signatures: dict[str, dict] = {}
+    if bindings is not None:
+        for primary in bindings.values():
+            for info in [primary, *primary.get("alternates", [])]:
+                table = info.get("table")
+                field = info.get("field")
+                signature = info.get("signature")
+                key = f"{table}.{field}"
+                if (isinstance(table, str) and isinstance(field, str)
+                        and isinstance(signature, dict)
+                        and (requested is None or key in requested)):
+                    signatures[key] = signature
+        missing = (requested - set(signatures)) if requested is not None else set()
+        if not missing:
+            return signatures
+        requested = missing
+    for cursor in tu.cursor.walk_preorder():
+        if cursor.kind != _cx.CursorKind.FIELD_DECL:
+            continue
+        owner = _record_type_name(cursor)
+        if owner not in PUBLIC_CALLBACK_TYPES:
+            continue
+        key = f"{owner}.{cursor.spelling}"
+        if requested is not None and key not in requested:
+            continue
+        signature = _function_pointer_signature(cursor.type)
+        if signature is not None:
+            signatures[key] = signature
+    return signatures
 
 
 def _record_type_name(field_cursor) -> str | None:
@@ -678,6 +762,23 @@ def _target_function_refs(cursor, targets: dict[str, Func]) -> list[str]:
     return found
 
 
+def _walk_preorder(cursor, target_files: set[str] | None = None):
+    """Walk AST nodes, optionally pruning declarations outside target files.
+
+    References from a target-file expression still resolve to declarations in
+    included headers, so the scoped walk retains type/field provenance while
+    avoiding a second traversal of every unrelated kernel header declaration.
+    """
+    if target_files:
+        location = cursor.location
+        file_cursor = location.file if location is not None else None
+        if file_cursor is not None and os.path.abspath(file_cursor.name) not in target_files:
+            return
+    yield cursor
+    for child in cursor.get_children():
+        yield from _walk_preorder(child, target_files)
+
+
 def _function_pointer_fields(cursor) -> list[object]:
     found = []
     seen: set[str] = set()
@@ -693,6 +794,59 @@ def _function_pointer_fields(cursor) -> list[object]:
     return found
 
 
+def _designated_fields(cursor) -> list[object]:
+    """Return field declarations named by designated initializer/member refs."""
+    found = []
+    seen: set[str] = set()
+    for node in cursor.walk_preorder():
+        if node.kind not in {_cx.CursorKind.MEMBER_REF,
+                             _cx.CursorKind.DECL_REF_EXPR}:
+            continue
+        ref = node.referenced
+        if ref is None or ref.kind != _cx.CursorKind.FIELD_DECL:
+            continue
+        key = ref.get_usr() or f"{_record_type_name(ref)}.{ref.spelling}"
+        if key not in seen:
+            found.append(ref)
+            seen.add(key)
+    return found
+
+
+def _public_field_transfer_roles(tu, target_files: set[str] | None = None
+                                 ) -> dict[tuple[str, str], tuple[str, str, str]]:
+    """Infer private-field roles from assignments into public callback fields."""
+    roles: dict[tuple[str, str], tuple[str, str, str]] = {}
+    scoped_files = ({os.path.abspath(path) for path in target_files}
+                    if target_files else None)
+    for cursor in _walk_preorder(tu.cursor, scoped_files):
+        if cursor.kind != _cx.CursorKind.BINARY_OPERATOR:
+            continue
+        tokens = [token.spelling for token in cursor.get_tokens()]
+        if "=" not in tokens:
+            continue
+        children = list(cursor.get_children())
+        if len(children) != 2:
+            continue
+        left_fields = _function_pointer_fields(children[0])
+        right_fields = _function_pointer_fields(children[1])
+        if not left_fields or not right_fields:
+            continue
+        for left in left_fields:
+            owner = _record_type_name(left)
+            if owner not in _ROLE_BEARING_CALLBACK_TYPES:
+                continue
+            role, context = _callback_field_role(owner, left.spelling)
+            if role == "unknown":
+                continue
+            for right in right_fields:
+                right_owner = _record_type_name(right)
+                if right_owner and right.spelling:
+                    roles.setdefault(
+                        (right_owner, right.spelling),
+                        (role, context, f"{owner}.{left.spelling}"))
+    return roles
+
+
 def _binding_info(func: Func, field_cursor, kind: str, evidence_cursor,
                   *, table: str | None = None) -> dict | None:
     field = field_cursor.spelling
@@ -704,7 +858,7 @@ def _binding_info(func: Func, field_cursor, kind: str, evidence_cursor,
         if owner in _ROLE_BEARING_CALLBACK_TYPES
         else ("unknown", "thread"))
     loc = evidence_cursor.location
-    return {
+    info = {
         "function": func.name,
         "field": field,
         "table": owner,
@@ -716,9 +870,15 @@ def _binding_info(func: Func, field_cursor, kind: str, evidence_cursor,
         "line": loc.line if loc else func.line,
         "column": loc.column if loc else 0,
     }
+    signature = _function_pointer_signature(getattr(field_cursor, "type", None))
+    if signature is not None:
+        info["signature"] = signature
+    return info
 
 
-def infer_callback_bindings(tu, funcs: list[Func]) -> dict[str, dict]:
+def infer_callback_bindings(
+        tu, funcs: list[Func], *, target_files: set[str] | None = None
+        ) -> dict[str, dict]:
     """Recover typed callback ownership from the AST.
 
     Bindings are accepted only when libclang proves a function flows into a
@@ -744,7 +904,9 @@ def infer_callback_bindings(tu, funcs: list[Func]) -> dict[str, dict]:
                    for item in entries):
             entries.append(info)
 
-    for cursor in tu.cursor.walk_preorder():
+    scoped_files = ({os.path.abspath(path) for path in target_files}
+                    if target_files else None)
+    for cursor in _walk_preorder(tu.cursor, scoped_files):
         if cursor.kind == _cx.CursorKind.VAR_DECL:
             initializers = [node for node in cursor.get_children()
                             if node.kind == _cx.CursorKind.INIT_LIST_EXPR]
@@ -757,6 +919,24 @@ def infer_callback_bindings(tu, funcs: list[Func]) -> dict[str, dict]:
                     symbols = _target_function_refs(expr, targets)
                     if len(fields) == 1 and len(symbols) == 1:
                         record(symbols[0], fields[0], "initializer", expr)
+                    elif len(symbols) == 1:
+                        designated = []
+                        for child in expr.get_children():
+                            child_symbols = _target_function_refs(child, targets)
+                            child_fields = _designated_fields(child)
+                            if (len(child_symbols) == 1
+                                    and child_symbols[0] == symbols[0]
+                                    and len(child_fields) == 1):
+                                designated.append(child_fields[0])
+                        if not designated:
+                            designated = [field for field in
+                                          _designated_fields(expr)
+                                          if field.spelling == "data"]
+                        if len(designated) == 1:
+                            kind = ("data_initializer"
+                                    if designated[0].spelling == "data"
+                                    else "initializer")
+                            record(symbols[0], designated[0], kind, expr)
                 if has_designators:
                     continue
                 declaration = _record_declaration(initializer.type)
@@ -838,6 +1018,51 @@ def infer_callback_bindings(tu, funcs: list[Func]) -> dict[str, dict]:
                     info["role"], info["context"] = role, context
                     grouped.setdefault(symbols[0], []).append(info)
 
+    # A private callback field can be dispatched from a public callback.  The
+    # dispatcher's already-proven role is stronger evidence than the private
+    # field name, and remains valid when the field owner is source-private.
+    role_by_symbol: dict[str, tuple[str, str]] = {}
+    for symbol, entries in grouped.items():
+        for info in entries:
+            role = info.get("role", "unknown")
+            if role != "unknown":
+                role_by_symbol[symbol] = (role, info.get("context", "thread"))
+                break
+    field_dispatch_roles: dict[tuple[str, str], tuple[str, str, str]] = \
+        _public_field_transfer_roles(tu, target_files=target_files)
+    for cursor in _walk_preorder(tu.cursor, scoped_files):
+        if cursor.kind != _cx.CursorKind.FUNCTION_DECL:
+            continue
+        dispatcher = function_symbol_id(cursor)
+        role_info = role_by_symbol.get(dispatcher)
+        if role_info is None:
+            continue
+        for call in cursor.walk_preorder():
+            if call.kind != _cx.CursorKind.CALL_EXPR:
+                continue
+            for field in _function_pointer_fields(call):
+                owner = _record_type_name(field)
+                if owner and field.spelling:
+                    field_dispatch_roles.setdefault(
+                        (owner, field.spelling),
+                        (role_info[0], role_info[1], dispatcher))
+    for entries in grouped.values():
+        for info in entries:
+            if info.get("role") != "unknown":
+                continue
+            propagated = field_dispatch_roles.get(
+                (info.get("table"), info.get("field")))
+            if propagated is None:
+                continue
+            info["role"], info["context"], dispatcher = propagated
+            info["role_evidence"] = {
+                "kind": ("proven_public_field_transfer"
+                          if "::" not in dispatcher and "." in dispatcher
+                          else "proven_dispatcher_field"),
+                "dispatcher": dispatcher,
+                "field": f"{info['table']}.{info['field']}",
+            }
+
     result: dict[str, dict] = {}
     for symbol, entries in grouped.items():
         entries.sort(key=lambda item: (
@@ -861,7 +1086,7 @@ def callback_binding_analysis(bindings: dict[str, dict], funcs: list[Func],
             rows.append({key: info.get(key) for key in (
                 "function", "table", "field", "role", "context",
                 "binding_kind", "public_callback_type", "source", "line",
-                "column")})
+                "column", "signature")})
     rows.sort(key=lambda item: (
         item["function"], item["table"], item["field"], item["line"] or 0))
     bound = set(bindings)
@@ -874,6 +1099,57 @@ def callback_binding_analysis(bindings: dict[str, dict], funcs: list[Func],
             func_by_symbol[symbol].name for symbol in callback_entries - bound
             if symbol in func_by_symbol),
     }
+
+
+def propagate_callback_dispatch_roles(
+        bindings: dict[str, dict], tus,
+        *, target_files: set[str] | None = None) -> dict[str, dict]:
+    """Propagate proven public dispatch roles across translation units."""
+    role_by_symbol: dict[str, tuple[str, str]] = {}
+    for symbol, primary in bindings.items():
+        for info in [primary] + primary.get("alternates", []):
+            role = info.get("role", "unknown")
+            if role != "unknown":
+                role_by_symbol[symbol] = (role, info.get("context", "thread"))
+                break
+    field_dispatch_roles: dict[tuple[str, str], tuple[str, str, str]] = {}
+    for tu in tus:
+        field_dispatch_roles.update(
+            _public_field_transfer_roles(tu, target_files=target_files))
+    scoped_files = ({os.path.abspath(path) for path in target_files}
+                    if target_files else None)
+    for tu in tus:
+        for cursor in _walk_preorder(tu.cursor, scoped_files):
+            if cursor.kind != _cx.CursorKind.FUNCTION_DECL:
+                continue
+            dispatcher = function_symbol_id(cursor)
+            role_info = role_by_symbol.get(dispatcher)
+            if role_info is None:
+                continue
+            for call in cursor.walk_preorder():
+                if call.kind != _cx.CursorKind.CALL_EXPR:
+                    continue
+                for field in _function_pointer_fields(call):
+                    owner = _record_type_name(field)
+                    if owner and field.spelling:
+                        field_dispatch_roles.setdefault(
+                            (owner, field.spelling),
+                            (role_info[0], role_info[1], dispatcher))
+    for primary in bindings.values():
+        for info in [primary] + primary.get("alternates", []):
+            if info.get("role") != "unknown":
+                continue
+            propagated = field_dispatch_roles.get(
+                (info.get("table"), info.get("field")))
+            if propagated is None:
+                continue
+            info["role"], info["context"], dispatcher = propagated
+            info["role_evidence"] = {
+                "kind": "proven_dispatcher_field",
+                "dispatcher": dispatcher,
+                "field": f"{info['table']}.{info['field']}",
+            }
+    return bindings
 
 
 def name_role_hints(func_name: str) -> str | None:
@@ -921,11 +1197,17 @@ _RESOURCE_CALLS = [
 # notable subsystem helper calls worth surfacing to the LLM
 _HELPER_CALLS = {
     "devm_gpiochip_add_data", "gpiochip_add_data", "bgpio_init",
+    "gpio_generic_chip_init", "gpio_irq_chip_set_chip",
     "platform_driver_register", "platform_driver_unregister",
     "virtio_device_ready", "register_virtio_device", "virtio_add_status",
     "virtio_finalize_features", "devm_regmap_init_mmio",
     "clk_prepare_enable", "clk_disable_unprepare",
 }
+
+
+def _has_call(source_text: str, name: str) -> bool:
+    """Match a helper invocation, not a longer function name containing it."""
+    return re.search(rf"\b{re.escape(name)}\s*\(", source_text) is not None
 
 
 def _target_structs(tu, target_file: str) -> list[StructDef]:
@@ -948,7 +1230,9 @@ def _target_structs(tu, target_file: str) -> list[StructDef]:
 
 def infer_facts(source_text: str, source_path: str, tu, macros,
                 callback_bindings: dict, register_names: set[str],
-                formal: dict | None = None, driver_name: str = "") -> FactsSpec:
+                formal: dict | None = None, driver_name: str = "",
+                callback_signatures: dict[str, dict] | None = None
+                ) -> FactsSpec:
     includes = _INCLUDE_RE.findall(source_text)
     structs = _target_structs(tu, source_path)
 
@@ -987,7 +1271,7 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
                     referenced |= _vars_in_expr(op["ReadModifyWrite"].get("transform"))
     referenced |= set(callback_bindings.keys())
     for h in _HELPER_CALLS:
-        if h in source_text:
+        if _has_call(source_text, h):
             referenced.add(h)
 
     # constants = int macros that are reconstruction-relevant.
@@ -1016,9 +1300,30 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
 
     # resources: scan for acquisition calls
     resources: list[ResourceFact] = []
+
+    def resource_policy(call: str, binds: str | None) -> tuple[bool, str | None]:
+        """Recover source-level probe policy for acquired resources."""
+        if call in {"devm_clk_get_optional_enabled", "devm_clk_get_optional",
+                    "clk_get_optional"}:
+            return False, "optional_api"
+        if call != "devm_clk_get_enabled" or not binds:
+            return True, None
+        target = re.escape(binds)
+        defer_only = re.search(
+            rf"IS_ERR\s*\(\s*{target}\s*\)\s*&&\s*"
+            rf"PTR_ERR\s*\(\s*{target}\s*\)\s*==\s*-EPROBE_DEFER",
+            source_text,
+        )
+        if defer_only:
+            return False, "probe_defer_only"
+        return True, None
+
     for i, (call, _kind, binds) in enumerate(_RESOURCE_CALLS):
         if re.search(rf"\b{re.escape(call)}\s*\(", source_text):
-            resources.append(ResourceFact(f"{_kind.lower()[:4]}{i}", call, binds))
+            required, failure_policy = resource_policy(call, binds)
+            resources.append(ResourceFact(
+                f"{_kind.lower()[:4]}{i}", call, binds,
+                required=required, failure_policy=failure_policy))
     # dedupe by acquisition, keep first, renumber
     seen = set()
     dedup = []
@@ -1029,11 +1334,12 @@ def infer_facts(source_text: str, source_path: str, tu, macros,
         dedup.append(r)
 
     error_paths = sorted(set(_ERROR_RE.findall(source_text)))
-    helper_calls = sorted({c for c in _HELPER_CALLS if c in source_text})
+    helper_calls = sorted({c for c in _HELPER_CALLS if _has_call(source_text, c)})
 
     return FactsSpec(
         source=source_path, includes=includes, structs=structs,
         constants=constants, callbacks=callbacks, resources=dedup,
+        callback_signatures=dict(callback_signatures or {}),
         error_paths=[f"return {e}" for e in error_paths],
         helper_calls=helper_calls,
     )

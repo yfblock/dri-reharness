@@ -1,0 +1,9 @@
+{
+  "functions": [
+    "reharness_usb_read_status",
+    "reharness_usb_ioctl",
+    "reharness_usb_probe",
+    "reharness_usb_disconnect"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_usb_sensor/reharness_usb_sensor.c"
+}

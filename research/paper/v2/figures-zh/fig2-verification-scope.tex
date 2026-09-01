@@ -1,0 +1,45 @@
+% 图 2：验证门的范围（极简学术版：浅蓝界内区域 vs 灰色问号清单，文字压至最短）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usepackage{xcolor}
+\definecolor{figblue}{HTML}{1D4ED8}
+\begin{document}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  stage/.style={rectangle, draw=black, line width=0.6pt, fill=white,
+    minimum width=2.7cm, minimum height=0.6cm, align=center},
+  flow/.style={-{Stealth[length=2.4mm]}, line width=0.6pt},
+]
+% ---- 界内：浅蓝底 + 虚线边界 ----
+\fill[figblue!5] (-0.4,-4.0) rectangle (3.4,1.0);
+\draw[black, dashed, line width=0.7pt] (-0.4,-4.0) rectangle (3.4,1.0);
+\node[font=\footnotesize\bfseries, anchor=north] at (1.5,0.92) {有界证据契约};
+
+% 四级检查（两字级短标签）
+\node[stage] (s1) at (1.5,-0.15) {①\ 编译};
+\node[stage] (s2) at (1.5,-1.22) {②\ 回执核对};
+\node[stage] (s3) at (1.5,-2.29) {③\ 形状 + 回调};
+\node[stage] (s4) at (1.5,-3.36) {④\ 执行 trace};
+\draw[flow] (s1) -- (s2);
+\draw[flow] (s2) -- (s3);
+\draw[flow] (s3) -- (s4);
+
+% ---- 界外：灰色问号清单（无框，弱化） ----
+\node[font=\footnotesize\bfseries, text=black!55, anchor=west] (nh)
+  at (4.35,-0.15) {门外 —— 不确立};
+\foreach \i/\t in {0/任意地址与任意值, 1/所有输入上的守卫等价,
+                   2/未执行路径的全局顺序, 3/额外访问与副作用,
+                   4/DMA · IRQ 竞争 · 生命周期} {
+  \node[font=\scriptsize, text=black!55, anchor=west] (q\i)
+    at (4.35,-0.78-\i*0.54) {$\times$~\t};
+}
+
+% ---- 底部警示 ----
+\node[rectangle, draw=black, line width=0.6pt, fill=white,
+  minimum width=8.5cm, minimum height=0.5cm, align=center, font=\bfseries]
+  at (2.6,-4.72) {不确立整个驱动的等价性};
+\end{tikzpicture}
+\end{document}

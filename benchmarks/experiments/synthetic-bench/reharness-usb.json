@@ -1,0 +1,102 @@
+{
+  "schema": 2,
+  "name": "reharness-usb",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-usb-sensor.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "usb-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "transfer", "unload"]
+    },
+    "registration": {
+      "root_table": "usb_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "fixture": {
+      "kind": "qemu-usb",
+      "config": {
+        "vendor_id": "0x0403",
+        "product_id": "0x6001"
+      }
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "qemu-xhci",
+      "bus": "usb",
+      "module": "reharness_usb_sensor",
+      "timeout_seconds": 90,
+      "probe_pattern": "REHARNESS_USB_DRIVER_PROBE",
+      "launch_device": false,
+      "kernel_modules": [
+        "xhci-hcd",
+        "xhci-pci",
+        "udc-core",
+        "dummy_hcd",
+        "libcomposite",
+        "usb_f_ss_lb",
+        "g_zero",
+        "usbtest"
+      ],
+      "binding": {
+        "bus": "usb",
+        "device_glob": "*"
+      },
+      "qemu_args": [
+        "-chardev",
+        "null,id=reharness_usb_char",
+        "-device",
+        "qemu-xhci,id=reharness_xhci",
+        "-device",
+        "usb-serial,bus=reharness_xhci.0,chardev=reharness_usb_char,always-plugged=true"
+      ]
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "usb",
+      "tests": [
+        {
+          "name": "usb-control-status",
+          "executable": "qa/native-tests/usb_transaction_test.c",
+          "args": ["/dev/reharness-usb-control", "control"],
+          "success_pattern": "USB_CONTROL_PASS"
+        },
+        {
+          "name": "usb-bulk-out",
+          "executable": "qa/native-tests/usb_transaction_test.c",
+          "args": ["/dev/reharness-usb-control", "bulk"],
+          "success_pattern": "USB_BULK_OUT_PASS"
+        },
+        {
+          "name": "usb-invalid-endpoint",
+          "executable": "qa/native-tests/usb_transaction_test.c",
+          "args": ["/dev/reharness-usb-control", "invalid"],
+          "success_pattern": "USB_INVALID_ENDPOINT_PASS"
+        },
+        {
+          "name": "linux-usbtest-gadget",
+          "provider": "linux-usbtest",
+          "required": true,
+          "args": ["-a", "-t", "1", "-c", "1", "-s", "64"],
+          "success_pattern": "test 1,"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

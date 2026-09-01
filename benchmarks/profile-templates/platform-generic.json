@@ -1,0 +1,55 @@
+{
+  "schema": 2,
+  "name": "platform-generic",
+  "source": {
+    "path": "benchmarks/drivers/baseline/gpio-ftgpio010.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "platform-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "unload"]
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "platform-virtual",
+      "bus": "platform",
+      "module": "platform_generic",
+      "timeout_seconds": 90,
+      "registrar": "generic_platform",
+      "probe_pattern": "probe|registered|PROFILE_PLATFORM_PROBE",
+      "binding": {
+        "bus": "platform",
+        "device_glob": "generic_platform"
+      }
+    },
+    "fixture": {
+      "kind": "qemu-platform",
+      "config": {
+        "module_args": {
+          "device-registrar": ["target=generic_platform"]
+        }
+      },
+      "module_sources": [
+        "qa/verification/device-registrar/device-registrar.c"
+      ]
+    }
+  },
+  "test": {
+    "executable": "qa/native-tests/profile_probe_test.c",
+    "success_pattern": "PROFILE_PROBE_PASS"
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

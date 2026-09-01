@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "ec1e9ce9a63d4978742d0970af06bc348cc0b44bec9e37e67c8192dbe3d9c4f7",
+  "iteration": 2,
+  "manifest_digest": "783dd2c741cd0a6f78c3da7c365d170cfbcce473275a50a0209209345fcc87d5",
+  "payload": {
+    "feedback": {
+      "details": {
+        "return_code": 2,
+        "stderr": "ftgpio010_gpio.c: In function \u2018ftgpio_gpio_probe\u2019:\nftgpio010_gpio.c:352:33: error: assignment to \u2018int (*)(struct gpio_chip *, unsigned int)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  352 |         g->chip.direction_input = ftgpio_gpio_probe__gpio_generic_direction_input;\n      |                                 ^\nftgpio010_gpio.c:353:34: error: assignment to \u2018int (*)(struct gpio_chip *, unsigned int,  int)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  353 |         g->chip.direction_output = ftgpio_gpio_probe__gpio_generic_direction_output;\n      |                                  ^\nftgpio010_gpio.c:354:21: error: assignment to \u2018int (*)(struct gpio_chip *, unsigned int)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  354 |         g->chip.get = ftgpio_gpio_probe__gpio_generic_get;\n      |                     ^\nftgpio010_gpio.c:355:31: error: assignment to \u2018int (*)(struct gpio_chip *, unsigned int)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  355 |         g->chip.get_direction = ftgpio_gpio_probe__gpio_generic_get_direction;\n      |                               ^\nftgpio010_gpio.c:356:30: error: assignment to \u2018int (*)(struct gpio_chip *, long unsigned int *, long unsigned int *)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  356 |         g->chip.get_multiple = ftgpio_gpio_probe__gpio_generic_get_multiple;\n      |                              ^\nftgpio010_gpio.c:357:21: error: assignment to \u2018int (*)(struct gpio_chip *, unsigned int,  int)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  357 |         g->chip.set = ftgpio_gpio_probe__gpio_generic_set;\n      |                     ^\nftgpio010_gpio.c:359:30: error: assignment to \u2018int (*)(struct gpio_chip *, long unsigned int *, long unsigned int *)\u2019 from incompatible pointer type \u2018int (*)(struct gpio_ftgpio010 *)\u2019 [-Werror=incompatible-pointer-types]\n  359 |         g->chip.set_multiple = ftgpio_gpio_probe__gpio_generic_set_multiple;\n      |                              ^\ncc1: some warnings being treated as errors\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.build:289: ftgpio010_gpio.o] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2144: .] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+      },
+      "failure_class": "compile",
+      "iteration": 2,
+      "message": "candidate compilation failed",
+      "retryable": true,
+      "stage": "compile"
+    }
+  },
+  "stage": "compile",
+  "status": "failed"
+}

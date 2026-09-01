@@ -90,7 +90,7 @@ _AUTHORITY_KBUILD_CMD.write_text(
 
 def _runtime_authority() -> tuple[str, dict]:
     import hashlib
-    from verification.linux_registration_ast_oracle import (
+    from backends.linux.oracles.linux_registration_ast_oracle import (
         linux_kbuild_compile_context,
     )
 
@@ -544,7 +544,7 @@ def _ast_leaf_report(contract: dict, required_ids: list[str],
 
 def _runtime_evidence(contract: dict, plan: dict) -> tuple[dict, dict]:
     from verification.generated_c_ast_oracle import verify_generated_c_ast
-    from verification.linux_registration_ast_oracle import (
+    from backends.linux.oracles.linux_registration_ast_oracle import (
         linux_kbuild_compile_context,
         verify_linux_registration_ast,
     )
@@ -637,6 +637,25 @@ def test_plan_lowers_supported_for_body_and_masked_drain_regions():
         assert report["planned_ops"] == report["lowered_ops"] == 3
         assert report["authorized_ops"] == 3
         assert report["blocked_ops"] == 0
+
+
+def test_plan_lowers_proven_post_decrement_while_body():
+    loop = _loop(
+        "while", reliability="Exact", bounded=True,
+        body=[_leaf("op_1")])
+    loop["Loop"].update({
+        "relation": "post-decrement",
+        "count": {"Var": "retry"},
+    })
+    formal = _formal(loop)
+    contract = _contract_for(formal)
+    report = verify_backend_lowering_plan(
+        formal, contract, "harness",
+        lowering_report=_lowering_report(contract, []))
+
+    assert report["complete"] is True, report
+    assert report["planned_ops"] == report["lowered_ops"] == 1
+    assert report["blocked_ops"] == 0
 
 
 def test_bounded_for_guard_ops_fail_closed():

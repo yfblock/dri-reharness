@@ -1,0 +1,375 @@
+{
+  "artifact": "examples/dw-apb-ssi",
+  "description": "18-item DesignWare APB SSI artifact checklist (paper v2 SS6.5)",
+  "items": [
+    {
+      "backends": {
+        "harness": {
+          "evidence": "ss/dw_spi_harness.c:377:14: error: variable \u2018r188\u2019 set but not used [-Werror=unused-but-set-variable]\n  377 |     uint32_t r188 = 0;\n      |              ^~~~\ncc1: all warnings being treated as errors",
+          "pass": false
+        }
+      },
+      "item": 1,
+      "name": "compile_harness",
+      "pass": false
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "etal/dw_spi_baremetal.c:383:14: error: variable \u2018r188\u2019 set but not used [-Werror=unused-but-set-variable]\n  383 |     uint32_t r188;\n      |              ^~~~\ncc1: all warnings being treated as errors",
+          "pass": false
+        }
+      },
+      "item": 2,
+      "name": "compile_baremetal",
+      "pass": false
+    },
+    {
+      "backends": {
+        "linux": {
+          "evidence": " *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2",
+          "pass": false
+        }
+      },
+      "item": 3,
+      "name": "compile_linux",
+      "pass": false
+    },
+    {
+      "backends": {
+        "rust": {
+          "evidence": "      $( $(#[$inner:meta])* $field:ident OFFSET($offset:expr)),+ $(,)?\n    |                                   ^^^^^^^^^^^^\n\nerror: could not compile `dw_apb_ssi_check` (lib) due to 18 previous errors",
+          "pass": false
+        }
+      },
+      "item": 4,
+      "name": "compile_rust",
+      "pass": false
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 8",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 8",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 59",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 72",
+          "pass": true
+        }
+      },
+      "item": 5,
+      "name": "set_cs_enable_ser_bit",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "8 zero write(s)",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "8 zero write(s)",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "8 zero write(s)",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 74",
+          "pass": true
+        }
+      },
+      "item": 6,
+      "name": "set_cs_disable_ser_zero",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 21",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 23",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 77",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 81",
+          "pass": true
+        }
+      },
+      "item": 7,
+      "name": "irq_status_read",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 29",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 31",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 85",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 89",
+          "pass": true
+        }
+      },
+      "item": 8,
+      "name": "irq_mask_write",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 30",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 32",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 86",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 90",
+          "pass": true
+        }
+      },
+      "item": 9,
+      "name": "irq_ack_or_reenable",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 124",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 126",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 200",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 121",
+          "pass": true
+        }
+      },
+      "item": 10,
+      "name": "config_ctrlr0_write",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 131",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 133",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 205",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 123",
+          "pass": true
+        }
+      },
+      "item": 11,
+      "name": "config_baudr_write",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "disable@12 enable@10",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "disable@12 enable@10",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "disable@13 enable@10",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "disable@12 enable@10",
+          "pass": true
+        }
+      },
+      "item": 12,
+      "name": "config_ssienr_lifecycle",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 82",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 83",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 145",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "not found",
+          "pass": false
+        }
+      },
+      "item": 13,
+      "name": "dataflow_tx_buffer_deref",
+      "pass": false
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 90",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 91",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 155",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "not found",
+          "pass": false
+        }
+      },
+      "item": 14,
+      "name": "dataflow_tx_cursor_advance",
+      "pass": false
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "not found",
+          "pass": false
+        },
+        "harness": {
+          "evidence": "line 94",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 158",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "not found",
+          "pass": false
+        }
+      },
+      "item": 15,
+      "name": "dataflow_tx_len_decrement",
+      "pass": false
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 92",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 93",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 157",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "line 108",
+          "pass": true
+        }
+      },
+      "item": 16,
+      "name": "dataflow_fifo_dr_write",
+      "pass": true
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "dr_read:line 50; rx_store:line 53",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "dr_read:line 51; rx_store:line 54",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "dr_read:line 111; rx_store:line 114",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "not found",
+          "pass": false
+        }
+      },
+      "item": 17,
+      "name": "dataflow_rx_fifo_to_buffer",
+      "pass": false
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "evidence": "line 61",
+          "pass": true
+        },
+        "harness": {
+          "evidence": "line 62",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "line 124",
+          "pass": true
+        },
+        "rust": {
+          "evidence": "not found",
+          "pass": false
+        }
+      },
+      "item": 18,
+      "name": "dataflow_rx_cursor_advance",
+      "pass": false
+    }
+  ],
+  "items_passed": 9,
+  "items_total": 18,
+  "schema": 1
+}

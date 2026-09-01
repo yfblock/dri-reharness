@@ -1,0 +1,41 @@
+=== QEMU run: module=8139cp bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.032054] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.032121] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.075598] ftrace: allocating 38351 entries in 152 pages
+[    0.075886] ftrace: allocated 152 pages with 3 groups
+[    0.426683] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.431137] thermal_sys: Registered thermal governor 'step_wise'
+[    0.435889] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.440300] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.537443] ACPI: bus type USB registered
+[    0.537755] usbcore: registered new interface driver usbfs
+[    0.537956] usbcore: registered new interface driver hub
+[    0.538054] usbcore: registered new device driver usb
+[    0.538257] pps_core: LinuxPPS API ver. 1 registered
+[    0.538375] PTP clock support registered
+[    0.570603] NET: Registered PF_INET protocol family
+[    0.586686] Key type asymmetric registered
+[    0.586764] Asymmetric key parser 'x509' registered
+[    0.587230] io scheduler mq-deadline registered
+[    0.587292] io scheduler kyber registered
+[    0.631858] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.635222] usbcore: registered new interface driver usbhid
+[    0.635948] NET: Registered PF_INET6 protocol family
+=== insmod required kernel module mii ===
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod 8139cp ===
+[    1.071625] insmod (63) used greatest stack depth: 13064 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+                               drv probe link
+                               drv probe link
+EXERCISER_RC=0
+=== rmmod 8139cp ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    1.473730] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=16 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: 8139cp probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-8139cp-qemu.sgq2n3

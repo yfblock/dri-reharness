@@ -1,0 +1,19 @@
+{
+  "evidence_digest": "7df0e96b13cccc0336e493698af9aa274237c4b6165dda93ec1d024d0fbac2a0",
+  "iteration": 4,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "feedback": {
+      "details": {
+        "exception": "AssertionError"
+      },
+      "failure_class": "infrastructure",
+      "iteration": 4,
+      "message": "contract adapter failed: ",
+      "retryable": false,
+      "stage": "contract"
+    }
+  },
+  "stage": "contract",
+  "status": "failed"
+}

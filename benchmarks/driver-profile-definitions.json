@@ -1,0 +1,333 @@
+{
+  "schema": 1,
+  "profiles": [
+    {
+      "profile_id": "platform-generic",
+      "bus": "platform",
+      "callback": "platform_driver.probe",
+      "resource": "platform_device",
+      "fixture_kind": "qemu-platform",
+      "required_capabilities": ["registration", "probe", "unload"],
+      "optional_capabilities": ["trace"],
+      "manifest_template": "benchmarks/profile-templates/platform-generic.json",
+      "callback_tokens": [
+        "module_platform_driver",
+        "platform_driver_register",
+        "struct platform_driver"
+      ],
+      "resource_tokens": [
+        "struct platform_device",
+        "platform_get_resource",
+        "platform_get_irq"
+      ],
+      "identity_patterns": [
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "platform_driver",
+        "identity_field": "registrar"
+      },
+      "plan_templates": {
+        "fixture_config": {
+          "registrar_target": "{driver_name}",
+          "module_args": {
+            "device-registrar": ["target={driver_name}"]
+          }
+        },
+        "runtime_overrides": {
+          "qemu": {
+            "registrar": "{driver_name}",
+            "binding": {
+              "bus": "platform",
+              "device_glob": "{driver_name}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "profile_id": "pci-generic",
+      "bus": "pci",
+      "callback": "pci_driver.probe",
+      "resource": "pci_device",
+      "fixture_kind": "qemu-pci",
+      "required_capabilities": ["registration", "probe", "unload"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "callback_tokens": [
+        "module_pci_driver",
+        "pci_register_driver",
+        "struct pci_driver"
+      ],
+      "resource_tokens": [
+        "struct pci_dev",
+        "pci_enable_device",
+        "pci_request_regions"
+      ],
+      "registration_contract": {
+        "root_table": "pci_driver",
+        "identity_field": "driver_name"
+      }
+    },
+    {
+      "profile_id": "i2c-generic",
+      "bus": "i2c",
+      "callback": "i2c_driver.probe",
+      "resource": "i2c_client",
+      "fixture_kind": "qemu-i2c",
+      "required_capabilities": ["registration", "probe", "transaction", "unload"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "manifest_template": "benchmarks/profile-templates/i2c-generic.json",
+      "callback_tokens": [
+        "module_i2c_driver",
+        "i2c_add_driver",
+        "struct i2c_driver"
+      ],
+      "resource_tokens": [
+        "struct i2c_client",
+        "i2c_transfer",
+        "i2c_smbus"
+      ],
+      "identity_patterns": [
+        "struct\\s+i2c_device_id\\s+\\w+\\s*\\[[^\\]]*\\]\\s*=\\s*\\{\\s*\\{\\s*\\\"([A-Za-z0-9_.+-]+)\\\"",
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "i2c_driver",
+        "identity_field": "driver_name",
+        "device_id_tables": ["i2c_device_id"]
+      },
+      "plan_templates": {
+        "fixture_config": {
+          "module_args": {
+            "i2c-registrar": ["client_type={driver_name}"]
+          }
+        }
+      }
+    },
+    {
+      "profile_id": "spi-generic",
+      "bus": "spi",
+      "callback": "spi_driver.probe",
+      "resource": "spi_device",
+      "fixture_kind": "qemu-spi",
+      "required_capabilities": ["registration", "probe", "transfer", "unload"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "manifest_template": "benchmarks/profile-templates/spi-generic.json",
+      "callback_tokens": [
+        "module_spi_driver",
+        "spi_register_driver",
+        "struct spi_driver"
+      ],
+      "resource_tokens": [
+        "struct spi_device",
+        "spi_sync",
+        "spi_async",
+        "spi_write",
+        "spi_read"
+      ],
+      "identity_patterns": [
+        "struct\\s+spi_device_id\\s+\\w+\\s*\\[[^\\]]*\\]\\s*=\\s*\\{\\s*\\{\\s*\\\"([A-Za-z0-9_.+-]+)\\\"",
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "spi_driver",
+        "identity_field": "driver_name",
+        "device_id_tables": ["spi_device_id"]
+      },
+      "plan_templates": {
+        "fixture_config": {
+          "module_args": {
+            "spi-registrar": ["modalias={driver_name}"]
+          }
+        }
+      }
+    },
+    {
+      "profile_id": "usb-generic",
+      "bus": "usb",
+      "callback": "usb_driver.probe",
+      "resource": "usb_device",
+      "fixture_kind": "qemu-usb",
+      "required_capabilities": ["registration", "probe", "transfer", "unload"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "manifest_template": "benchmarks/profile-templates/usb-generic.json",
+      "callback_tokens": [
+        "module_usb_driver",
+        "usb_register_driver",
+        "struct usb_driver"
+      ],
+      "resource_tokens": [
+        "struct usb_device_id",
+        "struct usb_device",
+        "interface_to_usbdev",
+        "usb_control_msg",
+        "usb_bulk_msg",
+        "usb_submit_urb"
+      ],
+      "identity_patterns": [
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\"",
+        "static\\s+struct\\s+usb_driver\\s+\\w+\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "device_id_patterns": [
+        "USB_DEVICE\\s*\\(\\s*(0x[0-9A-Fa-f]+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*)\\s*,\\s*(0x[0-9A-Fa-f]+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*)\\s*\\)",
+        "\\.idVendor\\s*=\\s*(0x[0-9A-Fa-f]+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*).*?\\.idProduct\\s*=\\s*(0x[0-9A-Fa-f]+|[0-9]+|[A-Za-z_][A-Za-z0-9_]*)"
+      ],
+      "required_fixture_fields": ["driver_name", "vendor_id", "product_id"],
+      "registration_contract": {
+        "root_table": "usb_driver",
+        "identity_field": "driver_name"
+      }
+    },
+    {
+      "profile_id": "virtio-generic",
+      "bus": "virtio",
+      "callback": "virtio_driver.probe",
+      "resource": "virtio_device",
+      "fixture_kind": "qemu-virtio",
+      "required_capabilities": ["registration", "probe", "transfer", "unload"],
+      "optional_capabilities": ["subsystem", "trace"],
+      "manifest_template": "benchmarks/profile-templates/virtio-generic.json",
+      "callback_tokens": [
+        "module_virtio_driver",
+        "register_virtio_driver",
+        "struct virtio_driver"
+      ],
+      "resource_tokens": [
+        "struct virtio_device",
+        "virtio_find_single_vq",
+        "virtio_find_vqs",
+        "virtqueue_add_"
+      ],
+      "identity_patterns": [
+        "\\.driver\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\"",
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "virtio_driver",
+        "identity_field": "driver_name"
+      }
+    },
+    {
+      "profile_id": "amba-generic",
+      "bus": "amba",
+      "callback": "amba_driver.probe",
+      "resource": "amba_device",
+      "fixture_kind": "qemu-amba",
+      "required_capabilities": ["registration", "probe", "subsystem", "unload"],
+      "optional_capabilities": ["trace"],
+      "callback_tokens": [
+        "module_amba_driver",
+        "amba_driver_register",
+        "struct amba_driver"
+      ],
+      "resource_tokens": [
+        "struct amba_device",
+        "amba_request_regions",
+        "amba_release_regions"
+      ],
+      "identity_patterns": [
+        "\\.(?:drv|driver)\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "amba_driver",
+        "identity_field": "driver_name"
+      },
+      "manifest_template": "benchmarks/profile-templates/amba-generic.json",
+      "matrix_required": true
+    },
+    {
+      "profile_id": "serdev-generic",
+      "bus": "serdev",
+      "callback": "serdev_device_driver.probe",
+      "resource": "serdev_device",
+      "fixture_kind": "qemu-serdev",
+      "required_capabilities": ["registration", "probe", "unload"],
+      "optional_capabilities": ["subsystem", "trace", "transfer"],
+      "callback_tokens": [
+        "module_serdev_device_driver",
+        "serdev_device_driver_register",
+        "struct serdev_device_driver"
+      ],
+      "resource_tokens": [
+        "struct serdev_device",
+        "serdev_device_open",
+        "serdev_device_set_client_ops",
+        "serdev_device_write_buf"
+      ],
+      "identity_patterns": [
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "serdev_device_driver",
+        "identity_field": "driver_name"
+      },
+      "matrix_required": false
+    },
+    {
+      "profile_id": "mdio-generic",
+      "bus": "mdio",
+      "callback": "mdio_driver.probe",
+      "resource": "mdio_device",
+      "fixture_kind": "qemu-mdio",
+      "required_capabilities": ["registration", "probe", "unload"],
+      "optional_capabilities": ["subsystem", "trace", "transaction"],
+      "callback_tokens": [
+        "mdio_module_driver",
+        "mdio_driver_register",
+        "struct mdio_driver"
+      ],
+      "resource_tokens": [
+        "struct mdio_device",
+        "mdio_device_register",
+        "mdiobus_read",
+        "mdiobus_write"
+      ],
+      "identity_patterns": [
+        "\\.driver\\s*=\\s*\\{(?:(?!\\}).){0,800}?\\.name\\s*=\\s*\\\"([A-Za-z0-9_.+-]+)\\\""
+      ],
+      "required_fixture_fields": ["driver_name"],
+      "registration_contract": {
+        "root_table": "mdio_driver",
+        "identity_field": "driver_name"
+      },
+      "matrix_required": true
+    },
+    {
+      "profile_id": "network-generic",
+      "bus": "network",
+      "callback": "net_device_ops",
+      "resource": "net_device",
+      "fixture_kind": "qemu-network",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "subsystem",
+        "unload"
+      ],
+      "optional_capabilities": ["trace"],
+      "manifest_template": "benchmarks/profile-templates/network-generic.json",
+      "registration_contract": {
+        "root_table": "net_device",
+        "identity_field": "none"
+      },
+      "callback_tokens": [
+        "struct net_device_ops",
+        "register_netdev",
+        "unregister_netdev"
+      ],
+      "resource_tokens": [
+        "struct net_device",
+        "alloc_netdev",
+        "netif_start_queue",
+        "netif_carrier_on"
+      ],
+      "matrix_required": true
+    }
+  ]
+}

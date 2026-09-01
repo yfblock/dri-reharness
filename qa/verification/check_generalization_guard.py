@@ -17,7 +17,8 @@ DEFAULT_HOLDOUT = (
     ROOT / "benchmarks" / "drivers" / "holdout" / "zero-shot-v1.json")
 PROTECTED_ROOT_PATHS = {
     "extractor": "src/extractor",
-    "generator": "src/generator",
+    "generator": "src/backends",   # legacy alias: src/generator → src/backends
+    "backends": "src/backends",
 }
 TEXT_SUFFIXES = {".py", ".c", ".h", ".json", ".md", ".toml", ".yaml", ".yml"}
 
@@ -150,7 +151,7 @@ def _specialization_inventory() -> dict[str, list[str]]:
         r"os\.path\.basename\(source\)\s*==\s*['\"]([^'\"]+)['\"]")
     device_re = re.compile(
         r"(?:device_spec\.name|\bdev)\s*==\s*['\"]([^'\"]+)['\"]")
-    for relative in ("extractor", "generator"):
+    for relative in ("extractor", "backends"):
         for path in (ROOT / PROTECTED_ROOT_PATHS[relative]).rglob("*.py"):
             text = path.read_text(encoding="utf-8", errors="replace")
             basename_values.update(basename_re.findall(text))

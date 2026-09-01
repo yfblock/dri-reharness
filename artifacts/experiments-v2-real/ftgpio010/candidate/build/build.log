@@ -1,0 +1,62 @@
+multiple(struct gpio_chip *gc,
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ftgpio010_gpio.c: In function ‘ftgpio_gpio_probe__gpio_generic_set_multiple’:
+ftgpio010_gpio.c:259:1: warning: label ‘__rh_op_op_70’ defined but not used [-Wunused-label]
+  259 | __rh_op_op_70: { writel((~*bits) & *mask, base + GPIO_DATA_CLR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:255:1: warning: label ‘__rh_op_op_69’ defined but not used [-Wunused-label]
+  255 | __rh_op_op_69: { writel(*bits & *mask, base + GPIO_DATA_SET); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c: At top level:
+ftgpio010_gpio.c:264:5: warning: no previous prototype for ‘ftgpio_gpio_probe__gpio_generic_direction_input’ [-Wmissing-prototypes]
+  264 | int ftgpio_gpio_probe__gpio_generic_direction_input(struct gpio_chip *gc,
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ftgpio010_gpio.c: In function ‘ftgpio_gpio_probe__gpio_generic_direction_input’:
+ftgpio010_gpio.c:275:1: warning: label ‘__rh_op_op_74’ defined but not used [-Wunused-label]
+  275 | __rh_op_op_74: { writel(shadow_dir, base + GPIO_DIR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c: At top level:
+ftgpio010_gpio.c:279:5: warning: no previous prototype for ‘ftgpio_gpio_probe__gpio_generic_direction_output’ [-Wmissing-prototypes]
+  279 | int ftgpio_gpio_probe__gpio_generic_direction_output(struct gpio_chip *gc,
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ftgpio010_gpio.c: In function ‘ftgpio_gpio_probe__gpio_generic_direction_output’:
+ftgpio010_gpio.c:299:1: warning: label ‘__rh_op_op_80’ defined but not used [-Wunused-label]
+  299 | __rh_op_op_80: { writel(shadow_dir, base + GPIO_DIR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:293:1: warning: label ‘__rh_op_op_77’ defined but not used [-Wunused-label]
+  293 | __rh_op_op_77: { writel(1U << offset, base + GPIO_DATA_CLR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:289:1: warning: label ‘__rh_op_op_76’ defined but not used [-Wunused-label]
+  289 | __rh_op_op_76: { writel(1U << offset, base + GPIO_DATA_SET); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c: At top level:
+ftgpio010_gpio.c:303:5: warning: no previous prototype for ‘ftgpio_gpio_probe__gpio_generic_get_direction’ [-Wmissing-prototypes]
+  303 | int ftgpio_gpio_probe__gpio_generic_get_direction(struct gpio_chip *gc,
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ftgpio010_gpio.c: In function ‘ftgpio_gpio_probe__gpio_generic_get_direction’:
+ftgpio010_gpio.c:312:1: warning: label ‘__rh_op_op_82’ defined but not used [-Wunused-label]
+  312 | __rh_op_op_82: { direction = readl(base + GPIO_DIR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c: At top level:
+ftgpio010_gpio.c:324:5: warning: no previous prototype for ‘ftgpio_gpio_probe’ [-Wmissing-prototypes]
+  324 | int ftgpio_gpio_probe(struct platform_device *pdev)
+      |     ^~~~~~~~~~~~~~~~~
+ftgpio010_gpio.c: In function ‘ftgpio_gpio_probe’:
+ftgpio010_gpio.c:391:1: warning: label ‘__rh_op_op_59’ defined but not used [-Wunused-label]
+  391 | __rh_op_op_59: { writel(0, priv->base + GPIO_DEBOUNCE_EN); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:389:1: warning: label ‘__rh_op_op_58’ defined but not used [-Wunused-label]
+  389 | __rh_op_op_58: { writel(0xffffffffU, priv->base + GPIO_INT_CLR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:387:1: warning: label ‘__rh_op_op_57’ defined but not used [-Wunused-label]
+  387 | __rh_op_op_57: { writel(0, priv->base + GPIO_INT_MASK); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:385:1: warning: label ‘__rh_op_op_56’ defined but not used [-Wunused-label]
+  385 | __rh_op_op_56: { writel(0, priv->base + GPIO_INT_EN); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:364:1: warning: label ‘__rh_op_op_45’ defined but not used [-Wunused-label]
+  364 | __rh_op_op_45: { initial_direction = readl(priv->base + GPIO_DIR); }
+      | ^~~~~~~~~~~~~
+ftgpio010_gpio.c:361:1: warning: label ‘__rh_op_op_43’ defined but not used [-Wunused-label]
+  361 | __rh_op_op_43: { initial_data = readl(priv->base + GPIO_DATA_IN); }
+      | ^~~~~~~~~~~~~

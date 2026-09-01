@@ -1,0 +1,73 @@
+{
+  "schema": 2,
+  "name": "reharness-virtio",
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-virtio-sensor.c"
+  },
+  "compile": {
+    "backend": "linux",
+    "language": "c",
+    "context": "kbuild"
+  },
+  "runtime": {
+    "adapter": "qemu-profile",
+    "profile": "virtio-generic",
+    "capabilities": {
+      "required": ["registration", "probe", "transfer", "unload"]
+    },
+    "registration": {
+      "root_table": "virtio_driver",
+      "identity_field": "driver_name",
+      "device_id_tables": []
+    },
+    "fixture": {
+      "kind": "qemu-virtio",
+      "config": {}
+    },
+    "qemu": {
+      "machine": "pc",
+      "device": "virtio-blk-pci",
+      "bus": "virtio",
+      "module": "reharness_virtio_sensor",
+      "timeout_seconds": 90,
+      "launch_device": false,
+      "binding": {
+        "bus": "virtio",
+        "device_glob": "*"
+      },
+      "qemu_args": [
+        "-drive",
+        "if=none,id=reharness_disk,driver=null-co,size=1M",
+        "-device",
+        "virtio-blk-pci,drive=reharness_disk"
+      ]
+    }
+  },
+  "test": {
+    "subsystem": {
+      "name": "virtio",
+      "tests": [
+        {
+          "name": "virtio-queue-read",
+          "executable": "qa/native-tests/virtio_queue_test.c",
+          "args": ["/dev/reharness-virtio-control", "valid"],
+          "success_pattern": "VIRTIO_QUEUE_PASS"
+        },
+        {
+          "name": "virtio-invalid-ioctl",
+          "executable": "qa/native-tests/virtio_queue_test.c",
+          "args": ["/dev/reharness-virtio-control", "invalid"],
+          "success_pattern": "VIRTIO_INVALID_IOCTL_PASS"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence"]
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  }
+}

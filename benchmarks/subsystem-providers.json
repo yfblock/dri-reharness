@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "providers": [
+    {
+      "id": "linux-i2c-dev",
+      "kind": "tool",
+      "subsystems": ["i2c"],
+      "executable": "qa/native-tests/i2cdev_transaction_test.c",
+      "required_kernel_modules": ["i2c-dev"]
+    },
+    {
+      "id": "linux-spidev",
+      "kind": "tool",
+      "subsystems": ["spi"],
+      "executable": "vendor/linux/tools/spi/spidev_test.c",
+      "required_kernel_modules": ["spidev"]
+    },
+    {
+      "id": "linux-gpio-chip-info",
+      "kind": "kselftest",
+      "subsystems": ["gpio"],
+      "executable": "vendor/linux/tools/testing/selftests/gpio/gpio-chip-info.c"
+    },
+    {
+      "id": "linux-gpio-line-name",
+      "kind": "kselftest",
+      "subsystems": ["gpio"],
+      "executable": "vendor/linux/tools/testing/selftests/gpio/gpio-line-name.c"
+    },
+    {
+      "id": "linux-clock-kunit",
+      "kind": "kunit",
+      "subsystems": ["clock"],
+      "module": "clk-test",
+      "default_success_pattern": "ok [0-9]+( |-|$)",
+      "required_kernel_modules": ["clk-test"]
+    },
+    {
+      "id": "linux-usbtest",
+      "kind": "tool",
+      "subsystems": ["usb"],
+      "executable": "vendor/linux/tools/usb/testusb.c",
+      "module": "usbtest",
+      "required_kernel_modules": ["usbtest"]
+    },
+    {
+      "id": "linux-netdevice-selftest",
+      "kind": "kselftest",
+      "subsystems": ["network"],
+      "executable": "vendor/linux/tools/testing/selftests/net/netdevice.sh"
+    }
+  ]
+}

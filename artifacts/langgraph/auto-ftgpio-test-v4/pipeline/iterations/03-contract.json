@@ -1,0 +1,87 @@
+{
+  "evidence_digest": "7df0e96b13cccc0336e493698af9aa274237c4b6165dda93ec1d024d0fbac2a0",
+  "iteration": 1,
+  "manifest_digest": "a68977dbfd72b5f2fd225cc278c7695859398b62a95a1433f4cd64c26a435f43",
+  "payload": {
+    "feedback": {
+      "details": {
+        "complete": false,
+        "digest_mismatch": [],
+        "duplicate": [
+          "op_43"
+        ],
+        "duplicate_expected_ids": [],
+        "duplicate_transaction_markers": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "missing_transaction_markers": [],
+        "receipts": 37,
+        "rejected": [],
+        "repair_requirements": {
+          "duplicate_register_operation_ids": [
+            "op_43"
+          ],
+          "exactly_one_anchor_per_operation_id": true,
+          "missing_register_operation_ids": [],
+          "missing_transaction_operation_ids": [],
+          "preserve_register_operation_ids": [
+            "op_1",
+            "op_2",
+            "op_3",
+            "op_4",
+            "op_5",
+            "op_6",
+            "op_7",
+            "op_8",
+            "op_27",
+            "op_28",
+            "op_29",
+            "op_30",
+            "op_31",
+            "op_32",
+            "op_33",
+            "op_35",
+            "op_36",
+            "op_37",
+            "op_39",
+            "op_43",
+            "op_45",
+            "op_56",
+            "op_57",
+            "op_58",
+            "op_59",
+            "op_61",
+            "op_63",
+            "op_66",
+            "op_67",
+            "op_69",
+            "op_70",
+            "op_74",
+            "op_76",
+            "op_77",
+            "op_80",
+            "op_82"
+          ],
+          "preserve_transaction_operation_ids": [],
+          "unknown_register_operation_ids": []
+        },
+        "required_ops": 36,
+        "required_transactions": 0,
+        "schema": 1,
+        "transaction_accounting_complete": true,
+        "transaction_marker_mismatch": [],
+        "transaction_markers": 0,
+        "unknown": [],
+        "unknown_transaction_markers": [],
+        "unsupported_transactions": []
+      },
+      "failure_class": "contract",
+      "iteration": 1,
+      "message": "candidate does not satisfy generation contract",
+      "retryable": true,
+      "stage": "contract"
+    }
+  },
+  "stage": "contract",
+  "status": "failed"
+}

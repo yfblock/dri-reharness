@@ -1,0 +1,109 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "reharness_i2c_sensor",
+  "runtime": {
+    "adapter": "qemu-profile",
+    "capabilities": {
+      "optional": [
+        "subsystem",
+        "trace"
+      ],
+      "required": [
+        "registration",
+        "probe",
+        "transaction",
+        "unload"
+      ]
+    },
+    "fixture": {
+      "config": {
+        "address": "0x50",
+        "driver_name": "reharness_i2c_sens",
+        "expected_value": "0x5a",
+        "module_args": {
+          "i2c-registrar": [
+            "client_type=reharness_i2c_sens"
+          ]
+        },
+        "register": "0x10"
+      },
+      "kind": "qemu-i2c",
+      "module_sources": [
+        "qa/verification/device-registrar/i2c-registrar.c"
+      ]
+    },
+    "profile": "i2c-generic",
+    "qemu": {
+      "binding": {
+        "bus": "i2c",
+        "device_glob": "*"
+      },
+      "bus": "i2c",
+      "device": "i2c-virtual",
+      "kernel_modules": [
+        "i2c-dev"
+      ],
+      "machine": "pc",
+      "module": "reharness_i2c_sensor",
+      "probe_pattern": "REHARNESS_I2C_DRIVER_PROBE",
+      "timeout_seconds": 90
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "benchmarks/drivers/fixtures/reharness-i2c-sensor.c",
+    "sha256": "48ae7a4f52e6e2027830f1d33ed8a41adefaa3f1d4a91843e0f2a223e20473cf"
+  },
+  "test": {
+    "subsystem": {
+      "name": "i2c",
+      "tests": [
+        {
+          "args": [
+            "/dev/reharness-i2c-control"
+          ],
+          "executable": "qa/native-tests/i2c_transaction_test.c",
+          "name": "i2c-transaction",
+          "success_pattern": "I2C_TRANSACTION_PASS"
+        },
+        {
+          "args": [
+            "/dev/reharness-i2c-control"
+          ],
+          "executable": "qa/native-tests/i2c_transaction_test.c",
+          "name": "i2c-invalid-address",
+          "success_pattern": "I2C_INVALID_ADDRESS_PASS"
+        },
+        {
+          "args": [
+            "/dev/i2c-0"
+          ],
+          "executable": "qa/native-tests/i2cdev_transaction_test.c",
+          "kind": "tool",
+          "name": "linux-i2c-dev-tool",
+          "provider": "linux-i2c-dev"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ]
+  }
+}

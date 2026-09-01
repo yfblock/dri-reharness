@@ -1,0 +1,39 @@
+=== QEMU run: module=e1000 bus=pci timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031148] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031214] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.074306] ftrace: allocating 38351 entries in 152 pages
+[    0.074608] ftrace: allocated 152 pages with 3 groups
+[    0.425485] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.429999] thermal_sys: Registered thermal governor 'step_wise'
+[    0.434717] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.442208] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.528168] ACPI: bus type USB registered
+[    0.528469] usbcore: registered new interface driver usbfs
+[    0.528702] usbcore: registered new interface driver hub
+[    0.528816] usbcore: registered new device driver usb
+[    0.528996] pps_core: LinuxPPS API ver. 1 registered
+[    0.529114] PTP clock support registered
+[    0.562353] NET: Registered PF_INET protocol family
+[    0.579244] Key type asymmetric registered
+[    0.579322] Asymmetric key parser 'x509' registered
+[    0.579811] io scheduler mq-deadline registered
+[    0.579888] io scheduler kyber registered
+[    0.624854] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.630272] usbcore: registered new interface driver usbhid
+[    0.630969] NET: Registered PF_INET6 protocol family
+=== insmod e1000 ===
+[    1.051826] e1000: [rhcov] e1000_probe
+[    1.607433] insmod (62) used greatest stack depth: 13000 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+                               drv probe link
+EXERCISER_RC=0
+=== rmmod e1000 ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[   10.389308] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=16 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: e1000 probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-e1000-qemu.oCOVQt

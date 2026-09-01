@@ -10,7 +10,11 @@
     "context": "kbuild"
   },
   "runtime": {
-    "adapter": "qemu-platform",
+    "adapter": "qemu-profile",
+    "registration": {
+      "root_table": "platform_driver",
+      "identity_field": "registrar"
+    },
     "safety_policy": {
       "forbidden_tokens": [],
       "action": "allow",
@@ -23,7 +27,22 @@
       "module": "ftgpio010_gpio",
       "timeout_seconds": 90,
       "probe_pattern": "probed|registered|gpiochip",
-      "registrar": "gpio-ftgpio010"
+      "registrar": "ftgpio010-gpio",
+      "binding": {
+        "bus": "platform",
+        "device_glob": "ftgpio010-gpio"
+      }
+    },
+    "fixture": {
+      "kind": "qemu-platform",
+      "config": {
+        "module_args": {
+          "device-registrar": ["target=ftgpio010-gpio"]
+        }
+      },
+      "module_sources": [
+        "qa/verification/device-registrar/device-registrar.c"
+      ]
     }
   },
   "test": {
@@ -36,7 +55,53 @@
       {"name": "get_value"},
       {"name": "set_value"}
     ],
-    "success_pattern": "GPIO_TRACE_DONE"
+    "success_pattern": "GPIO_TRACE_DONE",
+    "coverage": {
+      "required": [
+        "chip_info",
+        "line_info",
+        "v2_single_line",
+        "v2_multi_line",
+        "v2_values",
+        "v1_single_line",
+        "config_flags",
+        "config_debounce",
+        "error_paths",
+        "line_event",
+        "lifecycle"
+      ],
+      "callbacks": [
+        "gpio_chip.get",
+        "gpio_chip.get_multiple",
+        "gpio_chip.set",
+        "gpio_chip.set_multiple",
+        "gpio_chip.direction_input",
+        "gpio_chip.direction_output",
+        "gpio_chip.get_direction",
+        "gpio_chip.set_config",
+        "irq_chip.irq_ack",
+        "irq_chip.irq_mask",
+        "irq_chip.irq_unmask",
+        "irq_chip.irq_set_type",
+        "gpio_irq_chip.parent_handler"
+      ]
+    },
+    "subsystem": {
+      "name": "gpio",
+      "tests": [
+        {"name": "gpio-chip-info", "executable": "qa/native-tests/gpio_chip_info_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-chip-info"},
+        {"name": "gpio-line-info", "executable": "qa/native-tests/gpio_line_info_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-line-info"},
+        {"name": "gpio-v2-basic", "executable": "qa/native-tests/gpio_v2_basic_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-v2-basic"},
+        {"name": "gpio-v2-multi-line", "executable": "qa/native-tests/gpio_v2_multi_line_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-v2-multi-line"},
+        {"name": "gpio-v1-compat", "executable": "qa/native-tests/gpio_v1_compat_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-v1-compat"},
+        {"name": "gpio-config", "executable": "qa/native-tests/gpio_config_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-config"},
+        {"name": "gpio-errors", "executable": "qa/native-tests/gpio_error_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-errors"},
+        {"name": "gpio-events", "executable": "qa/native-tests/gpio_event_test.c", "args": ["/dev/gpiochip0", "/dev/reharness-gpio-control"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-events"},
+        {"name": "gpio-lifecycle", "executable": "qa/native-tests/gpio_lifecycle_test.c", "args": ["/dev/gpiochip0"], "success_pattern": "GPIO_SUBSYSTEM_PASS=gpio-lifecycle"},
+        {"name": "linux-gpio-chip-info", "provider": "linux-gpio-chip-info", "args": ["/dev/gpiochip0", "num-lines"]},
+        {"name": "linux-gpio-line-name", "provider": "linux-gpio-line-name", "args": ["/dev/gpiochip0", "0"]}
+      ]
+    }
   },
   "trace": {
     "fields": ["phase", "function", "kind", "width_bits", "address", "value", "sequence", "source_op_id"],
@@ -44,7 +109,7 @@
     "normalize_function": true,
     "instrument": true,
     "exercised_calls": [
-      "ftgpio_gpio_probe=gpio_ftgpio010_probe",
+      "ftgpio_gpio_probe=ftgpio_gpio_probe",
       "ftgpio_gpio_probe__gpio_generic_get_direction",
       "ftgpio_gpio_probe__gpio_generic_direction_output",
       "ftgpio_gpio_probe__gpio_generic_get_multiple",

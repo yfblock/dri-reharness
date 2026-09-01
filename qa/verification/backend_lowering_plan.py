@@ -61,6 +61,11 @@ def _loop_lowering_mode(loop: dict) -> str | None:
             and loop.get("loop_kind") == "for"):
         return "bounded_for"
     if (loop.get("reliability") == "Exact"
+            and loop.get("bounded")
+            and loop.get("loop_kind") == "while"
+            and loop.get("relation") == "post-decrement"):
+        return "bounded_post_decrement_while"
+    if (loop.get("reliability") == "Exact"
             and loop.get("proof_kind") == "masked_w1c_drain"):
         return "masked_w1c_drain"
     return None
@@ -72,7 +77,8 @@ def _loop_context(loop: dict, depth: int, region: str) -> dict[str, Any]:
     # lowering.  Masked W1C drain loops lower both guard_ops and body.
     region_lowerable = bool(
         mode == "masked_w1c_drain"
-        or (mode == "bounded_for" and region == "body"))
+        or (mode in {"bounded_for", "bounded_post_decrement_while"}
+            and region == "body"))
     return {
         "depth": depth,
         "region": region,
@@ -558,7 +564,7 @@ def _report_id_set(report: dict, key: str) -> tuple[set[str], bool]:
 
 def _route_fingerprint(route: dict) -> str:
     """Rebuild the registration oracle's stable route identity."""
-    from verification.linux_registration_ast_oracle import (
+    from backends.linux.oracles.linux_registration_ast_oracle import (
         registration_route_fingerprint,
     )
     return registration_route_fingerprint(route)
@@ -1017,7 +1023,7 @@ def verify_backend_lowering_plan(
             artifact_authority_errors.append("kbuild_context_authority_missing")
         else:
             try:
-                from verification.linux_registration_ast_oracle import (
+                from backends.linux.oracles.linux_registration_ast_oracle import (
                     linux_kbuild_compile_context,
                 )
                 expected_clang_args, expected_compile_context = \
@@ -1038,7 +1044,7 @@ def verify_backend_lowering_plan(
                 from verification.generated_c_ast_oracle import (
                     verify_generated_c_ast,
                 )
-                from verification.linux_registration_ast_oracle import (
+                from backends.linux.oracles.linux_registration_ast_oracle import (
                     verify_linux_registration_ast,
                 )
                 registration_device_spec = device_spec

@@ -1,0 +1,4 @@
+name: reharness/mmio-oracle
+version: 0.0.1
+dependencies:
+  codeql/cpp-all: ${workspace}

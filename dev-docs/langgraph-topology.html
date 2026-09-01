@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>reharness · LangGraph 工作流拓扑（三层）</title>
+<style>
+  body { font-family: 'Noto Sans CJK SC','PingFang SC','Microsoft YaHei',sans-serif;
+         color:#0f172a; background:#f8fafc; margin:0; padding:32px; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color:#64748b; font-size: 13px; margin-bottom: 20px; }
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+          padding: 20px 24px; margin-bottom: 20px; }
+  .card svg { max-width: 100%; height: auto; display:block; margin: 0 auto; }
+  h2 { font-size: 16px; margin: 4px 0 10px; color:#1d4ed8; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #e2e8f0; padding: 7px 10px; text-align: left;
+           vertical-align: top; }
+  th { background: #f1f5f9; }
+  code, .mono { font-family: 'JetBrains Mono','Cascadia Code',Consolas,monospace;
+    font-size: 12.5px; background:#f1f5f9; padding: 1px 5px; border-radius: 4px; }
+  .legend span { display:inline-block; margin-right: 18px; font-size: 12.5px; }
+  .dot { display:inline-block; width: 11px; height: 11px; border-radius: 3px;
+         margin-right: 5px; vertical-align: -1px; }
+  .note { color:#64748b; font-size: 12.5px; line-height: 1.7; }
+  .ok { color:#1d4ed8; font-weight: bold; }
+  .warn { color:#b91c1c; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>reharness · LangGraph 工作流拓扑（三层）</h1>
+  <div class="sub">源：<code>src/langgraph_workflow/graph.py</code>（主图）·
+    <code>generation_graph.py</code>（②）· <code>experiment_graph.py</code>（③）·
+    <code>pipeline_entry.py</code>（开关接线）· 入口 <code>python3 -m langgraph_workflow</code> ·
+    更新 2026-08-30（Tasks 0–4 落地后，节点与边经实际编译验证）</div>
+
+  <div class="card">
+    <img src="langgraph-topology.svg" alt="LangGraph 工作流拓扑图（三层）"
+         style="width:100%;height:auto;">
+    <div class="legend" style="margin-top:10px;">
+      <span><span class="dot" style="background:#eff6ff;border:1px solid #1d4ed8;"></span>确定性节点</span>
+      <span><span class="dot" style="background:#fff7ed;border:2px solid #f97316;"></span>资格门 / 条件分支（fail-closed）</span>
+      <span><span class="dot" style="background:#ecfdf5;border:1.5px solid #059669;"></span>Send 并行 fan-out 分支</span>
+      <span><span class="dot" style="background:#fffbeb;border:1.5px solid #ca8a04;"></span>join barrier（并行汇合点）</span>
+      <span><span class="dot" style="background:#f5f3ff;border:1.5px solid #7c3aed;"></span>子图复合节点（经 pipeline_entry 分发）</span>
+      <span><span class="dot" style="background:#fef2f2;border:1.5px solid #b91c1c;"></span>repair / 回边</span>
+      <span><span class="dot" style="background:#fff;border:1px dashed #64748b;"></span>可注入服务 / 开关 / 串行回退</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>① 主工作流（graph.py · build_graph，7 节点）</h2>
+    <table>
+      <tr><th style="width:210px;">节点</th><th>职责</th><th style="width:300px;">读/写 State</th></tr>
+      <tr><td><code>normalize_input</code></td>
+          <td>请求规范化：mode/backend、仓库路径解析、profile 注册表校验</td>
+          <td>input → normalized</td></tr>
+      <tr><td><code>discover_driver_files</code></td>
+          <td>源文件清单与 SHA 摘要（单文件或 manifest 多源）</td>
+          <td>normalized → inventory</td></tr>
+      <tr><td><code>analyze_driver_files</code></td>
+          <td>调 extractor 产出 RIS / DeviceSpec / readiness 证据（<code>analyzer</code> 可注入）</td>
+          <td>normalized+inventory → analysis</td></tr>
+      <tr><td><code>build_pipeline_plan</code></td>
+          <td><b>唯一条件分支</b>：<code>translation_requested</code> = mode≠analysis；
+              <code>translation_eligible</code> = <code>readiness.llm_synthesis_ready is True</code>（fail-closed）；
+              <code>run_pipeline</code> = 两者与；缺 runtime capability 不拦截生成，留待 finalize 分类</td>
+          <td>analysis → pipeline_plan</td></tr>
+      <tr><td><code>generation_pipeline</code></td>
+          <td>generation 模式管线；经 <code>pipeline_entry</code> 按
+              <code>REHARNESS_PIPELINE_BACKEND</code> 分发（graph → ② 子图；legacy → 既有管线）</td>
+          <td>normalized+analysis → pipeline_result</td></tr>
+      <tr><td><code>experiment_pipeline</code></td>
+          <td>experiment 模式管线；分发同上（graph → ③ 子图）；需 experiment_manifest 与缓存 evidence 对齐</td>
+          <td>normalized+analysis → pipeline_result</td></tr>
+      <tr><td><code>finalize</code></td>
+          <td>终态仲裁（矩阵见 ④），写 status / translation_status / failure</td>
+          <td>plan+result → status*</td></tr>
+    </table>
+    <table style="margin-top:10px;">
+      <tr><th style="width:420px;">边</th><th>类型 / 条件</th></tr>
+      <tr><td>START → normalize → discover → analyze → plan</td><td>固定顺序边</td></tr>
+      <tr><td>plan → generation_pipeline / experiment_pipeline</td>
+          <td>条件边 <code>route_pipeline</code>：<code>run_pipeline=true</code> 时按 mode 三路选择</td></tr>
+      <tr><td>plan → finalize</td><td>条件边：纯分析（mode=analysis）或资格门不过</td></tr>
+      <tr><td>generation_pipeline / experiment_pipeline → finalize → END</td>
+          <td>固定边；两后端返回同一 JSON 契约，finalize 无感知</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>② generation 子图（generation_graph.py · 7 节点 + 2 串行回退）</h2>
+    <table>
+      <tr><th style="width:210px;">节点</th><th>职责</th></tr>
+      <tr><td><code>prepare</code></td>
+          <td>建目录；build_generation_contract + synthesis_readiness 评分；落盘 RIS / formal.json /
+              generation-contract.json / dspec / device-spec.json / facts / analysis.json</td></tr>
+      <tr><td><code>run_oracle</code>（Send ×5）</td>
+          <td>五个源级 oracle 并行：gpio / sdhci / virtio / w1c / transaction，
+              各自写 verify/&lt;oracle&gt;.json</td></tr>
+      <tr><td><code>run_oracles_serial</code></td>
+          <td><code>parallel_oracles=false</code> 时的串行回退，产物字节不变</td></tr>
+      <tr><td><code>collect_oracles</code></td>
+          <td><b>join barrier</b>：Send fan-out 后必须接普通节点汇合（条件边直接挂 Send
+              目标会以部分状态触发）</td></tr>
+      <tr><td><code>run_backend</code>（Send ×3）</td>
+          <td>三后端并行：harness（cc 编译+运行+trace）、baremetal（freestanding
+              编译+host oracle）、linux（真实 Kbuild 模块编译 + AST / 注册 / lowering-plan 验证）</td></tr>
+      <tr><td><code>run_backends_serial</code></td>
+          <td><code>parallel_backends=false</code> 串行回退</td></tr>
+      <tr><td><code>write_artifacts</code></td>
+          <td>汇总 analysis.json / metrics.txt / score.txt / *.bind（按 legacy 顺序）；
+              return_code 由 <code>_pipeline_success(score)</code> 决定</td></tr>
+    </table>
+    <div class="note" style="margin-top:8px;">
+      边：START → prepare →（条件：Send×5 ｜ 串行）→ collect_oracles →（条件：Send×3 ｜ 串行）→
+      write_artifacts → END。任一 backend 分支异常 = 整体失败（C11）；
+      重提取对象 <code>res</code> 留在构建期闭包（C3）。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ experiment 子图（experiment_graph.py · 修复环，9 节点）</h2>
+    <table>
+      <tr><th style="width:190px;">节点</th><th>职责</th></tr>
+      <tr><td><code>prepare</code></td>
+          <td>目录 + 初始 experiment.json 持久化；extract（缓存 evidence）→ synthesize 产出候选与 scenario</td></tr>
+      <tr><td><code>verify_contract</code></td>
+          <td>环顶：<code>used</code> 总限检查 + 一般契约门；过则清零 contract_attempts</td></tr>
+      <tr><td><code>compile</code></td>
+          <td>编译候选；INFRASTRUCTURE / 不可重试 → stop，超 compile 限 → stop，否则 → repair</td></tr>
+      <tr><td><code>register_check</code></td>
+          <td>仅 linux backend：编译成功后的 Linux 注册契约门（compile → register_check → baseline_run，
+              环序以 legacy 为准，黄金测试钉死）</td></tr>
+      <tr><td><code>baseline_run</code></td>
+          <td>基线运行；INCONCLUSIVE → inconclusive 终态</td></tr>
+      <tr><td><code>candidate_run</code></td>
+          <td>编译产物候选运行</td></tr>
+      <tr><td><code>compare</code></td>
+          <td>trace 对比；相等 → accepted 终态；INFRASTRUCTURE 或超 trace 限 → stop；否则 → repair</td></tr>
+      <tr><td><code>repair</code></td>
+          <td>LLM 修复（active_feedback 驱动）；成功更新 candidate/scenario 后
+              <b>唯一回边</b>重入 verify_contract</td></tr>
+      <tr><td><code>finalize</code></td>
+          <td>终态持久化 experiment.json + result 投影（accepted / records / failure / comparison）</td></tr>
+    </table>
+    <table style="margin-top:10px;">
+      <tr><th style="width:190px;">条件边（next_action）</th><th>目标</th></tr>
+      <tr><td><code>prepare</code></td><td>verify_contract ｜ finalize（extract/synthesize 失败 → stop）</td></tr>
+      <tr><td><code>verify_contract</code></td><td>compile ｜ repair（可重试，携带 comparison）｜ finalize（不可重试 / 总限超 / contract 限超）</td></tr>
+      <tr><td><code>compile</code></td><td>register_check（linux）｜ baseline_run（非 linux）｜ repair ｜ finalize（infra / 不可重试 / 超限）</td></tr>
+      <tr><td><code>register_check</code></td><td>baseline_run ｜ repair（携带 comparison）｜ finalize（不可重试 / registration 限超）</td></tr>
+      <tr><td><code>baseline_run</code> / <code>candidate_run</code></td><td>下一阶段 ｜ repair ｜ finalize（inconclusive → inconclusive；infra → failed；超 runtime 限 → failed）</td></tr>
+      <tr><td><code>compare</code></td><td>finalize（accepted 或 infra / 超 trace 限）｜ repair（mismatch 可重试，携带 comparison）</td></tr>
+      <tr><td><code>repair</code></td><td>verify_contract（成功）｜ finalize（repair 失败 → stop）</td></tr>
+    </table>
+    <div class="note" style="margin-top:8px;">
+      断点续跑（Task 2）：<code>build_experiment_graph(checkpointer=SqliteSaver,
+      interrupt_after=[...])</code>；records 为 append-only reducer，续跑序号连续、不重复 extract/synthesize。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>④ finalize 终态仲裁矩阵（主图 · 按序判定）</h2>
+    <table>
+      <tr><th>条件</th><th style="width:220px;">status</th></tr>
+      <tr><td>mode = analysis（未请求翻译）</td><td class="ok">analysis_complete</td></tr>
+      <tr><td>请求翻译，但资格门未过</td><td class="warn">blocked</td></tr>
+      <tr><td>缺 runtime capability ∧ 管线 failed / rejected</td><td class="warn">failed</td></tr>
+      <tr><td>缺 runtime ∧ 子系统契约 fail</td><td class="warn">failed</td></tr>
+      <tr><td>缺 runtime capability（其余情况）</td><td>inconclusive</td></tr>
+      <tr><td>管线 failed / rejected</td><td class="warn">failed</td></tr>
+      <tr><td>子系统契约 status = fail</td><td class="warn">failed</td></tr>
+      <tr><td>子系统契约 status ≠ pass</td><td>inconclusive</td></tr>
+      <tr><td>管线 status = inconclusive</td><td>inconclusive</td></tr>
+      <tr><td>全部检查通过</td><td class="ok">completed / accepted</td></tr>
+    </table>
+    <div class="note" style="margin-top:8px;">
+      缺 runtime 时管线仍会执行（静态翻译与 Kbuild 仍有价值），仅在 finalize 归为 inconclusive；
+      异常兜底：<code>run_workflow</code> 捕获节点异常 → status=failed，JSON 协议不破。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⑤ 接线开关与设计不变量</h2>
+    <table>
+      <tr><th style="width:110px;">条目</th><th>说明</th></tr>
+      <tr><td><code>C8</code> 开关</td>
+          <td><code>REHARNESS_PIPELINE_BACKEND = legacy（默认）｜ graph</code>；
+              graph 时 generation/experiment 模式经 <code>pipeline_entry</code> 进对应子图；
+              analysis 模式恒走 legacy <code>run_existing_pipeline</code>；两后端返回同一 JSON 契约</td></tr>
+      <tr><td><code>C2</code> 对拍</td>
+          <td>legacy vs graph 影子对拍（同路径重放，产物树逐字节一致含 digest）；并行 vs 串行一致</td></tr>
+      <tr><td><code>C3</code> 全 JSON state</td>
+          <td>重对象（res 等）留构建期闭包；适配器值经 <code>_jsonable</code> 于节点边界归一化</td></tr>
+      <tr><td><code>C4</code> 零重实现</td>
+          <td><code>_invoke/_feedback/_jsonable</code> 直接 import；
+              <code>_verify_contract/_repair/_comparison_equal</code> 经 <code>_AdapterHost</code> unbound 复用</td></tr>
+      <tr><td><code>C10</code> IO 边界</td>
+          <td>route 函数与 reducer 不碰文件系统；共享文件仅由 prepare / write_artifacts 写</td></tr>
+      <tr><td><code>C11</code> fail-fast</td>
+          <td>任一 backend 并行分支异常 = 整体运行失败（与 legacy 串行循环一致）</td></tr>
+      <tr><td>Task 5 待办</td>
+          <td>默认翻转为 graph 需 ≥3 个真实 driver 对拍证据 + 人工批准（当前默认仍为 legacy）</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>与旧版拓扑图的差异（2026-08-30 01:17 版 → 本版）</h2>
+    <div class="note">
+      旧版仅覆盖单一 <code>run_project_pipeline</code> 节点的主图。Tasks 0–4 落地后：
+      ① 主图改为三路条件路由（generation_pipeline / experiment_pipeline / finalize 直达）；
+      ② 新增 generation 子图（两段 Send fan-out + join barrier + 串行回退）；
+      ③ 新增 experiment 修复环子图（9 节点、唯一回边、断点续跑）；
+      ④ pipeline_entry 特性开关接线；⑤ 补充设计不变量表。
+      本版节点与边均经 <code>graph.get_graph()</code> 实际编译验证。
+    </div>
+  </div>
+</div>
+</body>
+</html>

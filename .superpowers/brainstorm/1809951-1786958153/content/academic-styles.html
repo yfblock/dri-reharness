@@ -1,0 +1,45 @@
+<h2>论文 Figure 的视觉风格</h2>
+<p class="subtitle">请比较三种适合 ASPLOS/系统论文的图形方向，并选择一种作为统一风格。</p>
+
+<div class="cards" data-multiselect>
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f9fc;padding:16px;min-height:170px;color:#1f2937;font-family:Arial,sans-serif">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px">A · 冷静蓝灰</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;height:105px;border-bottom:1px solid #94a3b8;border-left:1px solid #94a3b8;padding:0 10px">
+        <div style="width:28px;height:72px;background:#2563eb"></div><div style="width:28px;height:48px;background:#94a3b8"></div>
+        <div style="width:28px;height:88px;background:#2563eb"></div><div style="width:28px;height:60px;background:#94a3b8"></div>
+        <div style="width:28px;height:55px;background:#2563eb"></div><div style="width:28px;height:32px;background:#94a3b8"></div>
+      </div>
+      <div style="font-size:10px;margin-top:8px;color:#475569">蓝色 = baseline · 灰色 = strict readiness</div>
+    </div>
+    <div class="card-body"><h3>冷静蓝灰</h3><p>高对比、低装饰、接近系统论文常见的矢量图风格。</p></div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fffaf2;padding:16px;min-height:170px;color:#292524;font-family:Arial,sans-serif">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px">B · 蓝橙强调</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;height:105px;border-bottom:1px solid #a8a29e;border-left:1px solid #a8a29e;padding:0 10px">
+        <div style="width:28px;height:72px;background:#1d4ed8"></div><div style="width:28px;height:48px;background:#f97316"></div>
+        <div style="width:28px;height:88px;background:#1d4ed8"></div><div style="width:28px;height:60px;background:#f97316"></div>
+        <div style="width:28px;height:55px;background:#1d4ed8"></div><div style="width:28px;height:32px;background:#f97316"></div>
+      </div>
+      <div style="font-size:10px;margin-top:8px;color:#57534e">蓝色 = compilation · 橙色 = readiness</div>
+    </div>
+    <div class="card-body"><h3>蓝橙强调</h3><p>用橙色突出严格门槛，适合强调“编译通过 ≠ ready”的结论。</p></div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc;padding:16px;min-height:170px;color:#0f172a;font-family:Arial,sans-serif">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px">C · 单色出版</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;height:105px;border-bottom:1px solid #64748b;border-left:1px solid #64748b;padding:0 10px">
+        <div style="width:28px;height:72px;background:#1e293b"></div><div style="width:28px;height:48px;background:#cbd5e1"></div>
+        <div style="width:28px;height:88px;background:#1e293b"></div><div style="width:28px;height:60px;background:#cbd5e1"></div>
+        <div style="width:28px;height:55px;background:#1e293b"></div><div style="width:28px;height:32px;background:#cbd5e1"></div>
+      </div>
+      <div style="font-size:10px;margin-top:8px;color:#334155">深灰/浅灰 + 纹理，黑白打印最稳妥</div>
+    </div>
+    <div class="card-body"><h3>单色出版</h3><p>依靠明度、线型和纹理区分系列，最适合黑白打印或审稿 PDF。</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:18px">建议选择 B：保留学术克制，同时让关键 readiness 门槛在缩小后仍可辨识。</p>

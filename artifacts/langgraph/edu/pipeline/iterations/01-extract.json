@@ -1,0 +1,23 @@
+{
+  "evidence_digest": "ae2e3432cc1ac0d689c6221569ef97fa8c422a4adf272f9ff1c0e4f9b72e0296",
+  "iteration": 1,
+  "manifest_digest": "a8398d1eff4ef681e13a92d6f8a402fd570e810399b5587123247ff1d075a0f6",
+  "payload": {
+    "result": {
+      "digest": "ae2e3432cc1ac0d689c6221569ef97fa8c422a4adf272f9ff1c0e4f9b72e0296",
+      "directory": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence",
+      "files": [
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.device-spec.json",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.dspec",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.facts",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.formal.json",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.linux.bind",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/edu.ris",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/generation-contract.json",
+        "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/langgraph/edu/evidence/score.txt"
+      ]
+    }
+  },
+  "stage": "extract",
+  "status": "passed"
+}

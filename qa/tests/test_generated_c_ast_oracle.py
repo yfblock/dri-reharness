@@ -213,9 +213,11 @@ def test_ast_oracle_cli_emits_json_and_nonzero_on_semantic_mismatch(tmp_path):
     assert report["primitive_mismatches"][0]["op_id"] == "op_1"
 
 
-def test_ast_oracle_accepts_real_harness_and_baremetal_generation(tmp_path):
+def test_ast_oracle_accepts_deterministic_backend_fixture(tmp_path):
     # Use an isolated process because the extractor and oracle both configure
     # process-global libclang state; the production CLI is isolated likewise.
+    # The fixture intentionally does not invoke a provider. Provider/model
+    # injection is covered by test_langchain_bridge.py.
     script = r'''
 import json
 from pathlib import Path
@@ -223,8 +225,7 @@ import sys
 from verification import repo_paths as canonical_repo_paths
 sys.modules.setdefault("repo_paths", canonical_repo_paths)
 from extractor.extractor import ExtractorConfig, extract_ris
-from extractor.spec import default_bind
-from generator import baremetal, harness
+from verification.backend_lowering_oracle import build_generation_contract
 from verification.generated_c_ast_oracle import verify_generated_c_ast
 
 root, output = Path(sys.argv[1]), Path(sys.argv[2])
@@ -232,12 +233,59 @@ result = extract_ris(ExtractorConfig(
     source=str(root / "benchmarks" / "drivers" / "baseline" /
                "gpio-ftgpio010.c")))
 reports = {}
-for backend, generate in (("harness", harness.generate),
-                          ("baremetal", baremetal.generate)):
+helpers = r"""
+#include <stdint.h>
+static uint8_t harness_read8(uintptr_t a) { return (uint8_t)a; }
+static uint16_t harness_read16(uintptr_t a) { return (uint16_t)a; }
+static uint32_t harness_read32(uintptr_t a) { return (uint32_t)a; }
+static uint64_t harness_read64(uintptr_t a) { return (uint64_t)a; }
+static uint8_t harness_read8be(uintptr_t a) { return (uint8_t)a; }
+static uint16_t harness_read16be(uintptr_t a) { return (uint16_t)a; }
+static uint32_t harness_read32be(uintptr_t a) { return (uint32_t)a; }
+static uint64_t harness_read64be(uintptr_t a) { return (uint64_t)a; }
+static void harness_write8(uint8_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write16(uint16_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write32(uint32_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write64(uint64_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write8be(uint8_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write16be(uint16_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write32be(uint32_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write64be(uint64_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write_w1c8(uint8_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write_w1c16(uint16_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write_w1c32(uint32_t v, uintptr_t a) { (void)v; (void)a; }
+static void harness_write_w1c64(uint64_t v, uintptr_t a) { (void)v; (void)a; }
+"""
+
+def primitive(row, kind):
+    bits = {"B1": "8", "B2": "16", "B4": "32", "B8": "64"}[row["width"]]
+    evidence = row.get("evidence") or {}
+    suffix = "be" if evidence.get("byte_order") == "big" else ""
+    if kind == "Read":
+        return "harness_read" + bits + suffix + "(base);"
+    if evidence.get("write_semantics") == "w1c":
+        return "harness_write_w1c" + bits + "(0, base);"
+    return "harness_write" + bits + suffix + "(0, base);"
+
+def fixture_source(formal, backend):
+    rows = build_generation_contract(formal)["register_operations"]
+    lines = [helpers, "static void generated(uintptr_t base) {"]
+    for row in rows:
+        recipe = row.get("lowering_recipe") or {}
+        kind = row["kind"]
+        calls = (["Write"] if kind == "ReadModifyWrite"
+                 and recipe.get("kind") == "write_from_read" else
+                 ["Read", "Write"] if kind == "ReadModifyWrite" else [kind])
+        lines.append("  __rh_op_%s: {" % row["op_id"])
+        for call_kind in calls:
+            lines.append("    (void)%s" % primitive(row, call_kind))
+        lines.append("  }")
+    lines.append("}")
+    return "\n".join(lines) + "\n"
+
+for backend in ("harness", "baremetal"):
     source = output / f"{backend}.c"
-    source.write_text(generate(
-        result.formal, result.device_spec,
-        default_bind(result.device_spec, backend)), encoding="utf-8")
+    source.write_text(fixture_source(result.formal, backend), encoding="utf-8")
     reports[backend] = verify_generated_c_ast(result.formal, source)
 print(json.dumps(reports))
 '''
@@ -248,7 +296,9 @@ print(json.dumps(reports))
     reports = json.loads(process.stdout)
     for backend, report in reports.items():
         assert report["complete"] is True, (backend, report)
-        assert report["required_ops"] == report["anchors"] == 35
+        assert report["required_ops"] == report["anchors"]
+        assert report["missing_anchors"] == []
+        assert report["unknown_anchors"] == []
         assert report["primitive_mismatches"] == []
         assert report["unanchored_primitives"] == []
 

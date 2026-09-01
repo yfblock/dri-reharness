@@ -1,0 +1,207 @@
+device gpio-ftgpio010 {
+  class gpio_controller
+  source "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c"
+  state {
+    base: MmioBase
+    clk: Clock
+    num_irqs: UInt
+    desc->handle_irq: UInt
+    g->dev: UInt
+    gpio_sdata: UInt
+    gpio_sdir: UInt
+    g->chip.gc.base: UInt
+    g->chip.gc.parent: UInt
+    g->chip.gc.owner: UInt
+    g->chip.gc.set_config: UInt
+    girq->parent_handler: UInt
+    girq->num_parents: UInt
+    girq->default_type: UInt
+    girq->handler: UInt
+    girq->chip: UInt
+  }
+  resource mmio0: MmioResource { required true bind base }
+  resource clk0: ClockResource { required true bind clk }
+  resource irq0: IrqResource { required true }
+  register GPIO_DATA_IN: B4 at base + 0x4
+  register GPIO_DIR: B4 at base + 0x8
+  register GPIO_DATA_SET: B4 at base + 0x10
+  register GPIO_DATA_CLR: B4 at base + 0x14
+  register GPIO_INT_EN: B4 at base + 0x20
+  register GPIO_INT_STAT_RAW: B4 at base + 0x24
+  register GPIO_INT_MASK: B4 at base + 0x2c
+  register GPIO_INT_CLR: B4 at base + 0x30
+  register GPIO_INT_TYPE: B4 at base + 0x34
+  register GPIO_INT_BOTH_EDGE: B4 at base + 0x38
+  register GPIO_INT_LEVEL: B4 at base + 0x3c
+  register GPIO_DEBOUNCE_EN: B4 at base + 0x40
+  register GPIO_DEBOUNCE_PRESCALE: B4 at base + 0x44
+  invariant forall line: UInt. line < num_irqs -> valid_interrupt_line(line)
+  function ftgpio_gpio_ack_irq(d: LogicalIRQ) -> Void {
+    role interrupt_ack
+    source "gpio-ftgpio010.c:56"
+    context irq
+    callback irq_chip.irq_ack
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_ack_irq
+    effect writes_register(GPIO_INT_CLR)
+    effect clears_interrupt(line)
+    ensure interrupt_pending[line] == false
+  }
+  function ftgpio_gpio_mask_irq(d: LogicalIRQ) -> Void {
+    role interrupt_mask
+    source "gpio-ftgpio010.c:64"
+    context irq
+    callback irq_chip.irq_mask
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_mask_irq
+    effect writes_register(GPIO_INT_EN)
+    effect masks_interrupt(line)
+    ensure interrupt_enabled[line] == false
+  }
+  function ftgpio_gpio_unmask_irq(d: LogicalIRQ) -> Void {
+    role interrupt_unmask
+    source "gpio-ftgpio010.c:76"
+    context irq
+    callback irq_chip.irq_unmask
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_unmask_irq
+    effect writes_register(GPIO_INT_EN)
+    effect unmasks_interrupt(line)
+    ensure interrupt_enabled[line] == true
+  }
+  function ftgpio_gpio_set_irq_type(d: LogicalIRQ, type: UInt) -> UInt {
+    role set_irq_type
+    source "gpio-ftgpio010.c:88"
+    context irq
+    callback irq_chip.irq_set_type
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_set_irq_type
+    effect writes_register(GPIO_INT_TYPE)
+    effect writes_register(GPIO_INT_LEVEL)
+    effect writes_register(GPIO_INT_BOTH_EDGE)
+    effect writes_register(GPIO_INT_CLR)
+    effect sets_irq_type(line)
+    ensure irq_type[line] == configured
+  }
+  function ftgpio_gpio_irq_handler(desc: LogicalIRQ) -> Void {
+    role interrupt_handler
+    source "gpio-ftgpio010.c:141"
+    context irq
+    callback gpio_irq_chip.parent_handler
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_irq_handler
+    effect handles_interrupt()
+    ensure interrupt_serviced
+  }
+  function ftgpio_gpio_set_config(gc: DeviceState, offset: UInt, config: UInt) -> UInt {
+    role write_config
+    source "gpio-ftgpio010.c:159"
+    context thread
+    callback gpio_chip.set_config
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_set_config
+    effect writes_register(GPIO_DEBOUNCE_EN)
+    effect writes_register(GPIO_DEBOUNCE_PRESCALE)
+    effect writes_config(offset)
+  }
+  function ftgpio_gpio_probe(pdev: DeviceState) -> UInt {
+    role probe
+    source "gpio-ftgpio010.c:236"
+    context boot
+    callback platform_driver.probe
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    require resources_available
+    ris ftgpio_gpio_probe
+    effect writes_register(GPIO_INT_EN)
+    effect writes_register(GPIO_INT_MASK)
+    effect writes_register(GPIO_INT_CLR)
+    effect writes_register(GPIO_DEBOUNCE_EN)
+    effect initializes_device()
+    ensure device_state == READY
+  }
+  function ftgpio_gpio_probe__gpio_generic_get(gc: DeviceState, offset: UInt) -> UInt {
+    role read_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.get
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_get
+    effect reads_config(offset)
+  }
+  function ftgpio_gpio_probe__gpio_generic_get_multiple(gc: DeviceState, mask: UIntPtr, bits: UIntPtr) -> UInt {
+    role read_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.get_multiple
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_get_multiple
+    effect reads_config(offset)
+  }
+  function ftgpio_gpio_probe__gpio_generic_set(gc: DeviceState, offset: UInt, value: UInt) -> UInt {
+    role write_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.set
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_set
+    effect writes_register(GPIO_DATA_SET)
+    effect writes_register(GPIO_DATA_CLR)
+    effect writes_config(offset)
+  }
+  function ftgpio_gpio_probe__gpio_generic_set_multiple(gc: DeviceState, mask: UIntPtr, bits: UIntPtr) -> UInt {
+    role write_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.set_multiple
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_set_multiple
+    effect writes_register(GPIO_DATA_SET)
+    effect writes_register(GPIO_DATA_CLR)
+    effect writes_config(offset)
+  }
+  function ftgpio_gpio_probe__gpio_generic_direction_input(gc: DeviceState, offset: UInt) -> UInt {
+    role write_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.direction_input
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_direction_input
+    effect writes_register(GPIO_DIR)
+    effect writes_config(offset)
+  }
+  function ftgpio_gpio_probe__gpio_generic_direction_output(gc: DeviceState, offset: UInt, value: UInt) -> UInt {
+    role write_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.direction_output
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_direction_output
+    effect writes_register(GPIO_DATA_SET)
+    effect writes_register(GPIO_DATA_CLR)
+    effect writes_register(GPIO_DIR)
+    effect writes_config(offset)
+  }
+  function ftgpio_gpio_probe__gpio_generic_get_direction(gc: DeviceState, offset: UInt) -> UInt {
+    role read_config
+    source "gpio-ftgpio010.c:236"
+    context thread
+    callback gpio_chip.get_direction
+    bind dev: DeviceState from g
+    bind base: MmioBase from g->base
+    ris ftgpio_gpio_probe__gpio_generic_get_direction
+    effect reads_config(offset)
+  }
+}

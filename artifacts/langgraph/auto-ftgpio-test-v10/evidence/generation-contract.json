@@ -1,0 +1,1197 @@
+{
+  "claim_scope": {
+    "alias_analysis": "off",
+    "call_semantics_proven": true,
+    "callee_rescue_semantics_complete": true,
+    "claim": "recognized hardware-access and structured-control universe",
+    "control_flow": "source statement CFG with dominance/joins, structured lexical paths, resolved forward-goto guards, switch exclusivity, and bounded loops",
+    "indirect_calls": "simple static initializer/assignment targets",
+    "register_accesses": "typed MMIO, regmap, I2C and public MFD helper transactions plus direct volatile and inline-asm detection",
+    "whole_program_complete": false
+  },
+  "driver": "gpio-ftgpio010",
+  "policy": {
+    "cardinality": "exactly-once",
+    "required_disposition": "lowered",
+    "semantic_authority": "canonical-formal-ris",
+    "unknown_operations_allowed": false
+  },
+  "register_operations": [
+    {
+      "access_domain": "mmio",
+      "digest": "5dd3bb35656acca9",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_ack_irq",
+        "line": 61,
+        "offset": 1676,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:61:2:1676:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_ack_irq",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_ack_irq",
+      "op_id": "op_1",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "67a27c7ab6f431e2",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "ftgpio_gpio_mask_irq",
+        "line": 70,
+        "offset": 1910,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:70:8:1910:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_mask_irq",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_mask_irq",
+      "op_id": "op_2",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "35b8bf6436435508",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_mask_irq",
+        "line": 72,
+        "offset": 1973,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:72:2:1973:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_mask_irq",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_2"
+      },
+      "module": "ftgpio_gpio_mask_irq",
+      "op_id": "op_3",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "67a27c7ab6f431e2",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "ftgpio_gpio_unmask_irq",
+        "line": 83,
+        "offset": 2279,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:83:8:2279:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_unmask_irq",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_unmask_irq",
+      "op_id": "op_4",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "d8ab399a3e165c09",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_unmask_irq",
+        "line": 85,
+        "offset": 2341,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:85:2:2341:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_unmask_irq",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_4"
+      },
+      "module": "ftgpio_gpio_unmask_irq",
+      "op_id": "op_5",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "b359d00e3d754d3e",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 13,
+        "function": "ftgpio_gpio_set_irq_type",
+        "line": 95,
+        "offset": 2644,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:95:13:2644:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_irq_type",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_6",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "85db95e4e47b9e4c",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 14,
+        "function": "ftgpio_gpio_set_irq_type",
+        "line": 96,
+        "offset": 2689,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:96:14:2689:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_irq_type",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_7",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "6642efb8949d9184",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 13,
+        "function": "ftgpio_gpio_set_irq_type",
+        "line": 97,
+        "offset": 2734,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:97:13:2734:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_irq_type",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_8",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "d1c746cb513851b5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_set_irq_type",
+        "line": 132,
+        "offset": 3531,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:132:2:3531:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_irq_type",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_6"
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_27",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "26d436ff936be225",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_set_irq_type",
+        "line": 133,
+        "offset": 3575,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:133:2:3575:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_irq_type",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_7"
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_28",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "64b0966d1739dce7",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_set_irq_type",
+        "line": 134,
+        "offset": 3621,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:134:2:3621:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_irq_type",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_8"
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_29",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "f3139a9d8d4fcbca",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_ack_irq",
+        "inlined_at": [
+          {
+            "callee": "ftgpio_gpio_ack_irq",
+            "function": "ftgpio_gpio_set_irq_type",
+            "indirect_expression": null,
+            "line": 136
+          }
+        ],
+        "line": 61,
+        "offset": 1676,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:61:2:1676:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_ack_irq",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_set_irq_type",
+      "op_id": "op_30",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "e74749be940967d5",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 9,
+        "function": "ftgpio_gpio_irq_handler",
+        "line": 151,
+        "offset": 4008,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:151:9:4008:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_irq_handler",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_irq_handler",
+      "op_id": "op_31",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "8eb491b0c0634ba7",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "ftgpio_gpio_set_config",
+        "line": 193,
+        "offset": 5298,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:193:8:5298:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_config",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_set_config",
+      "op_id": "op_32",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "48230cd8ed117ec6",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 9,
+        "function": "ftgpio_gpio_set_config",
+        "line": 202,
+        "offset": 5679,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:202:9:5679:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_config",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_set_config",
+      "op_id": "op_33",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "81000a354c140fe1",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 3,
+        "function": "ftgpio_gpio_set_config",
+        "line": 204,
+        "offset": 5738,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:204:3:5738:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_config",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_33"
+      },
+      "module": "ftgpio_gpio_set_config",
+      "op_id": "op_35",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "339408230d26d326",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "read",
+        "ast_kind": "CALL_EXPR",
+        "callee": "readl",
+        "column": 8,
+        "function": "ftgpio_gpio_set_config",
+        "line": 208,
+        "offset": 5802,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:208:8:5802:readl",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_config",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_set_config",
+      "op_id": "op_36",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a89c06a8b813ae48",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_set_config",
+        "line": 218,
+        "offset": 6019,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:218:2:6019:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_config",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_set_config",
+      "op_id": "op_37",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a6b3f48cd0fe1e05",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_set_config",
+        "line": 221,
+        "offset": 6115,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:221:2:6115:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_set_config",
+        "width_bytes": 4
+      },
+      "kind": "ReadModifyWrite",
+      "lowering_recipe": {
+        "kind": "write_from_read",
+        "primitives": [
+          "Write"
+        ],
+        "read_op_id": "op_36"
+      },
+      "module": "ftgpio_gpio_set_config",
+      "op_id": "op_39",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "16d85024e558eaef",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_generic_chip_init",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_probe",
+      "op_id": "op_43",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "e9b515951bfad9ea",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_generic_chip_init",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_probe",
+      "op_id": "op_45",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "7443390abf8fb623",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_probe",
+        "line": 304,
+        "offset": 8183,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:304:2:8183:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe",
+      "op_id": "op_56",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "015d9e37bb50b02a",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_probe",
+        "line": 305,
+        "offset": 8220,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:305:2:8220:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe",
+      "op_id": "op_57",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "153d39994bb1ba88",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_probe",
+        "line": 306,
+        "offset": 8259,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:306:2:8259:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe",
+      "op_id": "op_58",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "92b66149c6b53a4a",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "write",
+        "ast_kind": "CALL_EXPR",
+        "callee": "writel",
+        "column": 2,
+        "function": "ftgpio_gpio_probe",
+        "line": 309,
+        "offset": 8332,
+        "origin": "direct",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:309:2:8332:writel",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe",
+      "op_id": "op_59",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a2dc39d9a87e4bf7",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.get",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_get",
+      "op_id": "op_61",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "a2dc39d9a87e4bf7",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.get",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_get_multiple",
+      "op_id": "op_63",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "b36eb49659ebc50a",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.set",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_set",
+      "op_id": "op_66",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "3834a18c428720bf",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.set",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_set",
+      "op_id": "op_67",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "ab8d874dfdeeade8",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.set",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "op_id": "op_69",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "5f32f4874eb9aabb",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.set",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_set_multiple",
+      "op_id": "op_70",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "b949672343e78260",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.direction",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_direction_input",
+      "op_id": "op_74",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "b36eb49659ebc50a",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.set",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "op_id": "op_76",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "3834a18c428720bf",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.set",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "op_id": "op_77",
+      "reliability": "Conservative",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "43d76c2e0b3f2385",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.direction",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Write",
+      "lowering_recipe": {
+        "kind": "write",
+        "primitives": [
+          "Write"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_direction_output",
+      "op_id": "op_80",
+      "reliability": "Exact",
+      "width": "B4"
+    },
+    {
+      "access_domain": "mmio",
+      "digest": "9d0c4bdae3641bba",
+      "evidence": {
+        "access_domain": "mmio",
+        "access_kind": "summary",
+        "ast_kind": "CALL_EXPR",
+        "byte_order": "native",
+        "callee": "gpio_generic_chip_init",
+        "column": 8,
+        "effective_callee": "gpio_generic_chip_init",
+        "function": "ftgpio_gpio_probe",
+        "library_callback": "gpio_chip.direction",
+        "line": 276,
+        "offset": 7361,
+        "origin": "subsystem_summary",
+        "site_id": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c:276:8:7361:gpio_generic_chip_init",
+        "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c",
+        "subsystem_summary": "gpio_generic_chip",
+        "summary_contract": "linux.gpio_generic_chip_config",
+        "symbol": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-ftgpio010.c::ftgpio_gpio_probe",
+        "width_bytes": 4
+      },
+      "kind": "Read",
+      "lowering_recipe": {
+        "kind": "read",
+        "primitives": [
+          "Read"
+        ]
+      },
+      "module": "ftgpio_gpio_probe__gpio_generic_get_direction",
+      "op_id": "op_82",
+      "reliability": "Exact",
+      "width": "B4"
+    }
+  ],
+  "schema": 1,
+  "synthesis_readiness": {
+    "backend_bare_metal_ready": false,
+    "backend_harness_ready": false,
+    "backend_linux_ready": false,
+    "blockers": [
+      "generated backend compile/lowering/attestation results unavailable",
+      "7 synthesized subsystem callback(s) lack generic-backend execution oracle"
+    ],
+    "device_spec_quality": 1.0,
+    "facts_quality": 1.0,
+    "function_spec_quality": 1.0,
+    "llm_synthesis_ready": true,
+    "ris_quality": 1.0
+  },
+  "transaction_operations": []
+}

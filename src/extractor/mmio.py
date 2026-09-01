@@ -24,21 +24,6 @@ MMIO_WRITE_FNS = {
     "writeb_relaxed", "writew_relaxed", "writel_relaxed", "writeq_relaxed",
 }
 
-# Driver-private wrappers whose argument layout is semantically equivalent to
-# Linux MMIO primitives. The tuple is (device/state arg, offset arg, base
-# field); writes additionally identify the value arg. Keeping this explicit
-# avoids treating arbitrary functions named read/write as MMIO.
-PRIVATE_MMIO_READ_LAYOUTS = {
-    "dwc2_readl": (0, 1, "regs"),
-    "dw_readl": (0, 1, "regs"),
-    "dw_read_io_reg": (0, 1, "regs"),
-}
-PRIVATE_MMIO_WRITE_LAYOUTS = {
-    "dwc2_writel": (0, 1, 2, "regs"),
-    "dw_writel": (0, 2, 1, "regs"),
-    "dw_write_io_reg": (0, 2, 1, "regs"),
-}
-
 # Public subsystem accessors with stable, type-defined register contracts.
 # Keep these separate from driver-private layouts: this is Linux library
 # semantics, not a source-name exception.
@@ -132,7 +117,7 @@ FRAMEWORK_FNS = {
     # Misc
     "module_init", "module_exit",
     "kthread_create", "kthread_run", "kthread_stop",
-    "wait_for_completion", "complete",
+    "wait_for_completion", "wait_for_completion_timeout", "complete",
     "schedule", "wait_event",
     "clk_prepare", "clk_enable", "clk_unprepare", "clk_disable",
     "clk_prepare_enable", "clk_disable_unprepare",
@@ -141,13 +126,14 @@ FRAMEWORK_FNS = {
 
 
 def infer_width(name: str) -> int:
-    if name.endswith("64") or name.endswith("q"):
+    normalized = re.sub(r"(?:_(?:relaxed|acquire|release)|be)$", "", name)
+    if normalized.endswith("64") or normalized.endswith("q"):
         return 8
-    if name.endswith("32") or name.endswith("l"):
+    if normalized.endswith("32") or normalized.endswith("l"):
         return 4
-    if name.endswith("16") or name.endswith("w"):
+    if normalized.endswith("16") or normalized.endswith("w"):
         return 2
-    if name.endswith("8") or name.endswith("b"):
+    if normalized.endswith("8") or normalized.endswith("b"):
         return 1
     return 4
 
@@ -249,16 +235,14 @@ def infer_call_width(name: str, call=None) -> int:
 
 
 def is_mmio_read(name: str) -> bool:
-    return (name in MMIO_READ_FNS or name in PRIVATE_MMIO_READ_LAYOUTS
-            or name in SUBSYSTEM_MMIO_READ_LAYOUTS
+    return (name in MMIO_READ_FNS or name in SUBSYSTEM_MMIO_READ_LAYOUTS
             or name in DIRECT_ADDRESS_READ_LAYOUTS
             or name in VIRTIO_CONFIG_READ_FNS
             or name in VIRTQUEUE_READ_FNS)
 
 
 def is_mmio_write(name: str) -> bool:
-    return (name in MMIO_WRITE_FNS or name in PRIVATE_MMIO_WRITE_LAYOUTS
-            or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS
+    return (name in MMIO_WRITE_FNS or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS
             or name in DIRECT_ADDRESS_WRITE_LAYOUTS
             or name in VIRTIO_CONFIG_WRITE_FNS
             or name in VIRTQUEUE_WRITE_FNS)
@@ -317,8 +301,7 @@ def read_addr_expr(name: str, args: list[str]) -> str:
         if max(regmap) >= len(args):
             return ""
         return f"{args[state_arg]} + {args[offset_arg]}"
-    layout = (PRIVATE_MMIO_READ_LAYOUTS.get(name)
-              or SUBSYSTEM_MMIO_READ_LAYOUTS.get(name))
+    layout = SUBSYSTEM_MMIO_READ_LAYOUTS.get(name)
     if layout is None:
         return args[0] if args else ""
     state_arg, offset_arg, base_field = layout
@@ -349,8 +332,7 @@ def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
         if max(regmap) >= len(args):
             return "", ""
         return args[value_arg], f"{args[state_arg]} + {args[offset_arg]}"
-    layout = (PRIVATE_MMIO_WRITE_LAYOUTS.get(name)
-              or SUBSYSTEM_MMIO_WRITE_LAYOUTS.get(name))
+    layout = SUBSYSTEM_MMIO_WRITE_LAYOUTS.get(name)
     if layout is None:
         if len(args) >= 2:
             return args[0], args[1]

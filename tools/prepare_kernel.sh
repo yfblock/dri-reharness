@@ -1,1 +1,0 @@
-build/prepare_kernel.sh

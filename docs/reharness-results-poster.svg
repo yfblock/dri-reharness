@@ -1,0 +1,220 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1680" viewBox="0 0 1200 1680" font-family="-apple-system, 'Segoe UI', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="0.55" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="1680" fill="#0b1220"/>
+
+  <!-- ===== header ===== -->
+  <rect x="0" y="0" width="1200" height="8" fill="url(#hdr)"/>
+  <text x="600" y="72" text-anchor="middle" font-size="38" font-weight="800" fill="#f8fafc">Reharness 驱动翻译验证平台</text>
+  <text x="600" y="108" text-anchor="middle" font-size="16" fill="#7dd3fc">RIS 提取 · 三后端代码生成 · QEMU 硬件闭环 · LLM 修复环</text>
+  <text x="600" y="136" text-anchor="middle" font-size="12" fill="#94a3b8">2026-08-30 · LangGraph 编排（唯一路径）· deterministic rules · QEMU x86_64</text>
+
+  <!-- ===== KPI cards ===== -->
+  <g>
+    <rect x="40" y="176" width="270" height="116" rx="14" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="175" y="236" text-anchor="middle" font-size="42" font-weight="800" fill="#34d399">9/9</text>
+    <text x="175" y="264" text-anchor="middle" font-size="13" fill="#94a3b8">QEMU 闭环实验</text>
+    <text x="175" y="281" text-anchor="middle" font-size="10" fill="#64748b">probe + trace oracle 全过</text>
+
+    <rect x="330" y="176" width="270" height="116" rx="14" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="465" y="236" text-anchor="middle" font-size="42" font-weight="800" fill="#22d3ee">19/19</text>
+    <text x="465" y="264" text-anchor="middle" font-size="13" fill="#94a3b8">驱动提取流水线</text>
+    <text x="465" y="281" text-anchor="middle" font-size="10" fill="#64748b">RIS / formal / spec 完整产出</text>
+
+    <rect x="620" y="176" width="270" height="116" rx="14" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="755" y="236" text-anchor="middle" font-size="42" font-weight="800" fill="#fbbf24">56/57</text>
+    <text x="755" y="264" text-anchor="middle" font-size="13" fill="#94a3b8">三后端编译</text>
+    <text x="755" y="281" text-anchor="middle" font-size="10" fill="#64748b">harness 19 · baremetal 19 · linux 18</text>
+
+    <rect x="910" y="176" width="270" height="116" rx="14" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="1045" y="236" text-anchor="middle" font-size="42" font-weight="800" fill="#a78bfa">12/12</text>
+    <text x="1045" y="264" text-anchor="middle" font-size="13" fill="#94a3b8">zero-shot 流水线（holdout）</text>
+    <text x="1045" y="281" text-anchor="middle" font-size="10" fill="#64748b">未见驱动 · strict-ready 7/12</text>
+  </g>
+
+  <!-- ===== experiment table ===== -->
+  <text x="60" y="356" text-anchor="start" font-size="20" font-weight="700" fill="#f8fafc">QEMU 闭环实验结果</text>
+  <rect x="60" y="368" width="80" height="4" fill="url(#hdr)"/>
+
+  <text x="100" y="404" font-size="12" font-weight="700" fill="#7dd3fc">实验 / 驱动</text>
+  <text x="350" y="404" font-size="12" font-weight="700" fill="#7dd3fc">总线 / 类型</text>
+  <text x="580" y="404" font-size="12" font-weight="700" fill="#7dd3fc">probe</text>
+  <text x="670" y="404" font-size="12" font-weight="700" fill="#7dd3fc">trace oracle</text>
+  <text x="800" y="404" font-size="12" font-weight="700" fill="#7dd3fc">值 oracle / 覆盖率 / 子系统测试</text>
+
+  <!-- rows -->
+  <g font-size="13">
+    <rect x="60" y="416" width="1120" height="40" fill="#0f1629"/>
+    <text x="100" y="441" fill="#e2e8f0">edu</text>
+    <text x="350" y="441" fill="#94a3b8">PCI · QEMU edu 设备</text>
+    <text x="598" y="441" fill="#34d399">✓</text>
+    <text x="686" y="441" fill="#34d399">✓</text>
+    <text x="800" y="441" fill="#34d399">值 oracle：EDU_TRACE_OK</text>
+
+    <rect x="60" y="458" width="1120" height="40" fill="#111c33"/>
+    <text x="100" y="483" fill="#e2e8f0">ftgpio010</text>
+    <text x="350" y="483" fill="#94a3b8">platform · GPIO 控制器</text>
+    <text x="598" y="483" fill="#34d399">✓</text>
+    <text x="686" y="483" fill="#34d399">✓</text>
+    <text x="800" y="483" fill="#34d399">op 13/13 · reg 8/8 · call 7/7 · module 6/6</text>
+
+    <rect x="60" y="500" width="1120" height="40" fill="#0f1629"/>
+    <text x="100" y="525" fill="#e2e8f0">reharness-spi</text>
+    <text x="350" y="525" fill="#94a3b8">SPI 台架（registrar + spidev）</text>
+    <text x="598" y="525" fill="#34d399">✓</text>
+    <text x="686" y="525" fill="#34d399">✓</text>
+    <text x="800" y="525" fill="#34d399">子系统测试 3/3</text>
+
+    <rect x="60" y="542" width="1120" height="40" fill="#111c33"/>
+    <text x="100" y="567" fill="#e2e8f0">reharness-i2c</text>
+    <text x="350" y="567" fill="#94a3b8">I2C 台架</text>
+    <text x="598" y="567" fill="#34d399">✓</text>
+    <text x="686" y="567" fill="#34d399">✓</text>
+    <text x="800" y="567" fill="#34d399">probe 绑定 ✓</text>
+
+    <rect x="60" y="584" width="1120" height="40" fill="#0f1629"/>
+    <text x="100" y="609" fill="#e2e8f0">reharness-mdio</text>
+    <text x="350" y="609" fill="#94a3b8">MDIO 台架</text>
+    <text x="598" y="609" fill="#34d399">✓</text>
+    <text x="686" y="609" fill="#34d399">✓</text>
+    <text x="800" y="609" fill="#34d399">probe 绑定 ✓</text>
+
+    <rect x="60" y="626" width="1120" height="40" fill="#111c33"/>
+    <text x="100" y="651" fill="#e2e8f0">reharness-usb</text>
+    <text x="350" y="651" fill="#94a3b8">USB 台架</text>
+    <text x="598" y="651" fill="#34d399">✓</text>
+    <text x="686" y="651" fill="#34d399">✓</text>
+    <text x="800" y="651" fill="#34d399">probe 绑定 ✓</text>
+
+    <rect x="60" y="668" width="1120" height="40" fill="#0f1629"/>
+    <text x="100" y="693" fill="#e2e8f0">reharness-network</text>
+    <text x="350" y="693" fill="#94a3b8">net 台架</text>
+    <text x="598" y="693" fill="#34d399">✓</text>
+    <text x="686" y="693" fill="#34d399">✓</text>
+    <text x="800" y="693" fill="#34d399">probe 模式 ✓</text>
+
+    <rect x="60" y="710" width="1120" height="40" fill="#111c33"/>
+    <text x="100" y="735" fill="#e2e8f0">reharness-amba</text>
+    <text x="350" y="735" fill="#94a3b8">AMBA 台架</text>
+    <text x="598" y="735" fill="#34d399">✓</text>
+    <text x="686" y="735" fill="#34d399">✓</text>
+    <text x="800" y="735" fill="#34d399">probe 绑定 ✓</text>
+
+    <rect x="60" y="752" width="1120" height="40" fill="#0f1629"/>
+    <text x="100" y="777" fill="#e2e8f0">reharness-virtio</text>
+    <text x="350" y="777" fill="#94a3b8">virtio 台架</text>
+    <text x="598" y="777" fill="#34d399">✓</text>
+    <text x="686" y="777" fill="#34d399">✓</text>
+    <text x="800" y="777" fill="#34d399">子系统测试 2/2 · probe 计数 28</text>
+  </g>
+
+  <!-- ===== closed loop flow ===== -->
+  <text x="60" y="860" text-anchor="start" font-size="20" font-weight="700" fill="#f8fafc">闭环修复协议</text>
+  <rect x="60" y="872" width="80" height="4" fill="url(#hdr)"/>
+
+  <g font-size="12">
+    <rect x="60" y="900" width="150" height="54" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="135" y="922" text-anchor="middle" fill="#e2e8f0">提取 RIS + 证据</text>
+    <text x="135" y="940" text-anchor="middle" font-size="10" fill="#64748b">formal · contract</text>
+
+    <rect x="255" y="900" width="150" height="54" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="330" y="922" text-anchor="middle" fill="#e2e8f0">LLM 合成候选</text>
+    <text x="330" y="940" text-anchor="middle" font-size="10" fill="#64748b">携带 evidence + 限额</text>
+
+    <rect x="450" y="900" width="150" height="54" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="525" y="922" text-anchor="middle" fill="#e2e8f0">契约 + Kbuild 编译</text>
+    <text x="525" y="940" text-anchor="middle" font-size="10" fill="#64748b">linux 注册门</text>
+
+    <rect x="645" y="900" width="180" height="54" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="735" y="922" text-anchor="middle" fill="#e2e8f0">QEMU 基线 + 候选</text>
+    <text x="735" y="940" text-anchor="middle" font-size="10" fill="#64748b">原驱动 vs 翻译驱动</text>
+
+    <rect x="870" y="900" width="130" height="54" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="935" y="922" text-anchor="middle" fill="#e2e8f0">RIS 差分比对</text>
+    <text x="935" y="940" text-anchor="middle" font-size="10" fill="#64748b">路径 + 值 oracle</text>
+
+    <rect x="1040" y="900" width="110" height="54" rx="10" fill="#052e1f" stroke="#34d399" stroke-width="1.5"/>
+    <text x="1095" y="922" text-anchor="middle" fill="#34d399">ACCEPTED</text>
+    <text x="1095" y="940" text-anchor="middle" font-size="10" fill="#6ee7b7">语义等价证明</text>
+  </g>
+  <g stroke="#38bdf8" stroke-width="1.8" fill="none">
+    <line x1="210" y1="927" x2="251" y2="927" marker-end="url(#ar)"/>
+    <line x1="405" y1="927" x2="446" y2="927" marker-end="url(#ar)"/>
+    <line x1="600" y1="927" x2="641" y2="927" marker-end="url(#ar)"/>
+    <line x1="825" y1="927" x2="866" y2="927" marker-end="url(#ar)"/>
+    <line x1="1000" y1="927" x2="1036" y2="927" marker-end="url(#ar)"/>
+  </g>
+  <path d="M 935 954 L 935 990 L 330 990" stroke="#f59e0b" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+  <text x="632" y="982" text-anchor="middle" font-size="11" fill="#fbbf24">六类失败（contract / compile / register / baseline / candidate / diff）→ LLM 修复（feedback + 旧候选）→ 重试直至通过或限额</text>
+
+  <!-- ===== architecture ===== -->
+  <text x="60" y="1070" text-anchor="start" font-size="20" font-weight="700" fill="#f8fafc">编排：唯一路径 = LangGraph</text>
+  <rect x="60" y="1082" width="80" height="4" fill="url(#hdr)"/>
+
+  <g font-size="12">
+    <rect x="60" y="1108" width="180" height="60" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="150" y="1132" text-anchor="middle" fill="#e2e8f0">pipeline_entry</text>
+    <text x="150" y="1150" text-anchor="middle" font-size="10" fill="#64748b">generation / experiment 分发</text>
+
+    <rect x="290" y="1108" width="330" height="60" rx="10" fill="#0f1629" stroke="#0e7490"/>
+    <text x="455" y="1132" text-anchor="middle" fill="#22d3ee">generation 子图</text>
+    <text x="455" y="1150" text-anchor="middle" font-size="10" fill="#64748b">Send×5 oracle → join → Send×N backend → artifacts</text>
+
+    <rect x="670" y="1108" width="360" height="60" rx="10" fill="#0f1629" stroke="#059669"/>
+    <text x="850" y="1132" text-anchor="middle" fill="#34d399">experiment 子图 · 修复环</text>
+    <text x="850" y="1150" text-anchor="middle" font-size="10" fill="#64748b">contract→compile→register→QEMU→diff（repair 回边）</text>
+
+    <rect x="1060" y="1108" width="80" height="60" rx="10" fill="#111c33" stroke="#1e3a5f"/>
+    <text x="1100" y="1132" text-anchor="middle" fill="#e2e8f0">finalize</text>
+    <text x="1100" y="1150" text-anchor="middle" font-size="10" fill="#64748b">契约不变</text>
+  </g>
+  <g stroke="#38bdf8" stroke-width="1.6" fill="none">
+    <line x1="240" y1="1138" x2="286" y2="1138" marker-end="url(#ar)"/>
+    <line x1="620" y1="1138" x2="666" y2="1138" marker-end="url(#ar)"/>
+    <line x1="1030" y1="1138" x2="1056" y2="1138" marker-end="url(#ar)"/>
+  </g>
+  <text x="600" y="1200" text-anchor="middle" font-size="11" fill="#94a3b8">全 JSON 状态 · SqliteSaver 断点续跑 · interrupt_after 任意节点 · experiment_backends 多后端 fan-out（strict join 聚合）</text>
+
+  <!-- ===== layered rates ===== -->
+  <text x="60" y="1268" text-anchor="start" font-size="20" font-weight="700" fill="#f8fafc">分层成功率（口径注明）</text>
+  <rect x="60" y="1280" width="80" height="4" fill="url(#hdr)"/>
+
+  <g font-size="13">
+    <text x="60" y="1322" fill="#e2e8f0">提取 / 流水线完成</text>
+    <rect x="330" y="1306" width="700" height="22" rx="11" fill="#111c33"/>
+    <rect x="330" y="1306" width="700" height="22" rx="11" fill="#34d399" opacity="0.85"/>
+    <text x="1050" y="1322" fill="#34d399" font-weight="700">100%</text>
+
+    <text x="60" y="1372" fill="#e2e8f0">三后端编译（h/b/l）</text>
+    <rect x="330" y="1356" width="700" height="22" rx="11" fill="#111c33"/>
+    <rect x="330" y="1356" width="684" height="22" rx="11" fill="#fbbf24" opacity="0.85"/>
+    <text x="1050" y="1372" fill="#fbbf24" font-weight="700">98%</text>
+
+    <text x="60" y="1422" fill="#e2e8f0">zero-shot strict-ready（任一后端）</text>
+    <rect x="330" y="1406" width="700" height="22" rx="11" fill="#111c33"/>
+    <rect x="330" y="1406" width="408" height="22" rx="11" fill="#22d3ee" opacity="0.85"/>
+    <text x="1050" y="1422" fill="#22d3ee" font-weight="700">58%</text>
+
+    <text x="60" y="1472" fill="#e2e8f0">strict 可靠（全口径静态证明）</text>
+    <rect x="330" y="1456" width="700" height="22" rx="11" fill="#111c33"/>
+    <rect x="330" y="1456" width="184" height="22" rx="11" fill="#a78bfa" opacity="0.85"/>
+    <text x="1050" y="1472" fill="#a78bfa" font-weight="700">26%</text>
+  </g>
+  <text x="60" y="1512" font-size="11" fill="#64748b">编译/提取 = 19 驱动矩阵（LLM 模式, 2026-08-01）；确定性 rules 模式矩阵见 matrix-langgraph.json；strict = 静态证明口径（lowering/AST/注册证明），区别于 QEMU 闭环判定</text>
+
+  <!-- ===== footer ===== -->
+  <rect x="0" y="1560" width="1200" height="120" fill="#0f172a"/>
+  <rect x="0" y="1560" width="1200" height="4" fill="url(#hdr)"/>
+  <text x="600" y="1600" text-anchor="middle" font-size="13" fill="#e2e8f0">权威数据：research/experiments/results/（qemu.json · matrix.json · zero-shot-matrix.json · matrix-langgraph.json）</text>
+  <text x="600" y="1624" text-anchor="middle" font-size="11" fill="#94a3b8">编排：LangGraph 子图（generation Send 扇出 / experiment 修复环）· 等价性：24 场景差分 + 19 驱动矩阵 + 钉候选 QEMU 重放</text>
+  <text x="600" y="1646" text-anchor="middle" font-size="11" fill="#64748b">复现：./run.sh qemu-experiments · ./run.sh test · qa/verification/run_matrix_langgraph.py</text>
+</svg>

@@ -1,0 +1,7 @@
+=== QEMU run: module=e1000e bus=pci timeout=90s ===
+=== QEMU 退出码: 1 ===
+
+=== 成功判定 ===
+  => 失败: unload_failed
+  done=0 probe=0 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 失败: exerciser/subsystem semantic test failed

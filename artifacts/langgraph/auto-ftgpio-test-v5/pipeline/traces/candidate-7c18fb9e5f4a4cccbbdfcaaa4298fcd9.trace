@@ -1,0 +1,42 @@
+=== QEMU run: module=ftgpio010_gpio bus=platform timeout=90s ===
+=== QEMU 退出码: 0 ===
+[    0.031222] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031289] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.071212] ftrace: allocating 31848 entries in 126 pages
+[    0.071469] ftrace: allocated 126 pages with 6 groups
+[    0.402618] thermal_sys: Registered thermal governor 'step_wise'
+[    0.407028] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.411613] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.495222] pps_core: LinuxPPS API ver. 1 registered
+[    0.534035] Key type asymmetric registered
+[    0.534107] Asymmetric key parser 'x509' registered
+[    0.534483] io scheduler mq-deadline registered
+[    0.534569] io scheduler kyber registered
+[    0.576038] rtc_cmos PNP0B00:00: registered as rtc0
+=== insmod device-registrar target=ftgpio010-gpio ===
+REHARNESS_REGISTRAR_INSMOD_RC=0
+=== insmod ftgpio010_gpio ===
+[    1.302628] insmod (59) used greatest stack depth: 13120 bytes left
+REHARNESS_DRIVER_INSMOD_RC=0
+[    0.031222] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031289] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.402618] thermal_sys: Registered thermal governor 'step_wise'
+[    0.411613] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.495222] pps_core: LinuxPPS API ver. 1 registered
+[    0.534035] Key type asymmetric registered
+[    0.534107] Asymmetric key parser 'x509' registered
+[    0.534483] io scheduler mq-deadline registered
+[    0.534569] io scheduler kyber registered
+[    0.576038] rtc_cmos PNP0B00:00: registered as rtc0
+GPIO_TRACE_FAIL:open /dev/gpiochip0
+REHARNESS_SUBSYSTEM_TEST_0_NAME=ftgpio010-gpio-api
+REHARNESS_SUBSYSTEM_TEST_0_RC=2
+REHARNESS_SUBSYSTEM_TEST_0_STATUS=pass
+=== rmmod ftgpio010_gpio ===
+=== QEMU_RUN_DONE ===
+[    1.878091] Call Trace:
+
+=== 成功判定 ===
+REHARNESS_SUBSYSTEM_TEST_0_SUCCESS=0
+  done=1 probe=15 real_oops=0
+  => 失败: exerciser/subsystem semantic test failed

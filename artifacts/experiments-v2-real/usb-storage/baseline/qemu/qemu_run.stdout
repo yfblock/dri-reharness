@@ -1,0 +1,74 @@
+[    0.436649] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.440994] thermal_sys: Registered thermal governor 'step_wise'
+[    0.445651] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.450429] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.539505] ACPI: bus type USB registered
+[    0.539991] usbcore: registered new interface driver usbfs
+[    0.540196] usbcore: registered new interface driver hub
+[    0.540304] usbcore: registered new device driver usb
+[    0.540496] pps_core: LinuxPPS API ver. 1 registered
+[    0.540618] PTP clock support registered
+[    0.574016] NET: Registered PF_INET protocol family
+[    0.600633] Key type asymmetric registered
+[    0.600711] Asymmetric key parser 'x509' registered
+[    0.601151] io scheduler mq-deadline registered
+[    0.601211] io scheduler kyber registered
+[    0.643885] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.646638] usbcore: registered new interface driver usbhid
+[    0.647348] NET: Registered PF_INET6 protocol family
+=== insmod required kernel module xhci-hcd ===
+REHARNESS_KERNEL_MODULE_0_INSMOD_RC=0
+=== insmod required kernel module xhci-pci ===
+[    1.092330] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.097655] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.106523] insmod (63) used greatest stack depth: 12000 bytes left
+REHARNESS_KERNEL_MODULE_1_INSMOD_RC=0
+=== insmod usb_storage ===
+[    1.116532] usbcore: registered new interface driver usb-storage
+REHARNESS_DRIVER_INSMOD_RC=0
+[    1.439680] [rhcov] storage_probe
+[    1.440856] [rhcov] usb_stor_probe2
+REHARNESS_DRIVER_PROBE_BOUND=1
+[    0.031858] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.031925] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.436649] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.440994] thermal_sys: Registered thermal governor 'step_wise'
+[    0.445651] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.450429] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.539505] ACPI: bus type USB registered
+[    0.539991] usbcore: registered new interface driver usbfs
+[    0.540196] usbcore: registered new interface driver hub
+[    0.540304] usbcore: registered new device driver usb
+[    0.540496] pps_core: LinuxPPS API ver. 1 registered
+[    0.540618] PTP clock support registered
+[    0.574016] NET: Registered PF_INET protocol family
+[    0.600633] Key type asymmetric registered
+[    0.600711] Asymmetric key parser 'x509' registered
+[    0.601151] io scheduler mq-deadline registered
+[    0.601211] io scheduler kyber registered
+[    0.643885] rtc_cmos PNP0B00:00: registered as rtc0
+[    0.646638] usbcore: registered new interface driver usbhid
+[    0.647348] NET: Registered PF_INET6 protocol family
+[    1.092330] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1
+[    1.097655] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2
+[    1.116532] usbcore: registered new interface driver usb-storage
+[    1.439680] [rhcov] storage_probe
+[    1.440856] [rhcov] usb_stor_probe2
+EXERCISER_RC=0
+[    1.106523] insmod (63) used greatest stack depth: 12000 bytes left
+[    1.116532] usbcore: registered new interface driver usb-storage
+[    1.439680] [rhcov] storage_probe
+[    1.440856] [rhcov] usb_stor_probe2
+[    1.106523] insmod (63) used greatest stack depth: 12000 bytes left
+[    1.116532] usbcore: registered new interface driver usb-storage
+[    1.439680] [rhcov] storage_probe
+[    1.440856] [rhcov] usb_stor_probe2
+=== rmmod usb_storage ===
+REHARNESS_DRIVER_RMMOD_RC=0
+=== QEMU_RUN_DONE ===
+[    2.849076] Call Trace:
+
+=== 成功判定 ===
+  done=1 probe=44 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0
+  => 成功: usb_storage probe 成功
+QEMU runtime artifacts: /tmp/reharness-qemu-v2-usb_storage-qemu.86qJYK

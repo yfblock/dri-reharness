@@ -1,0 +1,50 @@
+{
+  "evidence_digest": "e1fa75bd04ba65addce70bdf119713cb6b98ee7784c2a3bdc57035d5600c0759",
+  "iteration": 1,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "feedback": {
+      "details": {
+        "candidate_structure": {
+          "complete": false,
+          "errors": [
+            "missing_source_helper:gpio_generic_chip_init",
+            "missing_source_resource:devm_clk_get_enabled",
+            "resource_failure_policy:devm_clk_get_enabled:probe_defer_only"
+          ],
+          "source_resource_acquisitions": [
+            "devm_clk_get_enabled",
+            "devm_platform_ioremap_resource",
+            "platform_get_irq"
+          ]
+        },
+        "complete": true,
+        "digest_mismatch": [],
+        "duplicate": [],
+        "duplicate_expected_ids": [],
+        "duplicate_transaction_markers": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "missing_transaction_markers": [],
+        "receipts": 36,
+        "rejected": [],
+        "required_ops": 36,
+        "required_transactions": 0,
+        "schema": 1,
+        "transaction_accounting_complete": true,
+        "transaction_marker_mismatch": [],
+        "transaction_markers": 0,
+        "unknown": [],
+        "unknown_transaction_markers": [],
+        "unsupported_transactions": []
+      },
+      "failure_class": "contract",
+      "iteration": 1,
+      "message": "candidate violates Linux framework structure contract",
+      "retryable": true,
+      "stage": "contract"
+    }
+  },
+  "stage": "contract",
+  "status": "failed"
+}

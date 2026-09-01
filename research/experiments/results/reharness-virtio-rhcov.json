@@ -1,0 +1,10 @@
+{
+  "functions": [
+    "reharness_virtio_done",
+    "reharness_virtio_read",
+    "reharness_virtio_ioctl",
+    "reharness_virtio_probe",
+    "reharness_virtio_remove"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_virtio_sensor/reharness_virtio_sensor.c"
+}

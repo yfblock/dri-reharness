@@ -99,7 +99,7 @@ def verify_ftgpio_ack_trace() -> dict:
             original = _original_trace(binary, hwirq)
             ris = _ris_trace(
                 result.formal, "ftgpio_gpio_ack_irq",
-                {"irqd_to_hwirq(d)": hwirq})
+                {"irqd_to_hwirq(d)": hwirq, "d->hwirq": hwirq})
             if original != ris:
                 raise AssertionError(
                     f"hwirq={hwirq}: original={original}, ris={ris}")
@@ -109,9 +109,29 @@ def verify_ftgpio_ack_trace() -> dict:
         register = next(reg for reg in mutated["register_map"]
                         if reg["name"] == "GPIO_INT_CLR")
         register["offset"] += 4
+        # IR-primary ops carry GEP-verified Fixed offsets inline (not routed
+        # through register_map), so the mutation must also hit the ops to
+        # exercise the differential at the trace level.
+        for _mod in mutated.get("modules", []):
+
+            def _bump(op_list):
+                for op in op_list:
+                    for key in ("Cond", "Seq", "Loop"):
+                        node = op.get(key) or {}
+                        for sub in ("then_ops", "else_ops", "ops",
+                                    "guard_ops", "body"):
+                            if node.get(sub):
+                                _bump(node[sub])
+                    body = (op.get("Read") or op.get("Write")
+                            or op.get("ReadModifyWrite"))
+                    if body:
+                        fixed = (body.get("addr") or {}).get("Fixed")
+                        if fixed and fixed.get("name") == "GPIO_INT_CLR":
+                            fixed["offset"] = fixed.get("offset", 0) + 4
+            _bump(_mod.get("ops", []))
         mutation_caught = (
             _ris_trace(mutated, "ftgpio_gpio_ack_irq",
-                       {"irqd_to_hwirq(d)": 3})
+                       {"irqd_to_hwirq(d)": 3, "d->hwirq": 3})
             != _original_trace(binary, 3))
         if not mutation_caught:
             raise AssertionError("FTGPIO trace oracle missed offset mutation")

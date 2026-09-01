@@ -1,0 +1,16 @@
+{
+  "commands": [
+    "modinfo usb_storage",
+    "lsmod | grep '^usb_storage'",
+    "sudo modprobe usb_storage",
+    "lsmod | grep '^usb_storage'",
+    "dmesg | tail -n 50",
+    "lsusb",
+    "lsblk -o NAME,MODEL,SIZE,TYPE,TRAN,MOUNTPOINTS",
+    "sudo modprobe -r usb_storage",
+    "lsmod | grep '^usb_storage' || true",
+    "sudo modprobe usb_storage",
+    "udevadm settle",
+    "dmesg | tail -n 50"
+  ]
+}

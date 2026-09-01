@@ -69,6 +69,7 @@
 #define MSCC_IF_SI_OWNER_SIMC 2
 #define MSCC_IF_SI_OWNER_SISL 0
 #define MSCC_SPI_MST_SW_MODE_SW_PIN_CTRL_MODE 8192
+#define NSEC_PER_USEC 1000
 #define OCELOT_IF_SI_OWNER_OFFSET 4
 #define SPARX5_FORCE_ENA 164
 #define SPARX5_FORCE_VAL 168
@@ -108,8 +109,33 @@ struct driver_priv {
 	void __iomem *base;
 	struct miscdevice misc;
 	struct device *dev;
-	u32 irq_status;
-	u32 r6, r8, r12, rxw, r14, r16, r18, r20, r23, r30, r35, r39, r42, r44, r48, r50, r54, r62, r63, r68, r70, r75, r78, r80, cr0, r83, r93, r95, r100, r103, r105, r108;
+	void *tx;
+	void *rx;
+	u32 tx_len;
+	u32 rx_len;
+	u32 n_bytes;
+	u32 fifo_len;
+	u32 current_freq;
+	u32 cur_rx_sample_dly;
+	u32 ver;
+	u32 num_cs;
+	u32 caps;
+	u32 irq;
+	u32 dma_mapped;
+	u32 paddr;
+	u32 bus_num;
+	u32 max_freq;
+	u32 max_mem_freq;
+	u32 reg_io_width;
+	u32 dfs_offset;
+	void *ctlr;
+	void *set_cs;
+	void *transfer_handler;
+	void *mem_ops;
+	void *dma_ops;
+	void *regset;
+	void *buf;
+	void *priv;
 };
 
 #endif /* REHARNESS_DW_APB_SSI_LINUX_H */

@@ -16,7 +16,7 @@
 - Create: `qa/tests/test_langchain_bridge.py`
 - Modify: `qa/tests/_bootstrap.py` only if the new module cannot be imported through the existing `src` path setup
 
-- [ ] **Step 1: Write tests for source extraction and response normalization**
+- [x] **Step 1: Write tests for source extraction and response normalization**
 
 Add tests that require `extract_generated_code()` to accept ` ```c ` and
 ` ```rust ` blocks, accept a complete source response, reject empty prose, and
@@ -24,7 +24,7 @@ require a non-empty extracted source. Add a test that `parse_model_response()`
 returns code, a JSON `scenario` array, and diagnostics from a fake response
 object exposing `.content`.
 
-- [ ] **Step 2: Write tests for request construction and repair invariants**
+- [x] **Step 2: Write tests for request construction and repair invariants**
 
 Use a fake model with an `invoke(prompt)` method. Instantiate
 `LangChainBridge(model=fake)` and assert that a synthesize call includes the
@@ -33,14 +33,14 @@ a repair call includes the old candidate and feedback. Assert that constructing
 or invoking repair without feedback raises the same validation error as
 `PiRequest`.
 
-- [ ] **Step 3: Write tests for model failures and backend configuration**
+- [x] **Step 3: Write tests for model failures and backend configuration**
 
 Assert that an exception from the fake model is propagated as a bridge error,
 that an invalid response is rejected, and that environment configuration takes
 precedence over project model metadata. Do not make these tests require
 `langchain_openai` or network access.
 
-- [ ] **Step 4: Run the new tests and verify the expected RED state**
+- [x] **Step 4: Run the new tests and verify the expected RED state**
 
 Run:
 
@@ -57,7 +57,7 @@ its public parser/bridge functions do not yet exist.
 - Create: `src/langchain_bridge.py`
 - Modify: `src/pi_bridge.py` only if a shared response helper is needed without changing the Pi wire protocol
 
-- [ ] **Step 1: Add settings and project metadata loading**
+- [x] **Step 1: Add settings and project metadata loading**
 
 Define a frozen settings object with model, base URL, API key, timeout, and
 temperature. Read `REHARNESS_LLM_MODEL`, `REHARNESS_LLM_BASE_URL`,
@@ -66,7 +66,7 @@ temperature. Read `REHARNESS_LLM_MODEL`, `REHARNESS_LLM_BASE_URL`,
 provider/model entry from `<repo>/.reharness/pi/models.json`; never read an API
 secret from that file.
 
-- [ ] **Step 2: Add response parsing independent of LangChain imports**
+- [x] **Step 2: Add response parsing independent of LangChain imports**
 
 Implement parsers for strings, mappings, and objects with `.content`. Extract
 the first fenced C/Rust/source block, otherwise accept text containing clear C
@@ -74,7 +74,7 @@ or Rust source markers. Parse the first valid fenced JSON object containing a
 `scenario` array of objects. Return JSON-compatible diagnostics and raise a
 bridge-specific `LangChainBridgeError` for empty or non-source output.
 
-- [ ] **Step 3: Add lazy ChatOpenAI construction and bridge invocation**
+- [x] **Step 3: Add lazy ChatOpenAI construction and bridge invocation**
 
 Implement `LangChainBridge(model=None, settings=None, repo_root=None)`.
 Injected models are used directly by tests. Without an injected model,
@@ -83,7 +83,7 @@ with the configured model, base URL, API key, timeout, and temperature. The
 bridge builds a validated `PiRequest`, calls `render_pi_prompt(request)`,
 invokes the model, and returns `code`, `scenario`, and `diagnostics`.
 
-- [ ] **Step 4: Run bridge tests and verify GREEN**
+- [x] **Step 4: Run bridge tests and verify GREEN**
 
 Run the Task 1 pytest command. Expected result: all bridge/parser tests pass
 without the LangChain provider package or network.
@@ -95,14 +95,14 @@ without the LangChain provider package or network.
 - Test: `qa/tests/test_langchain_bridge.py`
 - Test: `qa/tests/test_runtime_adapters.py`
 
-- [ ] **Step 1: Add a failing backend-selection test**
+- [x] **Step 1: Add a failing backend-selection test**
 
 Test `build_adapters()` with `REHARNESS_LLM_BACKEND` unset and assert that its
 `pi` protocol object is a `LangChainBridge`. Test with `REHARNESS_LLM_BACKEND=pi`
 and assert that the object is the existing `SubprocessPiBridge`. Test an
 unknown value and assert a clear `RuntimeAdapterError` or `ValueError`.
 
-- [ ] **Step 2: Implement explicit backend selection**
+- [x] **Step 2: Implement explicit backend selection**
 
 Add a small factory in `runtime_adapters.py` or `langchain_bridge.py` that
 returns the default `LangChainBridge`, returns `SubprocessPiBridge` only for
@@ -111,7 +111,7 @@ constructor timeout for the Pi compatibility branch. Leave the attribute name
 `Adapters.pi` unchanged because `ExperimentRunner` consumes the protocol, not
 the implementation name.
 
-- [ ] **Step 3: Run adapter and runner regression tests**
+- [x] **Step 3: Run adapter and runner regression tests**
 
 Run:
 
@@ -132,7 +132,7 @@ tests pass.
 - Modify: `src/generator/llm_bridge.py`
 - Test: `qa/tests/test_langchain_bridge.py`
 
-- [ ] **Step 1: Add a failing direct-generation routing test**
+- [x] **Step 1: Add a failing direct-generation routing test**
 
 Monkeypatch the LangChain text invocation and call `generate_via_llm()` with a
 minimal formal/device/bind fixture. Assert that the generated C backend uses
@@ -140,7 +140,7 @@ the returned C block and that a Rust backend uses the returned Rust block.
 Assert that the default route does not call the Pi subprocess. Add an explicit
 `REHARNESS_LLM_BACKEND=pi` test that keeps the legacy route available.
 
-- [ ] **Step 2: Implement backend-aware text invocation**
+- [x] **Step 2: Implement backend-aware text invocation**
 
 Keep prompt-template and evidence construction unchanged. Change `call_llm()`
 to select LangChain by default and Pi only when explicitly configured. Pass
@@ -148,7 +148,7 @@ the requested timeout through. Use the shared response text normalization so
 the Rust path accepts ` ```rust ` instead of the old C-only extractor. Preserve
 the generated-file prefix and existing function signature.
 
-- [ ] **Step 3: Run direct generator tests and existing generator checks**
+- [x] **Step 3: Run direct generator tests and existing generator checks**
 
 Run the focused bridge test file and the repository tests covering generator
 imports/no-hardcoding. Expected result: both C and Rust direct generation use
@@ -162,14 +162,14 @@ the LangChain route under default configuration.
 - Modify: `src/langgraph_workflow/tools.py` only if an explicit LLM backend option must be passed through workflow input
 - Test: `qa/tests/test_langgraph_workflow.py`
 
-- [ ] **Step 1: Add the production dependency ranges**
+- [x] **Step 1: Add the production dependency ranges**
 
 Declare `langgraph`, `langchain-core`, and `langchain-openai` in
 `requirements-langgraph.txt` with compatible major-version ranges. Keep the
 imports lazy enough that analysis-only workflows still produce a useful
 missing-dependency error before a model call.
 
-- [ ] **Step 2: Document configuration and selection**
+- [x] **Step 2: Document configuration and selection**
 
 Replace the stale `REHARNESS_LLM_CMD` description with the LangChain default,
 the OpenAI-compatible endpoint variables, the API-key variables, and the
@@ -177,13 +177,13 @@ explicit Pi compatibility command. Document that LangGraph analysis-only mode
 does not invoke a model and that experiment/generation acceptance still
 requires contract, compile, runtime, and trace gates.
 
-- [ ] **Step 3: Add LangGraph integration assertions**
+- [x] **Step 3: Add LangGraph integration assertions**
 
 Add a test using an injected pipeline or adapter factory to prove that the
 LangGraph workflow remains responsible for orchestration while the pipeline
 receives the selected bridge. Keep tests offline and use fake models.
 
-- [ ] **Step 4: Run focused LangGraph tests**
+- [x] **Step 4: Run focused LangGraph tests**
 
 Run:
 
@@ -202,7 +202,7 @@ PYTHONPATH=src:qa:qa/verification python3 -m pytest -q \
 - Test: `qa/tests/test_langgraph_workflow.py`
 - Modify: none unless verification exposes a directly scoped defect
 
-- [ ] **Step 1: Run static and syntax checks**
+- [x] **Step 1: Run static and syntax checks**
 
 Run:
 
@@ -211,13 +211,13 @@ python3 -m compileall -q src/langchain_bridge.py src/generator/llm_bridge.py qa/
 git diff --check
 ```
 
-- [ ] **Step 2: Run all targeted regression tests**
+- [x] **Step 2: Run all targeted regression tests**
 
 Run the focused bridge, adapter, runner, Pi protocol, LangGraph, dispatcher,
 and no-hardcoding tests together. Confirm that failures, if any, are not
 caused by missing optional provider credentials in offline tests.
 
-- [ ] **Step 3: Run an analysis-only LangGraph smoke**
+- [x] **Step 3: Run an analysis-only LangGraph smoke**
 
 Run:
 
@@ -228,10 +228,9 @@ Run:
 Confirm it completes without making a model request and writes the evidence
 bundle under `artifacts/langgraph/edu/`.
 
-- [ ] **Step 4: Audit the replacement boundary**
+- [x] **Step 4: Audit the replacement boundary**
 
 Search all production call sites for `pi_synth.sh`, `SubprocessPiBridge`, and
 `call_llm`. Confirm Pi calls remain only behind the explicit `pi` compatibility
 branch and that every default generation/experiment route resolves to
 `LangChainBridge`.
-

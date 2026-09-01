@@ -1,0 +1,44 @@
+% 图 1：reharness 架构（学术风格：白底细框、规整两行、无穿越连线）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\begin{document}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  block/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    minimum width=2.35cm, minimum height=0.9cm, align=center, inner sep=3pt},
+  artifact/.style={block, dashed},
+  gate/.style={block, line width=1pt},
+  arr/.style={-{Stealth[length=2.4mm]}, line width=0.6pt},
+  darr/.style={arr, dash pattern=on 3pt off 2pt},
+]
+% 第一行：提取与语义
+\node[block] (src)  at (0,0)      {C 驱动源码\\(\texttt{.c / .h})};
+\node[block] (ast)  at (2.9,0)    {AST 解析\\+ 宏解析};
+\node[block] (df)   at (5.8,0)    {流敏感数据流\\+ 污点追踪};
+\node[artifact] (ris)  at (8.7,0) {形式化 RIS\\(\texttt{.ris})};
+\node[block] (sem)  at (11.6,0)   {语义推断};
+\node[artifact] (spec) at (14.5,0){Function / Device\\Specs};
+% IR 证据（AST 下方，虚线补充）
+\node[artifact] (ir) at (2.9,-1.6) {LLVM IR 证据\\(\texttt{clang -O1})};
+% 第二行：生成与验证
+\node[block] (bridge) at (8.7,-3.1)  {LLM 桥\\+ 后端插件};
+\node[artifact] (gen) at (11.6,-3.1) {生成的驱动};
+\node[gate] (verify)  at (14.5,-3.1) {验证门\\编译 + AST + trace};
+
+\draw[arr] (src) -- (ast);
+\draw[arr] (ast) -- (df);
+\draw[arr] (df) -- (ris);
+\draw[arr] (ris) -- (sem);
+\draw[arr] (sem) -- (spec);
+\draw[darr] (src.south) |- (ir.west);
+\draw[darr] (ir.east) -| (df.south);
+\draw[arr] (spec.south) -- ++(0,-0.75) -| (bridge.north);
+\draw[arr] (bridge) -- (gen);
+\draw[arr] (gen) -- (verify);
+\draw[arr, dash pattern=on 3pt off 2pt] (verify.south) -- ++(0,-0.6)
+  -| node[below, pos=0.25, font=\scriptsize] {结构化修复反馈} (bridge.south);
+\end{tikzpicture}
+\end{document}

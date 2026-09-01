@@ -30,7 +30,11 @@ def _configure():
     if _CONFIGURED:
         return
     p = locate_libclang()
-    if p:
+    # libclang is process-global. Other verification components may have
+    # loaded it before the extractor (for example the generated-C AST oracle),
+    # and cindex rejects replacing the library after that point. Reuse the
+    # already-loaded instance so extraction remains composable in one process.
+    if p and not cx.Config.loaded:
         cx.Config.set_library_file(p)
     _CONFIGURED = True
 
@@ -66,19 +70,16 @@ def default_include_args(linux_root: str, build_root: str | None = None) -> list
     ]
 
 
-def parse_translation_unit(source: str, linux_root: str | None = None,
+def effective_compile_args(source: str, linux_root: str | None = None,
                            extra_args: list[str] | None = None,
                            compile_commands: str | None = None,
-                           compile_context_mode: str = "auto",
-                           *, return_context: bool = False):
-    """Parse a C source file with detailed preprocessing records.
+                           compile_context_mode: str = "auto") -> list[str]:
+    """Argument list clang needs for this source — no libclang parse.
 
-    Returns (tu, warnings). Parse diagnostics are downgraded to warnings —
-    we use whatever AST libclang managed to build.
+    Shared by parse_translation_unit (AST path) and the IR-primary path so
+    both compile against the identical preprocessor environment.
     """
-    _configure()
     if linux_root is None:
-        # Pinned Linux submodule shipped with the repository.
         repo = Path(__file__).resolve().parents[2]
         candidate = repo / "vendor/linux"
         linux_root = os.fspath(candidate) if candidate.is_dir() else None
@@ -104,22 +105,33 @@ def parse_translation_unit(source: str, linux_root: str | None = None,
     if not any(arg.startswith("-DKBUILD_MODFILE=") for arg in args):
         args.append(f'-DKBUILD_MODFILE="{modname}"')
     args += ['-D_Static_assert(x,y)=', '-Wno-ignored-attributes']
-    # For header files, ensure we use c-header mode (overrides any -x c from defaults)
     if source.endswith(".h"):
         for i, a in enumerate(args):
             if a == "-x" and i + 1 < len(args) and args[i + 1] == "c":
                 args[i + 1] = "c-header"
         if not any(a == "-x" for a in args):
             args += ["-x", "c-header"]
-    # The artifact is parsed against one pinned x86 kernel build, while a few
-    # corpus drivers are for other architectures.  Preserve the target
-    # driver's Kconfig-selected API surface and exact SoC constant when those
-    # definitions cannot come from the x86 autoconf/asm headers.
     if not context and os.path.basename(source) == "sdhci-esdhc-mcf.c":
         args += ["-DCONFIG_MMC_SDHCI_IO_ACCESSORS=1",
                  "-DMCF_PLL_DR=0xFC0C0004"]
     if extra_args:
         args += extra_args
+    return args, context
+
+
+def parse_translation_unit(source: str, linux_root: str | None = None,
+                           extra_args: list[str] | None = None,
+                           compile_commands: str | None = None,
+                           compile_context_mode: str = "auto",
+                           *, return_context: bool = False):
+    """Parse a C source file with detailed preprocessing records.
+
+    Returns (tu, warnings). Parse diagnostics are downgraded to warnings —
+    we use whatever AST libclang managed to build.
+    """
+    _configure()
+    args, context = effective_compile_args(
+        source, linux_root, extra_args, compile_commands, compile_context_mode)
 
     flags = (cx.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD
              | cx.TranslationUnit.PARSE_SKIP_FUNCTION_BODIES * 0)  # keep bodies

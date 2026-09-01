@@ -1,0 +1,20 @@
+{
+  "evidence_digest": "c1151da0a721ae2ebd79d25e781708756288b3587a960bcde780d0d0f618cdad",
+  "iteration": 4,
+  "manifest_digest": "8430c3990f0e0fa0783b3e606d513fffcbf6ddb4ab17d00056022d00ecb9ccba",
+  "payload": {
+    "feedback": {
+      "details": {
+        "return_code": 2,
+        "stderr": "In file included from edu_drv.c:5:\nedu_drv.c:187:22: error: \u2018EDU_VENDOR_ID\u2019 undeclared here (not in a function); did you mean \u2018PCI_VENDOR_ID\u2019?\n  187 |         { PCI_DEVICE(EDU_VENDOR_ID, EDU_DEVICE_ID) },\n      |                      ^~~~~~~~~~~~~\n/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/pci.h:1053:20: note: in definition of macro \u2018PCI_DEVICE\u2019\n 1053 |         .vendor = (vend), .device = (dev), \\\n      |                    ^~~~\nedu_drv.c:187:37: error: \u2018EDU_DEVICE_ID\u2019 undeclared here (not in a function); did you mean \u2018PCI_DEVICE_ID\u2019?\n  187 |         { PCI_DEVICE(EDU_VENDOR_ID, EDU_DEVICE_ID) },\n      |                                     ^~~~~~~~~~~~~\n/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/pci.h:1053:38: note: in definition of macro \u2018PCI_DEVICE\u2019\n 1053 |         .vendor = (vend), .device = (dev), \\\n      |                                      ^~~\nedu_drv.c:105:20: warning: \u2018edu_irq_handler\u2019 defined but not used [-Wunused-function]\n  105 | static irqreturn_t edu_irq_handler(int irq, void *data)\n      |                    ^~~~~~~~~~~~~~~\nmake[3]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/scripts/Makefile.build:289: edu_drv.o] Error 1\nmake[2]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:2144: .] Error 2\nmake[1]: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\n"
+      },
+      "failure_class": "compile",
+      "iteration": 4,
+      "message": "candidate compilation failed",
+      "retryable": true,
+      "stage": "compile"
+    }
+  },
+  "stage": "compile",
+  "status": "failed"
+}

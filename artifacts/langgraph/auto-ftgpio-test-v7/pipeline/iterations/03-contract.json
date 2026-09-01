@@ -1,0 +1,48 @@
+{
+  "evidence_digest": "9c86cd575a50c022ebb6b88b02bc70ffaa01e978bd546139c10269ccf81f20b9",
+  "iteration": 1,
+  "manifest_digest": "537f71149cce882eda326b4f1f99bd46a2c170d3e694d900f00b7c8622b6a839",
+  "payload": {
+    "feedback": {
+      "details": {
+        "candidate_structure": {
+          "complete": false,
+          "errors": [
+            "resource_failure_policy:devm_clk_get_enabled:probe_defer_only"
+          ],
+          "source_resource_acquisitions": [
+            "devm_clk_get_enabled",
+            "devm_platform_ioremap_resource",
+            "platform_get_irq"
+          ]
+        },
+        "complete": true,
+        "digest_mismatch": [],
+        "duplicate": [],
+        "duplicate_expected_ids": [],
+        "duplicate_transaction_markers": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "missing_transaction_markers": [],
+        "receipts": 36,
+        "rejected": [],
+        "required_ops": 36,
+        "required_transactions": 0,
+        "schema": 1,
+        "transaction_accounting_complete": true,
+        "transaction_marker_mismatch": [],
+        "transaction_markers": 0,
+        "unknown": [],
+        "unknown_transaction_markers": [],
+        "unsupported_transactions": []
+      },
+      "failure_class": "contract",
+      "iteration": 1,
+      "message": "candidate violates Linux framework structure contract",
+      "retryable": true,
+      "stage": "contract"
+    }
+  },
+  "stage": "contract",
+  "status": "failed"
+}

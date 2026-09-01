@@ -1,0 +1,7 @@
+{
+  "functions": [
+    "reharness_spi_sensor_probe",
+    "reharness_spi_sensor_remove"
+  ],
+  "source": "/tmp/reharness-qemu-suite.k6CCYB/artifacts/output/reharness_spi_sensor/reharness_spi_sensor.c"
+}

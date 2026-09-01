@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>reharness V2 调用拓扑</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "SF Mono", Menlo, Consolas, monospace; background: #0d1117; color: #c9d1d9; padding: 24px; }
+  h1 { font-size: 18px; color: #58a6ff; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #8b949e; margin-bottom: 20px; }
+  #canvas { position: relative; width: 100%; min-height: 760px; background: #010409; border: 1px solid #21262d; border-radius: 8px; overflow: auto; }
+  svg { position: absolute; top: 0; left: 0; pointer-events: none; }
+  .node { position: absolute; width: 172px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; padding: 10px 12px; cursor: pointer; transition: all .15s; }
+  .node:hover { border-color: #58a6ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(88,166,255,.25); }
+  .node .nn { font-size: 12px; font-weight: 700; color: #e6edf3; }
+  .node .nd { font-size: 10px; color: #8b949e; margin-top: 2px; line-height: 1.5; }
+  .node .tag { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 8px; margin-top: 5px; }
+  .t-graph { background: #1f3a5f; color: #79c0ff; } .t-extract { background: #2a4222; color: #7ee787; }
+  .t-llm { background: #4a2c6b; color: #d2a8ff; } .t-exec { background: #5c3a24; color: #ffa657; }
+  .t-oracle { background: #4a1f24; color: #ff7b72; } .t-sub { background: #1f4a4a; color: #56d4dd; }
+  .node.active { border-color: #f0883e; box-shadow: 0 0 0 2px rgba(240,136,62,.3); }
+  #panel { position: fixed; right: 0; top: 0; bottom: 0; width: 420px; background: #161b22; border-left: 1px solid #30363d; padding: 20px; transform: translateX(100%); transition: transform .25s; overflow-y: auto; z-index: 10; }
+  #panel.open { transform: translateX(0); }
+  #panel h2 { font-size: 15px; color: #f0883e; margin-bottom: 2px; }
+  #panel .file { font-size: 11px; color: #58a6ff; margin-bottom: 12px; word-break: break-all; }
+  #panel pre { font-size: 11px; line-height: 1.7; color: #c9d1d9; white-space: pre-wrap; background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 12px; }
+  #panel .close { position: absolute; top: 12px; right: 14px; cursor: pointer; color: #8b949e; font-size: 16px; }
+  #panel .close:hover { color: #ff7b72; }
+  .legend { margin: 12px 0; font-size: 11px; color: #8b949e; }
+  .legend span { margin-right: 14px; }
+  .edge { stroke: #30363d; stroke-width: 1.5; fill: none; }
+  .edge.cond { stroke-dasharray: 5 4; stroke: #6e40c9; }
+  .edge.hl { stroke: #f0883e; stroke-width: 2; }
+  .arrow { fill: #30363d; } .arrow.cond { fill: #6e40c9; } .arrow.hl { fill: #f0883e; }
+</style>
+</head>
+<body>
+<h1>reharness V2 合成闭环 · 调用拓扑</h1>
+<div class="sub">点击任意节点查看该步骤的详细行为 · <span style="color:#6e40c9">紫色虚线</span> = 条件路由 · 拓扑数据 2026-08-31</div>
+<div class="legend">
+  <span>▣ 编排 (LangGraph)</span><span style="color:#7ee787">▣ 提取</span><span style="color:#d2a8ff">▣ LLM</span><span style="color:#ffa657">▣ 构建/执行</span><span style="color:#ff7b72">▣ 判定</span><span style="color:#56d4dd">▣ 基础设施</span>
+</div>
+<div id="canvas"><svg id="edges"></svg></div>
+<div id="panel"><span class="close" onclick="panel.classList.remove('open')">✕</span><div id="pbody"></div></div>
+<script>
+const N = {
+ entry:      { x: 30,  y: 30,  tag: "t-sub",    nn: "run.sh v2",                d: "CLI 入口" },
+ runner:     { x: 30,  y: 130, tag: "t-sub",    nn: "run_v2_experiment",       d: "manifest 解析 + api_key 预检 + 单实验" },
+ build:      { x: 240, y: 30,  tag: "t-exec",   nn: "build_driver",            d: "编译原始 .ko + rhcov 插桩" },
+ ris:        { x: 240, y: 140, tag: "t-extract",nn: "ris_extract",             d: "libclang → RIS 形式模型" },
+ gentest:    { x: 240, y: 250, tag: "t-llm",    nn: "llm_gen_tests",           d: "LLM 生成 guest 测试命令" },
+ baseq:      { x: 240, y: 360, tag: "t-exec",   nn: "baseline_qemu",           d: "原始模块实机启动 + 覆盖率" },
+ synth:      { x: 240, y: 470, tag: "t-llm",    nn: "llm_synthesize",          d: "真模型合成候选驱动" },
+ comp:       { x: 240, y: 580, tag: "t-exec",   nn: "candidate_compile",       d: "kbuild 编译候选" },
+ candq:      { x: 240, y: 690, tag: "t-exec",   nn: "candidate_qemu",          d: "候选模块实机启动" },
+ repair:     { x: 480, y: 620, tag: "t-graph",  nn: "repair",                  d: "有界修复（≤ max_repair）" },
+ diff:       { x: 30,  y: 620, tag: "t-oracle", nn: "diff_compare",            d: "双端差分判定" },
+ fin:        { x: 30,  y: 470, tag: "t-graph",  nn: "finalize",                d: "写 experiment.json" },
+ // 展开的被调模块
+ bridge:     { x: 480, y: 400, tag: "t-llm",    nn: "LangChainBridge",         d: "emit_driver_code 工具调用" },
+ envelope:   { x: 690, y: 340, tag: "t-llm",    nn: "llm_protocol",            d: "SynthesisRequest 信封" },
+ contract:   { x: 690, y: 140, tag: "t-oracle", nn: "backend_lowering_oracle", d: "生成契约" },
+ lowerplan:  { x: 690, y: 240, tag: "t-oracle", nn: "backend_lowering_plan",   d: "verifier-owned 降级计划" },
+ extractor:  { x: 480, y: 140, tag: "t-extract",nn: "extractor ×27",           d: "dataflow/call_graph/..." },
+ inject:     { x: 480, y: 30,  tag: "t-exec",   nn: "inject_function_coverage",d: "[rhcov] 探针注入" },
+ qemurun:    { x: 30,  y: 760, tag: "t-exec",   nn: "qemu_run.py (子进程)",    d: "guest 构建 + 实机启动" },
+};
+const E = [
+ ["entry","runner",""], ["runner","build",""],
+ ["build","ris",""], ["ris","gentest",""], ["gentest","baseq",""],
+ ["baseq","synth",""], ["synth","comp",""], ["comp","candq","cond:f=repair|p=candq"],
+ ["candq","diff","cond:f=repair|p=diff"], ["diff","fin","cond:eq→fin"],
+ ["diff","repair","cond:ne→repair"], ["repair","synth","cond:预算内→重合成"],
+ ["repair","fin","cond:耗尽→fin"],
+ ["ris","extractor",""], ["ris","contract",""],
+ ["synth","bridge",""], ["bridge","envelope",""], ["bridge","lowerplan",""],
+ ["build","inject",""], ["baseq","qemurun",""], ["candq","qemurun",""],
+];
+const D = {
+ entry: { t: "run.sh v2 <manifest...>", f: "run.sh → reharness_cli.py", b:
+`参数: manifests... --output-root --max-repair --bridge {auto,langchain}
+行为: 转发到 Python CLI（shell 仅 3 行兼容壳）。
+每个 manifest 跑一遍完整 V2 闭环; 退出码 0 = 全部 accepted。
+产物: artifacts/<root>/<name>/experiment.json + summary.json` },
+ runner: { t: "run_v2_experiment.run_one", f: "qa/verification/run_v2_experiment.py", b:
+`1. json.load 读 manifest 的 name / source.path
+2. api_key 预检 → LangChainBridge（唯一桥，无选择）
+   (config.toml [llm] 无 api_key 直接 SystemExit)
+3. build_experiment_v2(...).invoke() 跑图
+4. 读回 experiment.json → 终端状态行; 退出码 0=accepted` },
+ build: { t: "build_driver 节点", f: "experiment_v2_graph.py", b:
+`provider 自动探测:
+· source_build (单文件): 读源码 → 注入 rhcov 探针 → 追加缺失的
+  MODULE_LICENSE → kbuild 编译为 <qemu_module>.ko
+  (KBUILD_MODNAME 决定 /dev 节点名, 如 edu_drv)
+· kernel_tree (vendor/linux): 注入探针 → in-tree make 目标重建
+  → 拷贝 .ko → git checkout 还原源树
+返回: driver_ko + baseline_inventory(函数清单)` },
+ inject: { t: "inject_function_coverage.inject", f: "tools/source/inject_function_coverage.py", b:
+`对每个文件作用域函数定义插入:
+  pr_info("[rhcov] <name>\\n");
+判定时从串口收集命中集合 vs 清单 → 全驱动函数覆盖率。
+V2 实测: edu 5/6 · ftgpio 7/7 · e1000 91/247` },
+ ris: { t: "ris_extract 节点", f: "experiment_v2_graph.py → src/extractor/*", b:
+`ExtractorConfig(source, driver_name) → extract_ris:
+  libclang 解析 → AST 模型 → 调用图 → 数据流/污点分析
+  → 寄存器操作(R/W/RMW/Loop) → 形式模型(RIS)
+随后 build_generation_contract 生成契约(操作全集+证据)。
+实测执行 27 个 extractor 文件, 3,332 语句 —— 本链最重的一环。` },
+ contract: { t: "build_generation_contract", f: "qa/verification/backend_lowering_oracle.py", b:
+`对每个 RIS 操作记账: op_id / 模块 / 种类 / 证据位置。
+生成 contract = 生成物的"应收账款清单"——后续 oracle 拿它对账,
+任何操作在生成 C 中无对应实现即拒绝。` },
+ gentest: { t: "llm_gen_tests 节点", f: "experiment_v2_graph.py", b:
+`向 LLM 提供操作摘要, 请求 guest 内可执行的 shell 测试命令。
+产物: evidence/<drv>.llm-tests.sh
+注入: qemu_run 经 RH_QEMU_EXTRA_TESTS 挂到 guest /bin/llm-tests,
+在 exerciser 之后执行 (=== llm-tests === 段)。` },
+ baseq: { t: "baseline_qemu 节点", f: "experiment_v2_graph.py → qemu_run.py", b:
+`_run_qemu_experiment(原始.ko, baseline/):
+  staging <root>/<module>/<module>.ko → 429 无关(无 LLM)
+  → 成功判定 = manifest success_pattern 命中串口
+  → parse_rhcov 收集覆盖率 → baseline_coverage {5/6}
+这是差分实验的"对照组"。` },
+ qemurun: { t: "qemu_run.run_guest (子进程)", f: "qa/verification/qemu_run.py (636 行)", b:
+`Python 化 guest 运行器(原 581 行 bash 已退役):
+1. load_manifest 规范化 → GuestSpec
+2. FIXTURE_PLUGINS 家族插件(usb-storage/virtio-blk)宿主侧准备
+3. rootfs: busybox + ldd 闭包 + 模块 + exerciser + llm-tests
+   (bin/* 统一剥 setuid 位 —— cp(1) 语义, 否则 mount(2) EPERM)
+4. 生成 init: 挂载→insmod 依赖→insmod 驱动→绑定等待→dmesg
+   →exerciser→llm-tests→subsystem tests→rmmod→QEMU_RUN_DONE
+5. assemble_qemu_args 纯 Python 拼参 → qemu-system-x86_64 实机启动
+6. judge(): 标记协议判定, 退出码 0/1/2/3/4` },
+ synth: { t: "llm_synthesize 节点", f: "experiment_v2_graph.py", b:
+`首轮: bridge.synthesize(manifest适配器, formal_model)
+修复轮: _repair_feedback 组装失败证据(编译日志尾部 2.5K /
+  串口关键行) → bridge.repair(manifest, evidence,
+  {"code": 上一版}, feedback) —— 不是盲重摇。
+manifest 适配器提供 64hex digest + compile/runtime 上下文
+(触发后端指南注入)。` },
+ bridge: { t: "LangChainBridge.synthesize/repair", f: "src/langchain_bridge.py (697 行)", b:
+`_invoke 优先级:
+1. bind_tools(SYNTHESIS_TOOLS) 结构化调用
+   → emit_driver_code(files=[{path,code}], scenario?)
+   → 工具参数直接成为候选(免解析)
+2. 无工具调用 → fenced C 块文本回退 → parse_model_response
+3. 429/cooldown → 按 reset_seconds 退避重试(≤6 次)
+诊断: backend=langchain + model 记入 diagnostics` },
+ envelope: { t: "llm_protocol 信封", f: "src/llm_protocol.py (254 行)", b:
+`SynthesisRequest(digest 校验/JSON 化) → render_synthesis_prompt:
+  证据信封(≤400K 截断: 长串截断+列表留 1/4, 防 413)
++ BACKEND LOWERING PLAN (verifier-owned 路由)
++ SAFETY POLICY (must-not-emit 禁令)
++ REPAIR DIRECTIVE (紧凑修复指令: repair_requirements,
+  剔除大诊断块)
+实测: edu 候选 6/6 满覆盖经 2 轮修复收敛。` },
+ lowerplan: { t: "backend_lowering_plan", f: "qa/verification/backend_lowering_plan.py (1,411 行)", b:
+`对每个操作产出路由: owner_function / callback / disposition
+  (authorized | blocked_unsupported_loop | root_unreachable ...)
+喂给模型 = "这些操作的合法落点" —— 生成对不对账在此。
+qa 侧通用关卡(与 backends/ 插件相对)。` },
+ comp: { t: "candidate_compile 节点", f: "experiment_v2_graph.py", b:
+`kernel_tree: 直通预编译 .ko(单文件合成无法链接多文件模块)。
+source_build: 候选源 → rhcov 注入 → kbuild。
+失败: build.log 尾部入 state.last_compile_log → 修复证据。
+成功: candidate_ko + candidate_inventory。` },
+ candq: { t: "candidate_qemu 节点", f: "experiment_v2_graph.py", b:
+`同一 manifest / 同一测试 / 同一 guest 流程, 仅模块不同。
+失败时串口关键行(insmod/probe/TRACE/FAIL/rhcov)入
+state.last_serial_tail → 修复证据。` },
+ repair: { t: "repair 节点 + 文件级计数器", f: "experiment_v2_graph.py", b:
+`_inc_rc() 写 /tmp/v2_repair_count(LangGraph 状态跨节点
+不持久化计数, 故用文件)。
+route: 计数 > max_repair(默认 3) → finalize(failed)
+       否则 → llm_synthesize 带证据重来` },
+ diff: { t: "diff_compare 节点", f: "experiment_v2_graph.py", b:
+`diff_equal = baseline_pass AND candidate_qemu_pass
+(双端 success_pattern 命中)。
+差分语义: 同 Linux / 同 QEMU / 同 manifest 测试, 只有被测
+驱动不同 —— 结果一致才 accepted, 排除环境变量。` },
+ fin: { t: "finalize 节点", f: "experiment_v2_graph.py", b:
+`写 <out>/experiment.json:
+  schema reharness-experiment-v2 / accepted / status
+  / baseline_coverage / candidate_coverage / repair_count
+  / 双端 trace 路径
+返回最终 state → runner 汇总退出码。` },
+ extractor: { t: "extractor 包 (27 文件实测执行)", f: "src/extractor/*", b:
+`dataflow(1830) 数据流/污点 · call_graph(1281) 调用图
+spec_infer(1385) DeviceSpec 推断 · formalize(1182) RIS 形式化
+ast_model(588) · control/macros/mmio/wrappers/smt...
+产物: formal(RIS) + facts + device_spec —— LLM 的全部输入依据。
+本次实测 3,332 语句 = 执行路径 76% 的重量。` },
+};
+const W = 172, H = 62, canvas = document.getElementById("canvas"),
+      svg = document.getElementById("edges"), panel = document.getElementById("panel");
+function anchor(x, y, tx, ty) { // 源(x,y)目标(tx,ty)中心, 求边框交点
+  const cx = x + W/2, cy = y + H/2, dx = tx - cx, dy = ty - cy;
+  const sx = dx === 0 ? Infinity : (W/2) / Math.abs(dx), sy = dy === 0 ? Infinity : (H/2) / Math.abs(dy);
+  const s = Math.min(sx, sy);
+  return [cx + dx * s, cy + dy * s];
+}
+let maxB = 0;
+for (const k in N) { N[k].cx = N[k].x + W/2; N[k].cy = N[k].y + H/2;
+  maxB = Math.max(maxB, N[k].x + W + 40, N[k].y + H + 40); }
+canvas.style.height = "880px"; canvas.style.width = "910px";
+svg.setAttribute("width", 910); svg.setAttribute("height", 880);
+for (const [a, b, cond] of E) {
+  const A = N[a], B = N[b];
+  const [x1, y1] = anchor(A.x, A.y, B.cx, B.cy), [x2, y2] = anchor(B.x, B.y, A.cx, A.cy);
+  const mx = (x1 + x2) / 2 + (y2 - y1) * 0.08, my = (y1 + y2) / 2 - (x2 - x1) * 0.08;
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", `M${x1},${y1} Q${mx},${my} ${x2},${y2}`);
+  p.setAttribute("class", "edge" + (cond ? " cond" : ""));
+  const ang = Math.atan2(y2 - my, x2 - mx);
+  const ax = x2 - 8 * Math.cos(ang), ay = y2 - 8 * Math.sin(ang);
+  const ar = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  ar.setAttribute("points", `${x2},${y2} ${ax - 4*Math.sin(ang)},${ay + 4*Math.cos(ang)} ${ax + 4*Math.sin(ang)},${ay - 4*Math.cos(ang)}`);
+  ar.setAttribute("class", "arrow" + (cond ? " cond" : ""));
+  p.dataset.a = a; p.dataset.b = b; ar.dataset.a = a; ar.dataset.b = b;
+  p.style.pointerEvents = ar.style.pointerEvents = "auto";
+  p.style.cursor = ar.style.cursor = "pointer";
+  const hl = () => { p.classList.add("hl"); ar.classList.add("hl"); };
+  const un = () => { p.classList.remove("hl"); ar.classList.remove("hl"); };
+  const click = () => show(a);
+  [p, ar].forEach(el => { el.addEventListener("mouseenter", hl); el.addEventListener("mouseleave", un); el.addEventListener("click", click); });
+  svg.appendChild(p); svg.appendChild(ar);
+  if (cond) { const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", mx); t.setAttribute("y", my - 4); t.setAttribute("fill", "#a371f7");
+    t.setAttribute("font-size", "9"); t.setAttribute("text-anchor", "middle");
+    t.textContent = cond.split(":")[1] || ""; svg.appendChild(t); }
+}
+function show(k) {
+  const d = D[k]; if (!d) return;
+  document.getElementById("pbody").innerHTML =
+    `<h2>${d.t}</h2><div class="file">${d.f}</div><pre>${d.b}</pre>`;
+  panel.classList.add("open");
+  document.querySelectorAll(".node").forEach(n => n.classList.remove("active"));
+  const el = document.querySelector(`[data-k="${k}"]`); if (el) el.classList.add("active");
+}
+for (const k in N) {
+  const n = N[k], el = document.createElement("div");
+  el.className = "node"; el.style.left = n.x + "px"; el.style.top = n.y + "px";
+  el.dataset.k = k;
+  el.innerHTML = `<div class="nn">${n.nn}</div><div class="nd">${n.d}</div><span class="tag ${n.tag}">${
+    {"t-graph":"编排","t-extract":"提取","t-llm":"LLM","t-exec":"执行","t-oracle":"判定","t-sub":"入口"}[n.tag]
+  }</span>`;
+  el.onclick = () => show(k);
+  canvas.appendChild(el);
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") panel.classList.remove("open"); });
+</script>
+</body>
+</html>

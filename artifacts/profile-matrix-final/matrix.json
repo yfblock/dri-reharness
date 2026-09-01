@@ -1,0 +1,1133 @@
+{
+  "accepted": true,
+  "artifact_root": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final",
+  "cases": [
+    {
+      "bus": "pci",
+      "manifest": "benchmarks/experiments/edu.json",
+      "manifest_digest": "fdf8ce2531793c7ee9e463bede2c60a7e29fbe7b34b5df72aa8078749426ffe9",
+      "module": "edu_drv",
+      "profile": "pci-generic",
+      "source": "benchmarks/drivers/baseline/edu.c",
+      "source_sha256": "754b37eab2504a091447d35a28adfc20b348050c7a3e09ce7ad7257ef8bfaa3e"
+    },
+    {
+      "bus": "platform",
+      "manifest": "benchmarks/experiments/ftgpio010.json",
+      "manifest_digest": "7d0aa358fca274b1375570b2dd54c9532aed9251be809b42aaaf5384f88ad7fe",
+      "module": "ftgpio010_gpio",
+      "profile": "platform-generic",
+      "source": "benchmarks/drivers/baseline/gpio-ftgpio010.c",
+      "source_sha256": "368b8ae1c3167cf16a811ce82002afad14a253ac2e574da30e382d976fcbfe33"
+    },
+    {
+      "bus": "amba",
+      "manifest": "benchmarks/experiments/reharness-amba.json",
+      "manifest_digest": "6695a702854b06caee085074d2d988f373d1621e079ae8f1c81a5500c44f63db",
+      "module": "reharness_amba_sensor",
+      "profile": "amba-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-amba-sensor.c",
+      "source_sha256": "4d0bafbb13c9beeb1ba6a65aa11570a2a7747f325f4c8df685d38dd3cf9426f9"
+    },
+    {
+      "bus": "i2c",
+      "manifest": "benchmarks/experiments/reharness-i2c.json",
+      "manifest_digest": "c2a507c31c7fb791cc429b1b620fd44d373f064c9fb12287425acc798a965485",
+      "module": "reharness_i2c_sensor",
+      "profile": "i2c-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-i2c-sensor.c",
+      "source_sha256": "48ae7a4f52e6e2027830f1d33ed8a41adefaa3f1d4a91843e0f2a223e20473cf"
+    },
+    {
+      "bus": "mdio",
+      "manifest": "benchmarks/experiments/reharness-mdio.json",
+      "manifest_digest": "e500a8fac8b948b451328338ae64cca52f2b2a6b242032023234ddbcadb7cf50",
+      "module": "reharness_mdio_sensor",
+      "profile": "mdio-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-mdio-sensor.c",
+      "source_sha256": "276813624946e0a5393cd381507a82cdf3ab66a66f559de40e540da93dc5c4e8"
+    },
+    {
+      "bus": "network",
+      "manifest": "benchmarks/experiments/reharness-network.json",
+      "manifest_digest": "b0427b5bd1ab383662221456c0a851cbe9b208c85842caa7e8c4154814c59af5",
+      "module": "reharness_network",
+      "profile": "network-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-network.c",
+      "source_sha256": "e596c53aaf4187f0f4d4ca074e1863d6f0e2f540462e4e6197f395c880958e34"
+    },
+    {
+      "bus": "spi",
+      "manifest": "benchmarks/experiments/reharness-spi.json",
+      "manifest_digest": "20e16e43eac16f1dd7d1d0e141e3809a0374de6aa2eb9068bdfdd3032912dddf",
+      "module": "reharness_spi_sensor",
+      "profile": "spi-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-spi-sensor.c",
+      "source_sha256": "9576672f30772dcd2331cb7e970ec4bb200a6e2c7175b6d46208ccbd28767f85"
+    },
+    {
+      "bus": "usb",
+      "manifest": "benchmarks/experiments/reharness-usb.json",
+      "manifest_digest": "9be90b43641b0d14d7c8a64601ad16fd5087d042df66c78d670fe5f1410d7efa",
+      "module": "reharness_usb_sensor",
+      "profile": "usb-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-usb-sensor.c",
+      "source_sha256": "b2694440ba132e19c52c74f468834f35f4b02aee22e491951886783682d97133"
+    },
+    {
+      "bus": "virtio",
+      "manifest": "benchmarks/experiments/reharness-virtio.json",
+      "manifest_digest": "315fcebffca54f9c41bbeefc46c4736b3523a59f0d8c82ac138b7abc0397df9e",
+      "module": "reharness_virtio_sensor",
+      "profile": "virtio-generic",
+      "source": "benchmarks/drivers/fixtures/reharness-virtio-sensor.c",
+      "source_sha256": "a67c4cb8c36e523a38dab65d4c1c35aa44cbadc222421f7007e94e6a58a5b66a"
+    }
+  ],
+  "discovered_profiles": [
+    "amba-generic",
+    "i2c-generic",
+    "mdio-generic",
+    "network-generic",
+    "pci-generic",
+    "platform-generic",
+    "spi-generic",
+    "usb-generic",
+    "virtio-generic"
+  ],
+  "duplicate_profiles": [],
+  "failed_profiles": [],
+  "generated_at": "2026-08-25T09:35:21.338365+00:00",
+  "inconclusive_profiles": [],
+  "kernel_dir": "/home/yfblock/Code/dri-trans-paper/reharness/platform/kernel/build",
+  "missing_profiles": [],
+  "profile_inventory": [
+    {
+      "bus": "amba",
+      "fixture_kind": "qemu-amba",
+      "manifest_template": "benchmarks/profile-templates/amba-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "amba-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "subsystem",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "i2c",
+      "fixture_kind": "qemu-i2c",
+      "manifest_template": "benchmarks/profile-templates/i2c-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "i2c-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transaction",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "mdio",
+      "fixture_kind": "qemu-mdio",
+      "manifest_template": null,
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace",
+        "transaction"
+      ],
+      "origin": "builtin",
+      "profile_id": "mdio-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "network",
+      "fixture_kind": "qemu-network",
+      "manifest_template": "benchmarks/profile-templates/network-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "network-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "subsystem",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "pci",
+      "fixture_kind": "qemu-pci",
+      "manifest_template": null,
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "pci-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "platform",
+      "fixture_kind": "qemu-platform",
+      "manifest_template": "benchmarks/profile-templates/platform-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "platform-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "serdev",
+      "fixture_kind": "qemu-serdev",
+      "manifest_template": null,
+      "matrix_required": false,
+      "optional_capabilities": [
+        "subsystem",
+        "trace",
+        "transfer"
+      ],
+      "origin": "builtin",
+      "profile_id": "serdev-generic",
+      "reason": "trusted runtime fixture is not registered",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "unload"
+      ],
+      "runtime_scope": "explicit-only",
+      "status": "runtime-inconclusive"
+    },
+    {
+      "bus": "spi",
+      "fixture_kind": "qemu-spi",
+      "manifest_template": "benchmarks/profile-templates/spi-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "spi-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "usb",
+      "fixture_kind": "qemu-usb",
+      "manifest_template": "benchmarks/profile-templates/usb-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "usb-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    },
+    {
+      "bus": "virtio",
+      "fixture_kind": "qemu-virtio",
+      "manifest_template": "benchmarks/profile-templates/virtio-generic.json",
+      "matrix_required": true,
+      "optional_capabilities": [
+        "subsystem",
+        "trace"
+      ],
+      "origin": "builtin",
+      "profile_id": "virtio-generic",
+      "required_capabilities": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ],
+      "runtime_scope": "default-matrix",
+      "status": "runtime-ready"
+    }
+  ],
+  "required_profiles": [
+    "amba-generic",
+    "i2c-generic",
+    "mdio-generic",
+    "network-generic",
+    "pci-generic",
+    "platform-generic",
+    "spi-generic",
+    "usb-generic",
+    "virtio-generic"
+  ],
+  "results": [
+    {
+      "manifest": "benchmarks/experiments/edu.json",
+      "profile": "pci-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/pci-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=edu_drv bus=pci timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030245] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030309] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071712] ftrace: allocating 38031 entries in 150 pages\n[    0.071962] ftrace: allocated 150 pages with 4 groups\n[    0.416269] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.420344] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424782] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.426042] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.507357] ACPI: bus type USB registered\n[    0.507642] usbcore: registered new interface driver usbfs\n[    0.507840] usbcore: registered new interface driver hub\n[    0.507938] usbcore: registered new device driver usb\n[    0.508109] pps_core: LinuxPPS API ver. 1 registered\n[    0.508209] PTP clock support registered\n[    0.540491] NET: Registered PF_INET protocol family\n[    0.556259] Key type asymmetric registered\n[    0.556333] Asymmetric key parser 'x509' registered\n[    0.556746] io scheduler mq-deadline registered\n[    0.556806] io scheduler kyber registered\n[    0.599809] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.601960] usbcore: registered new interface driver usbhid\n[    0.602633] NET: Registered PF_INET6 protocol family\n=== insmod edu_drv ===\n[    1.007862] edu_drv 0000:00:04.0: edu probed (irq 11)\n[    1.009459] insmod (61) used greatest stack depth: 13104 bytes left\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    0.030245] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030309] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.416269] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.420344] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424782] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.426042] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.507357] ACPI: bus type USB registered\n[    0.507642] usbcore: registered new interface driver usbfs\n[    0.507840] usbcore: registered new interface driver hub\n[    0.507938] usbcore: registered new device driver usb\n[    0.508109] pps_core: LinuxPPS API ver. 1 registered\n[    0.508209] PTP clock support registered\n[    0.540491] NET: Registered PF_INET protocol family\n[    0.556259] Key type asymmetric registered\n[    0.556333] Asymmetric key parser 'x509' registered\n[    0.556746] io scheduler mq-deadline registered\n[    0.556806] io scheduler kyber registered\n[    0.599809] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.601960] usbcore: registered new interface driver usbhid\n[    0.602633] NET: Registered PF_INET6 protocol family\n[    1.007862] edu_drv 0000:00:04.0: edu probed (irq 11)\nTRACE id@0x00 = 0x010000ed OK\nTRACE live_check@0x04 write0xa5a5a5a5 read0x5a5a5a5a OK (~X)\nTRACE factorial@0x08(5)=120 OK\nEDU_TRACE_OK\nEXERCISER_RC=0\n=== rmmod edu_drv ===\nREHARNESS_DRIVER_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.276660] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\n  done=1 probe=30 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: edu_drv probe \u6210\u529f\n",
+      "test_source_report": null,
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/ftgpio010.json",
+      "profile": "platform-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/platform-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": " registered\n[    0.605225] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.608676] usbcore: registered new interface driver usbhid\n[    0.609436] NET: Registered PF_INET6 protocol family\nGPIO_TRACE_DONE\nEXERCISER_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_NAME=gpio-chip-info\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=gpio-line-info\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_2_NAME=gpio-v2-basic\nREHARNESS_SUBSYSTEM_TEST_2_KIND=native\nREHARNESS_SUBSYSTEM_TEST_2_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_2_RC=0\nREHARNESS_SUBSYSTEM_TEST_2_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_3_NAME=gpio-v2-multi-line\nREHARNESS_SUBSYSTEM_TEST_3_KIND=native\nREHARNESS_SUBSYSTEM_TEST_3_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_3_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_3_RC=0\nREHARNESS_SUBSYSTEM_TEST_3_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_4_NAME=gpio-v1-compat\nREHARNESS_SUBSYSTEM_TEST_4_KIND=native\nREHARNESS_SUBSYSTEM_TEST_4_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_4_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_4_RC=0\nREHARNESS_SUBSYSTEM_TEST_4_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_5_NAME=gpio-config\nREHARNESS_SUBSYSTEM_TEST_5_KIND=native\nREHARNESS_SUBSYSTEM_TEST_5_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_5_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_5_RC=0\nREHARNESS_SUBSYSTEM_TEST_5_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_6_NAME=gpio-errors\nREHARNESS_SUBSYSTEM_TEST_6_KIND=native\nREHARNESS_SUBSYSTEM_TEST_6_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_6_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_6_RC=0\nREHARNESS_SUBSYSTEM_TEST_6_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_7_NAME=gpio-events\nREHARNESS_SUBSYSTEM_TEST_7_KIND=native\nREHARNESS_SUBSYSTEM_TEST_7_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_7_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_7_RC=0\nREHARNESS_SUBSYSTEM_TEST_7_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_8_NAME=gpio-lifecycle\nREHARNESS_SUBSYSTEM_TEST_8_KIND=native\nREHARNESS_SUBSYSTEM_TEST_8_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_8_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_8_RC=0\nREHARNESS_SUBSYSTEM_TEST_8_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_9_NAME=linux-gpio-chip-info\nREHARNESS_SUBSYSTEM_TEST_9_KIND=kselftest\nREHARNESS_SUBSYSTEM_TEST_9_PROVIDER=linux-gpio-chip-info\nREHARNESS_SUBSYSTEM_TEST_9_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_9_RC=0\nREHARNESS_SUBSYSTEM_TEST_9_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_10_NAME=linux-gpio-line-name\nREHARNESS_SUBSYSTEM_TEST_10_KIND=kselftest\nREHARNESS_SUBSYSTEM_TEST_10_PROVIDER=linux-gpio-line-name\nREHARNESS_SUBSYSTEM_TEST_10_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_10_RC=0\nREHARNESS_SUBSYSTEM_TEST_10_STATUS=pass\n=== rmmod ftgpio010_gpio ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.414160] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_3_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_4_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_5_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_6_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_7_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_8_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_9_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_10_SUCCESS=1\nREHARNESS_COVERAGE_chip_info_STATUS=pass\nREHARNESS_COVERAGE_line_info_STATUS=pass\nREHARNESS_COVERAGE_v2_single_line_STATUS=pass\nREHARNESS_COVERAGE_v2_multi_line_STATUS=pass\nREHARNESS_COVERAGE_v2_values_STATUS=pass\nREHARNESS_COVERAGE_v1_single_line_STATUS=pass\nREHARNESS_COVERAGE_config_flags_STATUS=pass\nREHARNESS_COVERAGE_config_debounce_STATUS=pass\nREHARNESS_COVERAGE_error_paths_STATUS=pass\nREHARNESS_COVERAGE_line_event_STATUS=pass\nREHARNESS_COVERAGE_lifecycle_STATUS=pass\n  done=1 probe=26 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: ftgpio010_gpio probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "kselftest": 2,
+            "native": 9
+          },
+          "by_provider": {
+            "linux-gpio-chip-info": 1,
+            "linux-gpio-line-name": 1
+          },
+          "optional": 0,
+          "required": 11,
+          "total": 11
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "gpio-chip-info",
+            "gpio-config",
+            "gpio-errors",
+            "gpio-events",
+            "gpio-lifecycle",
+            "gpio-line-info",
+            "gpio-v1-compat",
+            "gpio-v2-basic",
+            "gpio-v2-multi-line",
+            "linux-gpio-chip-info",
+            "linux-gpio-line-name"
+          ],
+          "total": 11
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "gpio-chip-info",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "gpio-chip-info",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-line-info",
+            "observed": {
+              "index": 1,
+              "kind": "native",
+              "name": "gpio-line-info",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-v2-basic",
+            "observed": {
+              "index": 2,
+              "kind": "native",
+              "name": "gpio-v2-basic",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-v2-multi-line",
+            "observed": {
+              "index": 3,
+              "kind": "native",
+              "name": "gpio-v2-multi-line",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-v1-compat",
+            "observed": {
+              "index": 4,
+              "kind": "native",
+              "name": "gpio-v1-compat",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-config",
+            "observed": {
+              "index": 5,
+              "kind": "native",
+              "name": "gpio-config",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-errors",
+            "observed": {
+              "index": 6,
+              "kind": "native",
+              "name": "gpio-errors",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-events",
+            "observed": {
+              "index": 7,
+              "kind": "native",
+              "name": "gpio-events",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "gpio-lifecycle",
+            "observed": {
+              "index": 8,
+              "kind": "native",
+              "name": "gpio-lifecycle",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "kselftest",
+            "name": "linux-gpio-chip-info",
+            "observed": {
+              "index": 9,
+              "kind": "kselftest",
+              "name": "linux-gpio-chip-info",
+              "provider": "linux-gpio-chip-info",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": "linux-gpio-chip-info",
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "kselftest",
+            "name": "linux-gpio-line-name",
+            "observed": {
+              "index": 10,
+              "kind": "kselftest",
+              "name": "linux-gpio-line-name",
+              "provider": "linux-gpio-line-name",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": "linux-gpio-line-name",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-amba.json",
+      "profile": "amba-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/amba-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_amba_sensor bus=amba timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030427] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030492] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071676] ftrace: allocating 38031 entries in 150 pages\n[    0.071928] ftrace: allocated 150 pages with 4 groups\n[    0.416017] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.420305] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424729] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.426265] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.513599] ACPI: bus type USB registered\n[    0.514164] usbcore: registered new interface driver usbfs\n[    0.514356] usbcore: registered new interface driver hub\n[    0.514455] usbcore: registered new device driver usb\n[    0.514629] pps_core: LinuxPPS API ver. 1 registered\n[    0.514748] PTP clock support registered\n[    0.546609] NET: Registered PF_INET protocol family\n[    0.561956] Key type asymmetric registered\n[    0.562030] Asymmetric key parser 'x509' registered\n[    0.562437] io scheduler mq-deadline registered\n[    0.562496] io scheduler kyber registered\n[    0.605002] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.607597] usbcore: registered new interface driver usbhid\n[    0.608254] NET: Registered PF_INET6 protocol family\n=== insmod runtime fixture amba-registrar ===\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0\n=== insmod reharness_amba_sensor ===\n[    1.021270] reharness_amba_sensor reharness-amba: REHARNESS_AMBA_DRIVER_PROBE periphid=0x00100001 resource=0x1000\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.021270] reharness_amba_sensor reharness-amba: REHARNESS_AMBA_DRIVER_PROBE periphid=0x00100001 resource=0x1000\nREHARNESS_SUBSYSTEM_TEST_0_NAME=amba-device-lifecycle\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\n=== rmmod reharness_amba_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.296471] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_amba_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 1
+          },
+          "by_provider": {},
+          "optional": 0,
+          "required": 1,
+          "total": 1
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "amba-device-lifecycle"
+          ],
+          "total": 1
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "amba-device-lifecycle",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "amba-device-lifecycle",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-i2c.json",
+      "profile": "i2c-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/i2c-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_i2c_sensor bus=i2c timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030210] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030274] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071494] ftrace: allocating 38031 entries in 150 pages\n[    0.071744] ftrace: allocated 150 pages with 4 groups\n[    0.415484] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.419649] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424007] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.425498] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.510502] ACPI: bus type USB registered\n[    0.510784] usbcore: registered new interface driver usbfs\n[    0.510981] usbcore: registered new interface driver hub\n[    0.511072] usbcore: registered new device driver usb\n[    0.511233] pps_core: LinuxPPS API ver. 1 registered\n[    0.511399] PTP clock support registered\n[    0.541029] NET: Registered PF_INET protocol family\n[    0.556860] Key type asymmetric registered\n[    0.556936] Asymmetric key parser 'x509' registered\n[    0.557369] io scheduler mq-deadline registered\n[    0.557429] io scheduler kyber registered\n[    0.597096] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.600240] usbcore: registered new interface driver usbhid\n[    0.601468] NET: Registered PF_INET6 protocol family\n=== insmod required kernel module i2c-dev ===\nREHARNESS_KERNEL_MODULE_0_INSMOD_RC=0\n=== insmod runtime fixture i2c-registrar ===\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0\n=== insmod reharness_i2c_sensor ===\n[    1.013863] reharness_i2c_sens 0-0050: REHARNESS_I2C_DRIVER_PROBE register=0x10 value=0x5a\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.013863] reharness_i2c_sens 0-0050: REHARNESS_I2C_DRIVER_PROBE register=0x10 value=0x5a\nREHARNESS_SUBSYSTEM_TEST_0_NAME=i2c-transaction\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=i2c-invalid-address\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_2_NAME=linux-i2c-dev-tool\nREHARNESS_SUBSYSTEM_TEST_2_KIND=tool\nREHARNESS_SUBSYSTEM_TEST_2_PROVIDER=linux-i2c-dev\nREHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_2_RC=0\nREHARNESS_SUBSYSTEM_TEST_2_STATUS=pass\n=== rmmod reharness_i2c_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.312213] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_i2c_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 2,
+            "tool": 1
+          },
+          "by_provider": {
+            "linux-i2c-dev": 1
+          },
+          "optional": 0,
+          "required": 3,
+          "total": 3
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "i2c-invalid-address",
+            "i2c-transaction",
+            "linux-i2c-dev-tool"
+          ],
+          "total": 3
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "i2c-transaction",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "i2c-transaction",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "i2c-invalid-address",
+            "observed": {
+              "index": 1,
+              "kind": "native",
+              "name": "i2c-invalid-address",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "tool",
+            "name": "linux-i2c-dev-tool",
+            "observed": {
+              "index": 2,
+              "kind": "tool",
+              "name": "linux-i2c-dev-tool",
+              "provider": "linux-i2c-dev",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": "linux-i2c-dev",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-mdio.json",
+      "profile": "mdio-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/mdio-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_mdio_sensor bus=mdio timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030196] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030263] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071623] ftrace: allocating 38031 entries in 150 pages\n[    0.071873] ftrace: allocated 150 pages with 4 groups\n[    0.418088] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.423073] thermal_sys: Registered thermal governor 'step_wise'\n[    0.427578] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.432012] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.515208] ACPI: bus type USB registered\n[    0.515512] usbcore: registered new interface driver usbfs\n[    0.515709] usbcore: registered new interface driver hub\n[    0.515804] usbcore: registered new device driver usb\n[    0.515976] pps_core: LinuxPPS API ver. 1 registered\n[    0.516092] PTP clock support registered\n[    0.547249] NET: Registered PF_INET protocol family\n[    0.565474] Key type asymmetric registered\n[    0.565548] Asymmetric key parser 'x509' registered\n[    0.565973] io scheduler mq-deadline registered\n[    0.566031] io scheduler kyber registered\n[    0.604842] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.608007] usbcore: registered new interface driver usbhid\n[    0.608884] NET: Registered PF_INET6 protocol family\n=== insmod runtime fixture mdio-registrar ===\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0\n=== insmod reharness_mdio_sensor ===\n[    1.014888] reharness_mdio_sensor reharness-mdio-bus:01: REHARNESS_MDIO_DRIVER_PROBE register=0x10 value=0x5a5a\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.014888] reharness_mdio_sensor reharness-mdio-bus:01: REHARNESS_MDIO_DRIVER_PROBE register=0x10 value=0x5a5a\nREHARNESS_SUBSYSTEM_TEST_0_NAME=mdio-transaction\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=mdio-invalid-address\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\n=== rmmod reharness_mdio_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.303519] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_mdio_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 2
+          },
+          "by_provider": {},
+          "optional": 0,
+          "required": 2,
+          "total": 2
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "mdio-invalid-address",
+            "mdio-transaction"
+          ],
+          "total": 2
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "mdio-transaction",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "mdio-transaction",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "mdio-invalid-address",
+            "observed": {
+              "index": 1,
+              "kind": "native",
+              "name": "mdio-invalid-address",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-network.json",
+      "profile": "network-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/network-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_network bus=network timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030067] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030131] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.071589] ftrace: allocating 38031 entries in 150 pages\n[    0.071838] ftrace: allocated 150 pages with 4 groups\n[    0.415160] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.419666] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424403] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.426077] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.513521] ACPI: bus type USB registered\n[    0.514208] usbcore: registered new interface driver usbfs\n[    0.514208] usbcore: registered new interface driver hub\n[    0.514208] usbcore: registered new device driver usb\n[    0.514297] pps_core: LinuxPPS API ver. 1 registered\n[    0.514414] PTP clock support registered\n[    0.545276] NET: Registered PF_INET protocol family\n[    0.561305] Key type asymmetric registered\n[    0.561379] Asymmetric key parser 'x509' registered\n[    0.561769] io scheduler mq-deadline registered\n[    0.561827] io scheduler kyber registered\n[    0.603340] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.606604] usbcore: registered new interface driver usbhid\n[    0.607327] NET: Registered PF_INET6 protocol family\n=== insmod reharness_network ===\n[    1.003295] REHARNESS_NETWORK_REGISTERED name=eth0\nREHARNESS_DRIVER_INSMOD_RC=0\n[    1.003295] REHARNESS_NETWORK_REGISTERED name=eth0\nREHARNESS_SUBSYSTEM_TEST_0_NAME=network-interface\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=linux-netdevice-selftest\nREHARNESS_SUBSYSTEM_TEST_1_KIND=kselftest\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=linux-netdevice-selftest\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=0\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\n=== rmmod reharness_network ===\nREHARNESS_DRIVER_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.437309] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\n  done=1 probe=4 driver_probe_bound=0 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_network probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "kselftest": 1,
+            "native": 1
+          },
+          "by_provider": {
+            "linux-netdevice-selftest": 1
+          },
+          "optional": 1,
+          "required": 1,
+          "total": 2
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "linux-netdevice-selftest",
+            "network-interface"
+          ],
+          "total": 2
+        },
+        "optional_failures": [
+          "linux-netdevice-selftest"
+        ],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "network-interface",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "network-interface",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "kselftest",
+            "name": "linux-netdevice-selftest",
+            "observed": {
+              "failure_marker": true,
+              "index": 1,
+              "kind": "kselftest",
+              "name": "linux-netdevice-selftest",
+              "provider": "linux-netdevice-selftest",
+              "required": false,
+              "return_code": 1,
+              "status": "fail",
+              "success": true
+            },
+            "provider": "linux-netdevice-selftest",
+            "required": false,
+            "status": "failed"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-spi.json",
+      "profile": "spi-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/spi-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/tools/spi/spidev_test.c: In function \u2018unescape\u2019:\n/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/tools/spi/spidev_test.c:95:52: warning: unused parameter \u2018len\u2019 [-Wunused-parameter]\n   95 | static int unescape(char *_dst, char *_src, size_t len)\n      |                                             ~~~~~~~^~~\n/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/tools/spi/spidev_test.c: In function \u2018transfer\u2019:\n/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/tools/spi/spidev_test.c:165:25: warning: comparison of integer expressions of different signedness: \u2018int\u2019 and \u2018size_t\u2019 {aka \u2018long unsigned int\u2019} [-Wsign-compare]\n  165 |                 if (ret != len)\n      |                         ^~\n",
+      "summary": "=== QEMU run: module=reharness_spi_sensor bus=spi timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030705] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030769] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.072535] ftrace: allocating 38031 entries in 150 pages\n[    0.072786] ftrace: allocated 150 pages with 4 groups\n[    0.418513] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.422819] thermal_sys: Registered thermal governor 'step_wise'\n[    0.427474] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.436325] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.516000] ACPI: bus type USB registered\n[    0.516281] usbcore: registered new interface driver usbfs\n[    0.516474] usbcore: registered new interface driver hub\n[    0.516575] usbcore: registered new device driver usb\n[    0.516812] pps_core: LinuxPPS API ver. 1 registered\n[    0.516930] PTP clock support registered\n[    0.547309] NET: Registered PF_INET protocol family\n[    0.562111] Key type asymmetric registered\n[    0.562185] Asymmetric key parser 'x509' registered\n[    0.562651] io scheduler mq-deadline registered\n[    0.562723] io scheduler kyber registered\n[    0.605155] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.608165] usbcore: registered new interface driver usbhid\n[    0.609207] NET: Registered PF_INET6 protocol family\n=== insmod required kernel module spidev ===\nREHARNESS_KERNEL_MODULE_0_INSMOD_RC=0\n=== insmod runtime fixture spi-registrar ===\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_INSMOD_RC=0\n=== insmod reharness_spi_sensor ===\n[    1.019408] reharness_spi_sens spi0.0: REHARNESS_SPI_DRIVER_PROBE register=0x10 value=0xa6\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.019408] reharness_spi_sens spi0.0: REHARNESS_SPI_DRIVER_PROBE register=0x10 value=0xa6\nREHARNESS_SUBSYSTEM_TEST_0_NAME=spi-transfer\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=spi-invalid-chip-select\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_2_NAME=linux-spidev-tool\nREHARNESS_SUBSYSTEM_TEST_2_KIND=tool\nREHARNESS_SUBSYSTEM_TEST_2_PROVIDER=linux-spidev\nREHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_2_RC=0\nREHARNESS_SUBSYSTEM_TEST_2_STATUS=pass\n=== rmmod reharness_spi_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\nREHARNESS_RUNTIME_FIXTURE_MODULE_0_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.315543] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_spi_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 2,
+            "tool": 1
+          },
+          "by_provider": {
+            "linux-spidev": 1
+          },
+          "optional": 0,
+          "required": 3,
+          "total": 3
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "linux-spidev-tool",
+            "spi-invalid-chip-select",
+            "spi-transfer"
+          ],
+          "total": 3
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "spi-transfer",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "spi-transfer",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "spi-invalid-chip-select",
+            "observed": {
+              "index": 1,
+              "kind": "native",
+              "name": "spi-invalid-chip-select",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "tool",
+            "name": "linux-spidev-tool",
+            "observed": {
+              "index": 2,
+              "kind": "tool",
+              "name": "linux-spidev-tool",
+              "provider": "linux-spidev",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": "linux-spidev",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-usb.json",
+      "profile": "usb-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/usb-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": " allocating 38031 entries in 150 pages\n[    0.072206] ftrace: allocated 150 pages with 4 groups\n[    0.416961] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.421253] thermal_sys: Registered thermal governor 'step_wise'\n[    0.426488] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.428059] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.509827] ACPI: bus type USB registered\n[    0.510126] usbcore: registered new interface driver usbfs\n[    0.510323] usbcore: registered new interface driver hub\n[    0.510425] usbcore: registered new device driver usb\n[    0.510595] pps_core: LinuxPPS API ver. 1 registered\n[    0.510717] PTP clock support registered\n[    0.544130] NET: Registered PF_INET protocol family\n[    0.567747] Key type asymmetric registered\n[    0.567827] Asymmetric key parser 'x509' registered\n[    0.568227] io scheduler mq-deadline registered\n[    0.568284] io scheduler kyber registered\n[    0.611843] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.614781] usbcore: registered new interface driver usbhid\n[    0.615794] NET: Registered PF_INET6 protocol family\n=== insmod required kernel module xhci-hcd ===\nREHARNESS_KERNEL_MODULE_0_INSMOD_RC=0\n=== insmod required kernel module xhci-pci ===\n[    1.044485] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 1\n[    1.051667] xhci_hcd 0000:00:04.0: new USB bus registered, assigned bus number 2\n[    1.059870] insmod (62) used greatest stack depth: 12008 bytes left\nREHARNESS_KERNEL_MODULE_1_INSMOD_RC=0\n=== insmod required kernel module udc-core ===\nREHARNESS_KERNEL_MODULE_2_INSMOD_RC=0\n=== insmod required kernel module dummy_hcd ===\n[    1.074361] dummy_hcd dummy_hcd.0: new USB bus registered, assigned bus number 3\n[    1.077381] insmod (64) used greatest stack depth: 11696 bytes left\nREHARNESS_KERNEL_MODULE_3_INSMOD_RC=0\n=== insmod required kernel module libcomposite ===\nREHARNESS_KERNEL_MODULE_4_INSMOD_RC=0\n=== insmod required kernel module usb_f_ss_lb ===\nREHARNESS_KERNEL_MODULE_5_INSMOD_RC=0\n=== insmod required kernel module g_zero ===\nREHARNESS_KERNEL_MODULE_6_INSMOD_RC=0\n=== insmod required kernel module usbtest ===\n[    1.440934] usbcore: registered new interface driver usbtest\nREHARNESS_KERNEL_MODULE_7_INSMOD_RC=0\n=== insmod reharness_usb_sensor ===\n[    1.447513] reharness_usb_sens 1-1:1.0: REHARNESS_USB_DRIVER_PROBE status=0xb1 0x60\n[    1.447656] usbcore: registered new interface driver reharness_usb_sens\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    1.447513] reharness_usb_sens 1-1:1.0: REHARNESS_USB_DRIVER_PROBE status=0xb1 0x60\nREHARNESS_SUBSYSTEM_TEST_0_NAME=usb-control-status\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=usb-bulk-out\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_2_NAME=usb-invalid-endpoint\nREHARNESS_SUBSYSTEM_TEST_2_KIND=native\nREHARNESS_SUBSYSTEM_TEST_2_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_2_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_2_RC=0\nREHARNESS_SUBSYSTEM_TEST_2_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_3_NAME=linux-usbtest-gadget\nREHARNESS_SUBSYSTEM_TEST_3_KIND=tool\nREHARNESS_SUBSYSTEM_TEST_3_PROVIDER=linux-usbtest\nREHARNESS_SUBSYSTEM_TEST_3_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_3_RC=0\nREHARNESS_SUBSYSTEM_TEST_3_STATUS=pass\n=== rmmod reharness_usb_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.763543] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_2_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_3_SUCCESS=1\n  done=1 probe=2 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_usb_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 3,
+            "tool": 1
+          },
+          "by_provider": {
+            "linux-usbtest": 1
+          },
+          "optional": 0,
+          "required": 4,
+          "total": 4
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "linux-usbtest-gadget",
+            "usb-bulk-out",
+            "usb-control-status",
+            "usb-invalid-endpoint"
+          ],
+          "total": 4
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "usb-control-status",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "usb-control-status",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "usb-bulk-out",
+            "observed": {
+              "index": 1,
+              "kind": "native",
+              "name": "usb-bulk-out",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "usb-invalid-endpoint",
+            "observed": {
+              "index": 2,
+              "kind": "native",
+              "name": "usb-invalid-endpoint",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "tool",
+            "name": "linux-usbtest-gadget",
+            "observed": {
+              "index": 3,
+              "kind": "tool",
+              "name": "linux-usbtest-gadget",
+              "provider": "linux-usbtest",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": "linux-usbtest",
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    },
+    {
+      "manifest": "benchmarks/experiments/reharness-virtio.json",
+      "profile": "virtio-generic",
+      "return_code": 0,
+      "serial_log": "/home/yfblock/Code/dri-trans-paper/reharness/artifacts/profile-matrix-final/virtio-generic/qemu.log",
+      "status": "accepted",
+      "stderr": "",
+      "summary": "=== QEMU run: module=reharness_virtio_sensor bus=virtio timeout=90s ===\n=== QEMU \u9000\u51fa\u7801: 0 ===\n[    0.030369] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030433] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.072511] ftrace: allocating 38031 entries in 150 pages\n[    0.072773] ftrace: allocated 150 pages with 4 groups\n[    0.415475] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.419910] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424455] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.426899] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.512628] ACPI: bus type USB registered\n[    0.512937] usbcore: registered new interface driver usbfs\n[    0.513143] usbcore: registered new interface driver hub\n[    0.513240] usbcore: registered new device driver usb\n[    0.513412] pps_core: LinuxPPS API ver. 1 registered\n[    0.513529] PTP clock support registered\n[    0.546799] NET: Registered PF_INET protocol family\n[    0.562853] Key type asymmetric registered\n[    0.562929] Asymmetric key parser 'x509' registered\n[    0.563353] io scheduler mq-deadline registered\n[    0.563414] io scheduler kyber registered\n[    0.613876] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.616042] usbcore: registered new interface driver usbhid\n[    0.616736] NET: Registered PF_INET6 protocol family\n=== insmod reharness_virtio_sensor ===\n[    1.023536] reharness_virtio_sensor virtio0: REHARNESS_VIRTIO_DRIVER_PROBE capacity=2048\nREHARNESS_DRIVER_INSMOD_RC=0\nREHARNESS_DRIVER_PROBE_BOUND=1\n[    0.030369] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]\n[    0.030433] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]\n[    0.415475] NET: Registered PF_NETLINK/PF_ROUTE protocol family\n[    0.419910] thermal_sys: Registered thermal governor 'step_wise'\n[    0.424455] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.\n[    0.426899] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages\n[    0.512628] ACPI: bus type USB registered\n[    0.512937] usbcore: registered new interface driver usbfs\n[    0.513143] usbcore: registered new interface driver hub\n[    0.513240] usbcore: registered new device driver usb\n[    0.513412] pps_core: LinuxPPS API ver. 1 registered\n[    0.513529] PTP clock support registered\n[    0.546799] NET: Registered PF_INET protocol family\n[    0.562853] Key type asymmetric registered\n[    0.562929] Asymmetric key parser 'x509' registered\n[    0.563353] io scheduler mq-deadline registered\n[    0.563414] io scheduler kyber registered\n[    0.613876] rtc_cmos PNP0B00:00: registered as rtc0\n[    0.616042] usbcore: registered new interface driver usbhid\n[    0.616736] NET: Registered PF_INET6 protocol family\n[    1.023536] reharness_virtio_sensor virtio0: REHARNESS_VIRTIO_DRIVER_PROBE capacity=2048\nREHARNESS_SUBSYSTEM_TEST_0_NAME=virtio-queue-read\nREHARNESS_SUBSYSTEM_TEST_0_KIND=native\nREHARNESS_SUBSYSTEM_TEST_0_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_0_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_0_RC=0\nREHARNESS_SUBSYSTEM_TEST_0_STATUS=pass\nREHARNESS_SUBSYSTEM_TEST_1_NAME=virtio-invalid-ioctl\nREHARNESS_SUBSYSTEM_TEST_1_KIND=native\nREHARNESS_SUBSYSTEM_TEST_1_PROVIDER=\nREHARNESS_SUBSYSTEM_TEST_1_REQUIRED=1\nREHARNESS_SUBSYSTEM_TEST_1_RC=0\nREHARNESS_SUBSYSTEM_TEST_1_STATUS=pass\n=== rmmod reharness_virtio_sensor ===\nREHARNESS_DRIVER_RMMOD_RC=0\n=== QEMU_RUN_DONE ===\n[    1.306851] Call Trace:\n\n=== \u6210\u529f\u5224\u5b9a ===\nREHARNESS_SUBSYSTEM_TEST_0_SUCCESS=1\nREHARNESS_SUBSYSTEM_TEST_1_SUCCESS=1\n  done=1 probe=28 driver_probe_bound=1 driver_probe_unbound=0 real_oops=0 real_warning=0\n  => \u6210\u529f: reharness_virtio_sensor probe \u6210\u529f\n",
+      "test_source_report": {
+        "declared": {
+          "by_kind": {
+            "native": 2
+          },
+          "by_provider": {},
+          "optional": 0,
+          "required": 2,
+          "total": 2
+        },
+        "duplicate_declared": [],
+        "duplicate_observed": [],
+        "failed_required": [],
+        "inconclusive_required": [],
+        "malformed_observed": [],
+        "metadata_mismatches": [],
+        "missing_required": [],
+        "observed": {
+          "names": [
+            "virtio-invalid-ioctl",
+            "virtio-queue-read"
+          ],
+          "total": 2
+        },
+        "optional_failures": [],
+        "status": "accepted",
+        "tests": [
+          {
+            "kind": "native",
+            "name": "virtio-queue-read",
+            "observed": {
+              "index": 0,
+              "kind": "native",
+              "name": "virtio-queue-read",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          },
+          {
+            "kind": "native",
+            "name": "virtio-invalid-ioctl",
+            "observed": {
+              "index": 1,
+              "kind": "native",
+              "name": "virtio-invalid-ioctl",
+              "required": true,
+              "return_code": 0,
+              "status": "pass",
+              "success": true
+            },
+            "provider": null,
+            "required": true,
+            "status": "pass"
+          }
+        ],
+        "unexpected_observed": []
+      },
+      "trace": null
+    }
+  ],
+  "schema": 1,
+  "status": "accepted"
+}

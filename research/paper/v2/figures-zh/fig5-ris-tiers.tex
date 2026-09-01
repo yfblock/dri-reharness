@@ -1,0 +1,43 @@
+% 补充图 A：RIS 三层操作模型与地址域（学术风格：白底细框、固定宽度左对齐堆叠）
+\documentclass[border=8pt]{standalone}
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK SC}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
+\begin{document}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  tier/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    align=left, inner sep=0.2cm, text width=9.8cm},
+  side/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    align=left, inner sep=0.2cm, text width=4.0cm, font=\scriptsize},
+  meta/.style={rectangle, draw=black, dashed, line width=0.5pt, fill=white,
+    align=left, inner sep=0.18cm, text width=14.4cm, font=\scriptsize},
+]
+\node[tier, anchor=north west] (t1) at (0,0)
+  {\textbf{第 1 层：寄存器操作}（直接 MMIO）\\[3pt]
+   \texttt{R(width, addr)} \quad \texttt{W(width, addr) = expr}\\
+   \texttt{RMW(width, addr) = transform}\\[3pt]
+   {\scriptsize 宽度标注 B1/B2/B4/B8 贯穿到代码生成（如 \texttt{readb} vs \texttt{readl}）}};
+\node[tier, anchor=north west] (t2) at ($(t1.south west)+(0,-0.4)$)
+  {\textbf{第 2 层：类型化事务}（总线级，非 MMIO）\\[3pt]
+   \texttt{TXREAD / TXWRITE / TXUPDATE[transport] target@selector}\\[3pt]
+   {\scriptsize transport $\in$ \{regmap, i2c\_smbus, i2c, mfd\}；句柄与选择器分离，不伪装成内存地址}};
+\node[tier, anchor=north west] (t3) at ($(t2.south west)+(0,-0.4)$)
+  {\textbf{第 3 层：功能状态}（软件状态 $\leftrightarrow$ 寄存器数据流）\\[3pt]
+   \texttt{VALUE(expr)} \quad \texttt{STATE(field) := expr} \quad \texttt{OUT(target) := expr}\\[3pt]
+   {\scriptsize 另有 \texttt{DELAY(cycles)} 与 \texttt{RETURN expr} 补全操作集}};
+
+\node[side, anchor=north west] (addr) at ($(t1.north east)+(0.45,0)$)
+  {\textbf{地址域} $\mathcal{A}$\\[4pt]
+   \textbf{Symbolic}$(d,r)$：宏已解析（理想）\\[3pt]
+   \textbf{Fixed}$(b,o)$：数值偏移，无名\\[3pt]
+   \textbf{Computed}$(e)$：运行时表达式（保守处理，不伪造符号名）};
+
+\node[meta, anchor=north west] (meta)
+  at ($(t3.south west)+(0,-0.45)$)
+  {每个 leaf op 携带 \texttt{op\_id}、可靠性（Exact / Conservative）、意图（Init / Status / Config /
+   DataTransfer）、源位置 provenance；控制流为 \texttt{IF/ELSE} · \texttt{LOOP} · \texttt{SEQ}，
+   叶子守卫来自谓词栈（if / switch-case 条件合取）。};
+\end{tikzpicture}
+\end{document}

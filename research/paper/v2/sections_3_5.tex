@@ -1,0 +1,294 @@
+% reharness - ASPLOS submission (sections_3_5.tex)
+% System Design and Evidence Contract, Device-Core Contract Extraction.
+% Requires: \input{generated_results.tex} and \newcommand{\reharness}, \newcommand{\rislang} in preamble.
+
+% =====================================================================
+%  SYSTEM DESIGN AND EVIDENCE CONTRACT
+% =====================================================================
+\section{System Design and Evidence Contract}
+\label{sec:overview}
+
+\reharness{} is structured as a four-stage pipeline that transforms C driver source into verification-gated, backend-specific driver code. Figure~\ref{fig:pipeline} shows the flow of artifacts through the system. The key design principle is the \emph{evidence contract}: deterministic analysis establishes the required modeled behavior, and downstream stages are instructed to re-express rather than reinterpret it. The verification gate checks required traceable register operations and exercised traces; it does not claim to exclude every additional hardware access or establish whole-driver equivalence.
+
+\subsection{Architecture and Deterministic Boundary}
+
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  block/.style={rectangle, draw=black, line width=0.5pt, fill=white,
+    minimum width=2.35cm, minimum height=0.9cm, align=center, inner sep=3pt},
+  artifact/.style={block, dashed},
+  gate/.style={block, line width=1pt},
+  arr/.style={-{Stealth[length=2.4mm]}, line width=0.6pt},
+  darr/.style={arr, dash pattern=on 3pt off 2pt},
+]
+\node[block] (src)  at (0,0)       {C Driver Source\\(\texttt{.c / .h})};
+\node[block] (ast)  at (2.9,0)     {AST Parse\\+ Macro Resolution};
+\node[block] (df)   at (5.8,0)     {Flow-Sensitive\\Dataflow + Taint};
+\node[artifact] (ris)  at (8.7,0)  {Formal \rislang\\(\texttt{.ris})};
+\node[block] (sem)  at (11.6,0)    {Semantic\\Inference};
+\node[artifact] (spec) at (14.5,0) {Function / Device\\Specs};
+\node[artifact] (ir) at (2.9,-1.6) {LLVM IR Evidence\\(\texttt{clang -O1})};
+\node[block] (bridge) at (8.7,-3.1)  {LLM Bridge\\+ Backend Plugins};
+\node[artifact] (gen) at (11.6,-3.1) {Generated\\Drivers};
+\node[gate] (verify)  at (14.5,-3.1) {Verification Gate\\compile + AST + trace};
+
+\draw[arr] (src) -- (ast);
+\draw[arr] (ast) -- (df);
+\draw[arr] (df) -- (ris);
+\draw[arr] (ris) -- (sem);
+\draw[arr] (sem) -- (spec);
+\draw[darr] (src.south) |- (ir.west);
+\draw[darr] (ir.east) -| (df.south);
+\draw[arr] (spec.south) -- ++(0,-0.75) -| (bridge.north);
+\draw[arr] (bridge) -- (gen);
+\draw[arr] (gen) -- (verify);
+\draw[arr, dash pattern=on 3pt off 2pt] (verify.south) -- ++(0,-0.6)
+  -| node[below, pos=0.25, font=\scriptsize] {repair feedback} (bridge.south);
+\end{tikzpicture}%
+}
+\caption{Architecture of \reharness. Stage~1 performs hybrid AST$+$IR extraction into the structured \rislang{} evidence IR. Stage~2 infers backend-independent function and device specifications. Stages~3--4 emit target drivers via pluggable backends driven by an LLM bridge, with a bounded verification gate providing structured repair feedback.}
+\Description{A four-stage pipeline diagram showing C source through AST parsing, LLVM IR evidence, dataflow analysis, RIS output, semantic inference, LLM-driven code generation, and verification gate.}
+\label{fig:pipeline}
+\end{figure}
+
+Deterministic AST analysis resolves macros, callback bindings, control flow, and data dependencies; LLVM IR supplements MMIO hidden by header-inlined accessors (Section~\ref{sec:extraction}). The result is the \rislang{} evidence IR plus backend-independent function/device summaries. Backend plugins serialize that contract for an LLM, which emits harness C, bare-metal C, Linux C, or Rust \texttt{no\_std}. Compilation, receipt accounting for recognized register operations, and exercised-path trace checks then accept or reject the candidate within their stated scope and provide bounded repair feedback. Across \EvalDrivers{} drivers, this pipeline extracts \EvalOps{} evidenced operations over \EvalRegisters{} registers; the multi-source evaluation covers \MultiSourceTUs{} translation units and \MultiSourceLines{} lines.
+
+% =====================================================================
+%  REGISTER INTERACTION SEQUENCE
+% =====================================================================
+\subsection{Register Interaction Sequence}
+\label{sec:rislang}
+
+The Register Interaction Sequence (\rislang{}) is the central structured evidence
+intermediate representation of \reharness{}. It provides a machine-parseable
+syntax for register, transaction, and functional-state observations, together
+with typed expressions and nested control-flow evidence. The current artifact
+does not define a complete denotational semantics or prove whole-program
+refinement; \rislang{} defines the required evidence only for the operations
+and paths that the extractor recognizes and records. Every downstream stage
+consumes this bounded evidence contract.
+
+\paragraph{Grammar and operation tiers.}
+
+A \rislang{} document consists of a driver header, one or more modules (one per analyzed function), and metadata blocks for accounting and validation. Each module is an ordered sequence of operations. The top-level grammar is:
+
+\begin{lstlisting}[language=ris]
+driver <name> v<ver> {
+  module <func> {
+    <op>            -- one operation per source statement
+    ...
+  }
+  ...
+  accounting { source_accesses N; emitted N; ... }
+  ir_analysis { source "f.c" { ir_generated true; ... } }
+}
+\end{lstlisting}
+
+Operations are organized into three semantic tiers.
+
+\textbf{Tier 1: Register operations} model direct MMIO interactions:
+
+\begin{itemize}
+\item \texttt{R(<width>, <addr>)} --- Read: loads a value of the given width from the register address; the result is bound to a variable.
+\item \texttt{W(<width>, <addr>) = <expr>} --- Write: stores a computed expression.
+\item \texttt{RMW(<width>, <addr>) = <transform>} --- logical Read-Modify-Write: records a read, a transformation expression, and a write-back to the same address. It does not claim hardware-level atomicity.
+\end{itemize}
+
+The width annotation (\texttt{B1}, \texttt{B2}, \texttt{B4}, \texttt{B8}) records
+the access width in bytes, distinguishing a byte-wide status read from a
+32-bit configuration write or a 64-bit access. This information is preserved
+through code generation so that the backend selects the intended primitive
+(\texttt{readb} vs.\ \texttt{readl} in Linux, or the corresponding register
+field width in Rust \texttt{tock-registers}).
+
+\textbf{Tier 2: Transaction operations} model typed bus-level accesses that are not MMIO:
+
+\begin{itemize}
+\item \texttt{TXREAD[<transport>] <target>@<selector>} --- reads via regmap, I2C/SMBus, or MFD.
+\item \texttt{TXWRITE} and \texttt{TXUPDATE} --- writes and masked updates preserving the selected transport's semantics.
+\end{itemize}
+
+The transport field (\texttt{regmap}, \texttt{i2c\_smbus}, \texttt{i2c}, or \texttt{mfd}) distinguishes the API family, and the target/selector pair keeps the bus handle separate from the register or command selector. This preserves a distinction that a flat MMIO representation would erase, such as the difference between a regmap handle and a memory address.
+
+\textbf{Tier 3: Functional-state operations} capture data flow between software state and device registers:
+
+\begin{itemize}
+\item \texttt{VALUE(<expr>)} --- ValueBind: binds a variable from a source-level expression (e.g., a buffer dereference).
+\item \texttt{STATE(<field>) := <expr>} --- StateWrite: updates persistent driver state (cursor, counter, flag).
+\item \texttt{OUT(<target>) := <expr>} --- OutputWrite: stores a value into a software output buffer.
+\end{itemize}
+
+These three tiers are interleaved in the extractor's source-order projection within each module. The \texttt{DELAY(<cycles>)} and \texttt{RETURN <expr>} operations round out the set. Each operation carries an \texttt{op\_id} (sequential identifier), a \emph{reliability} tag (\texttt{Exact} or \texttt{Conservative}), an \emph{intent} annotation (e.g., \texttt{Init}, \texttt{Status}, \texttt{Config}, \texttt{DataTransfer}), and source-location provenance (file and line), providing provenance for recognized statements rather than a complete audit of the original program.
+
+\paragraph{Register address model.}
+
+Register addresses in \rislang{} are classified into three disjoint categories, forming the address domain $\mathcal{A}$:
+
+\[
+\mathcal{A} = \underbrace{\textsc{Symbolic}(d, r)}_{\substack{\text{device $d$, register $r$} \\\\ \text{(macro-resolved)}}} \;\cup\; \underbrace{\textsc{Fixed}(b, o)}_{\substack{\text{base $b$, numeric offset $o$}}} \;\cup\; \underbrace{\textsc{Computed}(e)}_{\substack{\text{runtime expression $e$}}}
+\]
+
+A \emph{Symbolic} address is the ideal outcome: the extractor resolved a preprocessor macro to its register name and numeric offset, producing a stable, human-readable identifier such as \texttt{dws->regs.DW\_SPI\_DR}. A \emph{Fixed} address has a numeric offset but no resolved name---for instance, a bare constant written directly at the call site. A \emph{Computed} address carries a runtime expression, such as \texttt{base + (1 << (offset + 2))}, used for indexed register banks. The extractor never fabricates a symbolic name for an address it cannot statically resolve; it preserves the expression and marks it as a computed access, which downstream readiness analysis treats conservatively.
+
+\paragraph{Expression algebra.}
+
+Values use \textsc{Const}, \textsc{Var}, binary operators, bit slices, and conditional \textsc{Ite} terms; \textsc{Top} explicitly represents an unresolved value. Constant folding canonicalizes known subexpressions. RMW extraction represents straight-line and branch-dependent mutations in the same algebra, using nested \textsc{Ite} terms when different guards transform a read value before it is written back.
+
+\paragraph{Control flow.}
+
+\rislang{} uses \texttt{IF/ELSE}, \texttt{LOOP}, and \texttt{SEQ}. Guards and
+loop details use the same expression algebra. A predicate stack attaches
+accumulated \texttt{if} and \texttt{switch}-\texttt{case} conditions to leaf
+operations. This preserves path evidence for generation and analysis; the
+current receipt and runtime checks do not independently prove that a generated
+guard is equivalent to the source guard on every input.
+
+\paragraph{Example.}
+
+Listing~\ref{lst:ris-example} shows an extracted \rislang{} fragment from the DesignWare APB SSI transmit path, illustrating all three operation tiers in a single loop body.
+
+\begin{lstlisting}[language=ris, caption={\rislang{} fragment from \texttt{dw\_spi\_transfer\_handler}: the SPI transmit loop, showing functional-state operations interleaved with register writes.}, label={lst:ris-example}]
+LOOP while dws->tx_len {
+  IF dws->tx {
+    IF (dws->n_bytes == 0x1) {
+      txw := VALUE(*(u8 *)(dws->tx))     -- ValueBind
+    }
+    STATE(dws->tx) := (dws->tx + dws->n_bytes) -- StateWrite: cursor
+  }
+  W(B4, dws->regs.DW_SPI_DR) = txw           -- Write: push to FIFO
+  STATE(dws->tx_len) := (dws->tx_len + -1)    -- StateWrite: counter
+}
+\end{lstlisting}
+
+The \texttt{VALUE} operation records that \texttt{txw} is derived from dereferencing the transmit buffer pointer; the two \texttt{STATE} operations advance the buffer cursor and decrement the remaining-length counter; and the \texttt{W} operation pushes the bound value to the data register. Without the functional-state operations, a generated driver could reproduce the register-write pattern yet fail to transfer data. The contract therefore requires the \texttt{VALUE} $\rightarrow$ \texttt{STATE} $\rightarrow$ \texttt{W} $\rightarrow$ \texttt{STATE} order. The general runtime oracle observes only MMIO events; dedicated DesignWare artifact checks inspect this functional-state pattern in the generated targets.
+
+\subsection{Device and Function Semantics}
+
+\rislang{} specifies recognized ordered hardware-facing evidence; semantic
+inference adds roles needed to translate that evidence to a target environment.
+Each \texttt{FunctionSpec} records a backend-independent signature, callback
+role, execution context, state bindings, effects, pre/postconditions, and a
+reference to its \rislang{} module. Callback-table evidence takes precedence
+over name heuristics: an \texttt{irq\_chip.irq\_ack} initializer, for example,
+establishes an interrupt-acknowledgment role even when the function name is
+ambiguous. C types are abstracted to concepts such as \texttt{DeviceState},
+\texttt{LogicalIRQ}, and \texttt{UInt}.
+
+A \texttt{DeviceSpec} composes these function contracts with the device class, state, resources, accessed register map, and invariants. MMIO base expressions become device-state bindings; observed callback roles introduce the corresponding IRQ, clock, GPIO, SPI, or bus resources. The result describes the extracted device core without prescribing Linux C, freestanding C, or Rust syntax.
+
+\subsection{Backend Bindings and Evidence JSON}
+
+A \texttt{BindSpec} maps abstract concepts to one backend: types, MMIO primitives, state expressions, callback slots, and exported entry points. Source facts retain supporting information that is useful for reconstruction but is not part of the portable contract, including structure fields, constants, callback initializers, and resource-acquisition evidence. At generation time, \reharness{} serializes the \rislang{} operations, device identity/class, \texttt{BindSpec}, and selected source facts into one evidence JSON. \texttt{FunctionSpec} roles that cross the boundary are materialized as callback and state bindings rather than serialized as a separate object. This JSON is the only semantic input to the LLM; the original C source is not included.
+
+% =====================================================================
+%  DEVICE-CORE CONTRACT EXTRACTION
+% =====================================================================
+\section{Device-Core Contract Extraction}
+\label{sec:extraction}
+
+The extraction stage transforms complete Linux driver sources into the evidence contract defined above. A libclang-based AST path supplies macros, control structure, callback bindings, and flow-sensitive state; LLVM IR supplements operations hidden by header-inlined accessors.
+
+\subsection{AST Dataflow and Inter-Procedural Analysis}
+
+\paragraph{Translation units and macros.}
+
+The pipeline constructs a libclang translation unit for each \texttt{.c} or \texttt{.h} input with detailed processing records, preserving macro definitions, expansions, and included-header context. A macro table maps register identifiers to integer offsets, allowing \texttt{base + GPIO\_INT\_EN} to become a symbolic register address rather than opaque text.
+
+When a \path{compile_commands.json} database is available, the parser uses its include paths, definitions, and target arguments; otherwise it records diagnostics and uses the available kernel include configuration.
+
+Target functions include lifecycle entry points, interrupt handlers, and callbacks registered through Linux operations tables. The table type and field are retained so semantic inference can distinguish roles such as interrupt acknowledgment and GPIO direction control.
+
+\paragraph{Flow-sensitive dataflow and taint tracking.}
+
+For each target function, the extractor performs a flow-sensitive intra-procedural dataflow analysis. It walks the function's statements in source order, maintaining an \emph{abstract store} $\Sigma: \mathit{Var} \rightarrow \mathcal{V}$ mapping program variables to abstract values. The abstract value domain $\mathcal{V}$ is designed specifically for register interaction analysis:
+
+\begin{itemize}
+\item \texttt{BasePtr}($b$) --- a pointer known to originate from \texttt{ioremap} or an \texttt{\_\_iomem} parameter; the MMIO base.
+\item \texttt{Offset}($b$, $o$, $r$) --- \texttt{BasePtr}($b$) plus a constant offset $o$, optionally annotated with a resolved register name $r$.
+\item \texttt{ReadTaint}($a$, $r$) --- a value loaded by an MMIO read from address $a$; carries a taint label linking it back to the source register.
+\item \texttt{Const}($n$) --- an integer literal or fully folded constant.
+\item \texttt{SymExpr}($t$) --- a symbolic expression that cannot be fully evaluated (e.g., a runtime variable or unanalyzable call).
+\item \texttt{Top} --- an opaque, unknown value.
+\end{itemize}
+
+The analysis seeds the store with known MMIO sources. When it encounters an \texttt{ioremap} or \texttt{devm\_ioremap} call, the return value is bound to \texttt{BasePtr} in the store. Pointer-typed parameters (those with \texttt{\_\_iomem} annotation or \texttt{void~*} type) are also seeded as \texttt{BasePtr} candidates. As the walk proceeds, assignments update the store: \texttt{g = gpiochip\_get\_data(gc)} records that \texttt{g} derives from \texttt{gc}; a subsequent \texttt{g->base} access is then resolved through the store to identify the MMIO base field.
+
+Address resolution is the core operation. When the extractor encounters an MMIO call (e.g., \texttt{readl(g->base + GPIO\_INT\_STAT)}), it evaluates the address expression against the current store and macro table. The expression \texttt{g->base + GPIO\_INT\_STAT} is split at the top-level \texttt{+}, yielding \texttt{g->base} (resolved to \texttt{BasePtr} via the store) and \texttt{GPIO\_INT\_STAT} (resolved to \texttt{Offset} via the macro table, with \texttt{reg\_name = "GPIO\_INT\_STAT"}). The combination produces an \texttt{Offset} with the resolved base and numeric offset, plus the symbolic register name. If no macro resolves, the numeric constant (or expression) is preserved as a \texttt{Fixed} or \texttt{Computed} address.
+
+Branch conditions are tracked through a \emph{predicate stack}. As the walker enters an \texttt{if} body, the condition expression is pushed; for the \texttt{else} path, the negation is pushed. Each leaf operation inherits the full stack as its guard. Switch-case branches are handled by conjoining the selector-equality predicate for each case. This means the extracted \rislang{} preserves not just \emph{what} register is accessed but \emph{under what condition}---information that is essential for trace-level verification and for generating code that reproduces the same branching behavior.
+
+\paragraph{Read-modify-write detection.}
+
+RMW patterns are a critical register idiom: a value is read from a register, modified (typically by bitwise OR, AND, or XOR with a mask), and written back to the same address. \reharness{} detects these by matching the taint flow. When a \texttt{readl} stores its result into variable $v$ at address $a$, the extractor records a \texttt{ReadTaint} on $v$ linked to $a$. Subsequent mutations of $v$ (\texttt{v |= BIT(n)}, \texttt{v \&= ~mask}, etc.) are accumulated. When a \texttt{writel} of $v$ (or an expression derived from $v$) targets the same address $a$, the read-mutate-write sequence is collapsed into a single \texttt{RMW} operation.
+
+The transformation expression is reconstructed by replaying the mutation sequence. For straight-line code, this is a simple composition: each compound assignment extends the expression tree. For branch-dependent mutations, the extractor builds an ITE nest: for each guard $g_i$ under which $v$ is mutated by function $f_i$, the transform becomes $\textsc{Ite}(g_i, f_i(v_{\mathit{old}}), ...)$. Switch-case mutations are handled similarly, generating a disjunction of selector-equality guards. This reconstruction records the RMW transform represented by the extractor without dynamic execution. The current verification gate checks its receipt and primitive-shape obligations only within the stated scope; it does not independently re-prove an arbitrary generated value transform.
+
+\paragraph{Wrapper inlining and inter-procedural analysis.}
+
+Real drivers wrap MMIO primitives in helper functions. Without inter-procedural analysis, every operation inside a wrapper is invisible. \reharness{} builds a call graph from the parsed AST and performs depth-limited, recursion-safe inlining of callee functions into their callers.
+
+The call graph records, for each function, its callees with argument-to-parameter bindings and control-flow context (the predicate stack at the call site). When a callee is itself a target function with register operations, its extracted \rislang{} operations are instantiated with the actual arguments substituted for formal parameters, and merged into the caller's operation sequence at the call-site position. For recognized inlined calls, this preserves the extractor's source-order projection: if \texttt{probe} calls \texttt{gpio\_setbit} on line 42 and \texttt{readl} on line 43, the inlined operations from \texttt{gpio\_setbit} appear before the line-43 read in the final \rislang{}.
+
+The inlining depth is bounded (default 3) to prevent unbounded expansion of deeply recursive call chains, and a visited set prevents cycles. The inliner also handles \emph{wrapper summaries}: when a callee is a simple function containing exactly one MMIO call (a read or write) at the top level (no surrounding control flow), \reharness{} infers a compact summary---a mapping from the wrapper's parameters to the underlying MMIO operation---and substitutes it at each call site without a full re-extraction. This is particularly effective for accessor pairs like \texttt{dw\_readl}/\texttt{dw\_writel}, where the wrapper is a one-line function forwarding to \texttt{readl}/\texttt{writel}. The summary inference is conservative: it requires explicit MMIO provenance (an \texttt{\_\_iomem} parameter or conventional base-field name) and rejects generic \texttt{void~*} addresses, reducing misclassification for the wrapper patterns it covers.
+
+For multi-source drivers spanning multiple translation units, the call graph is extended with cross-TU edges resolved through symbol linkage. The multi-source manifest links bitcode via whole-program analysis, resolving \MultiSourceCrossTUEdges{} cross-translation-unit call edges in the evaluation corpus.
+
+\subsection{LLVM-IR Evidence Recovery}
+
+The AST path handles macro offsets, wrappers, conditions, and arithmetic addresses, but a further challenge remains in our source-file-oriented libclang path: \texttt{static~inline} MMIO accessors defined in kernel headers. When a driver's \texttt{.c} file calls \texttt{dw\_readl(dws, DW\_SPI\_CTRLR0)}, this path records the wrapper call but may not expose the nested \texttt{readl} and address computation as a direct MMIO operation in the analyzed function.
+
+\reharness{} addresses this blind spot through a complementary IR pass. The translation unit is compiled to LLVM IR with \texttt{clang -O1 -emit-llvm -g}. In the evaluated toolchain, \texttt{-O1} inlines the relevant header accessors. Linux MMIO primitives implemented via inline assembly then expand to recognizable patterns:
+
+\begin{lstlisting}
+; write: movl $0, $1
+tail call void asm sideeffect "movl $0,$1", "r,*m,~{...}"(...)
+; read:  movl $1, $0
+%r = tail call i32 asm sideeffect "movl $1,$0", "=r,*m,~{...}"(...)
+\end{lstlisting}
+
+The IR pass scans for \texttt{asm sideeffect} instructions matching these templates and classifies each as a read or write. It then extracts three pieces of evidence for each operation.
+
+\textbf{Offset recovery.} The pointer operand is traced backward through preceding \texttt{getelementptr} instructions to recover the byte offset from the MMIO base; the \texttt{i64} constant in the GEP index yields the numeric register offset. For example, if the GEP is \texttt{getelementptr i8, ptr \%base, i64 0x60}, the register offset is \texttt{0x60}.
+
+\textbf{Inline chain resolution.} Debug-location and subprogram metadata reconstruct the chain from the MMIO primitive through the inlined accessor to the outermost non-primitive caller, attributing each IR operation to its source function.
+
+\textbf{Source provenance.} The source line number is recovered from the outermost \texttt{DILocation}, providing provenance matching the AST evidence format.
+
+The recovered IR operations are merged with the AST extraction by a
+\texttt{(function,~offset)} key. If the AST path already found an operation at
+the same offset in the same function, the IR operation is treated as redundant;
+otherwise it fills an AST blind spot. This conservative merge is useful for the
+header-inline case, but the key does not encode access multiplicity, source
+location, call-site instance, or guard. Same-address repeated accesses can
+therefore collide and are an explicit limitation of the current evidence
+contract. The merge is additive with respect to distinct keys: no AST operation
+is removed or rewritten by the IR pass.
+
+IR evidence supplements rather than replaces the AST: IR exposes inlined MMIO, while macro names, predicates, callback bindings, and functional-state operations remain AST evidence. The DesignWare case study combines both paths to extract 244 evidenced operations across 28 modules.
+
+\subsection{Functional-State and Typed-Transaction Extraction}
+
+\paragraph{Functional state.}
+
+Beyond register and transaction operations, \reharness{} extracts \emph{functional-state} operations that represent how data moves between software buffers and device registers. They broaden the contract beyond register identity and order, but do not by themselves establish functional equivalence.
+
+The extractor identifies three categories of functional-state operations during the dataflow walk.
+
+\textbf{ValueBind} (\texttt{VALUE}). When a local variable is assigned from a source-level expression that feeds a subsequent register write argument, the binding is recorded. For example, \texttt{txw = *(u8 *)(dws->tx)} produces \texttt{txw := VALUE(*(u8 *)(dws->tx))}. The extractor retains only bindings that are consumed by a later operation (register write, state update, or output store); pure control-flow temporaries remain internal dataflow facts and are not emitted to the \rislang{} module.
+
+\textbf{StateWrite} (\texttt{STATE}). When a persistent driver-state field---a struct member accessed via \texttt{->} or \texttt{.}---is updated, the mutation is recorded. This includes pointer advancements (\texttt{dws->tx += n\_bytes}), counter decrements (\texttt{dws->tx\_len--}), flag assignments (\texttt{dws->dma\_mapped = 0}), and callback registrations (\texttt{ctlr->set\_cs = dw\_spi\_set\_cs}). Local scalar temporaries that do not escape the function are not emitted. The distinction is important: a state write affects computation visible to subsequent callbacks or inlined helpers, while a local assignment is control-flow bookkeeping. Unary increment and decrement operations (\texttt{++}/\texttt{--}) on persistent members are also captured, reconstructed as additive assignments.
+
+\textbf{OutputWrite} (\texttt{OUT}). When a value is stored through a pointer dereference into what the analysis identifies as a software output buffer, the store is recorded. For example, \texttt{*(u8 *)(dws->rx) = rxw} produces \texttt{OUT(*(u8 *)(dws->rx)) := rxw}. The extractor uses the assignment's extent end offset for ordering, ensuring that calls in the right-hand side (such as \texttt{*rx = readl(base)}) are emitted before the output write.
+
+These three categories are extracted in source order and interleaved with register operations in the final \rislang{} module. The ordering is critical: the SPI transmit loop's sequence---\texttt{VALUE} (read from tx buffer) $\rightarrow$ \texttt{STATE} (advance cursor) $\rightarrow$ \texttt{W} (write to data register) $\rightarrow$ \texttt{STATE} (decrement counter)---must be preserved, because reordering may write stale data or prevent termination. The evidence JSON retains this order for generation; the current general trace oracle checks the MMIO projection, while case-specific artifact checks cover the associated buffer/state operations.
+
+\paragraph{Typed transactions.}
+
+Many drivers interact with hardware through bus APIs rather than direct MMIO. Regmap provides a register-access abstraction layer; I2C/SMBus offers byte, word, and block transfers; and MFD (Multi-Function Device) helpers expose per-subdevice register accessors. These calls are semantically distinct from MMIO: a regmap read goes through a bus transaction, not a memory load, and conflating the regmap handle with a memory address would produce unsound specifications.
+
+\reharness{} recognizes public regmap and I2C/SMBus read, write, update, and bulk helpers, preserving the handle as target and register/command as selector. MFD recognition is provenance-gated to declarations under \path{include/linux/mfd/} and narrow register-helper patterns, preventing arbitrary calls from being misclassified as device transactions.
+
+The transaction operations preserve the bus-level semantics that flat MMIO representations lose: a \texttt{TXUPDATE[regmap]} with a mask and value is not equivalent to a read-modify-write on a memory address, because the regmap subsystem may apply caching, buffering, or bus-specific framing. By keeping these as distinct typed operations, \rislang{} ensures that generated backends use the correct API family for each access.

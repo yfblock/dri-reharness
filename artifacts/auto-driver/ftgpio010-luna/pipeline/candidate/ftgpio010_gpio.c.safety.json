@@ -1,0 +1,9 @@
+{
+  "changed": false,
+  "matched_tokens": [],
+  "policy_digest": "63e2a3be20f27e45424877df1ddf3f89d3cdfef4d6e4e8a7243f71004393b1bf",
+  "rewrite_rule_count": 0,
+  "schema": 1,
+  "source_after_sha256": "b0561e3b1aba7aab4c6aa938cf704977b25a365df206b6feae1e96c53b1d1d44",
+  "source_before_sha256": "b0561e3b1aba7aab4c6aa938cf704977b25a365df206b6feae1e96c53b1d1d44"
+}

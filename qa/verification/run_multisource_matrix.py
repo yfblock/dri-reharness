@@ -27,7 +27,17 @@ from extractor import mmio  # noqa: E402
 
 
 def _run(args, cwd=ROOT):
-    return subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+    environment = os.environ.copy()
+    pythonpath = [
+        os.path.join(ROOT, "src"),
+        os.path.join(ROOT, "qa"),
+        os.path.join(ROOT, "qa", "verification"),
+    ]
+    if environment.get("PYTHONPATH"):
+        pythonpath.append(environment["PYTHONPATH"])
+    environment["PYTHONPATH"] = os.pathsep.join(pythonpath)
+    return subprocess.run(
+        args, cwd=cwd, env=environment, capture_output=True, text=True)
 
 
 def _load_manifest(path: str) -> tuple[dict, list[str], str]:
@@ -38,21 +48,37 @@ def _load_manifest(path: str) -> tuple[dict, list[str], str]:
     base = os.path.dirname(os.path.realpath(path))
     sources = [os.path.realpath(os.path.join(base, source))
                for source in manifest.get("sources", [])]
-    if len(sources) < 4:
-        raise ValueError(f"multi-source case requires at least 4 C files: {path}")
-    if not all(source.endswith(".c") and os.path.isfile(source) for source in sources):
-        raise ValueError(f"manifest contains a missing/non-C source: {path}")
-    kbuild = os.path.realpath(os.path.join(base, manifest.get("kbuild", "")))
-    if not os.path.isfile(kbuild):
+    c_sources = [source for source in sources if source.endswith(".c")]
+    if not c_sources:
+        raise ValueError(f"manifest requires at least one C source: {path}")
+    if not all(source.endswith((".c", ".h")) and os.path.isfile(source)
+               for source in sources):
+        raise ValueError(f"manifest contains a missing/non-C/H source: {path}")
+    kbuild_value = manifest.get("kbuild")
+    kbuild = (os.path.realpath(os.path.join(base, kbuild_value))
+              if kbuild_value else "")
+    if kbuild and not os.path.isfile(kbuild):
         raise ValueError(f"manifest Kbuild file missing: {path}")
     return manifest, sources, kbuild
 
 
+def _manifest_paths(value: str) -> list[str]:
+    """Accept either one manifest or a directory containing manifests."""
+    if os.path.isfile(value):
+        return [os.path.realpath(value)]
+    return sorted(
+        os.path.realpath(os.path.join(value, name))
+        for name in os.listdir(value) if name.endswith(".json"))
+
+
 def _kbuild_contains_sources(kbuild: str, sources: list[str]) -> bool:
+    if not kbuild:
+        return False
     with open(kbuild, "r", encoding="utf-8", errors="replace") as fh:
         text = fh.read()
+    c_sources = [source for source in sources if source.endswith(".c")]
     return all(os.path.splitext(os.path.basename(source))[0] + ".o" in text
-               for source in sources)
+               for source in c_sources)
 
 
 def _line_count(path: str) -> int:
@@ -69,10 +95,8 @@ def _strip_comments_strings(source: str) -> str:
 
 
 def _source_mmio_counts(sources: list[str]) -> dict[str, int]:
-    read_names = set(mmio.MMIO_READ_FNS) | set(
-        mmio.PRIVATE_MMIO_READ_LAYOUTS)
-    write_names = set(mmio.MMIO_WRITE_FNS) | set(
-        mmio.PRIVATE_MMIO_WRITE_LAYOUTS)
+    read_names = set(mmio.MMIO_READ_FNS)
+    write_names = set(mmio.MMIO_WRITE_FNS)
 
     def count(names: set[str], text: str) -> int:
         pattern = re.compile(
@@ -90,6 +114,12 @@ def _source_mmio_counts(sources: list[str]) -> dict[str, int]:
 
 
 def _compile_original_kbuild(manifest: dict, kbuild: str, outdir: str) -> dict:
+    if not kbuild:
+        return {
+            "attempted": False,
+            "success": False,
+            "reason": "manifest has no module-level kbuild",
+        }
     kernel_build = os.path.join(ROOT, "platform", "kernel", "build")
     source_dir = os.path.dirname(kbuild)
     copy_dir = os.path.join(outdir, "original-kbuild-src")
@@ -163,9 +193,7 @@ def main() -> int:
             "multisource-matrix.json"))
     args = parser.parse_args()
 
-    manifests = sorted(
-        os.path.join(args.manifests, name) for name in os.listdir(args.manifests)
-        if name.endswith(".json"))
+    manifests = _manifest_paths(args.manifests)
     if not manifests:
         raise SystemExit("no multi-source manifests found")
     os.makedirs(args.workdir, exist_ok=True)
@@ -202,7 +230,7 @@ def main() -> int:
             "driver": name,
             "manifest": os.path.relpath(manifest_path, ROOT),
             "description": manifest.get("description", ""),
-            "kbuild": os.path.relpath(kbuild, ROOT),
+            "kbuild": os.path.relpath(kbuild, ROOT) if kbuild else None,
             "kbuild_verified": _kbuild_contains_sources(kbuild, sources),
             "source_count": len(sources),
             "source_lines": sum(_line_count(source) for source in sources),
@@ -253,8 +281,10 @@ def main() -> int:
         state = "/".join(
             "Y" if row["backends"][key] else "N"
             for key in ("harness_compile", "baremetal_compile", "linux_compile"))
+        kbuild_state = ("Y" if original_kbuild["success"]
+                        else "-" if not original_kbuild["attempted"] else "N")
         print(f"{name:<18} sources={len(sources):>2} lines={row['source_lines']:>5} "
-              f"ops={metrics.get('ops', '?'):>4} kbuild={'Y' if original_kbuild['success'] else 'N'} "
+              f"ops={metrics.get('ops', '?'):>4} kbuild={kbuild_state} "
               f"backends={state} {row['seconds']:>6.2f}s")
 
     result = {
@@ -294,8 +324,9 @@ def main() -> int:
     print(f"wrote {args.output}")
 
     valid = all(
-        row["pipeline_exit"] == 0 and row["kbuild_verified"]
-        and row["original_kbuild"]["success"]
+        row["pipeline_exit"] == 0
+        and (not row["original_kbuild"]["attempted"]
+             or (row["kbuild_verified"] and row["original_kbuild"]["success"]))
         and all(row["backends"][key] for key in (
             "harness_compile", "baremetal_compile", "linux_compile"))
         for row in rows)

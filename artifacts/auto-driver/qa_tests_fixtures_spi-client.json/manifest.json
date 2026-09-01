@@ -1,0 +1,93 @@
+{
+  "compile": {
+    "backend": "linux",
+    "context": "kbuild",
+    "language": "c"
+  },
+  "limits": {
+    "compile": 3,
+    "runtime": 3,
+    "trace": 3
+  },
+  "name": "spi_client",
+  "runtime": {
+    "adapter": "qemu-spi",
+    "capabilities": {
+      "optional": [
+        "subsystem",
+        "trace"
+      ],
+      "required": [
+        "registration",
+        "probe",
+        "transfer",
+        "unload"
+      ]
+    },
+    "fixture": {
+      "config": {
+        "chip_select": 0,
+        "driver_name": "fixture_spi_client",
+        "expected_value": "0xa6",
+        "module_args": {
+          "spi-registrar": [
+            "modalias=fixture_spi_client"
+          ]
+        },
+        "register": "0x10"
+      },
+      "kind": "qemu-spi",
+      "module_sources": [
+        "qa/verification/device-registrar/spi-registrar.c"
+      ]
+    },
+    "profile": "spi-generic",
+    "qemu": {
+      "bus": "spi",
+      "device": "spi-virtual",
+      "machine": "pc",
+      "module": "spi_client",
+      "probe_pattern": "REHARNESS_SPI_DRIVER_PROBE",
+      "timeout_seconds": 90
+    }
+  },
+  "schema": 2,
+  "source": {
+    "path": "qa/tests/fixtures/spi-client.json",
+    "sha256": "e782e5e2bdaedddb6d867f63552744676e6066e5215476fa4a595e49b54af6eb"
+  },
+  "test": {
+    "subsystem": {
+      "name": "spi",
+      "tests": [
+        {
+          "args": [
+            "/dev/reharness-spi-control"
+          ],
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "name": "spi-transfer",
+          "success_pattern": "SPI_TRANSFER_PASS"
+        },
+        {
+          "args": [
+            "/dev/reharness-spi-control"
+          ],
+          "executable": "qa/native-tests/spi_transaction_test.c",
+          "name": "spi-invalid-chip-select",
+          "success_pattern": "SPI_INVALID_CHIP_SELECT_PASS"
+        }
+      ]
+    }
+  },
+  "trace": {
+    "fields": [
+      "phase",
+      "function",
+      "kind",
+      "width_bits",
+      "address",
+      "value",
+      "sequence"
+    ]
+  }
+}
