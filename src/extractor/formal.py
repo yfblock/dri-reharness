@@ -6,7 +6,7 @@ A mathematically-grounded representation of register interaction sequences:
   RegAddr= Fixed{base,offset} | Symbolic{device,register} | Computed(Expr)
   RISOp  = Read | Write | ReadModifyWrite | TransactionRead
          | TransactionWrite | TransactionUpdate | StateRead | StateWrite
-         | OutputWrite | Return | Delay | Cond | Seq | Loop
+         | OutputWrite | ValueBind | Return | Delay | Cond | Seq | Loop
   FormalRIS = {driver, version, modules[], register_map[], metadata}
 
 Emits both:
@@ -30,8 +30,11 @@ from .dataflow import _split_top, _strip_casts
 
 # ── BinOp / Expr ─────────────────────────────────────────────────────
 
-BINOPS = ["==", "!=", "<=", ">=", "&&", "||", "<<", ">>", "<", ">",
-          "|", "^", "&", "+", "-", "*", "/", "%"]
+# ``parse_expr`` splits the lowest-precedence operator first.  Keep this in
+# C's precedence order from lowest to highest so mixed guards preserve their
+# source semantics (for example ``ready && length >= mps``).
+BINOPS = ["||", "&&", "|", "^", "&", "==", "!=", "<=", ">=", "<", ">",
+          ">>", "<<", "+", "-", "*", "/", "%"]
 BINOP_NAME = {
     "==": "Eq", "!=": "Ne", "<=": "Le", ">=": "Ge", "<": "Lt", ">": "Gt",
     "&&": "And", "||": "Or", "<<": "Shl", ">>": "Shr",
@@ -46,7 +49,7 @@ BINOP_SYM.update({"Add": "+", "Sub": "-", "BitAnd": "&", "BitOr": "|",
                    "Mul": "*", "Div": "/", "Mod": "%"})
 
 
-def parse_expr(text: str) -> dict:
+def parse_expr(text: str, constants: dict[str, int] | None = None) -> dict:
     """Best-effort parse a C value/condition string into an Expr dict."""
     if text is None:
         return {"Top": None}
@@ -58,9 +61,9 @@ def parse_expr(text: str) -> dict:
     if ternary is not None:
         guard, then_expr, else_expr = ternary
         return {"Ite": {
-            "guard": parse_expr(guard),
-            "then": parse_expr(then_expr),
-            "else": parse_expr(else_expr),
+            "guard": parse_expr(guard, constants),
+            "then": parse_expr(then_expr, constants),
+            "else": parse_expr(else_expr, constants),
         }}
 
     # comparison / logical / bitwise / arithmetic (lowest precedence first)
@@ -68,25 +71,27 @@ def parse_expr(text: str) -> dict:
         parts = _split_top(t, sep)
         if len(parts) > 1:
             op = BINOP_NAME[sep]
-            expr = parse_expr(parts[0])
+            expr = parse_expr(parts[0], constants)
             for p in parts[1:]:
-                expr = {"BinOp": {"op": op, "left": expr, "right": parse_expr(p)}}
+                expr = {"BinOp": {
+                    "op": op, "left": expr,
+                    "right": parse_expr(p, constants)}}
             return expr
 
     # unary logical not, represented within the existing BinOp algebra
     if t.startswith("!") and not t.startswith("!="):
-        return {"BinOp": {"op": "Eq", "left": parse_expr(t[1:]),
+        return {"BinOp": {"op": "Eq", "left": parse_expr(t[1:], constants),
                           "right": {"Const": 0}}}
 
     # unary ~
     if t.startswith("~"):
-        inner = parse_expr(t[1:])
+        inner = parse_expr(t[1:], constants)
         return {"BinOp": {"op": "BitXor", "left": inner, "right": {"Const": 0xFFFFFFFF}}}
 
     # BIT(n)
     m = re.fullmatch(r"BIT\s*\((.+)\)", t, re.I)
     if m:
-        arg = parse_expr(m.group(1))
+        arg = parse_expr(m.group(1), constants)
         # if arg is a constant, fold
         if "Const" in arg:
             return {"Const": (1 << arg["Const"]) & 0xFFFFFFFFFFFFFFFF}
@@ -96,13 +101,18 @@ def parse_expr(text: str) -> dict:
 
     # parenthesized
     if t.startswith("(") and t.endswith(")"):
-        return parse_expr(t[1:-1])
+        return parse_expr(t[1:-1], constants)
 
     # hex / dec literal
     if re.fullmatch(r"0[xX][0-9a-fA-F]+", t):
         return {"Const": int(t, 16)}
     if re.fullmatch(r"\d+", t):
         return {"Const": int(t)}
+
+    if constants and re.fullmatch(r"[A-Za-z_]\w*", t):
+        value = constants.get(t)
+        if value is not None:
+            return {"Const": int(value)}
 
     # identifier / member / call / complex → Var
     return {"Var": t}
@@ -280,7 +290,13 @@ def formal_addr(flat_addr: dict, reg_name: Optional[str]) -> dict:
 def addr_display(a: dict) -> str:
     if "Fixed" in a:
         f = a["Fixed"]
-        return f"{f['base']}[0x{f['offset']:x}]" if f["base"] else f"0x{f['offset']:x}"
+        # C-shaped: dynamic base expressions read as `expr + 0xN` (a
+        # `priv->mmio + *off[0x0]` subscript spelling would mislead the
+        # generators that consume this form)
+        if f["base"]:
+            return (f"{f['base']} + 0x{f['offset']:x}" if f["offset"]
+                    else f"{f['base']}")
+        return f"0x{f['offset']:x}"
     if "Symbolic" in a:
         s = a["Symbolic"]
         return f"{s['device']}.{s['register']}" if s["device"] else s["register"]
@@ -290,6 +306,13 @@ def addr_display(a: dict) -> str:
 
 
 # ── RISOp ────────────────────────────────────────────────────────────
+
+def _scalar_display(value) -> str:
+    """Render a field that may be an expr dict or a plain scalar."""
+    if isinstance(value, dict):
+        return expr_display(value)
+    return str(value)
+
 
 def op_display(op: dict, indent: int = 0) -> str:
     pad = "  " * indent
@@ -303,19 +326,24 @@ def op_display(op: dict, indent: int = 0) -> str:
         audit = ""
         if op_id or reliability:
             audit += f" @{op_id or '?'} [{reliability or 'Unknown'}]"
+        # receipt digest injected by the LLM evidence builder; never part of
+        # the digest itself (ris_op_digest never sees this key on real ops)
+        digest = body.get("_receipt_digest")
+        if digest:
+            audit += f" digest={digest}"
         if source and line:
             audit += f" {source}:{line}"
         return audit
 
     if "Read" in op:
         o = op["Read"]
-        return f"{pad}{o['var']} := R({o['width']}, {addr_display(o['addr'])}) -- {o['intent']}{suffix(o)}"
+        return f"{pad}{o.get('var', '?')} := R({o.get('width', 'B4')}, {addr_display(o.get('addr', {}))}) -- {o.get('intent', 'Unknown')}{suffix(o)}"
     if "Write" in op:
         o = op["Write"]
-        return f"{pad}W({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['value'])} -- {o['intent']}{suffix(o)}"
+        return f"{pad}W({o.get('width', 'B4')}, {addr_display(o.get('addr', {}))}) = {expr_display(o.get('value'))} -- {o.get('intent', 'Unknown')}{suffix(o)}"
     if "ReadModifyWrite" in op:
         o = op["ReadModifyWrite"]
-        return f"{pad}RMW({o['width']}, {addr_display(o['addr'])}) = {expr_display(o['transform'])} -- {o['intent']}{suffix(o)}"
+        return f"{pad}RMW({o.get('width', 'B4')}, {addr_display(o.get('addr', {}))}) = {expr_display(o.get('transform'))} -- {o.get('intent', 'Unknown')}{suffix(o)}"
     if "TransactionRead" in op:
         o = op["TransactionRead"]
         selector = (expr_display(o["selector"])
@@ -347,6 +375,9 @@ def op_display(op: dict, indent: int = 0) -> str:
     if "OutputWrite" in op:
         o = op["OutputWrite"]
         return f"{pad}OUT({o['target']}) := {expr_display(o['value'])}{suffix(o)}"
+    if "ValueBind" in op:
+        o = op["ValueBind"]
+        return f"{pad}{o['var']} := VALUE({expr_display(o['value'])}){suffix(o)}"
     if "Return" in op:
         o = op["Return"]
         return f"{pad}RETURN {expr_display(o['value'])}{suffix(o)}"
@@ -373,7 +404,21 @@ def op_display(op: dict, indent: int = 0) -> str:
         o = op["Loop"]
         guard = o.get("guard")
         detail = expr_display(guard) if guard else expr_display(o["count"])
-        lines = [f"{pad}LOOP {o.get('loop_kind', 'loop')} {detail} "
+        # proven loop shape: keep the source loop header details visible so
+        # generators can reproduce the exact for/while/do form
+        annotations = []
+        if o.get("init"):
+            annotations.append("init=" + _scalar_display(o["init"]))
+        if o.get("step"):
+            annotations.append("step=" + _scalar_display(o["step"]))
+        if o.get("count") is not None:
+            annotations.append("count=" + _scalar_display(o["count"]))
+        if o.get("relation"):
+            annotations.append("relation=" + str(o["relation"]))
+        if o.get("bounded"):
+            annotations.append("bounded")
+        meta = (" (" + "; ".join(annotations) + ")") if annotations else ""
+        lines = [f"{pad}LOOP {o.get('loop_kind', 'loop')} {detail}{meta} "
                  f"[{o.get('reliability', 'Unknown')}] {{"]
         if o.get("guard_ops"):
             lines.append(f"{pad}  GUARD {{")

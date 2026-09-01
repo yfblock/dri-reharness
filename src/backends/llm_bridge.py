@@ -1,6 +1,7 @@
 # Unified LLM bridge for backend code generation.
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -54,17 +55,17 @@ def llm_available() -> bool:
 
 def build_evidence_json(formal, device_spec, bind, facts=None,
                         module_names=None, function_names=None):
-    """`module_names`/`function_names` filter the RIS module dump and the
-    device_spec function list to a chunk (None = everything, the
-    single-shot behavior)."""
+    """JSON half of the evidence package: device, registers, bind, functions,
+    facts.  Module *ops* travel as text RIS (`_modules_ris_text`, injected at
+    the prompt's __RIS__ placeholder); this JSON only lists module names so
+    "every entry in evidence.modules" prompts still address real entries.
+    `module_names`/`function_names` filter both to a chunk (None =
+    everything, the single-shot behavior)."""
     regs = {}
     for r in formal.get("register_map", []):
         regs[r["name"]] = {"offset": r["offset"], "width": r.get("width", "B4")}
-    modules = []
-    for mod in formal.get("modules", []):
-        if module_names is not None and mod.get("name") not in module_names:
-            continue
-        modules.append({"name": mod["name"], "ops": _simplify_ops(mod.get("ops", []))})
+    modules = [mod["name"] for mod in formal.get("modules", [])
+               if module_names is None or mod.get("name") in module_names]
     primitives = {}
     for p in bind.primitives:
         primitives[p.op + "(" + p.width + ")"] = p.concrete
@@ -129,115 +130,70 @@ def build_evidence_json(formal, device_spec, bind, facts=None,
     return json.dumps(evidence, indent=2, sort_keys=True)
 
 
-def _simplify_ops(ops, depth=0):
-    if depth > 10: return [{"error": "max depth"}]
+# ── RIS text evidence ──────────────────────────────────────────────────
+# The module op dump is fed to the LLM as text RIS (op_display form), not
+# JSON: the same ops cost ~1/4 of the JSON envelope (no per-op key
+# repetition, no nested tagged unions).  Register/transaction ops carry
+# their receipt digest inline (`digest=<16hex>`) so receipt emission keeps
+# working unchanged — the oracle recomputes digests from res.formal, never
+# from this text.
+
+_RECEIPT_OP_KINDS = ("Read", "Write", "ReadModifyWrite")
+_TX_OP_KINDS = ("TransactionRead", "TransactionWrite", "TransactionUpdate")
+
+
+def _annotate_receipt_digests(ops):
+    """Deep-copy ops, attaching `_receipt_digest` to receipt-bearing leaves.
+
+    Works on copies so res.formal (and its saved formal.json) never gains
+    the annotation key — the oracle's ris_op_digest would otherwise see it.
+    """
     out = []
     for op in ops:
-        if "Read" in op:
-            o = op["Read"]
-            out.append({"kind": "read", "op_id": o.get("op_id", "?"), "digest": ris_op_digest({"Read": o}), "addr": _addr_str(o.get("addr", {})), "width": o.get("width", "B4"), "var": o.get("var", "")})
-        elif "Write" in op:
-            o = op["Write"]
-            out.append({"kind": "write", "op_id": o.get("op_id", "?"), "digest": ris_op_digest({"Write": o}), "addr": _addr_str(o.get("addr", {})), "value": _expr_str(o.get("value"))})
-        elif "ReadModifyWrite" in op:
-            o = op["ReadModifyWrite"]
-            out.append({"kind": "rmw", "op_id": o.get("op_id", "?"), "digest": ris_op_digest({"ReadModifyWrite": o}), "addr": _addr_str(o.get("addr", {})), "transform": _expr_str(o.get("transform"))})
-        elif "Cond" in op:
-            c = op["Cond"]
-            out.append({"kind": "cond", "guard": _expr_str(c.get("guard")), "then": _simplify_ops(c.get("then_ops", []), depth + 1), "else": _simplify_ops(c.get("else_ops", []), depth + 1) if c.get("else_ops") else []})
-        elif "Loop" in op:
-            l = op["Loop"]
-            out.append({
-                "kind": "loop",
-                "loop_kind": l.get("loop_kind", "loop"),
-                "guard": _expr_str(l.get("guard")),
-                "init": l.get("init", ""),
-                "step": l.get("step", ""),
-                "count": l.get("count"),
-                "relation": l.get("relation"),
-                "body": _simplify_ops(l.get("body", []), depth + 1),
-                "bounded": l.get("bounded", False),
-            })
-        elif "Return" in op:
-            out.append({"kind": "return", "value": _expr_str(op["Return"].get("value"))})
-        elif "TransactionWrite" in op:
-            o = op["TransactionWrite"]
-            out.append({"kind": "tx_write", "op_id": o.get("op_id", "?"),
-                        "transport": o.get("transport", "regmap"),
-                        "target": _expr_str(o.get("target")),
-                        "selector": _expr_str(o.get("selector")),
-                        "payload": _expr_str(o.get("value"))})
-        elif "TransactionUpdate" in op:
-            o = op["TransactionUpdate"]
-            out.append({"kind": "tx_update", "op_id": o.get("op_id", "?"),
-                        "transport": o.get("transport", "regmap"),
-                        "target": _expr_str(o.get("target")),
-                        "selector": _expr_str(o.get("selector")),
-                        "mask": _expr_str(o.get("update_mask")),
-                        "value": _expr_str(o.get("update_value"))})
-        elif "TransactionRead" in op:
-            o = op["TransactionRead"]
-            item = {"kind": "tx_read", "op_id": o.get("op_id", "?"),
-                    "transport": o.get("transport", "regmap"),
-                    "target": _expr_str(o.get("target")),
-                    "selector": _expr_str(o.get("selector")),
-                    "digest": transaction_digest({"TransactionRead": o})}
-            if o.get("protocol"):
-                item["protocol"] = o["protocol"]
-            payload = o.get("payload") or {}
-            if "Message" in payload:
-                message = payload["Message"]
-                item["message"] = _expr_str(message.get("message"))
-                if message.get("count") is not None:
-                    item["count"] = _expr_str(message["count"])
-            out.append(item)
-        elif "StateRead" in op:
-            o = op["StateRead"]
-            out.append({"kind": "state_read", "op_id": o.get("op_id", "?"),
-                        "field": o.get("field", ""),
-                        "var": o.get("var", "state_value"),
-                        "width": o.get("width", "Unknown")})
-        elif "StateWrite" in op:
-            o = op["StateWrite"]
-            out.append({"kind": "state_write", "op_id": o.get("op_id", "?"),
-                        "field": o.get("field", ""),
-                        "value": _expr_str(o.get("value")),
-                        "width": o.get("width", "Unknown")})
-        elif "OutputWrite" in op:
-            o = op["OutputWrite"]
-            out.append({"kind": "output_write", "op_id": o.get("op_id", "?"),
-                        "target": o.get("target", ""),
-                        "value": _expr_str(o.get("value"))})
-        elif "ValueBind" in op:
-            o = op["ValueBind"]
-            out.append({"kind": "value_bind", "op_id": o.get("op_id", "?"),
-                        "var": o.get("var", ""),
-                        "value": _expr_str(o.get("value"))})
-        elif "Delay" in op:
-            o = op["Delay"]
-            out.append({"kind": "delay", "op_id": o.get("op_id", "?"),
-                        "cycles": _expr_str(o.get("cycles"))})
+        op = copy.deepcopy(op)
+        for kind in _RECEIPT_OP_KINDS:
+            if kind in op:
+                op[kind]["_receipt_digest"] = ris_op_digest(op)
+                break
+        else:
+            tx = next((k for k in _TX_OP_KINDS if k in op), None)
+            if tx:
+                op[tx]["_receipt_digest"] = transaction_digest(op)
+        cond = op.get("Cond")
+        if cond:
+            cond["then_ops"] = _annotate_receipt_digests(cond.get("then_ops", []))
+            if cond.get("else_ops"):
+                cond["else_ops"] = _annotate_receipt_digests(cond["else_ops"])
+        seq = op.get("Seq")
+        if seq:
+            seq["ops"] = _annotate_receipt_digests(seq.get("ops", []))
+        loop = op.get("Loop")
+        if loop:
+            if loop.get("guard_ops"):
+                loop["guard_ops"] = _annotate_receipt_digests(loop["guard_ops"])
+            loop["body"] = _annotate_receipt_digests(loop.get("body", []))
+        out.append(op)
     return out
 
 
-def _addr_str(addr):
-    if isinstance(addr, dict):
-        if "Fixed" in addr:
-            fixed = addr["Fixed"]
-            base = str(fixed.get("base") or "base").strip()
-            offset = int(fixed.get("offset", 0))
-            if offset == 0:
-                return base
-            return f"{base} + 0x{offset:x}"
-        if "Symbolic" in addr:
-            return "base + " + addr["Symbolic"].get("register", "?")
-    return str(addr)
+def _module_ris(mod) -> str:
+    """Render one module's ops as text RIS with receipt digests."""
+    from extractor.formal import op_display
+    lines = ["module %s {" % mod.get("name", "?")]
+    for op in _annotate_receipt_digests(mod.get("ops", [])):
+        lines.append(op_display(op, indent=1))
+    lines.append("}")
+    return "\n".join(lines)
 
 
-def _expr_str(expr):
-    if expr is None: return "0"
-    from extractor.formal import expr_to_c
-    return expr_to_c(expr)
+def _modules_ris_text(formal, module_names=None) -> str:
+    """Text RIS for the selected modules; empty-note when a chunk has none."""
+    selected = [mod for mod in formal.get("modules", [])
+                if module_names is None or mod.get("name") in module_names]
+    if not selected:
+        return ("(none for this part — module function bodies are generated "
+                "in separate parts)")
+    return "\n".join(_module_ris(mod) for mod in selected)
 
 
 def extract_code_block(text, lang=None):
@@ -257,11 +213,13 @@ def call_llm(prompt, timeout=120, *, model=None):
     return call_langchain(prompt, timeout=timeout, model=model)
 
 
-# Chunked generation: drivers whose RIS module dump exceeds this many
-# JSON characters are synthesized one chunk per LLM call (scaffold part +
-# function-body parts), each part written as its own file.
-_CHUNK_MIN_CHARS = 48_000
-_CHUNK_BUDGET = 32_000
+# Chunked generation: drivers whose rendered module RIS text exceeds this
+# many characters are synthesized one chunk per LLM call (scaffold part +
+# function-body parts), each part written as its own file.  Budgets are in
+# RIS-text characters (~1/4 of the old JSON envelope, and ~4x denser in
+# information per character).
+_CHUNK_MIN_RIS_CHARS = 16_000
+_CHUNK_RIS_BUDGET = 24_000
 
 _SCAFFOLD_MODE = """
 
@@ -298,18 +256,15 @@ EXISTING SCAFFOLD (context only, never re-emit):
 
 
 def _chunk_module_names(formal):
-    """Group module names into chunks of roughly _CHUNK_BUDGET JSON
-    characters; None when the whole dump fits a single call."""
+    """Group module names into chunks of roughly _CHUNK_RIS_BUDGET rendered
+    RIS characters; None when the whole dump fits a single call."""
     mods = formal.get("modules", [])
-    total = 0
-    for mod in mods:
-        total += len(json.dumps(mod, sort_keys=True, default=str))
-    if total <= _CHUNK_MIN_CHARS:
+    sizes = [len(_module_ris(mod)) for mod in mods]
+    if sum(sizes) <= _CHUNK_MIN_RIS_CHARS:
         return None
     groups, cur, size = [], [], 0
-    for mod in mods:
-        s = len(json.dumps(mod, sort_keys=True, default=str))
-        if cur and size + s > _CHUNK_BUDGET:
+    for mod, s in zip(mods, sizes):
+        if cur and size + s > _CHUNK_RIS_BUDGET:
             groups.append(cur)
             cur, size = [], 0
         cur.append(mod.get("name", "?"))
@@ -323,7 +278,7 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
     template = load_prompt_template(backend)
     driver = formal.get("driver", device_spec.name)
 
-    def evidence_json(module_names=None, function_names=None):
+    def call(mode_note, module_names=None, function_names=None):
         ev = json.loads(build_evidence_json(
             formal, device_spec, bind, facts,
             module_names=module_names, function_names=function_names))
@@ -338,10 +293,10 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
                     ev["pci_identity"] = pci_identity
                 else:
                     ev["pci_identity"] = {"vendor": str(pci_identity)}
-        return json.dumps(ev, indent=2, sort_keys=True)
-
-    def call(mode_note, ev):
-        prompt = (template + mode_note).replace("__EVIDENCE__", ev)
+        prompt = (template + mode_note)
+        prompt = prompt.replace("__EVIDENCE__",
+                                json.dumps(ev, indent=2, sort_keys=True))
+        prompt = prompt.replace("__RIS__", _modules_ris_text(formal, module_names))
         prompt = prompt.replace("__DRIVER_NAME__", driver)
         raw = call_llm(prompt, model=kwargs.get("model"))
         try:
@@ -360,22 +315,20 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
 
     groups = _chunk_module_names(formal)
     if groups is None:
-        code, files = call("", evidence_json())
+        code, files = call("")
         return GeneratedCode(
             "/* Auto-generated by LLM (reharness) */\n" + code,
             files=files,
         )
 
     n = len(groups) + 1
-    scaffold, _ = call(_SCAFFOLD_MODE.format(n=n),
-                       evidence_json(module_names=[]))
+    scaffold, _ = call(_SCAFFOLD_MODE.format(n=n), module_names=[])
     parts = [scaffold]
     files = [{"path": "part-00-scaffold.c", "language": "c",
               "code": scaffold}]
     for i, names in enumerate(groups, 1):
         part, _ = call(_PART_MODE.format(i=i, n=n, scaffold=scaffold),
-                       evidence_json(module_names=names,
-                                     function_names=names))
+                       module_names=names, function_names=names)
         parts.append(part)
         files.append({"path": "part-%02d.c" % i, "language": "c",
                       "code": part})
