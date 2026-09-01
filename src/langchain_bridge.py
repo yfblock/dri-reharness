@@ -333,8 +333,12 @@ class LangChainBridge:
                 raise
             except Exception as exc:
                 text = str(exc)
-                transient = ("429" in text or "cooldown" in text.lower()
-                             or "负载已饱和" in text)
+                transient = ("429" in text
+                             or "cooldown" in text.lower()
+                             or "负载已饱和" in text
+                             # 网关渠道/凭据池枯竭: 同属可等恢复的容量类
+                             or "无可用渠道" in text
+                             or "auth_unavailable" in text)
                 if not transient or attempt == attempts - 1:
                     raise LangChainBridgeError(
                         f"model invocation failed: {exc}") from exc
