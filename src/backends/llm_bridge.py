@@ -1,0 +1,390 @@
+# Unified LLM bridge for backend code generation.
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+from pathlib import Path
+
+from backends.common import ris_op_digest, transaction_digest
+
+
+class GeneratedCode(str):
+    """String-compatible generated source with an optional file envelope."""
+
+    def __new__(cls, code: str, *, files=None):
+        value = super().__new__(cls, code)
+        value.files = ([dict(item) for item in files]
+                       if isinstance(files, list) else None)
+        return value
+
+
+def generated_file_entries(value: str, *, default_path: str) -> list[dict[str, str]]:
+    """Return files for direct output while preserving string compatibility."""
+    files = getattr(value, "files", None)
+    if not isinstance(files, list) or not files:
+        return [{"path": default_path, "code": str(value)}]
+
+    entries = [dict(item) for item in files]
+    primary = next(
+        (item for item in entries
+         if Path(str(item.get("path", ""))).suffix.lower()
+         in {".c", ".cc", ".cpp", ".s", ".rs"}),
+        entries[0],
+    )
+    primary["code"] = str(value)
+    return entries
+
+
+def load_prompt_template(backend: str) -> str:
+    p = Path(__file__).resolve().parent / backend / "prompt.md"
+    if not p.exists():
+        raise FileNotFoundError("No prompt template: " + str(p))
+    return p.read_text(encoding="utf-8")
+
+
+def llm_available() -> bool:
+    try:
+        import langchain_openai  # noqa: F401
+    except ImportError:
+        return False
+    return True
+
+
+def build_evidence_json(formal, device_spec, bind, facts=None,
+                        module_names=None, function_names=None):
+    """`module_names`/`function_names` filter the RIS module dump and the
+    device_spec function list to a chunk (None = everything, the
+    single-shot behavior)."""
+    regs = {}
+    for r in formal.get("register_map", []):
+        regs[r["name"]] = {"offset": r["offset"], "width": r.get("width", "B4")}
+    modules = []
+    for mod in formal.get("modules", []):
+        if module_names is not None and mod.get("name") not in module_names:
+            continue
+        modules.append({"name": mod["name"], "ops": _simplify_ops(mod.get("ops", []))})
+    primitives = {}
+    for p in bind.primitives:
+        primitives[p.op + "(" + p.width + ")"] = p.concrete
+    types_map = {t.abstract: t.concrete for t in bind.types}
+    state_map = {s.abstract_path: s.concrete_expr for s in bind.state}
+    callbacks_map = {c.table_field: c.function for c in bind.callbacks}
+    evidence = {
+        "driver": formal.get("driver", device_spec.name),
+        "device_class": device_spec.cls,
+        "registers": regs,
+        "modules": modules,
+        "bind": {"types": types_map, "primitives": primitives, "state": state_map, "callbacks": callbacks_map, "includes": getattr(bind, "includes", [])},
+        "functions": [
+            {
+                "name": fn.name,
+                "role": fn.role,
+                "context": fn.context,
+                "source": fn.source,
+                "ris_ref": fn.ris_ref,
+                "is_callback_entry": fn.is_callback_entry,
+                "callback_table": fn.callback_table,
+                "signature": {
+                    "params": [
+                        {"name": param.name, "type": param.type,
+                         "from_expr": param.from_expr}
+                        for param in fn.signature.params
+                    ],
+                    "return_type": fn.signature.return_type,
+                },
+            }
+            for fn in getattr(device_spec, "functions", [])
+            if function_names is None or fn.name in function_names
+        ],
+    }
+    if facts:
+        evidence["constants"] = dict(facts.constants) if facts.constants else {}
+        structs = {}
+        for s in (facts.structs or []):
+            structs[s.name] = {f.name: f.ctype for f in s.fields}
+        evidence["structs"] = structs
+        evidence["resources"] = [
+            {
+                "name": resource.name,
+                "type": getattr(resource, "type", None),
+                "acquisition": resource.acquisition,
+                "binds_to": resource.binds_to,
+                **({"required": False}
+                   if getattr(resource, "required", True) is False else {}),
+                **({"failure_policy": resource.failure_policy}
+                   if getattr(resource, "failure_policy", None) else {}),
+            }
+            for resource in (getattr(facts, "resources", None) or [])
+        ]
+        evidence["framework"] = {
+            "callbacks": dict(getattr(facts, "callbacks", None) or {}),
+            "callback_signatures": dict(
+                getattr(facts, "callback_signatures", None) or {}),
+            "error_paths": list(getattr(facts, "error_paths", None) or []),
+            "helper_calls": list(getattr(facts, "helper_calls", None) or []),
+            "source_snippets": dict(getattr(facts, "source_snippets", None) or {}),
+        }
+    return json.dumps(evidence, indent=2, sort_keys=True)
+
+
+def _simplify_ops(ops, depth=0):
+    if depth > 10: return [{"error": "max depth"}]
+    out = []
+    for op in ops:
+        if "Read" in op:
+            o = op["Read"]
+            out.append({"kind": "read", "op_id": o.get("op_id", "?"), "digest": ris_op_digest({"Read": o}), "addr": _addr_str(o.get("addr", {})), "width": o.get("width", "B4"), "var": o.get("var", "")})
+        elif "Write" in op:
+            o = op["Write"]
+            out.append({"kind": "write", "op_id": o.get("op_id", "?"), "digest": ris_op_digest({"Write": o}), "addr": _addr_str(o.get("addr", {})), "value": _expr_str(o.get("value"))})
+        elif "ReadModifyWrite" in op:
+            o = op["ReadModifyWrite"]
+            out.append({"kind": "rmw", "op_id": o.get("op_id", "?"), "digest": ris_op_digest({"ReadModifyWrite": o}), "addr": _addr_str(o.get("addr", {})), "transform": _expr_str(o.get("transform"))})
+        elif "Cond" in op:
+            c = op["Cond"]
+            out.append({"kind": "cond", "guard": _expr_str(c.get("guard")), "then": _simplify_ops(c.get("then_ops", []), depth + 1), "else": _simplify_ops(c.get("else_ops", []), depth + 1) if c.get("else_ops") else []})
+        elif "Loop" in op:
+            l = op["Loop"]
+            out.append({
+                "kind": "loop",
+                "loop_kind": l.get("loop_kind", "loop"),
+                "guard": _expr_str(l.get("guard")),
+                "init": l.get("init", ""),
+                "step": l.get("step", ""),
+                "count": l.get("count"),
+                "relation": l.get("relation"),
+                "body": _simplify_ops(l.get("body", []), depth + 1),
+                "bounded": l.get("bounded", False),
+            })
+        elif "Return" in op:
+            out.append({"kind": "return", "value": _expr_str(op["Return"].get("value"))})
+        elif "TransactionWrite" in op:
+            o = op["TransactionWrite"]
+            out.append({"kind": "tx_write", "op_id": o.get("op_id", "?"),
+                        "transport": o.get("transport", "regmap"),
+                        "target": _expr_str(o.get("target")),
+                        "selector": _expr_str(o.get("selector")),
+                        "payload": _expr_str(o.get("value"))})
+        elif "TransactionUpdate" in op:
+            o = op["TransactionUpdate"]
+            out.append({"kind": "tx_update", "op_id": o.get("op_id", "?"),
+                        "transport": o.get("transport", "regmap"),
+                        "target": _expr_str(o.get("target")),
+                        "selector": _expr_str(o.get("selector")),
+                        "mask": _expr_str(o.get("update_mask")),
+                        "value": _expr_str(o.get("update_value"))})
+        elif "TransactionRead" in op:
+            o = op["TransactionRead"]
+            item = {"kind": "tx_read", "op_id": o.get("op_id", "?"),
+                    "transport": o.get("transport", "regmap"),
+                    "target": _expr_str(o.get("target")),
+                    "selector": _expr_str(o.get("selector")),
+                    "digest": transaction_digest({"TransactionRead": o})}
+            if o.get("protocol"):
+                item["protocol"] = o["protocol"]
+            payload = o.get("payload") or {}
+            if "Message" in payload:
+                message = payload["Message"]
+                item["message"] = _expr_str(message.get("message"))
+                if message.get("count") is not None:
+                    item["count"] = _expr_str(message["count"])
+            out.append(item)
+        elif "StateRead" in op:
+            o = op["StateRead"]
+            out.append({"kind": "state_read", "op_id": o.get("op_id", "?"),
+                        "field": o.get("field", ""),
+                        "var": o.get("var", "state_value"),
+                        "width": o.get("width", "Unknown")})
+        elif "StateWrite" in op:
+            o = op["StateWrite"]
+            out.append({"kind": "state_write", "op_id": o.get("op_id", "?"),
+                        "field": o.get("field", ""),
+                        "value": _expr_str(o.get("value")),
+                        "width": o.get("width", "Unknown")})
+        elif "OutputWrite" in op:
+            o = op["OutputWrite"]
+            out.append({"kind": "output_write", "op_id": o.get("op_id", "?"),
+                        "target": o.get("target", ""),
+                        "value": _expr_str(o.get("value"))})
+        elif "ValueBind" in op:
+            o = op["ValueBind"]
+            out.append({"kind": "value_bind", "op_id": o.get("op_id", "?"),
+                        "var": o.get("var", ""),
+                        "value": _expr_str(o.get("value"))})
+        elif "Delay" in op:
+            o = op["Delay"]
+            out.append({"kind": "delay", "op_id": o.get("op_id", "?"),
+                        "cycles": _expr_str(o.get("cycles"))})
+    return out
+
+
+def _addr_str(addr):
+    if isinstance(addr, dict):
+        if "Fixed" in addr:
+            fixed = addr["Fixed"]
+            base = str(fixed.get("base") or "base").strip()
+            offset = int(fixed.get("offset", 0))
+            if offset == 0:
+                return base
+            return f"{base} + 0x{offset:x}"
+        if "Symbolic" in addr:
+            return "base + " + addr["Symbolic"].get("register", "?")
+    return str(addr)
+
+
+def _expr_str(expr):
+    if expr is None: return "0"
+    from extractor.formal import expr_to_c
+    return expr_to_c(expr)
+
+
+def extract_code_block(text, lang=None):
+    import re as _re
+    if lang:
+        pat = rf"```{_re.escape(lang)}\n([\s\S]*?)\n```"
+    else:
+        pat = r"```(?:\w*\n)?([\s\S]*?)\n```"
+    m = _re.search(pat, text)
+    if m: return m.group(1)
+    return text.strip()
+
+
+
+def call_llm(prompt, timeout=120, *, model=None):
+    from langchain_bridge import call_langchain
+    return call_langchain(prompt, timeout=timeout, model=model)
+
+
+# Chunked generation: drivers whose RIS module dump exceeds this many
+# JSON characters are synthesized one chunk per LLM call (scaffold part +
+# function-body parts), each part written as its own file.
+_CHUNK_MIN_CHARS = 48_000
+_CHUNK_BUDGET = 32_000
+
+_SCAFFOLD_MODE = """
+
+CHUNKED GENERATION — SCAFFOLD PART (part 0 of {n}).
+The module function bodies are generated by separate calls into separate
+files.  Emit ONLY the scaffold of the program:
+- includes and macro stubs;
+- the device private struct, with a field for every entry in bind.state;
+- stub implementations of every bind.primitives function the dialect needs;
+- a prototype for every function in evidence.functions (exact names,
+  parameter counts, and parameter types from evidence.functions[].signature);
+- the entry point the dialect requires: main() that instantiates the
+  device and calls each evidence.functions entry in order with
+  zero-initialized / plausible default arguments for userspace targets;
+  module_init/module_exit with the registration contract for kernel
+  targets.
+Do NOT emit any module function body.  Do not emit TODO markers.
+"""
+
+_PART_MODE = """
+
+CHUNKED GENERATION — PART {i} of {n}.
+The scaffold below (includes, struct, primitive stubs, prototypes, entry
+point) already exists in another file — never repeat, re-declare, or
+redefine any of it, and do not emit includes.  Emit ONLY the bodies of
+the functions for the modules in evidence.modules, exact module names,
+in module order.  No main, no stubs, no struct definition.
+
+EXISTING SCAFFOLD (context only, never re-emit):
+```c
+{scaffold}
+```
+"""
+
+
+def _chunk_module_names(formal):
+    """Group module names into chunks of roughly _CHUNK_BUDGET JSON
+    characters; None when the whole dump fits a single call."""
+    mods = formal.get("modules", [])
+    total = 0
+    for mod in mods:
+        total += len(json.dumps(mod, sort_keys=True, default=str))
+    if total <= _CHUNK_MIN_CHARS:
+        return None
+    groups, cur, size = [], [], 0
+    for mod in mods:
+        s = len(json.dumps(mod, sort_keys=True, default=str))
+        if cur and size + s > _CHUNK_BUDGET:
+            groups.append(cur)
+            cur, size = [], 0
+        cur.append(mod.get("name", "?"))
+        size += s
+    if cur:
+        groups.append(cur)
+    return groups
+
+
+def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type=None, pci_identity=None, **kwargs):
+    template = load_prompt_template(backend)
+    driver = formal.get("driver", device_spec.name)
+
+    def evidence_json(module_names=None, function_names=None):
+        ev = json.loads(build_evidence_json(
+            formal, device_spec, bind, facts,
+            module_names=module_names, function_names=function_names))
+        # Inject bus type info into evidence JSON
+        if bus_type or pci_identity:
+            if bus_type:
+                ev["bus_type"] = bus_type
+            if pci_identity:
+                if hasattr(pci_identity, "to_dict"):
+                    ev["pci_identity"] = pci_identity.to_dict()
+                elif isinstance(pci_identity, dict):
+                    ev["pci_identity"] = pci_identity
+                else:
+                    ev["pci_identity"] = {"vendor": str(pci_identity)}
+        return json.dumps(ev, indent=2, sort_keys=True)
+
+    def call(mode_note, ev):
+        prompt = (template + mode_note).replace("__EVIDENCE__", ev)
+        prompt = prompt.replace("__DRIVER_NAME__", driver)
+        raw = call_llm(prompt, model=kwargs.get("model"))
+        try:
+            from langchain_bridge import _transcribe
+            _transcribe(prompt, str(raw), kind=f"backend-{backend}",
+                        meta={"driver": driver,
+                              "repair_round": kwargs.get("repair_round", 0)})
+        except Exception:
+            pass
+        from langchain_bridge import parse_model_response
+        parsed = parse_model_response(raw)
+        code = parsed["code"]
+        if not code.strip():
+            raise RuntimeError("LLM returned empty code")
+        return code, parsed.get("files")
+
+    groups = _chunk_module_names(formal)
+    if groups is None:
+        code, files = call("", evidence_json())
+        return GeneratedCode(
+            "/* Auto-generated by LLM (reharness) */\n" + code,
+            files=files,
+        )
+
+    n = len(groups) + 1
+    scaffold, _ = call(_SCAFFOLD_MODE.format(n=n),
+                       evidence_json(module_names=[]))
+    parts = [scaffold]
+    files = [{"path": "part-00-scaffold.c", "language": "c",
+              "code": scaffold}]
+    for i, names in enumerate(groups, 1):
+        part, _ = call(_PART_MODE.format(i=i, n=n, scaffold=scaffold),
+                       evidence_json(module_names=names,
+                                     function_names=names))
+        parts.append(part)
+        files.append({"path": "part-%02d.c" % i, "language": "c",
+                      "code": part})
+    # primary first: pipeline overwrites the primary entry's code with the
+    # str() concatenation, compiles and attests it; parts land alongside
+    files.insert(0, {"path": f"{backend}.c", "language": "c", "code": ""})
+    concat = "\n\n".join("/* ---- part %02d of %02d ---- */\n%s" % (i, n - 1, p)
+                         for i, p in enumerate(parts))
+    return GeneratedCode(
+        "/* Auto-generated by LLM (reharness), %d chunked parts */\n" % n
+        + concat,
+        files=files)
