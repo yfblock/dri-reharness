@@ -338,7 +338,15 @@ class LangChainBridge:
                              or "负载已饱和" in text
                              # 网关渠道/凭据池枯竭: 同属可等恢复的容量类
                              or "无可用渠道" in text
-                             or "auth_unavailable" in text)
+                             or "auth_unavailable" in text
+                             # 反向代理切断长流式响应: 网络瞬断, 重试即可
+                             or "peer closed connection" in text
+                             or "incomplete chunked read" in text
+                             # 流式网关健康 chunk 间隙 <0.5s (实测
+                             # p99=0.1s); 读超时 = 连接挂死而非慢生成,
+                             # 重开连接即恢复, 属可重试瞬态
+                             or "ReadTimeout" in text
+                             or "timed out" in text)
                 if not transient or attempt == attempts - 1:
                     raise LangChainBridgeError(
                         f"model invocation failed: {exc}") from exc
