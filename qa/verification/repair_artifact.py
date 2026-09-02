@@ -232,6 +232,27 @@ def _compile_check(backend: str, artifact: Path, tmp: Path, *,
 _FENCE_LANG = {"harness": "c", "baremetal": "c", "linux": "c",
                "rust": "rust"}
 
+_RECEIPT_MARK = re.compile(
+    r"REHARNESS_(?:RIS|TRANSACTION)_OP\s+id=")
+
+
+def _receipt_count(text: str) -> int:
+    return len(_RECEIPT_MARK.findall(text))
+
+
+def _replacement_ok(new: str, old: str) -> bool:
+    """Reject truncated repair responses before they are written.
+
+    A span replacement must preserve every receipt that lived in the span
+    and must not collapse the span to a stub; the same applies to a
+    whole-file replacement.  Without this guard a response that silently
+    omits middle sections deletes lowering evidence outright.
+    """
+    if _receipt_count(new) < _receipt_count(old):
+        return False
+    old_len = len(old.strip())
+    return old_len == 0 or len(new.strip()) >= max(200, old_len // 3)
+
 
 def _extract_block(raw: str, lang: str) -> str:
     fence = re.search(r"```" + lang + r"(?:\s|\n)(.*?)```", raw, re.S)
@@ -263,6 +284,11 @@ def _looks_like_code(raw: str) -> bool:
             or sum(ln.startswith("register_") for ln in lines) >= 1
             or sum(re.search(r"\bfn\s+\w+\s*\(", ln) is not None
                    for ln in lines) >= 1):
+        return True
+    # declaration-heavy C spans (prototypes, struct members) may carry no
+    # braces at all; accept them on punctuation density alone
+    if with_semi >= max(2, len(lines) // 8) and sum(
+            "(" in ln for ln in lines) >= 2:
         return True
     return with_brace >= 1 and with_semi >= max(2, len(lines) // 8)
 
@@ -329,48 +355,61 @@ def main() -> int:
                 kind=f"{args.backend} backend", path=artifact.name,
                 lang=_FENCE_LANG[args.backend], code=code, diagnostics=diag)
         t0 = time.time()
-        raw = ""
+        block = None
+        raw_kept = ""
         for attempt in range(3):
+            raw = ""
             try:
                 raw = _call(prompt)
             except (TimeoutError, Exception) as exc:  # noqa: BLE001 - retry
-                rounds[-1]["repair_seconds"] = round(time.time() - t0, 1)
                 rounds[-1]["error"] = str(exc)[-300:]
                 print(f"repair call failed: {str(exc)[-160:]}")
-                raw = ""
                 time.sleep(10 * (attempt + 1))
                 continue
-            if raw and raw.strip():
-                break
-            print(f"empty response (attempt {attempt + 1}); retrying")
-            rounds[-1][f"empty_attempt_{attempt + 1}"] = True
-        if not raw or not raw.strip():
-            print("no usable repair response; stopping")
-            break
-        try:
-            repaired = _extract_block(raw, _FENCE_LANG[args.backend])
-        except RuntimeError as exc:
-            rounds[-1]["repair_seconds"] = round(time.time() - t0, 1)
-            rounds[-1]["error"] = str(exc)
-            rounds[-1]["raw_head"] = raw[:300]
-            dump = Path(os.environ.get("CLAUDE_JOB_DIR", "/tmp")) / "tmp" / (
-                f"repair-raw-{args.backend}-{i}.txt")
+            if not raw or not raw.strip():
+                print(f"empty response (attempt {attempt + 1}); retrying")
+                rounds[-1][f"empty_attempt_{attempt + 1}"] = True
+                continue
             try:
-                dump.write_text(raw, encoding="utf-8")
-            except OSError:
-                pass
-            print(f"{exc}; raw head: {raw[:200]!r}")
+                cand = _extract_block(raw, _FENCE_LANG[args.backend])
+            except RuntimeError as exc:
+                rounds[-1]["error"] = str(exc)
+                rounds[-1]["raw_head"] = raw[:300]
+                dump = Path(os.environ.get("CLAUDE_JOB_DIR", "/tmp")) / "tmp" / (
+                    f"repair-raw-{args.backend}-{i}-{attempt}.txt")
+                try:
+                    dump.write_text(raw, encoding="utf-8")
+                except OSError:
+                    pass
+                print(f"{exc}; retrying")
+                continue
+            if not _replacement_ok(cand, span_text):
+                rounds[-1]["error"] = "truncated repair response rejected"
+                dump = Path(os.environ.get("CLAUDE_JOB_DIR", "/tmp")) / "tmp" / (
+                    f"repair-truncated-{args.backend}-{i}-{attempt}.txt")
+                try:
+                    dump.write_text(raw, encoding="utf-8")
+                except OSError:
+                    pass
+                print("guard: repair response dropped receipts or collapsed "
+                      "the span; retrying")
+                continue
+            block = cand
+            raw_kept = raw
             break
         rounds[-1]["repair_seconds"] = round(time.time() - t0, 1)
-        if not repaired.strip():
+        if block is None:
+            print("no usable repair response; stopping")
+            break
+        if not block.strip():
             print("empty repair response; stopping")
             break
         if span is not None:
             lines = code.split("\n")
-            lines[a:b + 1] = repaired.rstrip("\n").split("\n")
+            lines[a:b + 1] = block.rstrip("\n").split("\n")
             artifact.write_text("\n".join(lines), encoding="utf-8")
         else:
-            artifact.write_text(repaired, encoding="utf-8")
+            artifact.write_text(block, encoding="utf-8")
 
     log = {"schema": 1}
     if OUT.is_file():

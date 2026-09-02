@@ -382,6 +382,184 @@
         }
       ],
       "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/harness.c",
+      "backend": "harness",
+      "generated_at": "2026-09-02T11:21:39+0800",
+      "lowering_complete": true,
+      "mode": "lowering",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": true,
+          "missing": 0,
+          "missing_transaction_markers": 0,
+          "round": 0,
+          "sha256_16": "9f5c23264231441d"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/harness.c",
+      "backend": "harness",
+      "generated_at": "2026-09-02T11:24:51+0800",
+      "lowering_complete": true,
+      "mode": "lowering",
+      "model": "glm-5.3-highspeed",
+      "rounds": [
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": true,
+          "missing": 0,
+          "missing_transaction_markers": 0,
+          "round": 0,
+          "sha256_16": "9f5c23264231441d"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/harness.c",
+      "backend": "harness",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T11:27:50+0800",
+      "model": "glm-5.3-highspeed",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "pi_mmio_resume(struct dw_apb_ssi_priv *dev)\n      |                 ^~~~~~~~~~~~~~~~~~\n/tmp/tmp9345sdro/h/dw_spi_harness.c:1593:17: error: \u2018dw_spi_mmio_suspend\u2019 defined but not used [-Werror=unused-function]\n 1593 | static uint32_t dw_spi_mmio_suspend(struct dw_apb_ssi_priv *dev)\n      |                 ^~~~~~~~~~~~~~~~~~~\n/tmp/tmp9345sdro/h/dw_spi_harness.c:1330:17: error: \u2018dw_spi_mmio_probe\u2019 defined but not used [-Werror=unused-function]\n 1330 | static uint32_t dw_spi_mmio_probe(struct dw_apb_ssi_priv *pdev)\n      |                 ^~~~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "empty_attempt_1": true,
+          "repair_seconds": 163.0,
+          "round": 0,
+          "sha256_16": "9f5c23264231441d"
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "ror]\n  351 | static uint32_t dw_spi_mmio_suspend(struct dw_apb_ssi_priv *dev);\n      |                 ^~~~~~~~~~~~~~~~~~~\n/tmp/tmp15rmaw_0/h/dw_spi_harness.c:352:17: error: \u2018dw_spi_mmio_resume\u2019 used but never defined [-Werror]\n  352 | static uint32_t dw_spi_mmio_resume(struct dw_apb_ssi_priv *dev);\n      |                 ^~~~~~~~~~~~~~~~~~\n/tmp/tmp15rmaw_0/h/dw_spi_harness.c:353:13: error: \u2018dw_spi_mmio_remove\u2019 used but never defined [-Werror]\n  353 | static void dw_spi_mmio_remove(struct dw_apb_ssi_priv *pdev);\n      |             ^~~~~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "error": "no fenced code block in repair response",
+          "raw_head": "void dw_spi_cleanup(struct dw_apb_ssi_priv *spi);\nvoid dw_spi_mscc_set_cs(struct dw_apb_ssi_priv *spi, uint32_t enable);\nuint32_t dw_spi_mscc_ocelot_init(struct dw_apb_ssi_priv *pdev,\n                                        struct dw_apb_ssi_priv *dwsmmio);\nuint32_t dw_spi_mscc_jaguar2_init(struct d",
+          "repair_seconds": 16.4,
+          "round": 1,
+          "sha256_16": "f34d8ce8665dc847",
+          "span": [
+            328,
+            353
+          ]
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "examples/dw-apb-ssi/dw_spi_harness.c",
+      "backend": "harness",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T11:28:23+0800",
+      "model": "glm-5.3-highspeed",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "error]\n   44 | static uint32_t dw_spi_mmio_suspend(struct dw_apb_ssi_priv *dev);\n      |                 ^~~~~~~~~~~~~~~~~~~\n/tmp/tmpxa9x2ukm/h/dw_spi_harness.c:45:17: error: \u2018dw_spi_mmio_resume\u2019 used but never defined [-Werror]\n   45 | static uint32_t dw_spi_mmio_resume(struct dw_apb_ssi_priv *dev);\n      |                 ^~~~~~~~~~~~~~~~~~\n/tmp/tmpxa9x2ukm/h/dw_spi_harness.c:46:13: error: \u2018dw_spi_mmio_remove\u2019 used but never defined [-Werror]\n   46 | static void dw_spi_mmio_remove(struct dw_apb_ssi_priv *pdev);\n      |             ^~~~~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "error": "no fenced code block in repair response",
+          "raw_head": "void dw_spi_cleanup(struct dw_apb_ssi_priv *spi);\nvoid dw_spi_mscc_set_cs(struct dw_apb_ssi_priv *spi, uint32_t enable);\nuint32_t dw_spi_mscc_ocelot_init(struct dw_apb_ssi_priv *pdev,\n                                 struct dw_apb_ssi_priv *dwsmmio);\nuint32_t dw_spi_mscc_jaguar2_init(struct dw_apb_s",
+          "repair_seconds": 32.1,
+          "round": 0,
+          "sha256_16": "ddd555342b2b9ab8",
+          "span": [
+            21,
+            46
+          ]
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/baremetal.c",
+      "backend": "baremetal",
+      "generated_at": "2026-09-02T11:29:46+0800",
+      "lowering_complete": true,
+      "mode": "lowering",
+      "model": "glm-5.3-highspeed",
+      "rounds": [
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 71,
+          "missing_transaction_markers": 1,
+          "repair_seconds": 69.9,
+          "round": 0,
+          "sha256_16": "a5dd96eaf2187507"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 0,
+          "missing_transaction_markers": 1,
+          "repair_seconds": 12.8,
+          "round": 1,
+          "sha256_16": "d22243acc59e0c50"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": true,
+          "missing": 0,
+          "missing_transaction_markers": 0,
+          "round": 2,
+          "sha256_16": "0c73faef50fb6ef9"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/baremetal.c",
+      "backend": "baremetal",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T11:32:08+0800",
+      "model": "glm-5.3-highspeed",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "_t dw_spi_transfer_handler(struct dw_spi_mmio *dws_dev)\n      |                 ^~~~~~~~~~~~~~~~~~~~~~~\n/tmp/tmpi4x7xwrx/b/dw_spi_baremetal.c:482:13: error: \u2018dw_spi_set_cs\u2019 defined but not used [-Werror=unused-function]\n  482 | static void dw_spi_set_cs(struct dw_spi_mmio *spi, uint32_t enable)\n      |             ^~~~~~~~~~~~~\n/tmp/tmpi4x7xwrx/b/dw_spi_baremetal.c:459:12: error: \u2018dw_spi_ip_is_p1\u2019 defined but not used [-Werror=unused-function]\n  459 | static int dw_spi_ip_is_p1(struct dw_spi_mmio *dws, uint32_t type)\n      |            ^~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 48.8,
+          "round": 0,
+          "sha256_16": "0c73faef50fb6ef9",
+          "span": [
+            458,
+            1674
+          ]
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "i_irq(uint32_t irq, struct dw_spi_mmio *dev_id)\n      |                 ^~~~~~~~~~\n/tmp/tmp4pguxl_i/b/dw_spi_baremetal.c:1716:17: error: \u2018dw_read_io_reg\u2019 defined but not used [-Werror=unused-function]\n 1716 | static uint32_t dw_read_io_reg(struct dw_spi *dws, uint32_t offset)\n      |                 ^~~~~~~~~~~~~~\n/tmp/tmp4pguxl_i/b/dw_spi_baremetal.c:1692:13: error: \u2018dw_write_io_reg\u2019 defined but not used [-Werror=unused-function]\n 1692 | static void dw_write_io_reg(struct dw_spi *dws, uint32_t offset, uint32_t val)\n      |             ^~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 79.8,
+          "round": 1,
+          "sha256_16": "d4e1a3b188ac7a33"
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "truct dw_spi_mmio *dev);\n      |                 ^~~~~~~~~~~~~~~~~~~\n/tmp/tmprtg8zkgy/b/dw_spi_baremetal.c:354:17: error: \u2018dw_spi_mmio_resume\u2019 declared \u2018static\u2019 but never defined [-Werror=unused-function]\n  354 | static uint32_t dw_spi_mmio_resume(struct dw_spi_mmio *dev);\n      |                 ^~~~~~~~~~~~~~~~~~\n/tmp/tmprtg8zkgy/b/dw_spi_baremetal.c:356:13: error: \u2018dw_spi_mmio_remove\u2019 declared \u2018static\u2019 but never defined [-Werror=unused-function]\n  356 | static void dw_spi_mmio_remove(struct dw_spi_mmio *pdev);\n      |             ^~~~~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 13.6,
+          "round": 2,
+          "sha256_16": "4d4e1a723ab692f9",
+          "span": [
+            319,
+            356
+          ]
+        }
+      ],
+      "temperature": 0.0
     }
   ],
   "schema": 1

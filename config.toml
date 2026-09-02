@@ -5,7 +5,7 @@
 
 [llm]
 # 任意 OpenAI 协议兼容端点
-model = "glm-5.3-flash"
+model = "glm-5.3-highspeed"
 base_url = "https://ai.yfblock.cn/v1"
 # 留空则回退环境变量；也可直接填入
 api_key = ""

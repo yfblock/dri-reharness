@@ -1079,3 +1079,29 @@ GPIO_SWPORTA_DDR/STRIDE 由 Var(→0) 变 Const(0/28)），解释器 trace
 1. dwapb banked 值序（唯一非网关深度提取缺口，本会话已推进一半）
 2. LLM 证据包增强 + 网关稳定窗口重跑（解锁 5 网关测试 + V2 验收数字）
 3. strict readiness 冻结矩阵重写（README 明言待重写；新 v2 数据已有）
+
+## 现有工具/harness 对比（2026-09-02，edu 设备同任务）
+
+### 三方规模与属性
+| 对象 | 总行 | 代码行 | unsafe | OS绑定 | 协议形态 |
+|---|---:|---:|---:|---:|---|
+| Linux 驱动源码（输入） | 227 | 125 | — | 全部 | 隐式（宏+readl/writel） |
+| QEMU 手写设备模型 | 446 | 317 | — | QEMU API | 隐式（MMIO case 分发） |
+| C2Rust 0.22.1 转译 | 39 | 39 | 10% | 0* | 隐式（指针算术） |
+| reharness Linux 模块 | 219 | 152 | 0 | 框架 | RIS 契约 + 证据 |
+| reharness host harness | 252 | 204 | 0 | 0 | RIS 契约 + 证据 |
+| reharness bare-metal | 206 | 152 | 0 | 0 | RIS 契约 + 证据 |
+
+*C2Rust 需先手工剥除内核依赖（三连崩：AddressSpaceConversion →
+TagTypeUnknown → 头文件错误雪崩），真实内核驱动不可直接转译。
+
+### 寄存器协议对照
+- QEMU 手写模型 case: 11 个偏移（含设备侧独有的 0x04 addr4、0x08 fact、0x20 status）
+- 驱动宏定义: 7 个；实际访问: 3 个（IO_ID/IRQ_STATUS/IRQ_ACK；DMA 四寄存器
+  被实验安全策略禁用——源码定义但零访问）
+- 我方 RIS: 3/3 实际访问全覆盖，与源码行为精确一致
+- C2Rust: 常量带入但协议隐式；无契约可对账
+
+### Direct-LLM baseline（已有，direct-llm-baseline.json）
+- 同模型 glm-5.2: 14/14 表面模式通过，gate 首查即拒（compile），缺 151 anchors
+
