@@ -49,3 +49,6 @@ modules.order
 
 # gate mutation study replay workdirs (regenerable)
 artifacts/cache/
+
+# Local LLM endpoint credentials (template: config.toml, kept out of VCS)
+config.toml
