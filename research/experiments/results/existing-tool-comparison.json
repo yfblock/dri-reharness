@@ -1,0 +1,130 @@
+{
+  "description": "Existing-tool comparison on the QEMU edu device: pinned Linux driver, QEMU's hand-written device model (v9.0.0 hw/misc/edu.c), C2Rust 0.22.1 transpilation of a de-kernelized stub (the real driver cannot be transpiled), and the reharness artifacts with their RIS contract",
+  "device": "qemu-edu",
+  "driver_view": {
+    "device_view_vs_driver_view": "QEMU model serves 11 offsets; the driver touches 3; the difference is the device-side register surface the driver never exercises",
+    "driver_accessed_count": 3,
+    "driver_accessed_offsets": [
+      "0x0",
+      "0x24",
+      "0x64"
+    ],
+    "reharness_ris_covers": 3
+  },
+  "objects": {
+    "c2rust": {
+      "blank": 0,
+      "code": 39,
+      "comment": 0,
+      "note": "C2Rust 0.22.1 cannot transpile the real driver: kernel headers crash the transpiler (AddressSpaceConversion, TagTypeUnknown, error avalanche)",
+      "os_binding": "none (stub de-kernelized by hand)",
+      "protocol": "implicit (pointer arithmetic), no contract to reconcile",
+      "stub_c_lines": 30,
+      "total": 39,
+      "unsafe": {
+        "functions": 4,
+        "unsafe_blocks": 0,
+        "unsafe_function_pct": 100.0,
+        "unsafe_functions": 4
+      }
+    },
+    "linux_driver": {
+      "blank": 45,
+      "code": 146,
+      "comment": 36,
+      "os_binding": "Linux kernel APIs throughout",
+      "protocol": "implicit (macros + readl/writel)",
+      "total": 227
+    },
+    "qemu_model": {
+      "blank": 66,
+      "code": 343,
+      "comment": 38,
+      "device_view_only_offsets": [
+        "0x00",
+        "0x04",
+        "0x08",
+        "0x20",
+        "0x60",
+        "0x80",
+        "0x88",
+        "0x90",
+        "0x98"
+      ],
+      "mmio_offsets": {
+        "read": [
+          "0x00",
+          "0x04",
+          "0x08",
+          "0x20",
+          "0x24",
+          "0x80",
+          "0x88",
+          "0x90",
+          "0x98"
+        ],
+        "union": [
+          "0x00",
+          "0x04",
+          "0x08",
+          "0x20",
+          "0x24",
+          "0x60",
+          "0x64",
+          "0x80",
+          "0x88",
+          "0x90",
+          "0x98"
+        ],
+        "union_count": 11,
+        "write": [
+          "0x04",
+          "0x08",
+          "0x20",
+          "0x60",
+          "0x64",
+          "0x80",
+          "0x88",
+          "0x90",
+          "0x98"
+        ]
+      },
+      "os_binding": "QEMU device APIs",
+      "protocol": "implicit (MMIO case dispatch)",
+      "total": 447
+    },
+    "reharness_baremetal": {
+      "blank": 33,
+      "code": 86,
+      "comment": 13,
+      "os_binding": "none",
+      "protocol": "RIS contract + receipts",
+      "total": 132
+    },
+    "reharness_harness": {
+      "blank": 33,
+      "code": 104,
+      "comment": 10,
+      "os_binding": "none",
+      "protocol": "RIS contract + receipts",
+      "total": 147
+    },
+    "reharness_linux": {
+      "blank": 41,
+      "code": 163,
+      "comment": 3,
+      "os_binding": "backend adapter",
+      "protocol": "RIS contract + receipts",
+      "total": 207
+    },
+    "reharness_rust": {
+      "blank": 9,
+      "code": 51,
+      "comment": 1,
+      "os_binding": "none (no_std)",
+      "protocol": "RIS contract + receipts",
+      "total": 61
+    }
+  },
+  "schema": 1
+}

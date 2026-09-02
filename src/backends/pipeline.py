@@ -182,7 +182,7 @@ def _repair_compile(backend, name, cpath, entries, ver_dir, root, tmp_dir):
         from backends.llm_bridge import call_llm
     except Exception:
         return False
-    rounds = int(os.environ.get("REHARNESS_LLM_REPAIR_ROUNDS", "2"))
+    rounds = int(os.environ.get("REHARNESS_LLM_REPAIR_ROUNDS", "3"))
     dialect = {"harness": "userspace program with main()",
                "baremetal": "freestanding library (no libc)",
                "linux": "Linux kernel module"}[backend]

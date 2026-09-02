@@ -18,7 +18,19 @@ surface. In the DesignWare APB SSI case study, the pinned Linux source spans
 \DwSourceLines{} lines across its core, MMIO glue, and header, whereas the
 generated targets contain \DwLinuxLines{} lines for Linux C (source and
 header), \DwBaremetalLines{} for bare-metal C (source and header), and
-\DwRustLines{} for Rust \texttt{no\_std}. This reduction arises because each target implements the extracted device core plus only the adapter its backend requires; it is not achieved by modifying the original driver, and it is not by itself a correctness argument. The smaller structured input and output may leave fewer opportunities to invent unrelated framework APIs or control flow; the current verification gate rejects only deviations observable under the modeled contract and checked traces.
+\DwRustLines{} for Rust \texttt{no\_std}. These totals are comparable
+rather than smaller: \DwReceiptMarkerLines{} of the harness pair's lines
+are receipt and anchor markers that carry no functional content, and the
+proportion is similar across backends. What shrinks is not the raw line
+count but the semantic surface: each target implements the extracted
+device core plus only the adapter its backend requires, so the model never
+translates the source's framework integration glue. This is a reduction in
+the model's textual and semantic search space, not a deletion of source
+code, and it is not by itself a correctness argument; the smaller
+structured input and output may leave fewer opportunities to invent
+unrelated framework APIs or control flow, while the current verification
+gate rejects only deviations observable under the modeled contract and
+checked traces.
 
 \reharness{} makes five contributions:
 
@@ -45,7 +57,7 @@ A useful cross-backend representation must separate these concerns without prete
 
 \subsection{Existing Translation Boundaries Are Insufficient}
 
-\paragraph{Deterministic source translation.} C2Rust-style translation~\cite{emrath2021c2rust} maps C syntax and control flow to a target language using deterministic compiler transformations. This provides reproducibility and broad syntactic coverage, but it preserves the source program's decomposition. A Linux driver's \texttt{devm\_*} resource calls, callback tables, locking idioms, error-unwind paths, intrusive containers, and kernel object lifetimes all survive in translated form. Outside Linux, many of those APIs do not exist; inside Rust, their pointer and aliasing structure often remains \texttt{unsafe} because the translator lacks the semantic distinction between an MMIO mapping, a software buffer, and an ordinary pointer.
+\paragraph{Deterministic source translation.} C2Rust-style translation~\cite{emrath2021c2rust} maps C syntax and control flow to a target language using deterministic compiler transformations. This provides reproducibility and broad syntactic coverage, but it preserves the source program's decomposition. A Linux driver's \texttt{devm\_*} resource calls, callback tables, locking idioms, error-unwind paths, intrusive containers, and kernel object lifetimes all survive in translated form. Outside Linux, many of those APIs do not exist; inside Rust, their pointer and aliasing structure often remains \texttt{unsafe} because the translator lacks the semantic distinction between an MMIO mapping, a software buffer, and an ordinary pointer. Section~\ref{sec:evaluation} measures this contrast on a concrete device: C2Rust cannot transpile the pinned kernel driver at all, and its transpilation of a de-kernelized stub carrying the same register protocol keeps that protocol implicit and unverifiable.
 
 Compiler infrastructures such as LLVM~\cite{lattner2004llvm} have made
 large-scale analysis and transformation of C programs routine, and
@@ -88,7 +100,7 @@ the complete driver and owns the extraction of its meaning, the candidate search
 space includes arbitrary omissions and inventions. Tests can reject observed
 failures, but they do not by themselves provide a complete translation contract.
 
-Earlier driver-analysis and synthesis systems provide deterministic foundations for such a boundary. SDV checks operating-system API protocols~\cite{ball2006thorough}; semantic patches automate collateral driver evolution~\cite{padioleau2007semantic}; Devil+ and Dingo/Termite synthesize drivers from explicit device/OS models~\cite{yu2005devil,ryzhyk2009dingo,ryzhyk2009termite,ryzhyk2014termite2}; and KLEE or S2E explore paths when an executable environment exists~\cite{cadar2008klee,chipounov2011s2e}. These approaches either target framework protocols, automate localized edits rather than translation, require manually authored specifications, or depend on executable models. They do not extract a compact hardware contract from an existing Linux driver as the input to constrained multi-backend translation.
+Earlier driver-analysis and synthesis systems provide deterministic foundations for such a boundary. SDV checks operating-system API protocols~\cite{ball2006thorough}; Coccinelle's semantic patches automate collateral driver evolution at kernel scale~\cite{padioleau2007semantic,lawall2018coccinelle}; the LDV toolset verifies kernel-module API rule compliance~\cite{zakharov2015ldv}; Devil+ and Dingo/Termite synthesize drivers from explicit device/OS models~\cite{yu2005devil,ryzhyk2009dingo,ryzhyk2009termite,ryzhyk2014termite2}; and KLEE or S2E explore paths when an executable environment exists~\cite{cadar2008klee,chipounov2011s2e}. These approaches either target framework protocols, automate localized edits rather than translation, require manually authored specifications, or depend on executable models. They do not extract a compact hardware contract from an existing Linux driver as the input to constrained multi-backend translation.
 
 \reharness{} moves the deterministic boundary before generation. AST and LLVM-IR
 analysis determine the hardware-relevant operations and their provenance;
@@ -102,4 +114,4 @@ trace comparison checks expected MMIO order on exercised paths. This follows the
 broader translation-validation idea~\cite{barthe2009certificate,kang2018crellvm,lopes2021alive2},
 but applies a narrower, evidence-bound check to generated drivers.
 
-The resulting target is often smaller than the original Linux driver because it contains the extracted device core and a backend-specific adapter rather than a translation of every source construct. This is a reduction in the model's semantic and textual search space, not a deletion of source code and not a correctness argument by itself. Confidence in the modeled properties comes from the deterministic evidence and stated acceptance checks; reduced code size makes the probabilistic step easier to constrain and audit.
+The resulting target contains the extracted device core and a backend-specific adapter rather than a translation of every source construct; its raw line count is comparable to the source's (receipt and anchor markers account for the difference), but the semantic and textual search space the model navigates is the device core alone. This is a reduction in the model's search space, not a deletion of source code and not a correctness argument by itself. Confidence in the modeled properties comes from the deterministic evidence and stated acceptance checks; the bounded surface makes the probabilistic step easier to constrain and audit.

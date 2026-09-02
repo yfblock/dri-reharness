@@ -237,6 +237,7 @@ The inlining depth is bounded (default 3) to prevent unbounded expansion of deep
 For multi-source drivers spanning multiple translation units, the call graph is extended with cross-TU edges resolved through symbol linkage. The multi-source manifest links bitcode via whole-program analysis, resolving \MultiSourceCrossTUEdges{} cross-translation-unit call edges in the evaluation corpus.
 
 \subsection{IR-Primary Evidence and the Tree-Preserving Join}
+\label{sec:irprimary}
 
 The AST path handles macro offsets, wrappers, conditions, and arithmetic
 addresses, but two systematic gaps remain in a source-file-oriented libclang

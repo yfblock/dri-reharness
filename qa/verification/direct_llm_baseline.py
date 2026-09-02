@@ -67,6 +67,11 @@ def main() -> int:
                     help="reuse a previously generated candidate .c")
     ap.add_argument("--rounds", type=int, default=1,
                     help="independent samples to draw (default 1)")
+    ap.add_argument("--compile-repair-rounds", type=int, default=0,
+                    help="compile-diagnostic repair budget for the "
+                         "baseline candidate, matching the constrained "
+                         "pipeline's own budget (default 0: none, the "
+                         "original protocol)")
     args = ap.parse_args()
 
     from langchain_bridge import load_langchain_settings, call_langchain
@@ -97,8 +102,22 @@ def main() -> int:
                                 + len(source_text),
                                 response_chars=raw_len,
                                 gen_seconds=(time.time() - t0)))
-        print(f"round {i}: rejected={rounds[-1]['gate']['rejected']} "
-              f"({rounds[-1]['gate'].get('first_failing_check')})")
+        r = rounds[-1]
+        if args.compile_repair_rounds and \
+                r["gate"]["first_failing_check"] == "compile":
+            workdir = (ROOT / "artifacts" / "cache" / "direct-llm"
+                       / f"sample-{i}")
+            workdir.mkdir(parents=True, exist_ok=True)
+            fixed, used, ok = _compile_repair(
+                code, workdir, args.compile_repair_rounds)
+            r["compile_repair_rounds"] = used
+            r["compile_repair_compiled"] = ok
+            r["gate_pre_repair"] = r["gate"]
+            r["gate"] = gate._verdict(gate._run_gate(
+                gate._load_extraction(args.manifest), fixed, workdir))
+            r["candidate_c"] = fixed
+        print(f"round {i}: rejected={r['gate']['rejected']} "
+              f"({r['gate'].get('first_failing_check')})")
 
     report = {
         "schema": 1,
@@ -121,6 +140,41 @@ def main() -> int:
             r["candidate_c"], encoding="utf-8")
     print(f"baseline report -> {args.out}")
     return 0
+
+
+def _compile_repair(code: str, workdir: Path, max_rounds: int) -> tuple[str, int]:
+    """Give the baseline the same compile-diagnostic repair budget the
+    constrained pipeline grants its own candidates (_repair_compile in
+    backends/pipeline.py): probe-compile, feed the exact cc diagnostics
+    back, bounded rounds.  Baseline candidates are single files, so the
+    repair rewrites the whole file per round."""
+    import subprocess
+    from langchain_bridge import call_langchain
+    cpath = workdir / "candidate.c"
+    binp = workdir / "candidate.bin"
+    rounds_used = 0
+    for r in range(max_rounds):
+        cpath.write_text(code, encoding="utf-8")
+        p = subprocess.run(["cc", "-o", str(binp), str(cpath)],
+                           capture_output=True, text=True)
+        if p.returncode == 0:
+            break
+        rounds_used = r + 1
+        prompt = (
+            "You are fixing compile errors in a host C program (dialect: "
+            "userspace program with main()). Fix ONLY the compile errors "
+            "the compiler reports; keep the program's structure, register "
+            "accesses, and behavior. Return the COMPLETE fixed file in a "
+            "single ```c fenced block, nothing else.\n\n"
+            "===== COMPILER DIAGNOSTICS =====\n"
+            + p.stderr[-4000:]
+            + "\n\n===== CURRENT FILE =====\n```c\n" + code + "\n```\n")
+        raw = call_langchain(prompt, timeout=600)
+        code = _extract_c_block(raw)
+    cpath.write_text(code, encoding="utf-8")
+    p = subprocess.run(["cc", "-o", str(binp), str(cpath)],
+                       capture_output=True, text=True)
+    return code, rounds_used, p.returncode == 0
 
 
 def _evaluate(code: str, args, gate, checklist, *, sample: int,

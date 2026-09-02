@@ -344,6 +344,20 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
         prompt = prompt.replace("__RIS__", _modules_ris_text(formal, module_names))
         prompt = prompt.replace("__DRIVER_NAME__", driver)
         raw = call_llm(prompt, model=kwargs.get("model"))
+        # 200-with-empty-body is an intermittent endpoint mode on long
+        # prompts; a bounded re-ask is cheaper than losing the whole part
+        for _empty_attempt in range(3):
+            from langchain_bridge import parse_model_response
+            parsed = parse_model_response(raw)
+            if parsed["code"].strip():
+                break
+            from langchain_bridge import call_langchain, \
+                LangChainBridgeError
+            try:
+                raw = call_langchain(prompt, timeout=120,
+                                     model=kwargs.get("model"))
+            except LangChainBridgeError:
+                raw = call_llm(prompt, model=kwargs.get("model"))
         try:
             from langchain_bridge import _transcribe
             _transcribe(prompt, str(raw), kind=f"backend-{backend}",

@@ -301,7 +301,7 @@ resist static name resolution.
 \subsection{Layer Ablation and Third-Party Cross-Validation (RQ2)}
 \label{sec:ablation}
 
-The IR-primary architecture (Section~3.3) separates two concerns: the
+The IR-primary architecture (Section~\ref{sec:irprimary}) separates two concerns: the
 compiled artifact supplies address truth, and the AST supplies intent. An
 ablation over the single-source corpus ($N{=}12$ compilable drivers) runs
 the extractor in three configurations and measures the effect of removing
@@ -490,6 +490,30 @@ their evidence
 JSON passes the eligibility checks for bindings, unsupported operations, and
 source facts needed to attempt a candidate. This label does not imply that a
 candidate was generated or accepted.
+Classifying the \EvalDrivers{} corpus's 15 not-strict-ready drivers by the
+root cause recorded in their blocker lists
+(\path{research/experiments/results/matrix.json}): 11 involve missing or
+incomplete subsystem or lifecycle models (three exclusively---\texttt{ahci\_ceva},
+\texttt{ahci\_mvebu}, \texttt{pll}), the human-effort-limited class; the
+rest fail on analysis limits---conservative loop summaries requiring
+validation (nine drivers, overlapping the subsystem class), one driver with
+13 computed dynamic register addresses (\texttt{gpio-mb86s7x}), one with an
+unsupported control-flow transfer, and one failing the AST primitive proof
+under a synthesized lifecycle stub.
+
+\textbf{Zero-shot holdout.} A frozen holdout of \ZeroShotCases{} drivers,
+excluded from all implementation work and enforced by an in-tree
+generalization guard, was run through the same deterministic pipeline:
+\ZeroShotCompile{}/\ZeroShotCases{} compile on all three backends, strict
+readiness is \ZeroShotHarnessStrict{}/\ZeroShotCases{} for harness and
+bare-metal and \ZeroShotLinuxStrict{}/\ZeroShotCases{} for Linux, with
+\ZeroShotAllStrict{} strict on every backend. The holdout's strict-readiness
+rate exceeds the development corpus's (\HarnessReadyCount{}/\EvalDrivers{});
+Section~\ref{sec:limitations} shows this is a corpus-composition effect---the
+development set's eight AHCI and clock drivers are all blocked, and the
+holdout samples none of them---rather than a leakage signal. The holdout
+matrix and its versioned results are reported with the artifact
+(\path{research/experiments/results/zero-shot-v2-matrix.json}).
 
 \subsection{Multi-Source Scalability}
 
@@ -663,6 +687,51 @@ receipt accounting and exercised-path trace that the constrained pipeline
 enforces. Like the closed-loop record, this is a single-trial,
 single-endpoint comparison, not a repeated-sample study.
 
+\textbf{Existing-tool comparison.} Table~\ref{tab:existing-tools} places
+the same device's realizations side by side on the QEMU \texttt{edu}
+device, whose hand-written QEMU model is upstream ground truth. The three
+families expose the register protocol differently. QEMU's model serves
+\ExtQemuMmioOffsets{} MMIO offsets---the \emph{device} view, including
+registers the driver never touches---while the pinned driver accesses
+\ExtDriverOffsets{} of them, and the reharness \rislang{} covers exactly
+those \ExtDriverOffsets{}/\ExtDriverOffsets{} with per-operation receipts.
+C2Rust 0.22.1 cannot transpile the real driver at all: the kernel headers
+crash the transpiler in three stages (address-space conversion, tag-type
+recovery, then an error avalanche), so the comparison uses a de-kernelized
+stub that carries the same register protocol by hand; its \ExtTranspileLines{}
+lines of transpiled Rust keep the protocol implicit in pointer arithmetic
+with \ExtTranspileUnsafePct\%\ unsafe function signatures and no contract to
+reconcile against. The reharness artifacts are the only realizations whose
+register protocol is explicit, per-operation, and machine-checkable
+(receipt accounting against the extracted contract). All inputs and
+measurements are versioned in
+\path{research/experiments/existing-tools/} and
+\path{research/experiments/results/existing-tool-comparison.json}.
+
+\begin{table}[t]
+\centering
+\caption{Existing-tool comparison on the QEMU \texttt{edu} device. Lines
+are total/source-line counts of the versioned inputs; ``binding'' is what
+the realization depends on to run; the register protocol column is how
+register identity and order are expressed.}
+\label{tab:existing-tools}
+\small
+\begin{tabular}{llll}
+\toprule
+Realization & Lines & Binding & Register protocol \\
+\midrule
+Linux driver (input) & \ExtEduDriverLines & kernel APIs & implicit \\
+QEMU hand-written model & \ExtQemuModelLines & QEMU APIs & implicit (case dispatch) \\
+C2Rust 0.22.1 (stub) & \ExtTranspileLines & none & implicit (pointer arith.) \\
+\midrule
+reharness Linux & \ExtRhEduLinuxLines & adapter & \rislang{} + receipts \\
+reharness harness & \ExtRhEduHarnessLines & none & \rislang{} + receipts \\
+reharness bare-metal & \ExtRhEduBareLines & none & \rislang{} + receipts \\
+reharness Rust \texttt{no\_std} & \ExtRhEduRustLines & none & \rislang{} + receipts \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{End-to-end LLM translation: DesignWare APB SSI.}
 \label{sec:dw-apb-ssi}
 
@@ -699,7 +768,7 @@ branches.
 the Linux kernel module, and Rust \texttt{no\_std} with
 \texttt{tock-registers}---were generated from this single \rislang{}
 specification by the same LLM bridge
-(model \LlmModelId{}, temperature \LlmTemperature{}, endpoint host
+(model \LlmModelId{}, temperature \LlmTemperature{}, served on
 \LlmEndpointHost{}; run metadata versioned in
 \path{research/experiments/results/llm-run-metadata.json}). The harness
 backend, whose contract differs from the bare-metal backend only in the
@@ -709,11 +778,16 @@ rename plus an appended \texttt{main()}) after the endpoint stopped
 serving the long chunked generation; the derivation script guards receipt
 count and brace balance, and the run is recorded in the repair log like
 any other normalization pass. Raw emission is
-incomplete: the receipt-accounting oracle reports dropped operations on every
-backend, so each artifact passes through two bounded repair loops---one fed
+incomplete: across the regeneration chains the receipt-accounting oracle
+observed dropped operations on every backend, so the pipeline treats two
+bounded repair loops as mandatory---one fed
 by the missing/duplicate operation list with the authoritative RIS
 statements (batched to bound the response size), one by exact compiler
-diagnostics---before installation. The receipt-repair loop is preceded by
+diagnostics---before installation. In the recorded final chain only the
+bare-metal artifact still consumed LLM receipt-repair rounds; the Linux
+and Rust artifacts were completed by the deterministic normalization
+pre-passes and the dataflow loop alone, which is why their recorded
+receipt-repair counts below are zero. The receipt-repair loop is preceded by
 deterministic normalization pre-passes---anchor-name canonicalization to
 the generator's doubled \texttt{\_\_rh\_op\_op\_\ensuremath{<}n\ensuremath{>}}
 labels and \texttt{\_\_rh\_txn\_\ensuremath{<}n\ensuremath{>} transaction anchors},
@@ -761,8 +835,10 @@ an unmapped offset, removal of the interrupt status read, a 32-to-16-bit
 width shrink on a status read, an early advance of the receive cursor, and
 a forged variant that keeps a syntactically well-formed receipt and anchor
 label while deleting the hardware access inside it---and replay the
-unchanged gate on each mutant. \GateMutationsRejected{} of
-\GateMutationsApplied{} mutants are rejected (first failing check recorded
+unchanged gate on each mutant. The study replays six candidates in
+total: the five mutants plus the pristine artifact. All six are rejected
+(\GateMutationsRejected{} of \GateMutationsApplied{} replay candidates;
+first failing check recorded
 per mutant): the invented write and the width shrink are rejected by the
 AST-leaf primitive-shape check (unanchored primitive, width mismatch), the
 dropped status read by receipt accounting, and the forged receipt by the

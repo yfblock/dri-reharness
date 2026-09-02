@@ -301,6 +301,21 @@ def main() -> None:
         if total:
             macros[macro] = total
 
+    # receipt/anchor marker lines in the harness pair (verification
+    # scaffolding, not functional code) — keeps §1's size claim honest
+    import re as _re
+    _rec = 0
+    for n in _dw_files["DwHarnessLines"]:
+        p = ex_dir / n
+        if not p.is_file():
+            continue
+        for l in p.read_text(encoding="utf-8", errors="replace").splitlines():
+            if ("REHARNESS_RIS_OP" in l or "REHARNESS_TRANSACTION_OP" in l
+                    or _re.search(r"__rh_(op|txn)_\w+:", l)):
+                _rec += 1
+    if _rec:
+        macros["DwReceiptMarkerLines"] = _rec
+
     # DW 产物行数（摘要/§1 引用；随再生成自动更新）— 源侧固定 1,844 行
     dw_sources = [
         ROOT / "vendor" / "linux" / "drivers" / "spi" / "spi-dw-core.c",
@@ -331,6 +346,36 @@ def main() -> None:
             macros["DirectLlmPatternTotal"] = sum(
                 r.get("checklist_patterns_total", 0) for r in rounds
                 if r.get("checklist_patterns_total"))
+
+    # 既有工具对比（edu 设备：QEMU 手写模型 / C2Rust 转译 / reharness）
+    ext_path = (ROOT / "research" / "experiments" / "results"
+                / "existing-tool-comparison.json")
+    if ext_path.is_file():
+        ext = json.load(open(ext_path, encoding="utf-8"))
+        objs = ext.get("objects", {})
+        _ext_map = {
+            "ExtEduDriverLines": ("linux_driver", "total"),
+            "ExtEduDriverCode": ("linux_driver", "code"),
+            "ExtQemuModelLines": ("qemu_model", "total"),
+            "ExtQemuModelCode": ("qemu_model", "code"),
+            "ExtTranspileLines": ("c2rust", "total"),
+            "ExtRhEduLinuxLines": ("reharness_linux", "total"),
+            "ExtRhEduHarnessLines": ("reharness_harness", "total"),
+            "ExtRhEduBareLines": ("reharness_baremetal", "total"),
+            "ExtRhEduRustLines": ("reharness_rust", "total"),
+        }
+        for macro, (obj, key) in _ext_map.items():
+            if objs.get(obj, {}).get(key) is not None:
+                macros[macro] = objs[obj][key]
+        qmmio = objs.get("qemu_model", {}).get("mmio_offsets", {})
+        if qmmio.get("union_count") is not None:
+            macros["ExtQemuMmioOffsets"] = qmmio["union_count"]
+        drv = ext.get("driver_view", {})
+        if drv.get("driver_accessed_count") is not None:
+            macros["ExtDriverOffsets"] = drv["driver_accessed_count"]
+        uns = objs.get("c2rust", {}).get("unsafe", {})
+        if uns.get("unsafe_function_pct") is not None:
+            macros["ExtTranspileUnsafePct"] = f'{uns["unsafe_function_pct"]:g}'
 
     # 验证门变异研究（Q2/W4）
     mut_path = (ROOT / "research" / "experiments" / "results"
@@ -390,7 +435,10 @@ def main() -> None:
         if meta.get("model"):
             macros["LlmModelId"] = esc(meta["model"])
         if meta.get("endpoint_host"):
-            macros["LlmEndpointHost"] = esc(meta["endpoint_host"])
+            # anonymized for double-blind review; the concrete host stays
+            # in the versioned metadata JSON, out of the manuscript
+            macros["LlmEndpointHost"] = (
+                "a private OpenAI-compatible endpoint")
         if meta.get("temperature") is not None:
             macros["LlmTemperature"] = f'{meta["temperature"]:g}'
 

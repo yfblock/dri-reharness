@@ -40,7 +40,28 @@ but the general MMIO oracle does not observe them; only the DesignWare artifact
 checks inspect this data flow. Interrupt-spanning state machines, DMA
 lifecycles, concurrency, and physical SPI validation remain open.
 
+The exactly-once receipt mechanism has one structural boundary, surfaced by
+the mutation study (Section~\ref{sec:dw-apb-ssi}): seventeen DesignWare
+receipts annotate register operations carried by loops whose trip count the
+extractor marks unbounded, so the strict lowering plan cannot authorize an
+exactly-once cardinality claim for them while receipt accounting still
+demands a receipt per contract operation. No artifact satisfies both
+constraints; the flagship artifact therefore passes compilation, receipt
+accounting, and the primitive-shape check, and is accepted through the
+case-specific 18-item checklist rather than the corpus-wide strict gate.
+A design path to remove the tension exists but is not implemented: the
+harness register-file log already records every MMIO access with its anchor
+provenance, so the runtime trace oracle could count receipts dynamically---a
+per-iteration multiplicity (receipt observed at least once per loop
+iteration, or an interval bound derived from the loop summary) would
+discharge exactly-once on unbounded loops without weakening the
+anchor-to-primitive binding. Until such loop-aware receipts are
+implemented, data-moving drivers whose core is a FIFO loop are outside the
+general strict gate; we report this as a measured limitation rather than
+routing them through it.
+
 \subsection{Scalability and Threats to Validity}
+\label{sec:limitations}
 
 Parsing kernel translation units dominates runtime (measured per-driver
 extraction takes \EvalSecondsMin--\EvalSecondsMax{} seconds, median
@@ -53,8 +74,9 @@ and parallel execution.
 Internal validity depends on libclang, macro resolution, and IR merging; the
 \texttt{(function, offset)} key can collide for repeated same-address accesses.
 QEMU covers two deterministic protocol slices. The corpus lacks network
-drivers and physical-hardware validation, and the single LLM case lacks model
-and repeated-trial metadata. RIS quality, synthesis eligibility, and readiness
+drivers and physical-hardware validation, and the LLM records remain
+single-trial, single-endpoint samples without repeated sampling (model,
+temperature, and endpoint are recorded; Section~\ref{sec:dw-apb-ssi}). RIS quality, synthesis eligibility, and readiness
 are internal metrics, not precision/recall. Required follow-up evidence is
 listed in the experiment-debt ledger versioned with the artifact.
 
@@ -65,8 +87,9 @@ compiling on all three deterministic backends, strict readiness of
 \ZeroShotHarnessStrict{}/\ZeroShotCases{} (harness and bare-metal) and
 \ZeroShotLinuxStrict{}/\ZeroShotCases{} (Linux), with \ZeroShotAllStrict{}
 cases strict on all backends and \ZeroShotHardwareCases{} cases containing
-modeled hardware interactions; these results are not yet integrated into the
-main evaluation and remain an artifact-side generalization datapoint.
+modeled hardware interactions; these counts are now reported with the
+main evaluation (Section~\ref{sec:evaluation}), and the composition
+analysis below explains the rate difference.
 
 The holdout's higher strict-readiness rate than the development corpus
 (\ZeroShotHarnessStrict{}/\ZeroShotCases{} versus
@@ -213,6 +236,17 @@ Y.~Padioleau, J.~Lawall, R.~R.~Hansen, and G.~Muller.
 \newblock Semantic patches: helping {Linux} evolution.
 \newblock In \emph{Testing: Academic and Industrial Conference, Practice and Research Techniques (TAICPART)}, 2007.
 \newblock doi:10.1109/TAICPART.2007.23.
+
+\bibitem{lawall2018coccinelle}
+J.~Lawall and G.~Muller.
+\newblock Coccinelle: 10 years of automated evolution in the {Linux} kernel.
+\newblock In \emph{2018 USENIX Annual Technical Conference (USENIX ATC)}, pages 601--614, 2018.
+
+\bibitem{zakharov2015ldv}
+I.~Zakharov, M.~Mandrykin, V.~Mutilin, E.~Novikov, A.~Petrenko, A.~Khoroshilov, and P.~Shved.
+\newblock Configurable toolset for static verification of operating systems kernel modules.
+\newblock \emph{Programming and Computer Software}, 41(1), 2015.
+\newblock doi:10.1134/S0361768815010065.
 
 \bibitem{wang2021codet5}
 Y.~Wang, W.~Wang, S.~Joty, and S.~C.~H.~Hoi.
