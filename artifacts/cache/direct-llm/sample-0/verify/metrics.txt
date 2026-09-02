@@ -1,0 +1,29 @@
+driver metrics: 158 ops | symbolic 137 fixed 14 computed 0 | rmw 0 unknown_value 8 | cond 136 loop 13 | pct_symbolic 0.907 pct_non_top 0.949 | clang_diag 0 | regs 18
+
+module                        ops  sym  fix  cmp  unk cond loop  %sym
+------------------------------------------------------------------------------
+dw_spi_set_cs                   2    2    0    0    0    2    0   1.0
+dw_spi_transfer_handler        21   17    4    0    2   24    2  0.81
+dw_spi_irq                      3    3    0    0    0    1    0   1.0
+dw_spi_transfer_one            26   22    4    0    2   25    3 0.846
+dw_spi_handle_err               6    6    0    0    0    0    0   1.0
+dw_spi_target_abort             6    6    0    0    0    0    0   1.0
+dw_spi_exec_mem_op             33   27    6    0    4   31    6 0.818
+dw_spi_setup                    0    0    0    0    0    2    0  None
+dw_spi_cleanup                  0    0    0    0    0    0    0  None
+dw_spi_mscc_set_cs              3    3    0    0    0    3    0   1.0
+dw_spi_mscc_ocelot_init         2    1    0    0    0    0    0   1.0
+dw_spi_mscc_jaguar2_init        2    1    0    0    0    0    0   1.0
+dw_spi_sparx5_set_cs            6    2    0    0    0    4    0   1.0
+dw_spi_mscc_sparx5_init         0    0    0    0    0    0    0  None
+dw_spi_alpine_init              0    0    0    0    0    0    0  None
+dw_spi_hssi_init                0    0    0    0    0    0    0  None
+dw_spi_intel_init               0    0    0    0    0    0    0  None
+dw_spi_mountevans_imc_init      0    0    0    0    0    0    0  None
+dw_spi_canaan_k210_init         0    0    0    0    0    0    0  None
+dw_spi_elba_set_cs              3    2    0    0    0    3    0   1.0
+dw_spi_elba_init                0    0    0    0    0    0    0  None
+dw_spi_mmio_probe              21   21    0    0    0   32    1   1.0
+dw_spi_mmio_suspend             2    2    0    0    0    0    0   1.0
+dw_spi_mmio_resume             20   20    0    0    0    9    1   1.0
+dw_spi_mmio_remove              2    2    0    0    0    0    0   1.0

@@ -7,20 +7,25 @@
 
 Device drivers constitute a large fraction of operating-system code and account for a disproportionate share of kernel faults~\cite{chou2001empirical,swift2005nexus}. Porting a driver to a userspace test harness, bare-metal firmware, another operating-system environment, or a memory-safe language is therefore a recurring systems problem. Although this task is commonly described as source-to-source conversion, a driver is not a homogeneous program. Its C source interleaves two concerns: \emph{operating-system integration}, including resource acquisition, subsystem registration, callbacks, synchronization, and object lifetimes; and the \emph{device core}, including register interactions, bus transactions, path conditions, and data movement between software state and the device. The latter contains hardware-facing behavior to preserve; the former is re-bound to the target but can still affect it through callbacks and state.
 
-Existing translation approaches handle this mixture poorly. Deterministic translators such as C2Rust~\cite{emrath2021c2rust} preserve the source program structurally and reproducibly, but consequently carry Linux-specific framework code and its pointer-heavy representation into the target. The translated program remains tied to APIs and lifecycles that may not exist outside Linux, while the device protocol remains implicit in syntax. Direct large-language-model (LLM) translation takes the opposite approach: a model can restructure code and emit idiomatic target APIs, but it is also asked to infer which source behavior matters. For a driver, that authority is unsafe. A plausible candidate may add a DMA command, omit an interrupt acknowledgment, alter a register width, or reorder a buffer update while still compiling successfully.
+Existing translation approaches handle this mixture poorly. Deterministic translators such as C2Rust~\cite{emrath2021c2rust} preserve the source program structurally and reproducibly, and consequently carry Linux-specific framework code and its pointer-heavy representation into the target. The translated program remains tied to APIs and lifecycles that may not exist outside Linux, while the device protocol remains implicit in syntax. Direct large-language-model (LLM) translation takes the opposite approach: a model can restructure code and emit idiomatic target APIs, but it is also asked to infer which source behavior matters. For a driver, that authority is unsafe. A plausible candidate may add a DMA command, omit an interrupt acknowledgment, alter a register width, or reorder a buffer update while still compiling successfully.
 
 The central question is therefore not whether translation should use rules or an LLM, but \emph{where nondeterminism is allowed}. We present \reharness{}, a constrained hybrid translation pipeline that places the LLM between two deterministic stages. First, static analysis examines the complete Linux driver---including its framework glue---and records recognized hardware-relevant behavior in a structured evidence contract. The contract is expressed as a Register Interaction Sequence (\rislang) together with device and binding specifications. It records recognized register identities, widths, operation order, path predicates, typed bus transactions, and selected software-state/data-flow effects. Second, an LLM translates this compact contract, rather than the original C source, into a backend-specific implementation. Third, deterministic compilation, receipt accounting, and exercised-path trace comparison decide whether the candidate is accepted within the modeled scope.
 
 This separation is semantic, not a source transformation. \reharness{} does not delete Linux glue from the input driver or assume that framework code is irrelevant. The extractor analyzes the full translation units and retains any condition, state binding, call relationship, or resource fact that affects a hardware interaction. What it excludes from the cross-backend contract is framework structure for which no device-core effect is established. Consequently, the LLM is not asked to rediscover the boundary between Linux integration and hardware behavior, nor to reproduce every kernel idiom from memory.
 
-Confining the model to the extracted contract also reduces the translation surface. In the DesignWare APB SSI case study, the pinned Linux source spans 1{,}844 lines across its core, MMIO glue, and header, whereas the generated targets contain 828 lines for Linux C (source and header), 581 for bare-metal C (source and header), and 276 for Rust \texttt{no\_std}. This reduction does not prove correctness and is not achieved by modifying the original driver. It arises because each target implements the extracted device core plus only the adapter required by that backend. The smaller structured input and output may leave fewer opportunities to invent unrelated framework APIs or control flow; the current verification gate rejects only deviations observable under the modeled contract and checked traces.
+Confining the model to the extracted contract also reduces the translation
+surface. In the DesignWare APB SSI case study, the pinned Linux source spans
+\DwSourceLines{} lines across its core, MMIO glue, and header, whereas the
+generated targets contain \DwLinuxLines{} lines for Linux C (source and
+header), \DwBaremetalLines{} for bare-metal C (source and header), and
+\DwRustLines{} for Rust \texttt{no\_std}. This reduction arises because each target implements the extracted device core plus only the adapter its backend requires; it is not achieved by modifying the original driver, and it is not by itself a correctness argument. The smaller structured input and output may leave fewer opportunities to invent unrelated framework APIs or control flow; the current verification gate rejects only deviations observable under the modeled contract and checked traces.
 
 \reharness{} makes five contributions:
 
 \begin{itemize}
 \item \textbf{A device-core extraction pipeline} combining libclang AST analysis, flow-sensitive dataflow and taint tracking, and LLVM-IR evidence at \texttt{-O1}. It records recognized hardware-relevant evidence from full Linux driver sources and recovers MMIO operations hidden in header-inlined \texttt{static~inline} accessors.
 
-\item \textbf{The \rislang{} evidence language}, extending register operations with typed regmap/I2C/MFD transactions and functional-state operations (\texttt{ValueBind}, \texttt{StateWrite}, and \texttt{OutputWrite}) that record selected buffer-to-register data flow.
+\item \textbf{The \rislang{} evidence language}, extending register operations with typed regmap/I2C/MFD transactions and functional-state operations (\texttt{ValueBind}, \texttt{StateWrite}, and \texttt{OutputWrite}) that record selected data flow from buffers to registers.
 
 \item \textbf{A constrained hybrid LLM translator} in which four backend plugins---harness C, bare-metal C, Linux kernel module, and Rust \texttt{no\_std}---share one deterministic evidence contract. The LLM receives the contract and a fixed backend prompt, never the original C source.
 
@@ -42,31 +47,36 @@ A useful cross-backend representation must separate these concerns without prete
 
 \paragraph{Deterministic source translation.} C2Rust-style translation~\cite{emrath2021c2rust} maps C syntax and control flow to a target language using deterministic compiler transformations. This provides reproducibility and broad syntactic coverage, but it preserves the source program's decomposition. A Linux driver's \texttt{devm\_*} resource calls, callback tables, locking idioms, error-unwind paths, intrusive containers, and kernel object lifetimes all survive in translated form. Outside Linux, many of those APIs do not exist; inside Rust, their pointer and aliasing structure often remains \texttt{unsafe} because the translator lacks the semantic distinction between an MMIO mapping, a software buffer, and an ordinary pointer.
 
-Compiler infrastructures such as LLVM~\cite{lattner2004llvm} make it practical
-to analyze and transform large C programs. Code-pretrained models such as
-CodeT5~\cite{wang2021codet5} improve learned code generation, but whole-program syntactic translation
-still does not expose the reusable device contract. Macro-defined offsets,
+Compiler infrastructures such as LLVM~\cite{lattner2004llvm} have made
+large-scale analysis and transformation of C programs routine, and
+code-pretrained models such as CodeT5~\cite{wang2021codet5} improve learned
+code generation. Neither line of work, however, extracts the reusable device
+contract from a whole-program syntactic translation: macro-defined offsets,
 wrapper accessors, register-dependent branches, transaction APIs, and
-buffer/FIFO ordering remain encoded in target-language statements. Retargeting
-the result to another backend still requires a developer to recover the same
-hardware protocol manually. Determinism is valuable, but preserving every
-source-level concern is not the same as preserving the right cross-platform
-semantics. The prevalence of integration code is measurable: across the \EvalDrivers{}
-driver corpus, only \GlueCorePct{} of non-blank source lines are referenced by
-an emitted device-core operation; the remaining \GlueGluePct{} split into
-framework entry bodies (\GlueEntryPct{}), glue wrappers and other function
-bodies (\GlueHelperPct{}), and file-scope declarations with registration
-boilerplate (\GlueFileScopePct{})
-(Figure~\ref{fig:glue-ratio}).
+buffer/FIFO ordering remain encoded in target-language statements, so
+retargeting the result to another backend still requires a developer to
+recover the same hardware protocol manually. Determinism is valuable, but
+preserving every source-level concern is not the same as preserving the
+right cross-platform semantics. The prevalence of integration code is
+measurable: across the \EvalDrivers{} driver corpus, only \GlueCorePct{} of
+non-blank source lines are referenced by an emitted device-core operation;
+the remaining \GlueGluePct{} split into framework entry bodies
+(\GlueEntryPct{}), glue wrappers and other function bodies
+(\GlueHelperPct{}), and file-scope declarations with registration
+boilerplate (\GlueFileScopePct{}) (Figure~\ref{fig:glue-ratio}).
 
-\paragraph{Direct LLM translation.} Code-pretrained models such as CodeT5~\cite{wang2021codet5}
-can restructure code and select
-idiomatic target APIs, but direct translation gives the model responsibility for
-both semantic discovery and code emission. The model must decide which
+\paragraph{Direct LLM translation.} A large language model takes the
+opposite approach: it can restructure code and select idiomatic target
+APIs, but direct translation delegates both semantic discovery and code
+emission to the model. The model must decide which
 callbacks matter, distinguish MMIO from ordinary memory, resolve macros and
 wrapper calls, preserve path guards, and reconstruct target-specific framework
 code at once. The complete Linux source also supplies a large amount of
-subsystem boilerplate that invites memorized but version-incompatible APIs.
+subsystem boilerplate that invites memorized but version-incompatible APIs. Recent
+LLM-for-kernel work accordingly stays within bounded tasks---mining syscall
+specifications for kernel fuzzing~\cite{yang2025kernelgpt} and curating
+driver-update datasets~\cite{kharlamova2025kernel}---rather than whole-driver
+generation.
 
 These failures are not merely stylistic. During development, a QEMU edu prompt that prohibited DMA and IRQ setup still produced a candidate that allocated DMA state and wrote \texttt{DMA\_CMD|DMA\_IRQ}; the resulting interrupt storm hung the guest and destroyed the feedback channel. Other candidates used obsolete kernel interfaces or produced different behavior from identical evidence. Compilation cannot detect a type-correct extra register write, a missing acknowledgment, or an incorrectly advanced transfer buffer. Direct LLM translation therefore lacks a stable authority for what the target must preserve.
 
@@ -78,7 +88,7 @@ the complete driver and owns the extraction of its meaning, the candidate search
 space includes arbitrary omissions and inventions. Tests can reject observed
 failures, but they do not by themselves provide a complete translation contract.
 
-Earlier driver-analysis and synthesis systems provide deterministic foundations for such a boundary. SDV checks operating-system API protocols~\cite{ball2006thorough}; Devil+ and Dingo/Termite synthesize drivers from explicit device/OS models~\cite{yu2005devil,ryzhyk2009dingo,ryzhyk2009termite,ryzhyk2014termite2}; and KLEE or S2E explore paths when an executable environment exists~\cite{cadar2008klee,chipounov2011s2e}. These approaches either target framework protocols, require manually authored specifications, or depend on executable models. They do not extract a compact hardware contract from an existing Linux driver as the input to constrained multi-backend translation.
+Earlier driver-analysis and synthesis systems provide deterministic foundations for such a boundary. SDV checks operating-system API protocols~\cite{ball2006thorough}; semantic patches automate collateral driver evolution~\cite{padioleau2007semantic}; Devil+ and Dingo/Termite synthesize drivers from explicit device/OS models~\cite{yu2005devil,ryzhyk2009dingo,ryzhyk2009termite,ryzhyk2014termite2}; and KLEE or S2E explore paths when an executable environment exists~\cite{cadar2008klee,chipounov2011s2e}. These approaches either target framework protocols, automate localized edits rather than translation, require manually authored specifications, or depend on executable models. They do not extract a compact hardware contract from an existing Linux driver as the input to constrained multi-backend translation.
 
 \reharness{} moves the deterministic boundary before generation. AST and LLVM-IR
 analysis determine the hardware-relevant operations and their provenance;
@@ -86,7 +96,8 @@ flow-sensitive analysis determines ordering, predicates, and data dependencies;
 semantic inference supplies device roles and backend bindings. Only this
 framework-independent evidence is sent to the LLM. The model is instructed to
 choose how to express an established operation, not whether it exists. After
-generation, receipts enforce the required traceable register projection, while
+generation, receipts---emission markers that generated code must carry per
+contract operation---enforce the required traceable register projection, while
 trace comparison checks expected MMIO order on exercised paths. This follows the
 broader translation-validation idea~\cite{barthe2009certificate,kang2018crellvm,lopes2021alive2},
 but applies a narrower, evidence-bound check to generated drivers.

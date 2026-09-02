@@ -59,7 +59,10 @@ def _has(pattern: str, text: str, flags: int = re.I) -> tuple[bool, str]:
 def check_compile_harness(tmp: Path) -> tuple[bool, str]:
     stage = _stage_c(tmp, "harness")
     out = tmp / "harness_bin"
-    r = subprocess.run(["cc", "-Wall", "-Werror", "-I", str(stage), "-o",
+    # -Wno-unused-label: anchor labels (__rh_op_*) are provenance markers
+    # emitted per contract operation; they are intentionally unreferenced.
+    r = subprocess.run(["cc", "-Wall", "-Werror", "-Wno-unused-label",
+                        "-I", str(stage), "-o",
                         str(out), str(stage / "dw_spi_harness.c")],
                        capture_output=True, text=True, timeout=120)
     return r.returncode == 0, (r.stderr.strip()[-200:] or "cc -Wall -Werror ok")
@@ -68,7 +71,8 @@ def check_compile_harness(tmp: Path) -> tuple[bool, str]:
 def check_compile_baremetal(tmp: Path) -> tuple[bool, str]:
     stage = _stage_c(tmp, "baremetal")
     out = tmp / "baremetal.o"
-    r = subprocess.run(["cc", "-ffreestanding", "-Wall", "-Werror", "-I",
+    r = subprocess.run(["cc", "-ffreestanding", "-Wall", "-Werror",
+                        "-Wno-unused-label", "-I",
                         str(stage), "-c", "-o", str(out),
                         str(stage / "dw_spi_baremetal.c")],
                        capture_output=True, text=True, timeout=120)
@@ -225,25 +229,66 @@ def item_ssienr_lifecycle(backend: str) -> tuple[bool, str]:
                 else "no disable->enable order")
 
 
+def _pos(pattern: str, text: str, flags: int = re.I) -> int | None:
+    m = re.search(pattern, text, flags)
+    return m.start() if m else None
+
+
+_TX_DEREF_C = r"=\s*\*\s*\((?:u\d+|uint\d+_t)\s*\*\)\s*\(?[^;]*?->\s*tx\b"
+_TX_ADV_C = r"->\s*tx\s*(\+=|=\s*[^;]*->\s*tx\s*\+)"
+_TX_LEN_C = (r"->\s*tx_len\s*(--|-\s*=|\+=\s*-?\s*1"
+             r"|=\s*[^;]*->\s*tx_len\s*(?:-\s*1|\+\s*-\s*1))")
+_DR_WRITE_C = r"(write\w*|writel)\s*\([^;]*?,[^;]*?SPI_DR\b"
+_DR_READ_C = r"=\s*(?:\w+\s*\()?[^;]*?(?:read\w*|readl)\s*\([^;]*?SPI_DR"
+_RX_STORE_C = (r"\*\s*\((?:u\d+|uint\d+_t)\s*\*\)\s*\(?[^;]*?->\s*rx\)?"
+               r"\s*=")
+_RX_ADV_C = r"->\s*rx\s*(\+=|=\s*[^;]*->\s*rx\s*\+)"
+
+_TX_DEREF_R = r"\*\s*\(.*tx|read_volatile.*tx|\bptr::read"
+_TX_ADV_R = r"\btx\s*(\+=|=\s*\w+\s*\+\s*n_bytes)"
+_TX_LEN_R = r"tx_len\s*(-=|=\s*[^;]*tx_len\s*-\s*1|--)"
+_DR_WRITE_R = r"\bdr\.set\("
+_DR_READ_R = r"\bdr\.get\(\)"
+_RX_STORE_R = r"\bdr\.get\(\)[^;]{0,80}\*\s*\(.*rx|write_volatile.*rx"
+_RX_ADV_R = r"\brx\s*(\+=|=\s*\w+\s*\+\s*n_bytes)"
+
+
+def _ordered(text: str, *patterns: str) -> tuple[bool, str]:
+    """每个 pattern 都出现且文本位置严格递增（先读后写/先存后进）。"""
+    positions = []
+    for i, pat in enumerate(patterns):
+        pos = _pos(pat, text)
+        if pos is None:
+            return False, f"pattern {i + 1} not found"
+        positions.append(pos)
+    ok = all(a < b for a, b in zip(positions, positions[1:]))
+    return ok, ("order ok" if ok else "order violated")
+
+
 def item_tx_buffer_deref(backend: str) -> tuple[bool, str]:
     text = _src(backend)
-    if backend == "rust":
-        return _has(r"\*\s*\(.*tx|read_volatile.*tx|\bptr::read", text)
-    return _has(r"=\s*\*\s*\((?:u\d+|uint\d+_t)\s*\*\)\s*\(?[^;]*?->\s*tx\b", text)
+    pat = _TX_DEREF_R if backend == "rust" else _TX_DEREF_C
+    return _has(pat, text)
 
 
 def item_tx_cursor_advance(backend: str) -> tuple[bool, str]:
     text = _src(backend)
-    if backend == "rust":
-        return _has(r"\btx\s*(\+=|=\s*\w+\s*\+\s*n_bytes)", text)
-    return _has(r"->\s*tx\s*(\+=|=\s*[^;]*->\s*tx\s*\+)", text)
+    deref, adv = ((_TX_DEREF_R, _TX_ADV_R) if backend == "rust"
+                  else (_TX_DEREF_C, _TX_ADV_C))
+    ok, ev = _ordered(text, deref, adv)
+    if not ok:
+        return _has(adv, text)[0], f"{ev} (advance present, order not)"
+    return ok, ev
 
 
 def item_tx_len_decrement(backend: str) -> tuple[bool, str]:
     text = _src(backend)
-    if backend == "rust":
-        return _has(r"tx_len\s*(-=|=\s*[^;]*tx_len\s*-\s*1|--)", text)
-    return _has(r"->\s*tx_len\s*(--|-\s*=|\+=\s*-?\s*1|=\s*[^;]*->\s*tx_len\s*(?:-\s*1|\+\s*-\s*1))", text)
+    write, dec = ((_DR_WRITE_R, _TX_LEN_R) if backend == "rust"
+                  else (_DR_WRITE_C, _TX_LEN_C))
+    ok, ev = _ordered(text, write, dec)
+    if not ok:
+        return _has(dec, text)[0], f"{ev} (decrement present, order not)"
+    return ok, ev
 
 
 def item_fifo_dr_write(backend: str) -> tuple[bool, str]:
@@ -255,19 +300,20 @@ def item_fifo_dr_write(backend: str) -> tuple[bool, str]:
 
 def item_rx_fifo_to_buffer(backend: str) -> tuple[bool, str]:
     text = _src(backend)
-    if backend == "rust":
-        return _has(r"\bdr\.get\(\)[^;]{0,80}\*\s*\(.*rx|write_volatile.*rx", text)
-    # 两步：FIFO 读进入局部变量；随后经解引用存入 rx 缓冲区
-    dr_read, ev1 = _has(r"=\s*(?:\w+\s*\()?[^;]*?(?:read\w*|readl)\s*\([^;]*?SPI_DR", text)
-    rx_store, ev2 = _has(r"\*\s*\((?:u\d+|uint\d+_t)\s*\*\)\s*\(?[^;]*?->\s*rx\)?\s*=", text)
-    return (dr_read and rx_store), f"dr_read:{ev1}; rx_store:{ev2}"
+    # 两步且有序：FIFO 读进入局部变量；随后经解引用存入 rx 缓冲区
+    read, store = ((_DR_READ_R, _RX_STORE_R) if backend == "rust"
+                   else (_DR_READ_C, _RX_STORE_C))
+    return _ordered(text, read, store)
 
 
 def item_rx_cursor_advance(backend: str) -> tuple[bool, str]:
     text = _src(backend)
-    if backend == "rust":
-        return _has(r"\brx\s*(\+=|=\s*\w+\s*\+\s*n_bytes)", text)
-    return _has(r"->\s*rx\s*(\+=|=\s*[^;]*->\s*rx\s*\+)", text)
+    store, adv = ((_RX_STORE_R, _RX_ADV_R) if backend == "rust"
+                  else (_RX_STORE_C, _RX_ADV_C))
+    ok, ev = _ordered(text, store, adv)
+    if not ok:
+        return _has(adv, text)[0], f"{ev} (advance present, order not)"
+    return ok, ev
 
 
 ITEMS = [

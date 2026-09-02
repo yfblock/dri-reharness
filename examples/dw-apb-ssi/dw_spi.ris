@@ -7,29 +7,29 @@ driver dw-apb-ssi v0.1.0 {
       W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_2 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:105
     }
   }
-  module dw_spi_check_status {
-    IF raw {
-      irq_status := R(B4, dws->regs.DW_SPI_RISR) -- Status @op_3 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:183
-    }
-    IF (raw == 0x0) {
-      irq_status := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_4 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:185
-    }
-    IF ret {
-      W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_5 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-      r6 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_6 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
-      W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_7 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-      r8 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_8 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
-      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_9 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
-      W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_10 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-      IF dws->ctlr->cur_msg {
-        STATE(dws->ctlr->cur_msg->status) := ret @op_11 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:206
+  module dw_spi_transfer_handler {
+    irq_status := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_3 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:215
+    IF dw_spi_check_status(dws, false) {
+      IF 0x0 {
+        ret := R(B4, dws->regs.DW_SPI_RISR) -- Status @op_4 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:183
+      }
+      IF (0x0 == 0x0) {
+        ret := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_5 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:185
+      }
+      IF ret {
+        W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Interrupt @op_6 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+        r7 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_7 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+        W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_8 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+        r9 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_9 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+        W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Config @op_10 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+        W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Interrupt @op_11 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+        IF dws->ctlr->cur_msg {
+          STATE(dws->ctlr->cur_msg->status) := ret @op_12 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:206
+        }
       }
     }
-  }
-  module dw_spi_transfer_handler {
-    irq_status := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_12 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:215
     r13 := R(B4, dws->regs.DW_SPI_RXFLR) -- DataTransfer @op_13 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:132
-    LOOP while max-- [Conservative] {
+    LOOP while max-- (count=max; relation=post-decrement; bounded) [Exact] {
       rxw := R(B4, dws->regs.DW_SPI_DR) -- Status @op_14 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:162
       IF dws->rx {
         IF (dws->n_bytes == 0x1) {
@@ -57,10 +57,10 @@ driver dw-apb-ssi v0.1.0 {
         W(B4, dws->regs.DW_SPI_RXFTLR) = (dws->rx_len - 0x1) -- DataTransfer @op_23 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:234
       }
     }
-    IF (irq_status & DW_SPI_INT_TXEI) {
+    IF (irq_status & 0x1) {
       tx_room := R(B4, dws->regs.DW_SPI_TXFLR) -- DataTransfer @op_24 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:114
       txw := VALUE(0x0) @op_25 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:138
-      LOOP while max-- [Conservative] {
+      LOOP while max-- (count=max; relation=post-decrement; bounded) [Exact] {
         IF dws->tx {
           IF (dws->n_bytes == 0x1) {
             txw := VALUE(*(u8 *)(dws->tx)) @op_26 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:143
@@ -75,7 +75,7 @@ driver dw-apb-ssi v0.1.0 {
           }
           STATE(dws->tx) := (dws->tx + dws->n_bytes) @op_29 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:149
         }
-        W(B4, dws->regs.DW_SPI_DR) = txw -- Config @op_30 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:151
+        W(B4, dws->regs.DW_SPI_DR) = (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && ((dws->n_bytes == 0x2) == 0x0)) ? *(u32 *)(dws->tx) : (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && (dws->n_bytes == 0x2)) ? *(u16 *)(dws->tx) : ((dws->tx && (dws->n_bytes == 0x1)) ? *(u8 *)(dws->tx) : 0x0))) -- Config @op_30 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:151
         STATE(dws->tx_len) := (dws->tx_len + -1) @op_31 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:152
       }
       IF (dws->tx_len == 0x0) {
@@ -86,32 +86,10 @@ driver dw-apb-ssi v0.1.0 {
   }
   module dw_spi_irq {
     ctlr := VALUE(dev_id) @op_34 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:253
-    irq_status := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_35 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:255
+    ctlr := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_35 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:255
     IF (ctlr->cur_msg == 0x0) {
       r36 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_36 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
       W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_37 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-    }
-  }
-  module dw_spi_update_config {
-    cr0 := VALUE(chip->cr0) @op_38 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:319
-    cr0 := VALUE((cr0 | ((cfg->dfs - 0x1) << dws->dfs_offset))) @op_39 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:324
-    IF dw_spi_ip_is(dws, PSSI) {
-      cr0 := VALUE((cr0 | FIELD_PREP(DW_PSSI_CTRLR0_TMOD_MASK, cfg->tmode))) @op_40 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:328
-    }
-    IF (dw_spi_ip_is(dws, PSSI) == 0x0) {
-      cr0 := VALUE((cr0 | FIELD_PREP(DW_HSSI_CTRLR0_TMOD_MASK, cfg->tmode))) @op_41 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:331
-    }
-    W(B4, dws->regs.DW_SPI_CTRLR0) = cr0 -- Config @op_42 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:333
-    IF ((cfg->tmode == (DW_SPI_CTRLR0_TMOD_EPROMREAD || cfg->tmode)) == DW_SPI_CTRLR0_TMOD_RO) {
-      W(B4, dws->regs.DW_SPI_CTRLR1) = (cfg->ndf ? (cfg->ndf - 0x1) : 0x0) -- Config @op_43 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:340
-    }
-    IF (dws->current_freq != speed_hz) {
-      W(B4, dws->regs.DW_SPI_BAUDR) = clk_div -- Config @op_44 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
-      STATE(dws->current_freq) := speed_hz @op_45 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:348
-    }
-    IF (dws->cur_rx_sample_dly != chip->rx_sample_dly) {
-      W(B4, dws->regs.DW_SPI_RX_SAMPLE_DLY) = chip->rx_sample_dly -- DataTransfer @op_46 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:353
-      STATE(dws->cur_rx_sample_dly) := chip->rx_sample_dly @op_47 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:354
     }
   }
   module dw_spi_transfer_one {
@@ -119,24 +97,44 @@ driver dw-apb-ssi v0.1.0 {
 		.tmode = DW_SPI_CTRLR0_TMOD_TR,
 		.dfs = transfer->bits_per_word,
 		.freq = transfer->speed_hz,
-	}) @op_48 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:421
-    STATE(dws->dma_mapped) := 0x0 @op_49 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:428
-    STATE(dws->tx) := transfer->tx_buf @op_50 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:430
-    STATE(dws->tx_len) := (transfer->len / dws->n_bytes) @op_51 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:431
-    STATE(dws->rx) := transfer->rx_buf @op_52 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:432
-    STATE(dws->rx_len) := dws->tx_len @op_53 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:433
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_54 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+	}) @op_38 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:421
+    STATE(dws->dma_mapped) := 0x0 @op_39 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:428
+    STATE(dws->tx) := transfer->tx_buf @op_40 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:430
+    STATE(dws->tx_len) := (transfer->len / dws->n_bytes) @op_41 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:431
+    STATE(dws->rx) := transfer->rx_buf @op_42 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:432
+    STATE(dws->rx_len) := dws->tx_len @op_43 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:433
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_44 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    cr0 := VALUE(chip->cr0) @op_45 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:319
+    cr0 := VALUE((cr0 | ((cfg.dfs - 0x1) << dws->dfs_offset))) @op_46 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:324
+    IF dw_spi_ip_is(dws, PSSI) {
+      cr0 := VALUE((cr0 | FIELD_PREP(DW_PSSI_CTRLR0_TMOD_MASK, cfg.tmode))) @op_47 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:328
+    }
+    IF (dw_spi_ip_is(dws, PSSI) == 0x0) {
+      cr0 := VALUE((cr0 | FIELD_PREP(DW_HSSI_CTRLR0_TMOD_MASK, cfg.tmode))) @op_48 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:331
+    }
+    W(B4, dws->regs.DW_SPI_CTRLR0) = chip->cr0 -- Config @op_49 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:333
+    IF ((cfg.tmode == 0x3) || (cfg.tmode == 0x2)) {
+      W(B4, dws->regs.DW_SPI_CTRLR1) = (cfg.ndf ? (cfg.ndf - 0x1) : 0x0) -- Config @op_50 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:340
+    }
+    IF (dws->current_freq != speed_hz) {
+      W(B4, dws->regs.DW_SPI_BAUDR) = clk_div -- Config @op_51 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
+      STATE(dws->current_freq) := speed_hz @op_52 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:348
+    }
+    IF (dws->cur_rx_sample_dly != chip->rx_sample_dly) {
+      W(B4, dws->regs.DW_SPI_RX_SAMPLE_DLY) = chip->rx_sample_dly -- DataTransfer @op_53 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:353
+      STATE(dws->cur_rx_sample_dly) := chip->rx_sample_dly @op_54 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:354
+    }
     STATE(transfer->effective_speed_hz) := dws->current_freq @op_55 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:442
     r56 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_56 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
     W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_57 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
     W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_58 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
     IF (dws->dma_mapped == 0x0) {
-      IF (dws->irq == IRQ_NOTCONNECTED) {
-        STATE(delay.unit) := SPI_DELAY_UNIT_SCK @op_59 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:397
-        LOOP do dws->rx_len [Conservative] {
+      IF (dws->irq == 0x80000000) {
+        STATE(delay.unit) := 0x2 @op_59 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:397
+        LOOP do dws->rx_len (count=⊤) [Conservative] {
           tx_room := R(B4, dws->regs.DW_SPI_TXFLR) -- DataTransfer @op_60 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:114
           txw := VALUE(0x0) @op_61 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:138
-          LOOP while max-- [Conservative] {
+          LOOP while max-- (count=max; relation=post-decrement; bounded) [Exact] {
             IF dws->tx {
               IF (dws->n_bytes == 0x1) {
                 txw := VALUE(*(u8 *)(dws->tx)) @op_62 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:143
@@ -151,12 +149,12 @@ driver dw-apb-ssi v0.1.0 {
               }
               STATE(dws->tx) := (dws->tx + dws->n_bytes) @op_65 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:149
             }
-            W(B4, dws->regs.DW_SPI_DR) = txw -- Config @op_66 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:151
+            W(B4, dws->regs.DW_SPI_DR) = (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && ((dws->n_bytes == 0x2) == 0x0)) ? *(u32 *)(dws->tx) : (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && (dws->n_bytes == 0x2)) ? *(u16 *)(dws->tx) : ((dws->tx && (dws->n_bytes == 0x1)) ? *(u8 *)(dws->tx) : 0x0))) -- Config @op_66 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:151
             STATE(dws->tx_len) := (dws->tx_len + -1) @op_67 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:152
           }
           STATE(delay.value) := (nbits * (dws->rx_len - dws->tx_len)) @op_68 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:403
           r69 := R(B4, dws->regs.DW_SPI_RXFLR) -- DataTransfer @op_69 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:132
-          LOOP while max-- [Conservative] {
+          LOOP while max-- (count=max; relation=post-decrement; bounded) [Exact] {
             rxw := R(B4, dws->regs.DW_SPI_DR) -- Status @op_70 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:162
             IF dws->rx {
               IF (dws->n_bytes == 0x1) {
@@ -174,357 +172,464 @@ driver dw-apb-ssi v0.1.0 {
             }
             STATE(dws->rx_len) := (dws->rx_len + -1) @op_75 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:173
           }
+          IF 0x1 {
+            ret := R(B4, dws->regs.DW_SPI_RISR) -- Status @op_76 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:183
+          }
+          IF (0x1 == 0x0) {
+            nbits := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_77 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:185
+          }
+          IF ret {
+            W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_78 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+            r79 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_79 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+            W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_80 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+            r81 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_81 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+            W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_82 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+            W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_83 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+            IF dws->ctlr->cur_msg {
+              STATE(dws->ctlr->cur_msg->status) := ret @op_84 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:206
+            }
+          }
         }
       }
     }
-    W(B4, dws->regs.DW_SPI_TXFTLR) = level -- DataTransfer @op_76 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:370
-    W(B4, dws->regs.DW_SPI_RXFTLR) = (level - 0x1) -- DataTransfer @op_77 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:371
-    STATE(dws->transfer_handler) := dw_spi_transfer_handler @op_78 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:373
-    imask := VALUE(((((DW_SPI_INT_TXEI | DW_SPI_INT_TXOI) | DW_SPI_INT_RXUI) | DW_SPI_INT_RXOI) | DW_SPI_INT_RXFI)) @op_79 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:375
-    r80 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_80 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:263
-    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_81 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:264
+    W(B4, dws->regs.DW_SPI_TXFTLR) = level -- DataTransfer @op_85 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:370
+    W(B4, dws->regs.DW_SPI_RXFTLR) = (level - 0x1) -- DataTransfer @op_86 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:371
+    STATE(dws->transfer_handler) := dw_spi_transfer_handler @op_87 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:373
+    imask := VALUE(((((0x1 | 0x2) | 0x4) | 0x8) | 0x10)) @op_88 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:375
+    r89 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_89 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:263
+    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_90 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:264
   }
   module dw_spi_handle_err {
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_82 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    r83 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_83 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
-    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_84 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-    r85 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_85 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
-    W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_86 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_87 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_91 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    r92 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_92 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_93 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+    r94 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_94 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+    W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_95 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_96 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
   }
   module dw_spi_target_abort {
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_88 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    r89 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_89 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
-    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_90 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-    r91 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_91 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
-    W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_92 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_93 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_97 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    r98 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_98 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_99 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+    r100 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_100 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+    W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_101 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_102 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
   }
   module dw_spi_exec_mem_op {
     IF (len <= DW_SPI_BUF_SIZE) {
-      out := VALUE(dws->buf) @op_94 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:523
+      out := VALUE(dws->buf) @op_103 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:523
     }
-    LOOP for (i < op->cmd.nbytes) [Exact] {
-      i := VALUE(0x0) @op_95 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:535
+    STATE(dws->n_bytes) := 0x1 @op_104 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:545
+    STATE(dws->tx) := out @op_105 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:546
+    STATE(dws->tx_len) := len @op_106 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:547
+    IF (op->data.dir == 0x1) {
+      STATE(dws->rx) := op->data.buf.in @op_107 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:549
+      STATE(dws->rx_len) := op->data.nbytes @op_108 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:550
     }
-    STATE(dws->n_bytes) := 0x1 @op_96 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:545
-    STATE(dws->tx) := out @op_97 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:546
-    STATE(dws->tx_len) := len @op_98 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:547
-    IF (op->data.dir == SPI_MEM_DATA_IN) {
-      STATE(dws->rx) := op->data.buf.in @op_99 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:549
-      STATE(dws->rx_len) := op->data.nbytes @op_100 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:550
+    IF ((op->data.dir == 0x1) == 0x0) {
+      STATE(dws->rx) := NULL @op_109 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:552
+      STATE(dws->rx_len) := 0x0 @op_110 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:553
     }
-    IF ((op->data.dir == SPI_MEM_DATA_IN) == 0x0) {
-      STATE(dws->rx) := NULL @op_101 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:552
-      STATE(dws->rx_len) := 0x0 @op_102 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:553
+    STATE(cfg.dfs) := 0x8 @op_111 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:694
+    IF (op->data.dir == 0x1) {
+      STATE(cfg.tmode) := 0x3 @op_112 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:697
+      STATE(cfg.ndf) := op->data.nbytes @op_113 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:698
     }
-    STATE(cfg.dfs) := 0x8 @op_103 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:694
-    IF (op->data.dir == SPI_MEM_DATA_IN) {
-      STATE(cfg.tmode) := DW_SPI_CTRLR0_TMOD_EPROMREAD @op_104 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:697
-      STATE(cfg.ndf) := op->data.nbytes @op_105 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:698
+    IF ((op->data.dir == 0x1) == 0x0) {
+      STATE(cfg.tmode) := 0x1 @op_114 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:700
     }
-    IF ((op->data.dir == SPI_MEM_DATA_IN) == 0x0) {
-      STATE(cfg.tmode) := DW_SPI_CTRLR0_TMOD_TO @op_106 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:700
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_115 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    cr0 := VALUE(chip->cr0) @op_116 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:319
+    cr0 := VALUE((cr0 | ((cfg.dfs - 0x1) << dws->dfs_offset))) @op_117 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:324
+    IF dw_spi_ip_is(dws, PSSI) {
+      cr0 := VALUE((cr0 | FIELD_PREP(DW_PSSI_CTRLR0_TMOD_MASK, cfg.tmode))) @op_118 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:328
     }
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_107 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    r108 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_108 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
-    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_109 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_110 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    buf := VALUE(dws->tx) @op_111 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:577
-    LOOP while len-- [Conservative] {
-      W(B4, dws->regs.DW_SPI_DR) = *buf++ -- Config @op_112 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:579
+    IF (dw_spi_ip_is(dws, PSSI) == 0x0) {
+      cr0 := VALUE((cr0 | FIELD_PREP(DW_HSSI_CTRLR0_TMOD_MASK, cfg.tmode))) @op_119 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:331
     }
-    LOOP while len [Conservative] {
-      entries := R(B4, dws->regs.DW_SPI_TXFLR) -- DataTransfer @op_113 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:590
-      LOOP for (room, - len) [Conservative] {
-        W(B4, dws->regs.DW_SPI_DR) = *buf++ -- Config @op_114 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:597
+    W(B4, dws->regs.DW_SPI_CTRLR0) = chip->cr0 -- Config @op_120 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:333
+    IF ((cfg.tmode == 0x3) || (cfg.tmode == 0x2)) {
+      W(B4, dws->regs.DW_SPI_CTRLR1) = (cfg.ndf ? (cfg.ndf - 0x1) : 0x0) -- Config @op_121 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:340
+    }
+    IF (dws->current_freq != speed_hz) {
+      W(B4, dws->regs.DW_SPI_BAUDR) = clk_div -- Config @op_122 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
+      STATE(dws->current_freq) := speed_hz @op_123 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:348
+    }
+    IF (dws->cur_rx_sample_dly != chip->rx_sample_dly) {
+      W(B4, dws->regs.DW_SPI_RX_SAMPLE_DLY) = chip->rx_sample_dly -- DataTransfer @op_124 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:353
+      STATE(dws->cur_rx_sample_dly) := chip->rx_sample_dly @op_125 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:354
+    }
+    r126 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_126 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_127 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_128 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    buf := VALUE(dws->tx) @op_129 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:577
+    LOOP while len-- (count=len; relation=post-decrement; bounded) [Exact] {
+      W(B4, dws->regs.DW_SPI_DR) = *buf++ -- Config @op_130 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:579
+    }
+    IF (cs_high == 0x0) {
+      W(B4, dws->regs.DW_SPI_SER) = (0x1 << mem->spi->chip_select[0]) -- Config @op_131 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:103
+    }
+    IF ((cs_high == 0x0) == 0x0) {
+      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_132 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:105
+    }
+    LOOP while len (count=⊤) [Conservative] {
+      len := R(B4, dws->regs.DW_SPI_TXFLR) -- DataTransfer @op_133 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:590
+      LOOP for (room, - len) (init=room; step=dw_write_io_reg(dws, DW_SPI_DR, *buf++); count=⊤) [Conservative] {
+        IF entries {
+          W(B4, dws->regs.DW_SPI_DR) = *buf++ -- Config @op_134 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:597
+        }
       }
     }
-    buf := VALUE(dws->rx) @op_115 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:606
-    LOOP while len [Conservative] {
-      entries := R(B4, dws->regs.DW_SPI_RXFLR) -- DataTransfer @op_116 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:608
+    buf := VALUE(dws->rx) @op_135 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:606
+    LOOP while len (count=⊤) [Conservative] {
+      len := R(B4, dws->regs.DW_SPI_RXFLR) -- DataTransfer @op_136 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:608
       IF (entries == 0x0) {
-        sts := R(B4, dws->regs.DW_SPI_RISR) -- Status @op_117 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:610
+        len := R(B4, dws->regs.DW_SPI_RISR) -- Status @op_137 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:610
       }
-      LOOP for (entries, - len) [Conservative] {
-        buffer_read_0 := R(B4, dws->regs.DW_SPI_DR) -- Status @op_118 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:619
-        OUT(*buf++) := buffer_read_0 @op_119 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:619
+      LOOP for (entries, - len) (init=entries; step=*buf++ = dw_read_io_reg(dws, DW_SPI_DR); count=⊤) [Conservative] {
+        IF entries {
+          len := R(B4, dws->regs.DW_SPI_DR) -- Status @op_138 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:619
+        }
+        OUT(*buf++) := len @op_139 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:619
       }
     }
     IF (ret == 0x0) {
-      nents := R(B4, dws->regs.DW_SPI_TXFLR) -- DataTransfer @op_120 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:637
-      IF (ns <= NSEC_PER_USEC) {
-        STATE(delay.unit) := SPI_DELAY_UNIT_NSECS @op_121 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:641
-        STATE(delay.value) := ns @op_122 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:642
+      retry := R(B4, dws->regs.DW_SPI_TXFLR) -- DataTransfer @op_140 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:637
+      IF (ns <= 0x3e8) {
+        STATE(delay.unit) := 0x1 @op_141 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:641
+        STATE(delay.value) := ns @op_142 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:642
       }
-      IF ((ns <= NSEC_PER_USEC) == 0x0) {
-        STATE(delay.unit) := SPI_DELAY_UNIT_USECS @op_123 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:645
+      IF ((ns <= 0x3e8) == 0x0) {
+        STATE(delay.unit) := 0x0 @op_143 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:645
       }
-      LOOP while (dw_spi_ctlr_busy(dws) && retry--) [Conservative] {
-        __return_read_0 := R(B4, dws->regs.DW_SPI_SR) -- Status @op_124 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:627
+      LOOP while (dw_spi_ctlr_busy(dws) && retry--) (count=retry; relation=post-decrement; bounded) [Exact] {
+        __return_read_0 := R(B4, dws->regs.DW_SPI_SR) -- Status @op_144 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:627
+      }
+      IF (ret == 0x0) {
+        IF 0x1 {
+          ret := R(B4, dws->regs.DW_SPI_RISR) -- Status @op_145 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:183
+        }
+        IF (0x1 == 0x0) {
+          cfg.tmode := R(B4, dws->regs.DW_SPI_ISR) -- Status @op_146 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:185
+        }
+        IF ret {
+          W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_147 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+          r148 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_148 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+          W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_149 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+          r150 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_150 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+          W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_151 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+          W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_152 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+          IF dws->ctlr->cur_msg {
+            STATE(dws->ctlr->cur_msg->status) := ret @op_153 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:206
+          }
+        }
       }
     }
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_125 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_126 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_154 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    IF (cs_high == 0x1) {
+      W(B4, dws->regs.DW_SPI_SER) = (0x1 << mem->spi->chip_select[0]) -- Config @op_155 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:103
+    }
+    IF ((cs_high == 0x1) == 0x0) {
+      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_156 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:105
+    }
+    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_157 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
   }
   module dw_spi_setup {
     IF (chip == 0x0) {
-      STATE(spi->controller_state) := chip @op_127 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/spi/spi.h:289
+      STATE(spi->controller_state) := chip @op_158 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/spi/spi.h:289
       IF (device_property_read_u32(&spi->dev,
 					     "rx-sample-delay-ns",
 					     &rx_sample_dly_ns) != 0x0) {
-        rx_sample_dly_ns := VALUE(dws->def_rx_sample_dly_ns) @op_128 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:809
+        rx_sample_dly_ns := VALUE(dws->def_rx_sample_dly_ns) @op_159 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:809
       }
     }
   }
   module dw_spi_cleanup {
-    STATE(spi->controller_state) := NULL @op_129 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/spi/spi.h:289
-  }
-  module dw_spi_add_controller {
-    STATE(dws->ctlr) := ctlr @op_130 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:939
-    STATE(dws->dma_addr) := (dma_addr_t)(dws->paddr + DW_SPI_DR) @op_131 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:940
-    IF dws {
-      W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_132 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-      r133 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_133 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
-      W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_134 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-      r135 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_135 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
-      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_136 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
-      W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_137 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-      IF (dws->ver == 0x0) {
-        dws->ver := R(B4, dws->regs.DW_SPI_VERSION) -- Status @op_138 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:844
-      }
-      IF spi_controller_is_target(dws->ctlr) {
-        STATE(dws->num_cs) := 0x1 @op_139 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:854
-      }
-      IF (spi_controller_is_target(dws->ctlr) == 0x0) {
-        IF (dws->num_cs == 0x0) {
-          W(B4, dws->regs.DW_SPI_SER) = 0xffff -- Config @op_140 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:863
-          ser := R(B4, dws->regs.DW_SPI_SER) -- Status @op_141 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:864
-          W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_142 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:865
-        }
-      }
-      IF (dws->fifo_len == 0x0) {
-        LOOP for (fifo < 0x100) [Exact] {
-          fifo := VALUE(0x1) @op_143 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:878
-          W(B4, dws->regs.DW_SPI_TXFTLR) = fifo -- DataTransfer @op_144 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:879
-          r145 := R(B4, dws->regs.DW_SPI_TXFTLR) -- DataTransfer @op_145 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:880
-        }
-        W(B4, dws->regs.DW_SPI_TXFTLR) = 0x0 -- Init @op_146 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:883
-        STATE(dws->fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) @op_147 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:885
-      }
-      IF dw_spi_ip_is(dws, PSSI) {
-        r148 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config @op_148 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:895
-        W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_149 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-        W(B4, dws->regs.DW_SPI_CTRLR0) = 0xffffffff -- Config @op_150 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:898
-        cr0 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config @op_151 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:899
-        W(B4, dws->regs.DW_SPI_CTRLR0) = tmp -- Config @op_152 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:900
-        W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_153 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-        IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) {
-          STATE(dws->caps) := (dws->caps | DW_SPI_CAP_DFS32) @op_154 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:904
-        }
-      }
-      IF (dw_spi_ip_is(dws, PSSI) == 0x0) {
-        STATE(dws->caps) := (dws->caps | DW_SPI_CAP_DFS32) @op_155 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:909
-      }
-      IF (dws->caps & DW_SPI_CAP_CS_OVERRIDE) {
-        W(B4, dws->regs.DW_SPI_CS_OVERRIDE) = 0xf -- Config @op_156 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:914
-      }
-    }
-    IF ((((ret < 0x0) && ret) != -ENOTCONN) == 0x0) {
-      IF dws {
-        IF (((dws->mem_ops.exec_op == 0x0) && ((dws->caps & DW_SPI_CAP_CS_OVERRIDE) == 0x0)) && (dws->set_cs == 0x0)) {
-          STATE(dws->mem_ops.adjust_op_size) := dw_spi_adjust_mem_op_size @op_157 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:780
-          STATE(dws->mem_ops.supports_op) := dw_spi_supports_mem_op @op_158 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:781
-          STATE(dws->mem_ops.exec_op) := dw_spi_exec_mem_op @op_159 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:782
-          IF (dws->max_mem_freq == 0x0) {
-            STATE(dws->max_mem_freq) := dws->max_freq @op_160 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:784
-          }
-        }
-      }
-    }
-    STATE(ctlr->mode_bits) := (SPI_CPOL | SPI_CPHA) @op_161 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:956
-    STATE(ctlr->bus_num) := dws->bus_num @op_162 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:961
-    STATE(ctlr->num_chipselect) := dws->num_cs @op_163 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:962
-    STATE(ctlr->setup) := dw_spi_setup @op_164 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:963
-    STATE(ctlr->cleanup) := dw_spi_cleanup @op_165 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:964
-    STATE(ctlr->transfer_one) := dw_spi_transfer_one @op_166 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:965
-    STATE(ctlr->handle_err) := dw_spi_handle_err @op_167 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:966
-    STATE(ctlr->auto_runtime_pm) := true @op_168 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:967
-    IF (target == 0x0) {
-      STATE(ctlr->use_gpio_descriptors) := true @op_169 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:970
-      STATE(ctlr->mode_bits) := (ctlr->mode_bits | SPI_LOOP) @op_170 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:971
-      IF dws->set_cs {
-        STATE(ctlr->set_cs) := dws->set_cs @op_171 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:973
-      }
-      IF (dws->set_cs == 0x0) {
-        STATE(ctlr->set_cs) := dw_spi_set_cs @op_172 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:975
-      }
-      IF dws->mem_ops.exec_op {
-        STATE(ctlr->mem_ops) := &dws->mem_ops @op_173 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:977
-        STATE(ctlr->mem_caps) := &dw_spi_mem_caps @op_174 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:978
-      }
-      STATE(ctlr->max_speed_hz) := dws->max_freq @op_175 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:980
-      STATE(ctlr->flags) := SPI_CONTROLLER_GPIO_SS @op_176 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:981
-    }
-    IF ((target == 0x0) == 0x0) {
-      STATE(ctlr->target_abort) := dw_spi_target_abort @op_177 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:983
-    }
-    IF (dws->dma_ops && dws->dma_ops->dma_init) {
-      IF ((ret == -EPROBE_DEFER) == 0x0) {
-        IF (ret == 0x0) {
-          STATE(ctlr->can_dma) := dws->dma_ops->can_dma @op_178 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:997
-          STATE(ctlr->flags) := (ctlr->flags | SPI_CONTROLLER_MUST_TX) @op_179 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:998
-        }
-      }
-    }
-    IF (ret == 0x0) {
-      IF (((dws->dma_ops && dws->dma_ops->dma_init) && (ret == -EPROBE_DEFER)) == 0x0) {
-        IF ((((ret < 0x0) && ret) != -ENOTCONN) == 0x0) {
-          IF dws {
-            STATE(dws->regset.regs) := dw_spi_dbgfs_regs @op_180 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:69
-            STATE(dws->regset.base) := dws->regs @op_181 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:71
-          }
-        }
-      }
-    }
-    IF 0x0 {
-      IF (((dws->dma_ops && dws->dma_ops->dma_init) && (ret == -EPROBE_DEFER)) == 0x0) {
-        IF ((((ret < 0x0) && ret) != -ENOTCONN) == 0x0) {
-          IF dws {
-            W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_182 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-          }
-        }
-      }
-    }
-  }
-  module dw_spi_remove_controller {
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_183 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    W(B4, dws->regs.DW_SPI_BAUDR) = 0x0 -- Power @op_184 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
-  }
-  module dw_spi_suspend_controller {
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_185 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    W(B4, dws->regs.DW_SPI_BAUDR) = 0x0 -- Power @op_186 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
-  }
-  module dw_spi_resume_controller {
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_187 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    r188 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_188 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
-    W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_189 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
-    r190 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_190 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
-    W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_191 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
-    W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_192 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-    IF (dws->ver == 0x0) {
-      dws->ver := R(B4, dws->regs.DW_SPI_VERSION) -- Status @op_193 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:844
-    }
-    IF spi_controller_is_target(dws->ctlr) {
-      STATE(dws->num_cs) := 0x1 @op_194 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:854
-    }
-    IF (spi_controller_is_target(dws->ctlr) == 0x0) {
-      IF (dws->num_cs == 0x0) {
-        W(B4, dws->regs.DW_SPI_SER) = 0xffff -- Config @op_195 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:863
-        ser := R(B4, dws->regs.DW_SPI_SER) -- Status @op_196 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:864
-        W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_197 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:865
-      }
-    }
-    IF (dws->fifo_len == 0x0) {
-      LOOP for (fifo < 0x100) [Exact] {
-        fifo := VALUE(0x1) @op_198 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:878
-        W(B4, dws->regs.DW_SPI_TXFTLR) = fifo -- DataTransfer @op_199 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:879
-        r200 := R(B4, dws->regs.DW_SPI_TXFTLR) -- DataTransfer @op_200 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:880
-      }
-      W(B4, dws->regs.DW_SPI_TXFTLR) = 0x0 -- Init @op_201 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:883
-      STATE(dws->fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) @op_202 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:885
-    }
-    IF dw_spi_ip_is(dws, PSSI) {
-      r203 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config @op_203 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:895
-      W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_204 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-      W(B4, dws->regs.DW_SPI_CTRLR0) = 0xffffffff -- Config @op_205 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:898
-      cr0 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config @op_206 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:899
-      W(B4, dws->regs.DW_SPI_CTRLR0) = tmp -- Config @op_207 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:900
-      W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_208 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
-      IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) {
-        STATE(dws->caps) := (dws->caps | DW_SPI_CAP_DFS32) @op_209 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:904
-      }
-    }
-    IF (dw_spi_ip_is(dws, PSSI) == 0x0) {
-      STATE(dws->caps) := (dws->caps | DW_SPI_CAP_DFS32) @op_210 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:909
-    }
-    IF (dws->caps & DW_SPI_CAP_CS_OVERRIDE) {
-      W(B4, dws->regs.DW_SPI_CS_OVERRIDE) = 0xf -- Config @op_211 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:914
-    }
+    STATE(spi->controller_state) := NULL @op_160 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/spi/spi.h:289
   }
   module dw_spi_mscc_set_cs {
-    dwsmscc := VALUE(dwsmmio->priv) @op_212 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:81
+    dwsmscc := VALUE(dwsmmio->priv) @op_161 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:81
     IF (cs < 0x4) {
-      sw_mode := VALUE(MSCC_SPI_MST_SW_MODE_SW_PIN_CTRL_MODE) @op_213 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:85
-      W(B4, dwsmscc->spi_mst.MSCC_SPI_MST_SW_MODE) = sw_mode -- Config @op_214 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:90
+      sw_mode := VALUE(0x2000) @op_162 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:85
+      W(B4, dwsmscc->spi_mst.MSCC_SPI_MST_SW_MODE) = ((cs < 0x4) ? 0x2000 : sw_mode) -- Config @op_163 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:90
+    }
+    IF (cs_high == enable) {
+      W(B4, dws->regs.DW_SPI_SER) = (0x1 << spi->chip_select[0]) -- Config @op_164 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:103
+    }
+    IF ((cs_high == enable) == 0x0) {
+      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_165 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:105
     }
   }
   module dw_spi_mscc_ocelot_init {
-    W(B4, dwsmscc->spi_mst.MSCC_SPI_MST_SW_MODE) = 0x0 -- Init @op_215 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:115
-    TXUPDATE[regmap] dwsmscc->syscon@MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL mask=(MSCC_IF_SI_OWNER_MASK << OCELOT_IF_SI_OWNER_OFFSET) value=(MSCC_IF_SI_OWNER_SIMC << OCELOT_IF_SI_OWNER_OFFSET) @op_216 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:118
-    STATE(dwsmmio->dws.set_cs) := dw_spi_mscc_set_cs @op_217 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:122
-    STATE(dwsmmio->priv) := dwsmscc @op_218 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:123
+    W(B4, dwsmscc->spi_mst.MSCC_SPI_MST_SW_MODE) = 0x0 -- Init @op_166 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:115
+    TXUPDATE[regmap] dwsmscc->syscon@MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL mask=(MSCC_IF_SI_OWNER_MASK << OCELOT_IF_SI_OWNER_OFFSET) value=(MSCC_IF_SI_OWNER_SIMC << OCELOT_IF_SI_OWNER_OFFSET) @op_167 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:118
+    STATE(dwsmmio->dws.set_cs) := dw_spi_mscc_set_cs @op_168 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:122
+    STATE(dwsmmio->priv) := dwsmscc @op_169 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:123
   }
   module dw_spi_mscc_jaguar2_init {
-    W(B4, dwsmscc->spi_mst.MSCC_SPI_MST_SW_MODE) = 0x0 -- Init @op_219 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:115
-    TXUPDATE[regmap] dwsmscc->syscon@MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL mask=(MSCC_IF_SI_OWNER_MASK << JAGUAR2_IF_SI_OWNER_OFFSET) value=(MSCC_IF_SI_OWNER_SIMC << JAGUAR2_IF_SI_OWNER_OFFSET) @op_220 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:118
-    STATE(dwsmmio->dws.set_cs) := dw_spi_mscc_set_cs @op_221 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:122
-    STATE(dwsmmio->priv) := dwsmscc @op_222 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:123
+    W(B4, dwsmscc->spi_mst.MSCC_SPI_MST_SW_MODE) = 0x0 -- Init @op_170 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:115
+    TXUPDATE[regmap] dwsmscc->syscon@MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL mask=(MSCC_IF_SI_OWNER_MASK << JAGUAR2_IF_SI_OWNER_OFFSET) value=(MSCC_IF_SI_OWNER_SIMC << JAGUAR2_IF_SI_OWNER_OFFSET) @op_171 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:118
+    STATE(dwsmmio->dws.set_cs) := dw_spi_mscc_set_cs @op_172 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:122
+    STATE(dwsmmio->priv) := dwsmscc @op_173 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:123
   }
   module dw_spi_sparx5_set_cs {
-    dwsmscc := VALUE(dwsmmio->priv) @op_223 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:152
+    dwsmscc := VALUE(dwsmmio->priv) @op_174 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:152
     IF (enable == 0x0) {
-      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_ENA {'Scalar': {'width': 'Unknown', 'value': {'Const': 1}}} @op_224 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:157
-      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_VAL {'Scalar': {'width': 'Unknown', 'value': {'BinOp': {'op': 'BitXor', 'left': {'BinOp': {'op': 'Shl', 'left': {'Const': 1}, 'right': {'Var': 'cs'}}}, 'right': {'Const': 4294967295}}}}} @op_225 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:159
+      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_ENA {'Scalar': {'width': 'Unknown', 'value': {'Const': 1}}} @op_175 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:157
+      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_VAL {'Scalar': {'width': 'Unknown', 'value': {'BinOp': {'op': 'BitXor', 'left': {'BinOp': {'op': 'Shl', 'left': {'Const': 1}, 'right': {'Var': 'cs'}}}, 'right': {'Const': 4294967295}}}}} @op_176 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:159
     }
     IF ((enable == 0x0) == 0x0) {
-      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_VAL {'Scalar': {'width': 'Unknown', 'value': {'BinOp': {'op': 'BitXor', 'left': {'Const': 0}, 'right': {'Const': 4294967295}}}}} @op_226 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:164
-      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_ENA {'Scalar': {'width': 'Unknown', 'value': {'Const': 0}}} @op_227 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:168
+      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_VAL {'Scalar': {'width': 'Unknown', 'value': {'BinOp': {'op': 'BitXor', 'left': {'Const': 0}, 'right': {'Const': 4294967295}}}}} @op_177 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:164
+      TXWRITE[regmap] dwsmscc->syscon@SPARX5_FORCE_ENA {'Scalar': {'width': 'Unknown', 'value': {'Const': 0}}} @op_178 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:168
+    }
+    IF (cs_high == enable) {
+      W(B4, dws->regs.DW_SPI_SER) = (0x1 << spi->chip_select[0]) -- Config @op_179 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:103
+    }
+    IF ((cs_high == enable) == 0x0) {
+      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_180 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:105
     }
   }
   module dw_spi_mscc_sparx5_init {
-    syscon_name := VALUE((("microchip,sparx5 - cpu) - syscon")) @op_228 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:177
-    dev := VALUE(&pdev->dev) @op_229 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:178
-    STATE(dwsmmio->dws.set_cs) := dw_spi_sparx5_set_cs @op_230 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:197
-    STATE(dwsmmio->priv) := dwsmscc @op_231 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:198
+    syscon_name := VALUE((("microchip,sparx5 - cpu) - syscon")) @op_181 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:177
+    dev := VALUE(&pdev->dev) @op_182 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:178
+    STATE(dwsmmio->dws.set_cs) := dw_spi_sparx5_set_cs @op_183 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:197
+    STATE(dwsmmio->priv) := dwsmscc @op_184 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:198
   }
   module dw_spi_alpine_init {
-    STATE(dwsmmio->dws.caps) := DW_SPI_CAP_CS_OVERRIDE @op_232 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:206
+    STATE(dwsmmio->dws.caps) := 0x1 @op_185 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:206
   }
   module dw_spi_hssi_init {
-    STATE(dwsmmio->dws.ip) := DW_HSSI_ID @op_233 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:222
+    STATE(dwsmmio->dws.ip) := 0x1 @op_186 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:222
   }
   module dw_spi_intel_init {
-    STATE(dwsmmio->dws.ip) := DW_HSSI_ID @op_234 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:232
+    STATE(dwsmmio->dws.ip) := 0x1 @op_187 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:232
   }
   module dw_spi_mountevans_imc_init {
-    STATE(dwsmmio->dws.fifo_len) := 0x1f @op_235 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:250
+    STATE(dwsmmio->dws.fifo_len) := 0x1f @op_188 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:250
   }
   module dw_spi_canaan_k210_init {
-    STATE(dwsmmio->dws.fifo_len) := 0x1f @op_236 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:265
+    STATE(dwsmmio->dws.fifo_len) := 0x1f @op_189 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:265
   }
   module dw_spi_elba_set_cs {
-    syscon := VALUE(dwsmmio->priv) @op_237 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:280
+    syscon := VALUE(dwsmmio->priv) @op_190 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:280
     IF (cs < 0x2) {
-      TXUPDATE[regmap] syscon@ELBA_SPICS_REG mask=ELBA_SPICS_MASK(spi_get_chipselect(spi, 0)) value=ELBA_SPICS_SET(spi_get_chipselect(spi, 0), enable) @op_238 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:272
+      TXUPDATE[regmap] syscon@ELBA_SPICS_REG mask=ELBA_SPICS_MASK(spi_get_chipselect(spi, 0)) value=ELBA_SPICS_SET(spi_get_chipselect(spi, 0), enable) @op_191 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:272
+    }
+    IF (cs_high == enable) {
+      W(B4, dws->regs.DW_SPI_SER) = (0x1 << spi->chip_select[0]) -- Config @op_192 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:103
+    }
+    IF ((cs_high == enable) == 0x0) {
+      W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_193 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:105
     }
   }
   module dw_spi_elba_init {
-    STATE(dwsmmio->priv) := syscon @op_239 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:307
-    STATE(dwsmmio->dws.set_cs) := dw_spi_elba_set_cs @op_240 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:308
+    STATE(dwsmmio->priv) := syscon @op_194 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:307
+    STATE(dwsmmio->dws.set_cs) := dw_spi_elba_set_cs @op_195 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:308
   }
   module dw_spi_mmio_probe {
-    dws := VALUE(&dwsmmio->dws) @op_241 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:327
-    STATE(dws->paddr) := mem->start @op_242 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:334
-    STATE(dws->bus_num) := pdev->id @op_243 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:358
+    dws := VALUE(&dwsmmio->dws) @op_196 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:327
+    STATE(dws->paddr) := mem->start @op_197 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:334
+    STATE(dws->bus_num) := pdev->id @op_198 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:358
     IF device_property_read_u32(&pdev->dev, "reg-io-width",
 				     &dws->reg_io_width) {
-      STATE(dws->reg_io_width) := 0x4 @op_244 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:364
+      STATE(dws->reg_io_width) := 0x4 @op_199 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-mmio.c:364
+    }
+    IF ((init_func && ret) == 0x0) {
+      STATE(dws->ctlr) := ctlr @op_200 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:939
+      STATE(dws->dma_addr) := (dma_addr_t)(dws->paddr + 0x60) @op_201 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:940
+      IF dws {
+        W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_202 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+        r203 := R(B4, dws->regs.DW_SPI_IMR) -- Status @op_203 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+        W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config @op_204 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+        r205 := R(B4, dws->regs.DW_SPI_ICR) -- Status @op_205 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+        W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_206 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+        W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_207 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+        IF (dws->ver == 0x0) {
+          dws->ver := R(B4, dws->regs.DW_SPI_VERSION) -- Status @op_208 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:844
+        }
+        IF spi_controller_is_target(dws->ctlr) {
+          STATE(dws->num_cs) := 0x1 @op_209 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:854
+        }
+        IF (spi_controller_is_target(dws->ctlr) == 0x0) {
+          IF (dws->num_cs == 0x0) {
+            W(B4, dws->regs.DW_SPI_SER) = 0xffff -- Config @op_210 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:863
+            ser := R(B4, dws->regs.DW_SPI_SER) -- Status @op_211 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:864
+            W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init @op_212 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:865
+          }
+        }
+        IF (dws->fifo_len == 0x0) {
+          LOOP for (fifo < 0x100) (init=fifo = 1; step=fifo++; count=0xff; bounded) [Exact] {
+            W(B4, dws->regs.DW_SPI_TXFTLR) = fifo -- DataTransfer @op_213 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:879
+            r214 := R(B4, dws->regs.DW_SPI_TXFTLR) -- DataTransfer @op_214 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:880
+          }
+          W(B4, dws->regs.DW_SPI_TXFTLR) = 0x0 -- Init @op_215 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:883
+          STATE(dws->fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) @op_216 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:885
+        }
+        IF dw_spi_ip_is(dws, PSSI) {
+          r217 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config @op_217 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:895
+          W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_218 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+          W(B4, dws->regs.DW_SPI_CTRLR0) = 0xffffffff -- Config @op_219 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:898
+          cr0 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config @op_220 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:899
+          W(B4, dws->regs.DW_SPI_CTRLR0) = tmp -- Config @op_221 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:900
+          W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_222 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+          IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) {
+            STATE(dws->caps) := (dws->caps | 0x2) @op_223 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:904
+          }
+        }
+        IF (dw_spi_ip_is(dws, PSSI) == 0x0) {
+          STATE(dws->caps) := (dws->caps | 0x2) @op_224 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:909
+        }
+        IF (dws->caps & 0x1) {
+          W(B4, dws->regs.DW_SPI_CS_OVERRIDE) = 0xf -- Config @op_225 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:914
+        }
+      }
+      IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) {
+        IF dws {
+          IF (((dws->mem_ops.exec_op == 0x0) && ((dws->caps & 0x1) == 0x0)) && (dws->set_cs == 0x0)) {
+            STATE(dws->mem_ops.adjust_op_size) := dw_spi_adjust_mem_op_size @op_226 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:780
+            STATE(dws->mem_ops.supports_op) := dw_spi_supports_mem_op @op_227 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:781
+            STATE(dws->mem_ops.exec_op) := dw_spi_exec_mem_op @op_228 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:782
+            IF (dws->max_mem_freq == 0x0) {
+              STATE(dws->max_mem_freq) := dws->max_freq @op_229 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:784
+            }
+          }
+        }
+      }
+      STATE(ctlr->mode_bits) := (SPI_CPOL | SPI_CPHA) @op_230 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:956
+      STATE(ctlr->bus_num) := dws->bus_num @op_231 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:961
+      STATE(ctlr->num_chipselect) := dws->num_cs @op_232 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:962
+      STATE(ctlr->setup) := dw_spi_setup @op_233 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:963
+      STATE(ctlr->cleanup) := dw_spi_cleanup @op_234 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:964
+      STATE(ctlr->transfer_one) := dw_spi_transfer_one @op_235 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:965
+      STATE(ctlr->handle_err) := dw_spi_handle_err @op_236 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:966
+      STATE(ctlr->auto_runtime_pm) := 0x1 @op_237 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:967
+      IF (target == 0x0) {
+        STATE(ctlr->use_gpio_descriptors) := 0x1 @op_238 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:970
+        STATE(ctlr->mode_bits) := (ctlr->mode_bits | SPI_LOOP) @op_239 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:971
+        IF dws->set_cs {
+          STATE(ctlr->set_cs) := dws->set_cs @op_240 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:973
+        }
+        IF (dws->set_cs == 0x0) {
+          STATE(ctlr->set_cs) := dw_spi_set_cs @op_241 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:975
+        }
+        IF dws->mem_ops.exec_op {
+          STATE(ctlr->mem_ops) := &dws->mem_ops @op_242 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:977
+          STATE(ctlr->mem_caps) := &dw_spi_mem_caps @op_243 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:978
+        }
+        STATE(ctlr->max_speed_hz) := dws->max_freq @op_244 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:980
+        STATE(ctlr->flags) := 0x20 @op_245 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:981
+      }
+      IF ((target == 0x0) == 0x0) {
+        STATE(ctlr->target_abort) := dw_spi_target_abort @op_246 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:983
+      }
+      IF (dws->dma_ops && dws->dma_ops->dma_init) {
+        IF ((ret == -EPROBE_DEFER) == 0x0) {
+          IF (ret == 0x0) {
+            STATE(ctlr->can_dma) := dws->dma_ops->can_dma @op_247 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:997
+            STATE(ctlr->flags) := (ctlr->flags | 0x10) @op_248 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:998
+          }
+        }
+      }
+      IF (ret == 0x0) {
+        IF (((dws->dma_ops && dws->dma_ops->dma_init) && (ret == -EPROBE_DEFER)) == 0x0) {
+          IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) {
+            IF dws {
+              STATE(dws->regset.regs) := dw_spi_dbgfs_regs @op_249 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:69
+              STATE(dws->regset.base) := dws->regs @op_250 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:71
+            }
+          }
+        }
+      }
+      IF 0x0 {
+        IF (((dws->dma_ops && dws->dma_ops->dma_init) && (ret == -EPROBE_DEFER)) == 0x0) {
+          IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) {
+            IF dws {
+              W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_251 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+            }
+          }
+        }
+      }
+    }
+  }
+  module dw_spi_mmio_suspend {
+    W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_252 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    W(B4, dwsmmio->dws.regs.DW_SPI_BAUDR) = 0x0 -- Power @op_253 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
+  }
+  module dw_spi_mmio_resume {
+    W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_254 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    r255 := R(B4, dwsmmio->dws.regs.DW_SPI_IMR) -- Status @op_255 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:254
+    W(B4, dwsmmio->dws.regs.DW_SPI_IMR) = new_mask -- Config @op_256 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:255
+    r257 := R(B4, dwsmmio->dws.regs.DW_SPI_ICR) -- Status @op_257 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:276
+    W(B4, dwsmmio->dws.regs.DW_SPI_SER) = 0x0 -- Init @op_258 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:277
+    W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_259 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    IF (dwsmmio->dws.ver == 0x0) {
+      dwsmmio->dws.ver := R(B4, dwsmmio->dws.regs.DW_SPI_VERSION) -- Status @op_260 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:844
+    }
+    IF spi_controller_is_target(dwsmmio->dws.ctlr) {
+      STATE(dwsmmio->dws.num_cs) := 0x1 @op_261 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:854
+    }
+    IF (spi_controller_is_target(dwsmmio->dws.ctlr) == 0x0) {
+      IF (dwsmmio->dws.num_cs == 0x0) {
+        W(B4, dwsmmio->dws.regs.DW_SPI_SER) = 0xffff -- Config @op_262 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:863
+        ser := R(B4, dwsmmio->dws.regs.DW_SPI_SER) -- Status @op_263 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:864
+        W(B4, dwsmmio->dws.regs.DW_SPI_SER) = 0x0 -- Init @op_264 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:865
+      }
+    }
+    IF (dwsmmio->dws.fifo_len == 0x0) {
+      LOOP for (fifo < 0x100) (init=fifo = 1; step=fifo++; count=0xff; bounded) [Exact] {
+        W(B4, dwsmmio->dws.regs.DW_SPI_TXFTLR) = fifo -- DataTransfer @op_265 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:879
+        r266 := R(B4, dwsmmio->dws.regs.DW_SPI_TXFTLR) -- DataTransfer @op_266 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:880
+      }
+      W(B4, dwsmmio->dws.regs.DW_SPI_TXFTLR) = 0x0 -- Init @op_267 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:883
+      STATE(dwsmmio->dws.fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) @op_268 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:885
+    }
+    IF dw_spi_ip_is(&dwsmmio->dws, PSSI) {
+      r269 := R(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) -- Config @op_269 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:895
+      W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_270 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+      W(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) = 0xffffffff -- Config @op_271 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:898
+      cr0 := R(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) -- Config @op_272 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:899
+      W(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) = tmp -- Config @op_273 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:900
+      W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config @op_274 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+      IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) {
+        STATE(dwsmmio->dws.caps) := (dwsmmio->dws.caps | 0x2) @op_275 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:904
+      }
+    }
+    IF (dw_spi_ip_is(&dwsmmio->dws, PSSI) == 0x0) {
+      STATE(dwsmmio->dws.caps) := (dwsmmio->dws.caps | 0x2) @op_276 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:909
+    }
+    IF (dwsmmio->dws.caps & 0x1) {
+      W(B4, dwsmmio->dws.regs.DW_SPI_CS_OVERRIDE) = 0xf -- Config @op_277 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw-core.c:914
+    }
+  }
+  module dw_spi_mmio_remove {
+    W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config @op_278 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:241
+    W(B4, dwsmmio->dws.regs.DW_SPI_BAUDR) = 0x0 -- Power @op_279 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:246
+  }
+  module dw_writel {
+    W(B4, [(dws->regs + offset)]) = val -- Config @op_280 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:212
+  }
+  module dw_readl {
+    __return_read_0 := R(B4, [(dws->regs + offset)]) -- Status @op_281 [Exact] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:207
+  }
+  module dw_write_io_reg {
+    IF (dws->reg_io_width == 0x2) {
+      W(B2, 0x0) = ⊤ -- Config @op_282 [Unknown] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:230
+    }
+    IF (dws->reg_io_width == 0x4) {
+      W(B4, 0x0) = ⊤ -- Config @op_283 [Unknown] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:234
+    }
+  }
+  module dw_read_io_reg {
+    IF (dws->reg_io_width == 0x2) {
+      r284 := R(B2, 0x0) -- Status @op_284 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:219
+    }
+    IF (dws->reg_io_width == 0x4) {
+      r285 := R(B4, 0x0) -- Status @op_285 [Conservative] /home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/drivers/spi/spi-dw.h:222
     }
   }
   accounting {
-    source_accesses 45
-    emitted 45
+    source_accesses 51
+    emitted 51
     filtered 0
     unsupported 0
     unaccounted 0
@@ -532,11 +637,11 @@ driver dw-apb-ssi v0.1.0 {
     strict_complete true
   }
   path_validation {
-    solver "Z3 5.0.0"
-    satisfiable 104
+    solver "Z3 4.16.0"
+    satisfiable 130
     infeasible 0
     unknown 0
-    intentionally_unreachable 1
+    intentionally_unreachable 5
     complete true
   }
   ir_analysis {

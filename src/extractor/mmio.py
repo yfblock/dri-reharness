@@ -24,6 +24,22 @@ MMIO_WRITE_FNS = {
     "writeb_relaxed", "writew_relaxed", "writel_relaxed", "writeq_relaxed",
 }
 
+# Driver-private accessor layouts: (state_arg, offset_arg, base_field) for
+# reads; (state_arg, value_arg, offset_arg, base_field) for writes.  These
+# switch-based accessors (e.g. dw_read_io_reg selecting on reg_io_width)
+# cannot be resolved by generic inlining alone — the offset argument would
+# be lost inside the switch arms and surface as offset 0x0.
+PRIVATE_MMIO_READ_LAYOUTS = {
+    "dwc2_readl": (0, 1, "regs"),
+    "dw_readl": (0, 1, "regs"),
+    "dw_read_io_reg": (0, 1, "regs"),
+}
+PRIVATE_MMIO_WRITE_LAYOUTS = {
+    "dwc2_writel": (0, 1, 2, "regs"),
+    "dw_writel": (0, 2, 1, "regs"),
+    "dw_write_io_reg": (0, 2, 1, "regs"),
+}
+
 # Public subsystem accessors with stable, type-defined register contracts.
 # Keep these separate from driver-private layouts: this is Linux library
 # semantics, not a source-name exception.
@@ -235,14 +251,16 @@ def infer_call_width(name: str, call=None) -> int:
 
 
 def is_mmio_read(name: str) -> bool:
-    return (name in MMIO_READ_FNS or name in SUBSYSTEM_MMIO_READ_LAYOUTS
+    return (name in MMIO_READ_FNS or name in PRIVATE_MMIO_READ_LAYOUTS
+            or name in SUBSYSTEM_MMIO_READ_LAYOUTS
             or name in DIRECT_ADDRESS_READ_LAYOUTS
             or name in VIRTIO_CONFIG_READ_FNS
             or name in VIRTQUEUE_READ_FNS)
 
 
 def is_mmio_write(name: str) -> bool:
-    return (name in MMIO_WRITE_FNS or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS
+    return (name in MMIO_WRITE_FNS or name in PRIVATE_MMIO_WRITE_LAYOUTS
+            or name in SUBSYSTEM_MMIO_WRITE_LAYOUTS
             or name in DIRECT_ADDRESS_WRITE_LAYOUTS
             or name in VIRTIO_CONFIG_WRITE_FNS
             or name in VIRTQUEUE_WRITE_FNS)
@@ -301,7 +319,8 @@ def read_addr_expr(name: str, args: list[str]) -> str:
         if max(regmap) >= len(args):
             return ""
         return f"{args[state_arg]} + {args[offset_arg]}"
-    layout = SUBSYSTEM_MMIO_READ_LAYOUTS.get(name)
+    layout = (PRIVATE_MMIO_READ_LAYOUTS.get(name)
+              or SUBSYSTEM_MMIO_READ_LAYOUTS.get(name))
     if layout is None:
         return args[0] if args else ""
     state_arg, offset_arg, base_field = layout
@@ -332,7 +351,8 @@ def write_value_addr(name: str, args: list[str]) -> tuple[str, str]:
         if max(regmap) >= len(args):
             return "", ""
         return args[value_arg], f"{args[state_arg]} + {args[offset_arg]}"
-    layout = SUBSYSTEM_MMIO_WRITE_LAYOUTS.get(name)
+    layout = (PRIVATE_MMIO_WRITE_LAYOUTS.get(name)
+              or SUBSYSTEM_MMIO_WRITE_LAYOUTS.get(name))
     if layout is None:
         if len(args) >= 2:
             return args[0], args[1]

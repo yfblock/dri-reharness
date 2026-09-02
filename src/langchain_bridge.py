@@ -59,6 +59,21 @@ def _transcribe(prompt: str, response_text: str, *, kind: str,
         + ("\n## RESPONSE（原始输出）\n\n```c\n" + response_text + "\n```\n"
            if response_text else "\n## RESPONSE（空/失败）\n"),
         encoding="utf-8")
+    # usage（流式聚合于最后一个 chunk 的 usage；langchain 收进 usage_metadata）
+    try:
+        usage_path = out.with_name("usage.jsonl")
+        model = load_langchain_settings().model
+        usage_path.parent.mkdir(parents=True, exist_ok=True)
+        import json as _json
+        with usage_path.open("a", encoding="utf-8") as fh:
+            fh.write(_json.dumps({
+                "file": out.name, "model": model,
+                "prompt_chars": len(prompt),
+                "response_chars": len(response_text or ""),
+                "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            }, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
     return out
 
 

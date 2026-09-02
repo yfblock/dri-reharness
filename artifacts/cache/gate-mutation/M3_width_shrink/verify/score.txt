@@ -1,0 +1,20 @@
+generation_readiness:
+  ris_quality: 0.971
+  function_spec_quality: 1.0
+  device_spec_quality: 1.0
+  facts_quality: 1.0
+  backend_harness_ready: False
+  backend_bare_metal_ready: False
+  backend_linux_ready: False
+  llm_synthesis_ready: True
+  blockers:
+    - 7 typed hardware transaction(s) lack backend/runtime validation
+    - 8 unknown (Top) value(s)
+    - 5 conservative loop summary/summaries require validation
+    - callback entry without table binding: dw_spi_mscc_sparx5_init, dw_spi_canaan_k210_init
+    - harness backend lowering receipt reconciliation failed
+    - harness backend has 21 register operation(s) explicitly blocked by unsupported loop lowering
+    - harness backend has 130 unexplained RIS lowering accounting discrepancy/discrepancies
+    - baremetal backend generation/attestation results unavailable
+    - linux backend generation/attestation results unavailable
+    - harness backend generated-C AST primitive proof failed outside planned loop blockers

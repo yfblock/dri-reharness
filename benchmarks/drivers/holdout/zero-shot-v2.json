@@ -16,7 +16,14 @@
     "specialization_allowlist": {
       "source_basename_equals": ["sdhci-esdhc-mcf.c"],
       "device_name_equals": ["edu"],
-      "private_mmio_layouts": ["dwc2_readl", "dwc2_writel"]
+      "private_mmio_layouts": [
+        "dwc2_readl",
+        "dwc2_writel",
+        "dw_readl",
+        "dw_writel",
+        "dw_read_io_reg",
+        "dw_write_io_reg"
+      ]
     },
     "rule": "Holdout driver identifiers must not appear in extractor or generator implementation files. Generalization changes must be driver-name agnostic. The baseline is run before any protected-root change."
   },

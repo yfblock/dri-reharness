@@ -22,7 +22,7 @@ such as `priv->mmio + *off`; never lower a dynamic address to `base`,
 must remain the address used by the generated access.
 - `TXWRITE[transport] ...` -> regmap write. Use: regmap_write(regmap, SELECTOR, payload). Declare a static struct regmap *regmap at the top of the function if any TX ops appear. The target field is the regmap handle name.
 - `TXUPDATE[transport] ... mask=.. value=..` -> regmap update. Use: regmap_update_bits(regmap, SELECTOR, mask, value).
-- `TXREAD[transport] ...` with transport "regmap" -> regmap read. Use: regmap_read(regmap, SELECTOR, &var).
+- `TXREAD[transport] ...` with transport "regmap" -> regmap read. Use: regmap_read(regmap, SELECTOR, &var) with `var` declared as `u32` — argument 3 is `u32 *`.
 - `TXREAD[i2c] ... protocol i2c_transfer` -> preserve
   the target, message expression, and count exactly with
   `i2c_transfer(target, message, count)`.
@@ -185,6 +185,11 @@ exactly, including pointer ownership and const qualifiers.
   because a type is unavailable; in particular, do not include
   `<linux/offsetof.h>` or define kernel structs/types already supplied by the
   target headers.
+- Any kernel struct type you reference (e.g. a subsystem core port or device
+  struct) MUST be defined by one of the headers you include. If the type you
+  want is not defined by those headers, do not reference it — carry the data
+  in plain locals or a minimal local struct of your own instead. A reference
+  to an undefined struct type fails the whole build.
 - Acquire each evidence resource in evidence.resources when it is required by
   the framework route, preserve its source-derived binding, and handle the
   listed evidence.framework.error_paths. The optional `required` and

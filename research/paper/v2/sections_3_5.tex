@@ -107,7 +107,7 @@ field width in Rust \texttt{tock-registers}).
 \textbf{Tier 2: Transaction operations} model typed bus-level accesses that are not MMIO:
 
 \begin{itemize}
-\item \texttt{TXREAD[<transport>] <target>@<selector>} --- reads via regmap, I2C/SMBus, or MFD.
+\item Reads: \texttt{TXREAD[<transport>]} \texttt{<target>@<selector>} selects the transport (regmap, I2C/SMBus, or MFD) and the target register.
 \item \texttt{TXWRITE} and \texttt{TXUPDATE} --- writes and masked updates preserving the selected transport's semantics.
 \end{itemize}
 
@@ -121,7 +121,7 @@ The transport field (\texttt{regmap}, \texttt{i2c\_smbus}, \texttt{i2c}, or \tex
 \item \texttt{OUT(<target>) := <expr>} --- OutputWrite: stores a value into a software output buffer.
 \end{itemize}
 
-These three tiers are interleaved in the extractor's source-order projection within each module. The \texttt{DELAY(<cycles>)} and \texttt{RETURN <expr>} operations round out the set. Each operation carries an \texttt{op\_id} (sequential identifier), a \emph{reliability} tag (\texttt{Exact} or \texttt{Conservative}), an \emph{intent} annotation (e.g., \texttt{Init}, \texttt{Status}, \texttt{Config}, \texttt{DataTransfer}), and source-location provenance (file and line), providing provenance for recognized statements rather than a complete audit of the original program.
+These three tiers are interleaved in the extractor's source-order projection within each module. The \texttt{DELAY(<cycles>)} and \texttt{RETURN <expr>} operations round out the set. Each operation carries an \texttt{op\_id} (sequential identifier), a \emph{reliability} tag (\texttt{Exact} or \texttt{Conservative}), an \emph{intent} annotation (e.g., \texttt{Init}, \texttt{Status}, \texttt{Config}, \texttt{DataTransfer}), and source-location provenance (file and line). These annotations characterize recognized statements; they are not a complete audit of the original program.
 
 \paragraph{Register address model.}
 
@@ -206,7 +206,7 @@ Target functions include lifecycle entry points, interrupt handlers, and callbac
 For each target function, the extractor performs a flow-sensitive intra-procedural dataflow analysis. It walks the function's statements in source order, maintaining an \emph{abstract store} $\Sigma: \mathit{Var} \rightarrow \mathcal{V}$ mapping program variables to abstract values. The abstract value domain $\mathcal{V}$ is designed specifically for register interaction analysis:
 
 \begin{itemize}
-\item \texttt{BasePtr}($b$) --- a pointer known to originate from \texttt{ioremap} or an \texttt{\_\_iomem} parameter; the MMIO base.
+\item \texttt{BasePtr}($b$) --- a pointer originating from \texttt{ioremap} or an \texttt{\_\_iomem} parameter; the MMIO base.
 \item \texttt{Offset}($b$, $o$, $r$) --- \texttt{BasePtr}($b$) plus a constant offset $o$, optionally annotated with a resolved register name $r$.
 \item \texttt{ReadTaint}($a$, $r$) --- a value loaded by an MMIO read from address $a$; carries a taint label linking it back to the source register.
 \item \texttt{Const}($n$) --- an integer literal or fully folded constant.
@@ -265,16 +265,16 @@ tail call void asm sideeffect "movl $0,$1", "r,*m,~{...}"(...)
 \textbf{Physical truth extraction.} Every template match yields an
 operation with GEP-verified byte offset (the address chain is walked
 through \texttt{getelementptr} instructions; loop unrolling and peeling are
-deduplicated by a function/line/offset key), width (from the accessor
-family: \texttt{readb}\,$\rightarrow$\,B1 \dots \texttt{readq}\,$\rightarrow$\,B8),
+deduplicated by a function/line/offset key), width (taken from the
+accessor family: \texttt{readb} yields B1 and \texttt{readq} yields B8),
 and provenance: the \texttt{!dbg} chain resolves through
 \texttt{inlinedAt} links to the driver source line, and register offsets are
 mapped back to driver-local macro names via a \texttt{clang -dM} reverse
 index filtered to macros defined in the driver's own sources.
 
-\textbf{Variable-name recovery.} Debug intrinsics
-(\texttt{llvm.dbg.value} $\rightarrow$ \texttt{!DILocalVariable}) bind SSA
-values to source variables. After inlining, one SSA temporary can carry
+\textbf{Variable-name recovery.} The \texttt{llvm.dbg.value} intrinsic,
+through its \texttt{!DILocalVariable} operand, binds SSA values to source
+variables. After inlining, one SSA temporary can carry
 \emph{several} source variables, so name selection is scope-aware: the
 binding whose subprogram scope matches the frame the statement belongs to
 (innermost driver-file frame first) wins; genuinely ambiguous temporaries

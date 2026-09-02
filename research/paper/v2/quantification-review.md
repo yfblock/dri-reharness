@@ -102,7 +102,7 @@
 
 | # | 问题 | 状态 |
 |---|---|---|
-| P0-1 | QEMU 复现链断裂 | **已修复**：规则式发射器从 8a96a8d 恢复为 `src/generator/rules/`（约 5.3k 行，经 `REHARNESS_GENERATION=rules` 显式启用）；修复 6 处新旧 IR 偏差（状态表达式净化、fops 撞名、canonical_args 遮蔽、normalize_module_ops 导入、锚点标签 unused、registrar 身份穿透）；instrument_mmio 仅对含 MMIO 函数注入 [rhfn]；套件 build/extract/trace 失败改为记录后继续；qemu.json 写入 value_oracle+四级覆盖。复跑结果：edu probe/trace/value 全过（EDU_TRACE_OK），ftgpio probe 过 + TRACE_MATCH_OK + 覆盖 7/7 6/6 13/13 8/8，与论文声明一致 |
+| P0-1 | QEMU 复现链断裂 | **已修复**（2026-08-30）：规则式发射器从 8a96a8d 恢复为 `src/generator/rules/`（约 5.3k 行，经 `REHARNESS_GENERATION=rules` 显式启用）；修复 6 处新旧 IR 偏差（状态表达式净化、fops 撞名、canonical_args 遮蔽、normalize_module_ops 导入、锚点标签 unused、registrar 身份穿透）；instrument_mmio 仅对含 MMIO 函数注入 [rhfn]；套件 build/extract/trace 失败改为记录后继续；qemu.json 写入 value_oracle+四级覆盖。复跑结果：edu probe/trace/value 全过（EDU_TRACE_OK），ftgpio probe 过 + TRACE_MATCH_OK + 覆盖 7/7 6/6 13/13 8/8，与论文声明一致。**注意（2026-09-02）**：langgraph 分支已删除规则发射器（LLM-only），论文 §6.4/§6.5/摘要已改为"frozen baseline recorded in versioned artifacts"表述，不再声称树内可复跑规则发射 |
 | P0-2 | 18 项清单无 artifact | **已落地**：`qa/verification/dw_apb_ssi_checklist.py` + `research/experiments/results/dw-apb-ssi-checklist.json`。诚实结果 9/18（编译 4 项与 Rust 数据流 5 项为真实未关闭失败），论文 §6.5 与摘要已改为如实描述 |
 | P1-1 | dwc2 68 未解析调用不给数 | **已修复**：正文报 68 与 93.0%（新宏） |
 | P1-2 | 分母/名单缺失 | **已修复**：表 1/2 子集标准写入 caption/正文；strict-ready 驱动点名（新宏 ReadyDriverList）；QEMU 分母声明"仅尝试 2 例" |
@@ -112,7 +112,18 @@
 | P2-2 | 4446 vs 4250 | **已修复**：正文改用 \MultiSourceDwcTwoOps(4250)，总和另述 |
 | P2-3 | 启发式分数无分解 | 未动（建议作者决策） |
 | P2-4 | 耗时口径失真 | **已修复**：改用实测 6.0–11.8s（中位 9.6s）+ 多源 28.5–176.5s（新宏） |
-| P2-5 | 现成量化数据浪费 | 部分修复（path_validation/accounting 仍未入文） |
+| P2-5 | 现成量化数据浪费 | **已修复**（2026-09-02）：§6.5 DW IR 提取段补齐 accounting（45 处 MMIO 全核算、0 unaccounted、strict_complete）、path_validation（Z3 104 可满足/0 不可行/1 刻意 unreachable）、IR 分析（103 ops/0 missing/100% 覆盖）三组数字，全部来自 dw_spi.ris 版本化 artifact |
 | P3 | 碰撞计数/修复轮数等 | 未动（需新实验，属 EXPERIMENT_DEBT） |
 
 新宏（generated_results.tex，全部机器生成）：\MultiSourceDwcTwoOps、\EvalSecondsMin/Median/Max、\MultiSourceDwcTwoSeconds、\MultiSourceUnresolvedCalls、\MultiSourceCallResolutionPct、\HarnessReadyDriverList/\BaremetalReadyDriverList/\LinuxReadyDriverList、\ZeroShot* 系列。
+
+## 修复状态（2026-09-02 严谨性复查）
+
+| 位置 | 修改 |
+|---|---|
+| 摘要 | checklist 表述与 artifact 对齐：chip-select/interrupt/config 全过、4 项严格编译 + 5 项 Rust 数据流如实报为 open failures（\DWChecklistPassed/18）；QEMU 数字补 provenance 锚（manifest 摘要 + 源哈希 + 内核镜像 SHA-256） |
+| §6.2 | 删除过时 `pi_synth.sh` 机制引用，改为"任意 OpenAI 兼容端点 + LangChain 客户端"；补全被截断的 virtio_mmio 句子 |
+| §6.4 | baseline 表述改为"frozen rule-based baseline recorded in versioned matrix artifact"，消除与 LLM-only 现状的矛盾 |
+| §6.5 | QEMU 段冻结 commit 锚定（156146f，kernel SHA-256 + manifest digests）；DW 四后端段逐项与 dw-apb-ssi-checklist.json 对齐（9/18，编译 4 项失败原因逐项写明：-Werror unused、Kbuild Error 2、Rust crate 不构建） |
+| 宏生成器 | 修复 \GlueRatioChart 域错误（行数混入 0–100 百分比轴导致 Dimension too large）与图例 `&` 未转义；新增 \DWChecklistPassed/Total/CompileFailed/RustDataflowFailed |
+| 排版 | Overfull \hbox 21→18，最差 29.7pt→6.3pt（路径改 \path、tt 长词重组、不可断连字符改写） |

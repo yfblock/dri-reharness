@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 import statistics
 
@@ -25,12 +26,13 @@ def yn(value: bool) -> str:
 
 def _glue_chart(rows, gagg) -> str:
     """Horizontal 4-way stacked bars: device-core / framework entry /
-    glue+other function bodies / file-scope declaration & registration."""
+    glue+other function bodies / file-scope declaration & registration.
+    几何使用 0--100 百分比域（与坐标轴刻度一致），行数只出现在数据源。"""
     segs = [
-        ("device_core_lines", "figblue", None),
-        ("framework_entry_lines", "figorange", None),
-        ("glue_helper_lines", "gray!45", None),
-        ("file_scope_lines", "gray!15", None),
+        ("core_pct", "figblue"),
+        ("entry_pct", "figorange"),
+        ("helper_pct", "gray!45"),
+        ("file_scope_pct", "gray!15"),
     ]
     out = [r"\begin{tikzpicture}[x=0.082cm,y=1cm,font=\scriptsize]",
            r"  \draw[line width=0.7pt] (0,0.34) -- (0,0) -- (106,0);",
@@ -39,12 +41,12 @@ def _glue_chart(rows, gagg) -> str:
            r"    \node[above, font=\scriptsize] at (\x,0.16) {\xl};",
            r"  }",
            r"  \node[above=8pt, font=\scriptsize] at (50,0.25)",
-           r"    {Composition of non-blank source lines (\%)};"]
+           r"    {share of non-blank source lines (\%)};"]
     y = 0.0
     for row in rows:
         x = 0.0
-        for key, color, _ in segs:
-            span = row[key]
+        for key, color in segs:
+            span = float(row[key])
             out.append(
                 "  \\path[fill=" + color + ", draw=black, line width=0.3pt] "
                 f"({x:.2f},-{y:.2f}) rectangle ({x + span:.2f},-{y + 0.26:.2f});")
@@ -59,8 +61,8 @@ def _glue_chart(rows, gagg) -> str:
     out.append(f"  \\draw[line width=0.5pt] (0,-{y:.2f}) -- (106,-{y:.2f});")
     ysep = y + 0.12
     x = 0.0
-    for key, color, _ in segs:
-        span = gagg[key]
+    for key, color in segs:
+        span = float(gagg[key])
         out.append(
             "  \\path[fill=" + color + ", draw=black, line width=0.5pt] "
             f"({x:.2f},-{ysep:.2f}) rectangle ({x + span:.2f},-{ysep + 0.32:.2f});")
@@ -75,8 +77,8 @@ def _glue_chart(rows, gagg) -> str:
     legends = [
         ("Device-core lines", "figblue"),
         ("Framework entry bodies", "figorange"),
-        ("Glue wrappers & other function bodies", "gray!45"),
-        ("File-scope declarations & registration", "gray!15"),
+        ("Glue wrappers \\& other function bodies", "gray!45"),
+        ("File-scope declarations \\& registration", "gray!15"),
     ]
     lx, ly0 = 6, ysep + 0.78
     for i, (label, color) in enumerate(legends):
@@ -90,6 +92,10 @@ def _glue_chart(rows, gagg) -> str:
             f"{{{label}}};")
     out.append(r"\end{tikzpicture}")
     return "\n".join(out)
+
+
+def _line_count(path: Path) -> int:
+    return len(path.read_text(encoding="utf-8").splitlines())
 
 
 def main() -> None:
@@ -118,6 +124,7 @@ def main() -> None:
 
     edu_qemu = _qemu_row("edu")
     ft_qemu = _qemu_row("gpio-ftgpio010", "ftgpio010")
+
     multi_rows = multisource["drivers"]
     multi_agg = multisource["aggregate"]
     multi_by_driver = {row["driver"]: row for row in multi_rows}
@@ -191,6 +198,192 @@ def main() -> None:
         macros[f"MultiSource{suffix}UnresolvedCalls"] = row.get(
             "unresolved_internal_calls", 0)
 
+    # QEMU 实验全记录口径：结构化 oracle 实验 vs 探针级实验 vs 未执行 manifest
+    oracle_names = {"edu", "ftgpio010", "gpio-ftgpio010"}
+    probe_names = sorted(
+        k for k in qemu_experiments if k not in oracle_names)
+    macros["QEMURecordedExperiments"] = len(qemu_experiments)
+    macros["QEMUOracleExperiments"] = len(
+        set(oracle_names) & set(qemu_experiments))
+    macros["QEMUProbeExperiments"] = len(probe_names)
+    macros["QEMUProbeNames"] = ", ".join(esc(n) for n in probe_names)
+
+    def _probe_cov(name):
+        return qemu_experiments[name].get(
+            "driver_function_coverage", {}).get("percent")
+
+    for macro, name in (("QEMUProbeNicCoverage", "e1000"),
+                        ("QEMUProbeUsbCoverage", "usb-storage")):
+        if name in qemu_experiments:
+            macros[macro] = _probe_cov(name)
+    manifest_files = sorted(
+        (ROOT / "benchmarks" / "experiments").glob("*.json"))
+    unexecuted = [
+        p.stem for p in manifest_files
+        if p.stem not in qemu_experiments
+    ]
+    macros["QEMUUnexecutedManifests"] = len(unexecuted)
+    macros["QEMUUnexecutedNames"] = ", ".join(esc(n) for n in unexecuted)
+
+    # v2 LangGraph closed-loop LLM experiments (artifacts/experiments-v2-real);
+    # provider=source_build 行是真正的 LLM 生成候选 (kernel_tree 行为基线烟测)
+    v2_dir = ROOT / "artifacts" / "experiments-v2-real"
+    if (v2_dir / "edu" / "experiment.json").is_file():
+        src_build = {}
+        for p in sorted(v2_dir.glob("*/experiment.json")):
+            d = json.load(open(p, encoding="utf-8"))
+            if d.get("provider") == "source_build":
+                src_build[d["driver"]] = d
+        accepted = sorted(n for n, d in src_build.items()
+                          if d.get("accepted"))
+        macros["ClosedLoopCases"] = len(src_build)
+        macros["ClosedLoopAccepted"] = len(accepted)
+        macros["ClosedLoopAcceptedNames"] = ", ".join(
+            esc(n) for n in accepted) if accepted else "--"
+        if "edu" in src_build:
+            edu_v2 = src_build["edu"]
+            b, c = (edu_v2.get("baseline_coverage", {}),
+                    edu_v2.get("candidate_coverage", {}))
+            macros["EduRepairRounds"] = edu_v2.get("repair_count", 0)
+            macros["EduBaselineFnCov"] = (
+                f"{b.get('covered_count')}/{b.get('total')}")
+            macros["EduCandidateFnCov"] = (
+                f"{c.get('covered_count')}/{c.get('total')}")
+        if "ftgpio010" in src_build:
+            macros["FtRepairRounds"] = src_build["ftgpio010"].get(
+                "repair_count", 0)
+
+    # DesignWare 版本化 .ris 的模块/操作计数（正文 §7.6 引用，避免手写漂移）
+    dw_ris_path = ROOT / "examples" / "dw-apb-ssi" / "dw_spi.ris"
+    if dw_ris_path.is_file():
+        dw_ris = dw_ris_path.read_text(encoding="utf-8")
+        macros["DWRISModules"] = len(
+            re.findall(r"^  module \w+", dw_ris, re.M))
+        macros["DWRISOps"] = len(set(re.findall(r"@op_\d+", dw_ris)))
+    dw_formal_path = (ROOT / "examples" / "dw-apb-ssi"
+                      / "dw_spi.formal.json")
+    if dw_formal_path.is_file():
+        dw_formal = json.load(open(dw_formal_path, encoding="utf-8"))
+        dw_meta = dw_formal.get("metadata", {})
+        dw_acc = dw_meta.get("access_accounting", {})
+        if dw_acc:
+            macros["DWAccountingSource"] = dw_acc.get("source_accesses", 0)
+            macros["DWAccountingEmitted"] = dw_acc.get("emitted", 0)
+            macros["DWAccountingUnaccounted"] = dw_acc.get("unaccounted", 0)
+            macros["DWAccountingStrict"] = (
+                "true" if dw_acc.get("strict_complete") else "false")
+        dw_pv = dw_meta.get("path_validation", {})
+        if dw_pv:
+            macros["DWPathsSatisfiable"] = dw_pv.get("satisfiable", 0)
+            macros["DWPathsInfeasible"] = dw_pv.get("infeasible", 0)
+            macros["DWPathsUnreachable"] = dw_pv.get(
+                "intentionally_unreachable",
+                dw_pv.get("unreachable", 0))
+        dw_ir = dw_meta.get("ir_layer", dw_meta.get("ir_analysis", {}))
+        if dw_ir:
+            macros["DWIROps"] = dw_ir.get(
+                "total_ir_ops", dw_ir.get("ops", 0))
+            macros["DWIRMissingOffsets"] = dw_ir.get(
+                "total_missing_from_ast", 0)
+            macros["DWIRCoveragePct"] = dw_ir.get("coverage_pct", 100.0)
+
+    # DW 产物行数（摘要/§1 引用；随再生成自动更新）
+    ex_dir = ROOT / "examples" / "dw-apb-ssi"
+    _dw_files = {
+        "DwLinuxLines": ("dw_apb_ssi_linux.c", "dw_apb_ssi_linux.h"),
+        "DwBaremetalLines": ("dw_spi_baremetal.c", "dw_spi_baremetal.h"),
+        "DwHarnessLines": ("dw_spi_harness.c", "dw_spi_harness.h"),
+        "DwRustLines": ("dw_spi_rust_baremetal.rs",),
+    }
+    for macro, names in _dw_files.items():
+        total = sum(_line_count(ex_dir / n) for n in names
+                    if (ex_dir / n).is_file())
+        if total:
+            macros[macro] = total
+
+    # DW 产物行数（摘要/§1 引用；随再生成自动更新）— 源侧固定 1,844 行
+    dw_sources = [
+        ROOT / "vendor" / "linux" / "drivers" / "spi" / "spi-dw-core.c",
+        ROOT / "vendor" / "linux" / "drivers" / "spi" / "spi-dw.h",
+        ROOT / "vendor" / "linux" / "drivers" / "spi" / "spi-dw-mmio.c",
+    ]
+    macros["DwSourceLines"] = sum(_line_count(p) for p in dw_sources)
+
+    # 直译基线（同模型、同验收门、无证据契约；Q/W2）
+    direct_path = (ROOT / "research" / "experiments" / "results"
+                   / "direct-llm-baseline.json")
+    if direct_path.is_file():
+        direct = json.load(open(direct_path, encoding="utf-8"))
+        rounds = direct.get("rounds", [])
+        if rounds:
+            first = rounds[0]
+            gate = first.get("gate", {})
+            macros["DirectLlmSamples"] = len(rounds)
+            macros["DirectLlmRejected"] = sum(
+                1 for r in rounds if r.get("gate", {}).get("rejected"))
+            fails = [r.get("gate", {}).get("first_failing_check")
+                     for r in rounds]
+            macros["DirectLlmFirstFail"] = esc(
+                ", ".join(sorted({f for f in fails if f})) or "none")
+            macros["DirectLlmPatternPass"] = sum(
+                r.get("checklist_patterns_passed", 0) for r in rounds
+                if r.get("checklist_patterns_passed"))
+            macros["DirectLlmPatternTotal"] = sum(
+                r.get("checklist_patterns_total", 0) for r in rounds
+                if r.get("checklist_patterns_total"))
+
+    # 验证门变异研究（Q2/W4）
+    mut_path = (ROOT / "research" / "experiments" / "results"
+                / "dw-gate-mutation-study.json")
+    if mut_path.is_file():
+        mut = json.load(open(mut_path, encoding="utf-8"))
+        rows_m = mut.get("results", [])
+        applied = [r for r in rows_m if r.get("applied")]
+        if applied:
+            macros["GateMutationsApplied"] = len(applied)
+            macros["GateMutationsRejected"] = sum(
+                1 for r in applied if r.get("rejected"))
+        pristine = next((r for r in rows_m
+                         if r.get("mutation") == "pristine"), None)
+        if pristine:
+            macros["GatePristineRejected"] = (
+                "true" if pristine.get("rejected") else "false")
+
+    # DW 再生成修复循环轮次（W1：LLM 产物经有界修复后的编译状态）
+    rep_path = (ROOT / "research" / "experiments" / "results"
+                / "artifact-repair-log.json")
+    if rep_path.is_file():
+        rep = json.load(open(rep_path, encoding="utf-8"))
+        by_backend: dict[str, list[dict]] = {}
+        for run in rep.get("runs", []):
+            by_backend.setdefault(run.get("backend", "?"), []).append(run)
+        for backend, runs in by_backend.items():
+            tag = {"harness": "Harn", "baremetal": "Bare",
+                   "linux": "Linux", "rust": "Rust"}.get(backend, backend)
+            last = runs[-1]
+            macros[f"Dw{tag}RepairRounds"] = len(last.get("rounds", [])) - 1
+            macros[f"Dw{tag}CompileOk"] = (
+                "true" if last.get("compile_ok") else "false")
+            lowering_runs = [r for r in runs if r.get("mode") == "lowering"]
+            if lowering_runs:
+                lrow = lowering_runs[-1]
+                macros[f"Dw{tag}LoweringRounds"] = (
+                    len(lrow.get("rounds", [])) - 1)
+                macros[f"Dw{tag}LoweringComplete"] = (
+                    "true" if lrow.get("lowering_complete") else "false")
+
+    # LLM 发射元数据（W5：模型/端点/温度来自 record_llm_run.py 记录）
+    meta_path = (ROOT / "research" / "experiments" / "results"
+                 / "llm-run-metadata.json")
+    if meta_path.is_file():
+        meta = json.load(open(meta_path, encoding="utf-8"))
+        if meta.get("model"):
+            macros["LlmModelId"] = esc(meta["model"])
+        if meta.get("endpoint_host"):
+            macros["LlmEndpointHost"] = esc(meta["endpoint_host"])
+        if meta.get("temperature") is not None:
+            macros["LlmTemperature"] = f'{meta["temperature"]:g}'
+
     # 单驱动提取耗时（matrix.json seconds）与严格就绪名单
     seconds = sorted(r.get("seconds", 0.0) for r in rows)
     if seconds:
@@ -240,6 +433,22 @@ def main() -> None:
         macros["ZeroShotAllStrict"] = zstrict.get("all_backends", 0)
         macros["ZeroShotHardwareCases"] = zagg.get(
             "cases_with_hardware_interactions", 0)
+
+    # DesignWare 18 项 checklist（逐项判定来自版本化脚本，正文只引用宏）
+    dw_checklist_path = RESULTS / "dw-apb-ssi-checklist.json"
+    if dw_checklist_path.is_file():
+        dw = json.load(open(dw_checklist_path, encoding="utf-8"))
+        macros["DWChecklistPassed"] = dw.get("items_passed", 0)
+        macros["DWChecklistTotal"] = dw.get("items_total", 0)
+        compile_failed = sum(1 for item in dw.get("items", [])
+                             if item["name"].startswith("compile_")
+                             and not item["pass"])
+        rust_df_failed = sum(
+            1 for item in dw.get("items", [])
+            if item["name"].startswith("dataflow_") and not item["pass"]
+            and not item["backends"].get("rust", {"pass": True})["pass"])
+        macros["DWChecklistCompileFailed"] = compile_failed
+        macros["DWChecklistRustDataflowFailed"] = rust_df_failed
     for key, value in macros.items():
         lines.append(f"\\newcommand{{\\{key}}}{{{value}}}")
 
@@ -251,22 +460,24 @@ def main() -> None:
                   _glue_chart(grows, glue["aggregate"]), "}"]
 
     lines += ["", r"\newcommand{\ExtractionResultsTable}{%",
-              r"\begin{tabular}{lrrrrrrrr}", r"\hline",
+              r"\begin{tabular}{lrrrrrrrrr}", r"\hline",
               r"\textbf{Driver} & \textbf{Ops} & \textbf{Sym} & \textbf{Fixed} & "
-              r"\textbf{Comp} & \textbf{RMW} & \textbf{Cond} & \textbf{Regs} & \textbf{\%Sym}\\",
+              r"\textbf{Comp} & \textbf{NAddr} & \textbf{RMW} & \textbf{Cond} & \textbf{Regs} & \textbf{\%Sym}\\",
               r"\hline"]
     selected = ("gpio-ftgpio010", "virtio_mmio", "gpio-pl061", "gpio-cadence", "edu")
     for name in selected:
         row = next(r for r in rows if r["driver"] == name)
         m = row["metrics"]
+        naddr = m["ops"] - m["symbolic"] - m["fixed"] - m["computed"]
         pct = "--" if m["pct_symbolic"] is None else f"{100*m['pct_symbolic']:.1f}\\%"
         lines.append(f"{esc(name)} & {m['ops']} & {m['symbolic']} & {m['fixed']} & "
-                     f"{m['computed']} & {m['rmw']} & {m['conditions']} & "
+                     f"{m['computed']} & {naddr} & {m['rmw']} & {m['conditions']} & "
                      f"{m['registers']} & {pct}\\\\")
     lines += [r"\hline",
               f"\\textbf{{Total ({len(rows)})}} & \\textbf{{{agg['ops']}}} & "
               f"\\textbf{{{agg['symbolic']}}} & \\textbf{{{agg['fixed']}}} & "
-              f"\\textbf{{{agg['computed']}}} & \\textbf{{{agg['rmw']}}} & "
+              f"\\textbf{{{agg['computed']}}} & \\textbf{{{agg['ops'] - addr_total}}} & "
+              f"\\textbf{{{agg['rmw']}}} & "
               f"\\textbf{{{agg['conditions']}}} & \\textbf{{{agg['registers']}}} & "
               f"\\textbf{{{100*agg['symbolic']/addr_total:.1f}\\%}}\\\\",
               r"\hline", r"\end{tabular}", r"}", ""]

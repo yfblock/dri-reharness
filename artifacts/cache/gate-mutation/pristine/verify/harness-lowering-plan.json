@@ -1,0 +1,4922 @@
+{
+  "accounting_complete": true,
+  "authorization_complete": true,
+  "authorized_missing": [
+    "op_1",
+    "op_10",
+    "op_100",
+    "op_101",
+    "op_102",
+    "op_103",
+    "op_104",
+    "op_105",
+    "op_106",
+    "op_11",
+    "op_119",
+    "op_124",
+    "op_125",
+    "op_126",
+    "op_128",
+    "op_13",
+    "op_130",
+    "op_131",
+    "op_132",
+    "op_134",
+    "op_135",
+    "op_136",
+    "op_137",
+    "op_14",
+    "op_147",
+    "op_15",
+    "op_151",
+    "op_152",
+    "op_153",
+    "op_154",
+    "op_155",
+    "op_156",
+    "op_157",
+    "op_158",
+    "op_159",
+    "op_161",
+    "op_162",
+    "op_163",
+    "op_164",
+    "op_170",
+    "op_171",
+    "op_172",
+    "op_173",
+    "op_177",
+    "op_186",
+    "op_187",
+    "op_199",
+    "op_2",
+    "op_200",
+    "op_209",
+    "op_21",
+    "op_210",
+    "op_211",
+    "op_212",
+    "op_213",
+    "op_214",
+    "op_215",
+    "op_217",
+    "op_218",
+    "op_219",
+    "op_22",
+    "op_220",
+    "op_221",
+    "op_222",
+    "op_224",
+    "op_225",
+    "op_226",
+    "op_227",
+    "op_228",
+    "op_229",
+    "op_23",
+    "op_232",
+    "op_24",
+    "op_25",
+    "op_258",
+    "op_259",
+    "op_260",
+    "op_261",
+    "op_262",
+    "op_263",
+    "op_264",
+    "op_265",
+    "op_266",
+    "op_267",
+    "op_269",
+    "op_270",
+    "op_271",
+    "op_272",
+    "op_273",
+    "op_274",
+    "op_276",
+    "op_277",
+    "op_278",
+    "op_279",
+    "op_280",
+    "op_281",
+    "op_284",
+    "op_285",
+    "op_286",
+    "op_3",
+    "op_31",
+    "op_32",
+    "op_34",
+    "op_35",
+    "op_37",
+    "op_38",
+    "op_39",
+    "op_4",
+    "op_46",
+    "op_5",
+    "op_51",
+    "op_52",
+    "op_53",
+    "op_55",
+    "op_58",
+    "op_59",
+    "op_6",
+    "op_60",
+    "op_7",
+    "op_8",
+    "op_89",
+    "op_9",
+    "op_90",
+    "op_93",
+    "op_94",
+    "op_95",
+    "op_96",
+    "op_97",
+    "op_98",
+    "op_99"
+  ],
+  "authorized_op_ids": [
+    "op_1",
+    "op_10",
+    "op_100",
+    "op_101",
+    "op_102",
+    "op_103",
+    "op_104",
+    "op_105",
+    "op_106",
+    "op_11",
+    "op_119",
+    "op_124",
+    "op_125",
+    "op_126",
+    "op_128",
+    "op_13",
+    "op_130",
+    "op_131",
+    "op_132",
+    "op_134",
+    "op_135",
+    "op_136",
+    "op_137",
+    "op_14",
+    "op_147",
+    "op_15",
+    "op_151",
+    "op_152",
+    "op_153",
+    "op_154",
+    "op_155",
+    "op_156",
+    "op_157",
+    "op_158",
+    "op_159",
+    "op_161",
+    "op_162",
+    "op_163",
+    "op_164",
+    "op_170",
+    "op_171",
+    "op_172",
+    "op_173",
+    "op_177",
+    "op_186",
+    "op_187",
+    "op_199",
+    "op_2",
+    "op_200",
+    "op_209",
+    "op_21",
+    "op_210",
+    "op_211",
+    "op_212",
+    "op_213",
+    "op_214",
+    "op_215",
+    "op_217",
+    "op_218",
+    "op_219",
+    "op_22",
+    "op_220",
+    "op_221",
+    "op_222",
+    "op_224",
+    "op_225",
+    "op_226",
+    "op_227",
+    "op_228",
+    "op_229",
+    "op_23",
+    "op_232",
+    "op_24",
+    "op_25",
+    "op_258",
+    "op_259",
+    "op_260",
+    "op_261",
+    "op_262",
+    "op_263",
+    "op_264",
+    "op_265",
+    "op_266",
+    "op_267",
+    "op_269",
+    "op_270",
+    "op_271",
+    "op_272",
+    "op_273",
+    "op_274",
+    "op_276",
+    "op_277",
+    "op_278",
+    "op_279",
+    "op_280",
+    "op_281",
+    "op_284",
+    "op_285",
+    "op_286",
+    "op_3",
+    "op_31",
+    "op_32",
+    "op_34",
+    "op_35",
+    "op_37",
+    "op_38",
+    "op_39",
+    "op_4",
+    "op_46",
+    "op_5",
+    "op_51",
+    "op_52",
+    "op_53",
+    "op_55",
+    "op_58",
+    "op_59",
+    "op_6",
+    "op_60",
+    "op_7",
+    "op_8",
+    "op_89",
+    "op_9",
+    "op_90",
+    "op_93",
+    "op_94",
+    "op_95",
+    "op_96",
+    "op_97",
+    "op_98",
+    "op_99"
+  ],
+  "authorized_ops": 130,
+  "backend": "harness",
+  "backend_mismatch": null,
+  "blocked_op_ids": [
+    "op_138",
+    "op_139",
+    "op_140",
+    "op_142",
+    "op_143",
+    "op_144",
+    "op_145",
+    "op_62",
+    "op_68",
+    "op_69",
+    "op_72",
+    "op_73",
+    "op_74",
+    "op_80",
+    "op_81",
+    "op_82",
+    "op_83",
+    "op_84",
+    "op_85",
+    "op_86",
+    "op_87"
+  ],
+  "blocked_ops": 21,
+  "candidate_definition_ops": 0,
+  "classification_complete": true,
+  "classification_mismatches": [],
+  "complete": false,
+  "contract_mismatches": [],
+  "definition_alignment_complete": false,
+  "disposition_counts": {
+    "blocked_linux_lifecycle_stub": 0,
+    "blocked_linux_lifecycle_unimplemented": 0,
+    "blocked_linux_root_unreachable": 0,
+    "blocked_unsupported_loop": 21,
+    "candidate_definition_emit": 0,
+    "definition_evidence_only": 0,
+    "lowered": 130
+  },
+  "driver": "dw-apb-ssi",
+  "driver_mismatch": null,
+  "duplicate_contract_ids": [],
+  "duplicate_formal_ids": [],
+  "duplicate_plan_ids": [],
+  "entries": [
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_set_cs",
+      "op_id": "op_1",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_set_cs",
+      "op_id": "op_2",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_3",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_4",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_5",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_6",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_7",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_8",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_9",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_10",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_11",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_13",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_14",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_15",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_21",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_22",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_23",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_24",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_25",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_31",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_32",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_34",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_handler",
+      "op_id": "op_35",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_handler",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_irq",
+      "op_id": "op_37",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_irq",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_irq",
+      "op_id": "op_38",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_irq",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_irq",
+      "op_id": "op_39",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_irq",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_46",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_51",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_52",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_53",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_55",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_58",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_59",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_60",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_62",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 2,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_68",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 2,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_69",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_72",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 2,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_73",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": true,
+          "count": {
+            "Var": "max"
+          },
+          "depth": 2,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "max--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_74",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_80",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_81",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_82",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_83",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_84",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_85",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_86",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "dws->rx_len"
+        },
+        "init": "",
+        "loop_kind": "do",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "dws->rx_len"
+          },
+          "init": "",
+          "loop_kind": "do",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_87",
+      "reason": "enclosing do loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_89",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_90",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_93",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_transfer_one",
+      "op_id": "op_94",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_transfer_one",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_handle_err",
+      "op_id": "op_95",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_handle_err",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_handle_err",
+      "op_id": "op_96",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_handle_err",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_handle_err",
+      "op_id": "op_97",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_handle_err",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_handle_err",
+      "op_id": "op_98",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_handle_err",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_handle_err",
+      "op_id": "op_99",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_handle_err",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_handle_err",
+      "op_id": "op_100",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_handle_err",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_target_abort",
+      "op_id": "op_101",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_target_abort",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_target_abort",
+      "op_id": "op_102",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_target_abort",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_target_abort",
+      "op_id": "op_103",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_target_abort",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_target_abort",
+      "op_id": "op_104",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_target_abort",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_target_abort",
+      "op_id": "op_105",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_target_abort",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_target_abort",
+      "op_id": "op_106",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_target_abort",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_119",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_124",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_125",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_126",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_128",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_130",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_131",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_132",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "len"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "len--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_134",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "len"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "Var": "len--"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_135",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_136",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_137",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_138",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 2,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "room,"
+              },
+              "op": "Sub",
+              "right": {
+                "Var": "len"
+              }
+            }
+          },
+          "init": "room",
+          "loop_kind": "for",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": "dw_write_io_reg(dws, DW_SPI_DR, *buf++)"
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_139",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 2,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "room,"
+              },
+              "op": "Sub",
+              "right": {
+                "Var": "len"
+              }
+            }
+          },
+          "init": "room",
+          "loop_kind": "for",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": "dw_write_io_reg(dws, DW_SPI_DR, *buf++)"
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_140",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_142",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_143",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 2,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "entries,"
+              },
+              "op": "Sub",
+              "right": {
+                "Var": "len"
+              }
+            }
+          },
+          "init": "entries",
+          "loop_kind": "for",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": "*buf++ = dw_read_io_reg(dws, DW_SPI_DR)"
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_144",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": {
+        "bounded": false,
+        "count": {
+          "Top": null
+        },
+        "depth": 1,
+        "dynamic_bound": false,
+        "guard": {
+          "Var": "len"
+        },
+        "init": "",
+        "loop_kind": "while",
+        "lowering_mode": null,
+        "proof_kind": null,
+        "region": "body",
+        "region_lowerable": false,
+        "reliability": "Conservative",
+        "step": ""
+      },
+      "disposition": "blocked_unsupported_loop",
+      "enclosing_loops": [
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "Var": "len"
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": ""
+        },
+        {
+          "bounded": false,
+          "count": {
+            "Top": null
+          },
+          "depth": 2,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "entries,"
+              },
+              "op": "Sub",
+              "right": {
+                "Var": "len"
+              }
+            }
+          },
+          "init": "entries",
+          "loop_kind": "for",
+          "lowering_mode": null,
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": false,
+          "reliability": "Conservative",
+          "step": "*buf++ = dw_read_io_reg(dws, DW_SPI_DR)"
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_145",
+      "reason": "enclosing while loop is not proven lowerable by backend policy (reliability='Conservative', bounded=False, proof_kind=None)",
+      "receipt_authorized": false,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": false
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_147",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Var": "retry"
+          },
+          "depth": 1,
+          "dynamic_bound": true,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "dw_spi_ctlr_busy(dws)"
+              },
+              "op": "And",
+              "right": {
+                "Var": "retry--"
+              }
+            }
+          },
+          "init": "",
+          "loop_kind": "while",
+          "lowering_mode": "bounded_post_decrement_while",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": ""
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_151",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_152",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_153",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_154",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_155",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_156",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_157",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_158",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_159",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_161",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_162",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_163",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_exec_mem_op",
+      "op_id": "op_164",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_exec_mem_op",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mscc_set_cs",
+      "op_id": "op_170",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mscc_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mscc_set_cs",
+      "op_id": "op_171",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mscc_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mscc_set_cs",
+      "op_id": "op_172",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mscc_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mscc_ocelot_init",
+      "op_id": "op_173",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mscc_ocelot_init",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mscc_jaguar2_init",
+      "op_id": "op_177",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mscc_jaguar2_init",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_sparx5_set_cs",
+      "op_id": "op_186",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_sparx5_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_sparx5_set_cs",
+      "op_id": "op_187",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_sparx5_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_elba_set_cs",
+      "op_id": "op_199",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_elba_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_elba_set_cs",
+      "op_id": "op_200",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_elba_set_cs",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_209",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_210",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_211",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_212",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_213",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_214",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_215",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_217",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_218",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_219",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Const": 255
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "fifo"
+              },
+              "op": "Lt",
+              "right": {
+                "Const": 256
+              }
+            }
+          },
+          "init": "fifo = 1",
+          "loop_kind": "for",
+          "lowering_mode": "bounded_for",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": "fifo++"
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_220",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Const": 255
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "fifo"
+              },
+              "op": "Lt",
+              "right": {
+                "Const": 256
+              }
+            }
+          },
+          "init": "fifo = 1",
+          "loop_kind": "for",
+          "lowering_mode": "bounded_for",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": "fifo++"
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_221",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_222",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_224",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_225",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_226",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_227",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_228",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_229",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_232",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_probe",
+      "op_id": "op_258",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_probe",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_suspend",
+      "op_id": "op_259",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_suspend",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_suspend",
+      "op_id": "op_260",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_suspend",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_261",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_262",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_263",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_264",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_265",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_266",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_267",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_269",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_270",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_271",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Const": 255
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "fifo"
+              },
+              "op": "Lt",
+              "right": {
+                "Const": 256
+              }
+            }
+          },
+          "init": "fifo = 1",
+          "loop_kind": "for",
+          "lowering_mode": "bounded_for",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": "fifo++"
+        }
+      ],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_272",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [
+        {
+          "bounded": true,
+          "count": {
+            "Const": 255
+          },
+          "depth": 1,
+          "dynamic_bound": false,
+          "guard": {
+            "BinOp": {
+              "left": {
+                "Var": "fifo"
+              },
+              "op": "Lt",
+              "right": {
+                "Const": 256
+              }
+            }
+          },
+          "init": "fifo = 1",
+          "loop_kind": "for",
+          "lowering_mode": "bounded_for",
+          "proof_kind": null,
+          "region": "body",
+          "region_lowerable": true,
+          "reliability": "Exact",
+          "step": "fifo++"
+        }
+      ],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_273",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_274",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_276",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_277",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_278",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Read",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_279",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_280",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_281",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_resume",
+      "op_id": "op_284",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_resume",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_remove",
+      "op_id": "op_285",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_remove",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    },
+    {
+      "ast_leaf_proven": null,
+      "blocking_loop": null,
+      "disposition": "lowered",
+      "enclosing_loops": [],
+      "kind": "Write",
+      "module": "dw_spi_mmio_remove",
+      "op_id": "op_286",
+      "reason": null,
+      "receipt_authorized": true,
+      "registration_route_id": null,
+      "route": {
+        "callback": null,
+        "function": "dw_spi_mmio_remove",
+        "kind": "formal_definition",
+        "provenance": "formal.modules[].name",
+        "role": null
+      },
+      "runtime_registration_proven": null,
+      "strict_eligible": true
+    }
+  ],
+  "evidence_only_ops": 0,
+  "linux_ast_leaf_complete": true,
+  "linux_ast_leaf_errors": [],
+  "linux_ast_leaf_proven_op_ids": [],
+  "linux_ast_leaf_valid": true,
+  "lowered_ops": 130,
+  "lowering_complete": false,
+  "lowering_report_errors": [
+    "authorized_missing",
+    "receipt_authorization_set_mismatch"
+  ],
+  "malformed_plan_entries": [],
+  "missing_from_contract": [],
+  "missing_plan_ops": [],
+  "oracle": "backend-lowering-plan-v3",
+  "plan_envelope_mismatch": null,
+  "planned_ops": 151,
+  "policy": {
+    "authorization_axis": "definition-receipt",
+    "blocked_entries_authorize_receipts": false,
+    "cardinality": "exactly-once",
+    "linux_ast_axis": "generated-c-ast-leaf-v1-required-subset",
+    "linux_precedence": [
+      "loop",
+      "lifecycle",
+      "root"
+    ],
+    "runtime_axis": "independent-registration-attestation",
+    "semantic_authority": "canonical-formal-ris",
+    "supported_backends": [
+      "baremetal",
+      "harness",
+      "linux"
+    ],
+    "supported_loop_modes": [
+      "bounded_for",
+      "masked_w1c_drain"
+    ]
+  },
+  "reconciliation_complete": false,
+  "reconciliation_performed": true,
+  "required_ops": 151,
+  "runtime_and_ast_proven_op_ids": [],
+  "runtime_artifact_authority_errors": [],
+  "runtime_artifact_authority_valid": true,
+  "runtime_attestation_complete": true,
+  "runtime_attestation_errors": [],
+  "runtime_attestation_valid": true,
+  "runtime_compile_context": null,
+  "runtime_complete": false,
+  "runtime_generated_sha256": null,
+  "runtime_registered_op_ids": [],
+  "runtime_registered_ops": 0,
+  "schema": 3,
+  "strict_candidate_op_ids": [],
+  "strict_complete": false,
+  "strict_eligible_op_ids": [
+    "op_1",
+    "op_10",
+    "op_100",
+    "op_101",
+    "op_102",
+    "op_103",
+    "op_104",
+    "op_105",
+    "op_106",
+    "op_11",
+    "op_119",
+    "op_124",
+    "op_125",
+    "op_126",
+    "op_128",
+    "op_13",
+    "op_130",
+    "op_131",
+    "op_132",
+    "op_134",
+    "op_135",
+    "op_136",
+    "op_137",
+    "op_14",
+    "op_147",
+    "op_15",
+    "op_151",
+    "op_152",
+    "op_153",
+    "op_154",
+    "op_155",
+    "op_156",
+    "op_157",
+    "op_158",
+    "op_159",
+    "op_161",
+    "op_162",
+    "op_163",
+    "op_164",
+    "op_170",
+    "op_171",
+    "op_172",
+    "op_173",
+    "op_177",
+    "op_186",
+    "op_187",
+    "op_199",
+    "op_2",
+    "op_200",
+    "op_209",
+    "op_21",
+    "op_210",
+    "op_211",
+    "op_212",
+    "op_213",
+    "op_214",
+    "op_215",
+    "op_217",
+    "op_218",
+    "op_219",
+    "op_22",
+    "op_220",
+    "op_221",
+    "op_222",
+    "op_224",
+    "op_225",
+    "op_226",
+    "op_227",
+    "op_228",
+    "op_229",
+    "op_23",
+    "op_232",
+    "op_24",
+    "op_25",
+    "op_258",
+    "op_259",
+    "op_260",
+    "op_261",
+    "op_262",
+    "op_263",
+    "op_264",
+    "op_265",
+    "op_266",
+    "op_267",
+    "op_269",
+    "op_270",
+    "op_271",
+    "op_272",
+    "op_273",
+    "op_274",
+    "op_276",
+    "op_277",
+    "op_278",
+    "op_279",
+    "op_280",
+    "op_281",
+    "op_284",
+    "op_285",
+    "op_286",
+    "op_3",
+    "op_31",
+    "op_32",
+    "op_34",
+    "op_35",
+    "op_37",
+    "op_38",
+    "op_39",
+    "op_4",
+    "op_46",
+    "op_5",
+    "op_51",
+    "op_52",
+    "op_53",
+    "op_55",
+    "op_58",
+    "op_59",
+    "op_6",
+    "op_60",
+    "op_7",
+    "op_8",
+    "op_89",
+    "op_9",
+    "op_90",
+    "op_93",
+    "op_94",
+    "op_95",
+    "op_96",
+    "op_97",
+    "op_98",
+    "op_99"
+  ],
+  "strict_eligible_ops": 130,
+  "unauthorized_receipts": [],
+  "unknown_contract_ops": [],
+  "unknown_plan_ops": []
+}

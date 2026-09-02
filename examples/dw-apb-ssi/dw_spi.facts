@@ -44,7 +44,6 @@ structs:
       syscon: "struct regmap *"
       spi_mst: "void *"
 constants:
-  IRQ_NOTCONNECTED: 0x80000000
   DW_PSSI_ID: 0x0
   DW_HSSI_ID: 0x1
   DW_HSSI_102A: 0x3130322a
@@ -121,8 +120,132 @@ callbacks:
   dev_pm_ops.resume: dw_spi_mmio_resume
   dev_pm_ops.restore: dw_spi_mmio_resume
   dev_pm_ops.thaw: dw_spi_mmio_resume
+  of_device_id.data: dw_spi_elba_init
   platform_driver.probe: dw_spi_mmio_probe
   platform_driver.remove: dw_spi_mmio_remove
+callback_signatures:
+  dw_spi.transfer_handler:
+    type: "enum irqreturn (*)(struct dw_spi *)"
+    return_type: "enum irqreturn"
+    params:
+      - "struct dw_spi *"
+    variadic: false
+  spi_controller_mem_ops.adjust_op_size:
+    type: "int (*)(struct spi_mem *, struct spi_mem_op *)"
+    return_type: "int"
+    params:
+      - "struct spi_mem *"
+      - "struct spi_mem_op *"
+    variadic: false
+  spi_controller_mem_ops.supports_op:
+    type: "_Bool (*)(struct spi_mem *, const struct spi_mem_op *)"
+    return_type: "_Bool"
+    params:
+      - "struct spi_mem *"
+      - "const struct spi_mem_op *"
+    variadic: false
+  spi_controller_mem_ops.exec_op:
+    type: "int (*)(struct spi_mem *, const struct spi_mem_op *)"
+    return_type: "int"
+    params:
+      - "struct spi_mem *"
+      - "const struct spi_mem_op *"
+    variadic: false
+  spi_controller.setup:
+    type: "int (*)(struct spi_device *)"
+    return_type: "int"
+    params:
+      - "struct spi_device *"
+    variadic: false
+  spi_controller.cleanup:
+    type: "void (*)(struct spi_device *)"
+    return_type: "void"
+    params:
+      - "struct spi_device *"
+    variadic: false
+  spi_controller.transfer_one:
+    type: "int (*)(struct spi_controller *, struct spi_device *, struct spi_transfer *)"
+    return_type: "int"
+    params:
+      - "struct spi_controller *"
+      - "struct spi_device *"
+      - "struct spi_transfer *"
+    variadic: false
+  spi_controller.handle_err:
+    type: "void (*)(struct spi_controller *, struct spi_message *)"
+    return_type: "void"
+    params:
+      - "struct spi_controller *"
+      - "struct spi_message *"
+    variadic: false
+  spi_controller.set_cs:
+    type: "void (*)(struct spi_device *, _Bool)"
+    return_type: "void"
+    params:
+      - "struct spi_device *"
+      - "_Bool"
+    variadic: false
+  spi_controller.target_abort:
+    type: "int (*)(struct spi_controller *)"
+    return_type: "int"
+    params:
+      - "struct spi_controller *"
+    variadic: false
+  dev_pm_ops.suspend:
+    type: "int (*)(struct device *)"
+    return_type: "int"
+    params:
+      - "struct device *"
+    variadic: false
+  dev_pm_ops.resume:
+    type: "int (*)(struct device *)"
+    return_type: "int"
+    params:
+      - "struct device *"
+    variadic: false
+  dev_pm_ops.freeze:
+    type: "int (*)(struct device *)"
+    return_type: "int"
+    params:
+      - "struct device *"
+    variadic: false
+  dev_pm_ops.thaw:
+    type: "int (*)(struct device *)"
+    return_type: "int"
+    params:
+      - "struct device *"
+    variadic: false
+  dev_pm_ops.poweroff:
+    type: "int (*)(struct device *)"
+    return_type: "int"
+    params:
+      - "struct device *"
+    variadic: false
+  dev_pm_ops.restore:
+    type: "int (*)(struct device *)"
+    return_type: "int"
+    params:
+      - "struct device *"
+    variadic: false
+  dw_spi.set_cs:
+    type: "void (*)(struct spi_device *, _Bool)"
+    return_type: "void"
+    params:
+      - "struct spi_device *"
+      - "_Bool"
+    variadic: false
+  platform_driver.probe:
+    type: "int (*)(struct platform_device *)"
+    return_type: "int"
+    params:
+      - "struct platform_device *"
+    variadic: false
+  platform_driver.remove:
+    type: "void (*)(struct platform_device *)"
+    return_type: "void"
+    params:
+      - "struct platform_device *"
+    variadic: false
 resources:
   resource0:
     acquisition: "devm_platform_ioremap_resource"

@@ -27,7 +27,7 @@ functional-state operations. Function roles are represented by callback and
 state bindings; the full \texttt{FunctionSpec} object is not serialized.
 
 The LLM never sees the original C source. The JSON is a generation-oriented
-projection, not a claim that every analysis fact crosses the boundary. The
+projection; not every analysis fact crosses the boundary. The
 prompt authorizes target-language expression of required evidence but forbids
 inventing or omitting device operations. Subsequent checks detect missing or
 mutated traceable register operations and compare exercised MMIO order; they
@@ -53,9 +53,11 @@ the Rust prompt requires the corresponding \texttt{tock-registers} layout and
 bitfield macros. These rules constrain target adaptation but do not replace
 the evidence as the source of device operations.
 
-The current implementation invokes a configurable endpoint through
-\texttt{tools/pi/pi\_synth.sh}; the bridge interface admits any endpoint that
-accepts a prompt and returns text. Swapping models does not change the stated
+The bridge is implemented against any OpenAI-compatible chat endpoint
+through a LangChain-based client; the model identifier, endpoint, and
+sampling parameters are project configuration and are not fixed by the
+framework. The bridge interface itself admits any endpoint that accepts
+a prompt and returns text. Swapping models does not change the stated
 acceptance criteria: different candidates face the same compile, receipt, and
 trace checks.
 
@@ -238,22 +240,22 @@ The evaluation addresses five research questions:
 \begin{itemize}
 \item \textbf{RQ1 (Address resolution):} Among emitted addressable operations,
 what fractions are symbolic, fixed, or computed?
-\item \textbf{RQ1b (Layer contribution and external validity):} Which
+\item \textbf{RQ2 (Layer contribution and external validity):} Which
 properties does each extraction layer uniquely contribute, and does an
 independent third-party tool (CodeQL) agree with the combined result?
-\item \textbf{RQ2 (Extracted structure):} How many RMW patterns and branch
+\item \textbf{RQ3 (Extracted structure):} How many RMW patterns and branch
 conditions does the extractor report?
-\item \textbf{RQ3 (Baseline translation):} Do the deterministically generated
+\item \textbf{RQ4 (Baseline translation):} Do the deterministically generated
 harness, bare-metal, and Linux outputs compile?
-\item \textbf{RQ4 (Strict readiness):} Beyond compilation, do the generated
+\item \textbf{RQ5 (Strict readiness):} Beyond compilation, do the generated
 outputs satisfy the stated verification criteria (AST receipts, lowering
 reconciliation, and registration attestation)?
-\item \textbf{RQ5 (End-to-end validation):} Do generated drivers satisfy
+\item \textbf{RQ6 (End-to-end validation):} Do generated drivers satisfy
 runtime oracles and, for the LLM case study, the reported case-specific artifact
 checks?
 \end{itemize}
 
-\subsection{Contract Extraction Characteristics (RQ1--RQ2)}
+\subsection{Contract Extraction Characteristics (RQ1 and RQ3)}
 
 Table~\ref{tab:extraction} shows per-driver extraction metrics for a
 representative subset. Across all \EvalDrivers{} drivers, \reharness{}
@@ -266,14 +268,14 @@ distinct registers.
 \begin{table}[t]
 \centering
 \caption{Extraction results for representative drivers. Sym = symbolic
-addresses, Fixed = fixed offset, Comp = computed address, RMW = read-modify-
-write, Cond = branch conditions, Regs = distinct registers. The subset spans
+addresses, Fixed = fixed offset, Comp = computed address, NAddr = non-address
+operations (e.g., \texttt{DELAY}, \texttt{RETURN}), RMW = read-modify-
+write, Cond = branch conditions, Regs = distinct registers. Sym+Fixed+Comp+NAddr
+equals Ops in every row; \%Sym uses the addressable Sym+Fixed+Comp denominator.
+The subset spans
 the QEMU-validated drivers (ftgpio010, edu), the most condition-heavy driver
 (virtio\_mmio), and the extremes of the symbolic-rate range; per-driver rows
-for all \EvalDrivers{} drivers are in the versioned matrix artifact. In the
-total row, Ops includes \EvalUnknown{}-unknown plus 14 non-address operations,
-so Sym+Fixed+Comp (471) is the addressable denominator of \%Sym; per-driver
-rows have no non-address operations.}
+for all \EvalDrivers{} drivers are in the versioned matrix artifact.}
 \label{tab:extraction}
 \resizebox{\columnwidth}{!}{\ExtractionResultsTable}
 \end{table}
@@ -282,12 +284,10 @@ The symbolic rate of \EvalSymbolicPct{} shows that preprocessing records and
 flow-sensitive dataflow recover names for most emitted addressable operations.
 The remaining emitted accesses are classified as \EvalFixed{} direct numeric
 offsets or \EvalComputed{} runtime expressions for indexed register banks.
-The aggregate has 471 addressable and 14 non-address emitted operations; the
-zero unknown count (\EvalUnknown{}) is an internal provenance count, not
-evidence that no operations were missed.
-These are internal characterization metrics, not precision or recall against a
-manually labeled ground truth; an access missed before emission would not
-appear in the unknown count.
+The aggregate has 471 addressable and 14 non-address emitted operations. The
+zero unknown count (\EvalUnknown{}) is an internal provenance count, not a
+precision or recall measurement against a manually labeled ground truth: an
+access missed before emission would not appear in it.
 
 The gpio-ftgpio010 and gpio-cadence drivers achieve 100\% symbolic rates
 because all their register offsets are defined through preprocessor macros
@@ -295,8 +295,10 @@ that the MacroTable resolves. The edu driver has the lowest symbolic rate
 (60\%) because two of its five accesses use fixed numeric offsets in the
 original source. virtio\_mmio exercises the most complex extraction: 59
 operations across 44 conditions, reflecting the virtio configuration-space
+accessors, whose width and offset are selected at runtime and therefore
+resist static name resolution.
 
-\subsection{Layer Ablation and Third-Party Cross-Validation (RQ1b)}
+\subsection{Layer Ablation and Third-Party Cross-Validation (RQ2)}
 \label{sec:ablation}
 
 The IR-primary architecture (Section~3.3) separates two concerns: the
@@ -320,7 +322,7 @@ Configuration & Recall & Named-fixed/op & Quality & Time \\
 \midrule
 AST-only & 0.982 & 0.0 / 27.0 & 0.878 & 7.7\,s \\
 IR-only & 0.450 & 4.3 / 12.3 & 0.795 & 0.3\,s \\
-Hybrid (default) & \textbf{0.982} & 3.9 / 30.9 & \textbf{0.894} & $+$0.3\,s \\
+Hybrid (default) & \textbf{0.982} & 3.9 / 30.9 & \textbf{0.894} & 8.0\,s \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -332,13 +334,13 @@ Second, \emph{recall is preserved only by the AST supplement}: single-TU IR
 alone reaches 0.450 because library-mediated accesses (GPIO generic
 callbacks, SDHCI accessors) never appear in the driver's own translation
 unit. Third, the hybrid matches AST-only recall while improving quality
-(named addresses feed the resolution component) and adds 0.3\,s of IR
-analysis on top of the cached AST pass.
+(named addresses feed the resolution component) and completes in 8.0\,s,
+the cached AST pass plus 0.3\,s of IR analysis.
 
-\textbf{Cross-validation.} An independent CodeQL query (function-call match
-on the accessor family, run over databases created with the same Kbuild
-contexts) agrees with the combined extraction on \emph{206 of 209}
-line-identified sites across the 11 database-capable drivers. The three
+\textbf{Cross-validation.} An independent CodeQL query --- built over
+databases with the same Kbuild contexts --- matches function calls in
+the accessor family and agrees with the combined extraction on \emph{206
+of 209} line-identified sites across the 11 database-capable drivers. The three
 divergences are the same three lines in the ahci driver that both tools
 miss: a ThunderX errata handler gated by \texttt{\#ifdef CONFIG\_ARM64},
 which the pinned x86 configuration compiles out. The two tools'
@@ -375,12 +377,15 @@ integration line shares; the aggregate is 9.5\% device-core and 90.5\%
 integration.}
 \end{figure}
 
-\subsection{Translation and Strict Readiness (RQ3--RQ4)}
+\subsection{Translation and Strict Readiness (RQ4 and RQ5)}
 
 Table~\ref{tab:readiness} reports readiness metrics for the representative
-subset (selection criteria as in Table~\ref{tab:extraction}). Under the frozen
-retired deterministic-emitter baseline (superseded by LLM-only
-synthesis; the emitter was removed from the tree), the harness backend
+subset (selection criteria as in Table~\ref{tab:extraction}). The counts in
+this subsection were produced by the rule-based emitters of the deterministic
+baseline; those emitters have since been retired from the tree in favor of
+LLM-only emission, so the numbers describe the frozen baseline recorded in
+the versioned matrix artifact rather than the current default path. Under
+that baseline, the harness backend
 compiles for \HarnessCompileCount{}/\EvalDrivers{} drivers, the bare-metal
 backend for \BaremetalCompileCount{}/\EvalDrivers{}, and the Linux backend
 for \LinuxCompileCount{}/\EvalDrivers{}. All three backends compile the
@@ -581,15 +586,28 @@ Makefile builds successfully against the pinned kernel tree (indicated by
 $\checkmark^{\dagger}$ in the table). The latter is a build-integrity check on
 the original module and is not a semantic validation of the generated driver.
 
-\subsection{Runtime and End-to-End LLM Validation (RQ5)}
+\subsection{Runtime and End-to-End LLM Validation (RQ6)}
 
 Two QEMU experiments check concrete runtime behavior of deterministically
-generated drivers. Neither experiment invokes an LLM; both use the
-deterministic-emitter baseline (restored as an explicit in-tree mode,
-\texttt{REHARNESS\_GENERATION=rules}, so the reported numbers are regenerable).
-The QEMU suite currently attempts exactly these two experiments; no other
-corpus driver has a validated runtime manifest, so 2/2 reflects the attempted
-denominator rather than a corpus-wide pass rate.
+generated drivers. Neither experiment invokes an LLM: both were produced by
+the rule-based emitters of the deterministic baseline at the frozen commit
+recorded in the versioned QEMU artifact, which pins the kernel-image
+SHA-256, per-experiment manifest digests, and driver source hashes. Because
+the emitters have since been retired from the tree, these numbers document
+the deterministic baseline rather than the current default generation path.
+The versioned QEMU artifact records \QEMURecordedExperiments{}
+generated-driver experiments from this baseline. The two reported here, edu
+and gpio-ftgpio010, are the only ones validated by structured oracles
+(value checks and RIS-derived trace matching). The other
+\QEMUProbeExperiments{} (\QEMUProbeNames{}) are probe-level runs whose
+manifests define no exercised-call oracle: the e1000 and usb-storage
+modules boot and pass their guest functional tests, with injected
+function-entry probes covering \QEMUProbeNicCoverage\% and
+\QEMUProbeUsbCoverage\% of generated functions (the e1000 run additionally
+fails its unload step), while the e1000e module fails its guest exerciser.
+\QEMUUnexecutedManifests{} further manifests (\QEMUUnexecutedNames{}) are
+versioned but were not executed. The 2/2 structured-oracle pass rate thus
+has its denominator set by oracle availability, not by selective reporting.
 
 \textbf{QEMU edu (PCI).} The deterministic PCI backend generates a
 miscdevice providing positional reads and writes over the mapped BAR. The
@@ -608,12 +626,42 @@ passes (\texttt{\FTQEMUOracle}) with \FTQEMUModuleCoverage{} module coverage,
 \FTQEMUCallCoverage{} call coverage, \FTQEMUOpCoverage{} operation coverage,
 and \FTQEMURegisterCoverage{} register coverage.
 
-These experiments validate two complementary properties: concrete read/write
-\emph{values} on a modeled PCI device, and access-order and offset
-\emph{preservation} across a Linux platform-driver probe and exercised
-subsystem callbacks. Together they show agreement with two exercised protocol
-slices: concrete values on edu and per-callback access order on
-gpio-ftgpio010.
+Together, the experiments validate two complementary properties on exercised
+protocol slices: concrete read/write values on the modeled PCI device, and
+access-order and offset preservation across a Linux platform-driver probe and
+its exercised subsystem callbacks.
+
+\textbf{Closed-loop LLM record.} Beyond the deterministic baseline, the
+repository versions a closed-loop record for \ClosedLoopCases{}
+source-build experiments in which the LLM bridge emits the candidate, the
+pinned Kbuild compiles it, and the same guest exerciser judges acceptance
+under bounded repair. \ClosedLoopAccepted{} of \ClosedLoopCases{}
+(\ClosedLoopAcceptedNames{}) is accepted: the edu candidate passes the
+value-level oracle after \EduRepairRounds{} repair rounds and covers
+\EduCandidateFnCov{} of its generated functions at runtime, where the pinned
+in-tree baseline module covers \EduBaselineFnCov{}. The gpio-ftgpio010
+closed-loop candidate is rejected after \FtRepairRounds{} repair rounds---no
+candidate satisfied the runtime oracle within the bound, and the rejection is
+reported rather than retried under a different model. These are single-trial,
+single-endpoint records without repeated sampling; they complement, and do
+not replace, the deterministic-baseline QEMU numbers above.
+
+\textbf{Scoped direct-translation baseline.} To isolate the effect of the
+evidence boundary on the same task, we also ran an unconstrained baseline:
+the raw pinned DesignWare sources (core and header, \DwSourceLines{} source
+lines in total for the three files) were given to the \emph{same} model with
+a minimal ``translate this driver to a host harness'' prompt, and the
+candidate was passed through the identical verification gate and the same
+pattern items of the DesignWare checklist. The baseline candidate passes all
+\DirectLlmPatternTotal{} presence-and-order pattern items yet is rejected by
+the gate at its first check (\DirectLlmFirstFail{}), because unconstrained
+emission compiles against neither the harness interface contract nor the
+receipt and anchor obligations. The pattern items alone are therefore
+necessary but not sufficient: they reward textual presence of the right
+register idioms, while acceptance additionally demands the per-operation
+receipt accounting and exercised-path trace that the constrained pipeline
+enforces. Like the closed-loop record, this is a single-trial,
+single-endpoint comparison, not a repeated-sample study.
 
 \paragraph{End-to-end LLM translation: DesignWare APB SSI.}
 \label{sec:dw-apb-ssi}
@@ -628,8 +676,17 @@ verification checks.
 
 \textbf{IR-enhanced extraction.} Header-defined accessors and interrupt-mask
 helpers hide the underlying MMIO from a source-file-only AST pass. Merging IR
-evidence by function and offset yields 28 modules and 244 evidenced operations
-covering control, interrupt, and FIFO registers.
+evidence by function and offset yields \DWRISModules{} modules and
+\DWRISOps{} evidenced operations covering control, interrupt, and FIFO
+registers. The artifact's own accounting
+block records \DWAccountingSource{} source accesses with \DWAccountingEmitted{}
+emitted, \DWAccountingUnaccounted{} unaccounted, and
+\texttt{strict\_complete} set; its Z3 path validation reports
+\DWPathsSatisfiable{} satisfiable, \DWPathsInfeasible{} infeasible, and
+\DWPathsUnreachable{} intentionally unreachable predicate paths; and the IR
+layer contributes \DWIROps{} operations with \DWIRMissingOffsets{} missing
+offsets at \DWIRCoveragePct\% per-source coverage, all machine-checked in the
+versioned \texttt{.ris} artifact and its formal JSON companion.
 
 \textbf{Functional-state preservation.} The writer preserves the
 \texttt{VALUE}$\rightarrow$cursor \texttt{STATE}$\rightarrow$FIFO
@@ -640,22 +697,54 @@ branches.
 
 \textbf{Four-backend generation.} All four backends---harness C, bare-metal C,
 Linux kernel module, and Rust \texttt{no\_std} with \texttt{tock-registers}---were
-generated by the LLM bridge from this single \rislang{} specification. checked artifacts are audited by a versioned, machine-checked 18-item
-artifact checklist (\texttt{qa/verification/dw\_apb\_ssi\_checklist.py})
-covering per-backend compilation, chip-select assertion in \texttt{set\_cs},
-interrupt mask/unmask sequences, transfer configuration, and the ordered tx/rx
-buffer data flow described above. The checklist result is reported honestly:
-the three C backends pass all control, configuration, register-order, and
-C data-flow items; the current versioned Linux artifact fails strict Kbuild
-compilation against the pinned kernel (an emitted struct member is missing),
-and the Rust artifact fails the strict-crate build and the six buffer
-data-flow items because its emission binds buffer reads to constants rather
-than dereferencing software buffers. This is an artifact-level case study
-rather than a repeated-sampling study or a held-out evaluation. The checklist
-is case-specific and does not establish whole-driver semantic equivalence. The
-artifacts, checklist script, and per-item results (including open failures)
-are versioned under \texttt{examples/dw-apb-ssi/} and
-\texttt{research/experiments/results/dw-apb-ssi-checklist.json}.
+generated from this single \rislang{} specification by the same LLM bridge
+(model \LlmModelId{}, temperature \LlmTemperature{}, endpoint host
+\LlmEndpointHost{}; run metadata versioned in
+\path{research/experiments/results/llm-run-metadata.json}). Raw emission is
+incomplete: the receipt-accounting oracle reports dropped operations on every
+backend, so each artifact passes through two bounded repair loops---one fed
+by the missing/duplicate operation list with the authoritative RIS
+statements, one by exact compiler diagnostics---before installation. The
+harness required \DwHarnLoweringRounds{} receipt-repair and
+\DwHarnRepairRounds{} compile-repair rounds, the bare-metal artifact
+\DwBareLoweringRounds{} and \DwBareRepairRounds{}, the Linux module
+\DwLinuxLoweringRounds{} and \DwLinuxRepairRounds{}, and the Rust artifact
+\DwRustLoweringRounds{} and \DwRustRepairRounds{}; post-repair receipt
+completeness and compilability per backend are recorded alongside every
+round in \path{research/experiments/results/artifact-repair-log.json}. The
+artifacts are audited by the versioned, machine-executable 18-item artifact
+checklist covering per-backend compilation, chip-select assertion in
+\texttt{set\_cs}, interrupt mask/unmask sequences, transfer configuration,
+and the ordered tx/rx buffer data flow; \DWChecklistPassed{} of 18 items
+pass, with per-item, per-backend evidence (including open failures) in
+\path{research/experiments/results/dw-apb-ssi-checklist.json}. This is an
+artifact-level case study rather than a repeated-sampling study or a
+held-out evaluation. The checklist is case-specific and does not establish
+whole-driver semantic equivalence; acceptance itself is the gate's job, and
+the mutation study below replays that gate on the installed harness pair.
+The artifacts and checklist script are versioned under
+\path{examples/dw-apb-ssi/}.
+
+\textbf{Gate mutation study.} The checklist audited what the artifacts
+contain; a complementary study asks whether the verification gate would
+\emph{reject} the failure modes that motivated it. Starting from the
+repaired harness artifact (header and source replayed through the
+unchanged gate, so the artifact's own acceptance status is measured rather
+than assumed), we inject five single-fault mutants---an invented write to
+an unmapped offset, removal of the interrupt status read, a 32-to-16-bit
+width shrink on a status read, an early advance of the receive cursor, and
+a forged variant that keeps a syntactically well-formed receipt and anchor
+label while deleting the hardware access inside it---and replay the
+unchanged gate on each mutant. \GateMutationsRejected{} of
+\GateMutationsApplied{} mutants are rejected (first failing check recorded
+per mutant); the pristine artifact itself is reported as
+rejected=\GatePristineRejected{} under the same replay, so any undetected
+mutant is visible as the difference between these two counts rather than
+hidden behind a passing baseline. The forged
+receipt mutant matters most: it shows that the accounting check binds
+receipts to the primitive calls they annotate, not merely to their presence.
+Results are versioned in
+\path{research/experiments/results/dw-gate-mutation-study.json}.
 
 Two observations from this case study shaped the framework design. First,
 IR evidence is a supplement, not a replacement: in this case the IR pass

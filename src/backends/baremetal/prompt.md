@@ -13,11 +13,16 @@ Rules:
 - Define a device private struct with uintptr_t base.
 - Define static inline mmio read/write helpers using volatile pointer dereference.
 - Export one function per module, each taking a pointer to the device struct.
-- For every read, write, or read-modify-write operation, emit the exact supplied
-  `REHARNESS_RIS_OP` receipt immediately before its implementation, followed by
-  a matching direct compound AST anchor in the form
-  `__rh_op_<op_id>: { ... }`. The receipt and anchor must use the same op_id;
-  emit each operation exactly once and copy its supplied digest.
+- For every read, write, or read-modify-write operation, emit the receipt
+  comment verbatim in this exact form (copy `op_id`, `kind`, and `digest`
+  from the RIS op line; status is always `lowered`):
+  `/* REHARNESS_RIS_OP id=<op_id> kind=<Read|Write|ReadModifyWrite> status=lowered digest=<digest> */`
+  Immediately after the receipt comment, emit the matching AST anchor
+  `__rh_op_<op_id>: { ... }` with the lowered primitive(s) inside its direct
+  compound statement. The receipt comment and the anchor label must use the
+  same op_id. The receipt is a COMMENT: never write it as a macro call
+  `REHARNESS_RIS_OP(...)`, as a JSON comment, or in any other spelling.
+  Emit each operation exactly once; do not invent op_ids or digests.
 - No main() function - this is a library.
 - Add #ifdef REHARNESS_BAREMETAL_ORACLE guard with a main() for testing.
 - Address fidelity: every RIS address expression is a source-derived C

@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""Gate mutation study: does the verification gate reject the motivating
+fault classes advertised in the paper's introduction?
+
+For a pinned generated harness artifact, the study runs the unchanged
+backend verification pipeline (compile + run + trace subsequence, receipt
+accounting, AST leaf anchors, lowering plan) on the pristine artifact and
+on four text-level mutations that mirror the motivating faults:
+
+  M1 extra_write       an invented MMIO write to an unmapped offset
+                       (the ``DMA_CMD|DMA_IRQ`` class of hallucination)
+  M2 drop_irq_ack      the interrupt status/acknowledge read is deleted
+  M3 width_shrink      a 32-bit register access is narrowed to 16 bits
+  M4 reorder_rx_cursor the rx buffer cursor advances before the FIFO value
+                       is stored into the buffer
+
+Each mutant is rejected iff any gate check fails; the first failing check
+is recorded.  A mutant that passes is reported as passing -- that is a
+measured gate boundary, not a study failure.
+
+Usage: gate_mutation_study.py <harness.c> [--manifest <multisource.json>]
+                              [--out <results.json>]
+                              [--with-header <header.h>]
+
+--with-header concatenates the versioned header (minus its include guard)
+ahead of the source body so a header/source pair artifact can be replayed
+through the single-file gate; mutations are applied to the combined text.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import pickle
+import re
+import sys
+import time
+from pathlib import Path
+from types import SimpleNamespace
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+for entry in (str(ROOT / "src"), str(ROOT / "qa"), str(HERE)):
+    if entry not in sys.path:
+        sys.path.insert(0, entry)
+
+CACHE = ROOT / "artifacts" / "cache" / "gate-mutation-extraction.pkl"
+DEFAULT_OUT = (ROOT / "research" / "experiments" / "results"
+               / "dw-gate-mutation-study.json")
+
+
+def _load_extraction(manifest: str):
+    """Run (or reload from cache) the DW extraction used by the gate."""
+    from extractor.extractor import ExtractorConfig, extract_ris
+
+    key = (manifest,)
+    if CACHE.is_file():
+        with open(CACHE, "rb") as fh:
+            cached_key, res = pickle.load(fh)
+        if cached_key == key:
+            return res
+    cfg = ExtractorConfig(
+        source=manifest,
+        output=str(ROOT / "artifacts" / "cache" / "gate-mutation.ris"),
+        compile_context_mode="auto",
+        ir_mode="auto",
+    )
+    res = extract_ris(cfg)
+    CACHE.parent.mkdir(parents=True, exist_ok=True)
+    with open(CACHE, "wb") as fh:
+        pickle.dump((key, res), fh)
+    return res
+
+
+# -- mutations --------------------------------------------------------------
+
+def mut_extra_write(text: str) -> str | None:
+    """M1: invented write to an offset no contract operation maps."""
+    anchor = re.search(r"\n([ \t]*)[^\n;]*?" + _DR_WRITE + r";", text)
+    if anchor is None:
+        return None
+    indent = anchor.group(1)
+    invented = (f"\n{indent}/* M1: invented DMA-command write (unmapped "
+                f"offset) */\n{indent}harness_write32(0x3, base + 0x9c);")
+    return text[:anchor.end()] + invented + text[anchor.end():]
+
+
+_STATUS_REG = r"DW_SPI_(?:ISR|RISR)"
+
+_DR_WRITE = (r"(?:harness_write32\([^;\n]*(?:DW_SPI_DR|regs_base \+ 0x0)"
+             r"[^;\n]*\)"
+             r"|(?:dw_write_io_reg|dw_read_io_reg)\([^;\n]*DW_SPI_DR[^;\n]*\))")
+
+
+def _drop_read_block(text: str, register: str) -> str | None:
+    """Remove the anchored read block (receipt + anchor + statement)."""
+    pat = re.compile(
+        r"[ \t]*/\* REHARNESS_RIS_OP[^*]*\*/\s*\n"
+        r"[ \t]*__rh_op_\S+:\s*\{[^{}]*?"
+        + register + r"[^{}]*?\}\s*\n?",
+        re.S)
+    if pat.search(text):
+        return pat.sub("", text, count=1)
+    line_pat = re.compile(
+        r"^[ \t]*\S[^\n]*" + register + r"[^\n]*\n", re.M)
+    if line_pat.search(text):
+        return line_pat.sub("", text, count=1)
+    return None
+
+
+def mut_drop_irq_ack(text: str) -> str | None:
+    """M2: the interrupt status read disappears (receipt goes with it)."""
+    return _drop_read_block(text, _STATUS_REG)
+
+
+def mut_width_shrink(text: str) -> str | None:
+    """M3: a 32-bit status read narrows to 16 bits."""
+    target = re.search(
+        r"harness_read32\(([^)]*" + _STATUS_REG + r")\)", text)
+    if target is None:
+        return None
+    return (text[:target.start()] + "harness_read16("
+            + target.group(1) + ")" + text[target.end():])
+
+
+_RX_STORE = (r"([ \t]*)\*\s*\(u?int8_t\s*\*\)[^;\n=]*?"
+             r"([\w]+(?:\.\w+)*(?:->\s*rx)?)\s*(?:\(void\s*\*\))?\s*=")
+_RX_ADV = (r"([ \t]*)([\w]+(?:\.\w+)*(?:->\s*rx)?)\s*(?:\+=|=\s*\(void \*\)"
+           r"\s*\(\(uintptr_t\)[^;\n]*?\+\s*(?:[\w.]+(?:->\s*)?)?n_bytes)")
+
+
+def mut_reorder_rx_cursor(text: str) -> str | None:
+    """M4: rx cursor advances before the FIFO value is stored."""
+    store = re.search(_RX_STORE + r"[^;\n]*;", text)
+    advance = re.search(_RX_ADV + r"[^;\n]*;", text)
+    if store is None or advance is None:
+        return None
+    indent = store.group(1)
+    adv_full = advance.group(0).strip()
+    moved = (f"{indent}{adv_full}   /* M4: advanced early */\n"
+             f"{indent}{store.group(0).strip()}")
+    out = text[:store.start()] + moved + text[store.end():]
+    out = out[:advance.start()] + out[advance.end():]
+    return out
+
+
+def mut_receipt_without_semantics(text: str) -> str | None:
+    """M5: keep a well-formed receipt and anchor label, delete the actual
+    hardware access inside the anchor block."""
+    pat = re.compile(
+        r"(__rh_op_\S+:\s*\{)([^{}]*?harness_read32\([^)]*" + _STATUS_REG
+        + r"\)[^{}]*?)(\})")
+    m = pat.search(text)
+    if m is None:
+        return None
+    gutted = re.sub(
+        r"[ \t]*harness_read32\([^)]*" + _STATUS_REG + r"\);", "",
+        m.group(2))
+    return text[:m.start(2)] + gutted + text[m.end(2):]
+
+
+MUTATIONS = [
+    ("pristine", lambda t: t),
+    ("M1_extra_write", mut_extra_write),
+    ("M2_drop_irq_ack", mut_drop_irq_ack),
+    ("M3_width_shrink", mut_width_shrink),
+    ("M4_reorder_rx_cursor", mut_reorder_rx_cursor),
+    ("M5_receipt_without_semantics", mut_receipt_without_semantics),
+]
+
+
+# -- gate runner ------------------------------------------------------------
+
+def _run_gate(res, harness_text: str, workdir: Path) -> dict:
+    """Run the unchanged backend pipeline on injected harness text."""
+    import backends.registry as registry
+    from backends.pipeline import run_backend_pipeline
+
+    stub = SimpleNamespace(generate=lambda *a, **k: harness_text,
+                           GEN_KWARGS=[])
+    workdir.mkdir(parents=True, exist_ok=True)
+    original = registry.list_backends
+    registry.list_backends = lambda: {"harness": stub}
+    try:
+        # third argument is the driver manifest path, not a run label
+        result = run_backend_pipeline(
+            res, str(workdir),
+            "benchmarks/drivers/multisource/dw-apb-ssi.json")
+    finally:
+        registry.list_backends = original
+    return result["gen_results"]["harness"]
+
+
+_CHECK_FIELDS = (
+    ("compile", lambda gr: gr.get("compiled") is True),
+    ("receipt_accounting", lambda gr: gr.get("backend_lowering", {})
+        .get("complete") is True),
+    ("ast_leaf_anchors", lambda gr: gr.get("backend_ast_leaf_complete")
+        is True),
+    ("lowering_plan", lambda gr: gr.get(
+        "backend_lowering_plan_strict_complete") is True),
+    ("runtime_trace", lambda gr: gr.get("trace_passed") is True),
+)
+
+
+def _verdict(gr: dict) -> dict:
+    checks = {name: bool(ok(gr)) for name, ok in _CHECK_FIELDS}
+    first_fail = next((n for n, v in checks.items() if not v), None)
+    return {
+        "checks": checks,
+        "rejected": first_fail is not None,
+        "first_failing_check": first_fail,
+        "lowering_detail": {
+            key: gr.get("backend_lowering", {}).get(key)
+            for key in ("missing", "duplicate", "digest_mismatch",
+                        "kind_mismatch", "rejected")},
+        "ast_detail": {
+            key: (gr.get("backend_ast_leaf") or {}).get(key)
+            for key in ("missing_anchors", "primitive_mismatches",
+                        "unanchored_primitives", "duplicate_anchors")},
+        "result_line": gr.get("result_line"),
+    }
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("harness_c")
+    ap.add_argument("--manifest", default=str(
+        ROOT / "benchmarks" / "drivers" / "multisource" / "dw-apb-ssi.json"))
+    ap.add_argument("--out", default=str(DEFAULT_OUT))
+    ap.add_argument("--with-header", default=None,
+                    help="prepend this header (guard stripped) to the source "
+                         "body so a header/source pair replays through the "
+                         "single-file gate")
+    args = ap.parse_args()
+
+    text = Path(args.harness_c).read_text(encoding="utf-8")
+    if args.with_header:
+        header = Path(args.with_header).read_text(encoding="utf-8")
+        # strip the include guard (#ifndef ... first #endif) and any
+        # self-include of the generated header, then inline the remainder
+        lines = header.split("\n")
+        guard = next((i for i, ln in enumerate(lines)
+                      if ln.strip().startswith("#ifndef")), None)
+        if guard is not None:
+            close = next(j for j in range(guard + 1, len(lines))
+                         if lines[j].strip().startswith("#endif"))
+            lines = lines[:guard] + lines[close + 1:]
+        header_body = "\n".join(lines)
+        text = re.sub(r'^[ \t]*#[ \t]*include[ \t]*"'
+                      r'[\w./+-]+"\n?', "", text, count=1)
+        text = header_body + "\n" + text
+        print(f"combined with header {args.with_header} "
+              f"({len(text.splitlines())} lines)")
+    print("extracting (cached after first run)...")
+    res = _load_extraction(args.manifest)
+
+    rows = []
+    for name, fn in MUTATIONS:
+        mutated = fn(text)
+        if mutated is None:
+            rows.append({"mutation": name, "applied": False,
+                         "note": "pattern not found in artifact"})
+            print(f"[skip] {name}: pattern not found")
+            continue
+        workdir = (ROOT / "artifacts" / "cache" / "gate-mutation"
+                   / name)
+        t0 = time.time()
+        try:
+            gr = _run_gate(res, mutated, workdir)
+            row = {"mutation": name, "applied": True, **_verdict(gr)}
+        except Exception as exc:  # gate itself exploded: counts as reject
+            row = {"mutation": name, "applied": True,
+                   "rejected": True, "first_failing_check": "gate_exception",
+                   "exception": str(exc)[-500:]}
+        row["seconds"] = round(time.time() - t0, 1)
+        rows.append(row)
+        verdict = ("REJECTED by " + str(row.get("first_failing_check"))
+                   if row.get("rejected") else "PASSED gate")
+        print(f"[{'x' if row.get('rejected') else ' '}] {name}: {verdict}")
+
+    passed_mutants = [r["mutation"] for r in rows
+                      if r.get("applied") and not r.get("rejected")]
+    report = {
+        "schema": 1,
+        "artifact": str(Path(args.harness_c).resolve()),
+        "description": ("Verification-gate mutation study on the generated "
+                        "harness artifact; motivating fault classes from "
+                        "the paper's introduction"),
+        "mutations_total": sum(1 for r in rows if r.get("applied")),
+        "mutations_rejected": sum(1 for r in rows
+                                  if r.get("applied") and r.get("rejected")),
+        "mutations_passed_gate": passed_mutants,
+        "results": rows,
+    }
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    print(f"{report['mutations_rejected']}/{report['mutations_total']} "
+          f"mutants rejected -> {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

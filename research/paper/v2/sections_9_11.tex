@@ -44,7 +44,7 @@ lifecycles, concurrency, and physical SPI validation remain open.
 
 Parsing kernel translation units dominates runtime (measured per-driver
 extraction takes \EvalSecondsMin--\EvalSecondsMax{} seconds, median
-\EvalSecondsMedian{}, on the evaluation machine; the three multi-source
+\EvalSecondsMedian{}, on the evaluation machine; the multi-source
 pipelines take 28.5--\MultiSourceDwcTwoSeconds{} seconds each). The
 multi-source evaluation covers \MultiSourceTUs{} units and
 \MultiSourceLines{} lines; whole-kernel analysis would need persistent caches
@@ -56,7 +56,7 @@ QEMU covers two deterministic protocol slices. The corpus lacks network
 drivers and physical-hardware validation, and the single LLM case lacks model
 and repeated-trial metadata. RIS quality, synthesis eligibility, and readiness
 are internal metrics, not precision/recall. Required follow-up evidence is
-listed in \texttt{EXPERIMENT\_DEBT.md}.
+listed in the experiment-debt ledger versioned with the artifact.
 
 A frozen zero-shot holdout (12 drivers excluded from all implementation
 work, enforced by an in-tree generalization guard) is versioned with the
@@ -67,6 +67,21 @@ compiling on all three deterministic backends, strict readiness of
 cases strict on all backends and \ZeroShotHardwareCases{} cases containing
 modeled hardware interactions; these results are not yet integrated into the
 main evaluation and remain an artifact-side generalization datapoint.
+
+The holdout's higher strict-readiness rate than the development corpus
+(\ZeroShotHarnessStrict{}/\ZeroShotCases{} versus
+\HarnessReadyCount{}/\EvalDrivers{}) is a composition effect rather than a
+leakage signal. Strict failures in both sets concentrate in drivers whose
+subsystem models are absent or incomplete: the development corpus contains
+five AHCI storage drivers and three clock drivers that are all blocked
+(0/8 strict), while the holdout samples no AHCI driver and its three clock
+and one virtio cases fail with the same call-context and effective-plan
+blockers (0/4). Within the GPIO and SDHCI classes that both sets sample, the
+residual difference tracks driver complexity: the development corpus's
+failing SDHCI cases are the far-difficulty ColdFire and AT91 variants, and
+its failing GPIO cases carry unsafe computed register addresses
+(\emph{mb86s7x}) or inlined-helper definitions without proven call context
+(\emph{sodaville}, \emph{cadence}).
 
 % =====================================================================
 %  CONCLUSION
@@ -88,7 +103,7 @@ artifact.
 % =====================================================================
 %  BIBLIOGRAPHY
 % =====================================================================
-\vspace{-2.0em}
+
 \begin{thebibliography}{99}
 \tiny
 \setlength{\itemsep}{0pt}
@@ -150,7 +165,7 @@ P.~Jana, P.~Jha, H.~Ju, G.~Kishore, A.~Mahajan, and V.~Ganesh.
 \bibitem{yu2005devil}
 Y.~Yu, M.~Zhu, and S.~Chen.
 \newblock New approach for device driver development -- {Devil+} language.
-\newblock In \emph{Proc. 5th Int'l Conf. on Embedded Software and Systems}, 2005, pp.~418--422.
+\newblock In \emph{Int'l Conf.\ on Embedded Software and Systems (ICESS 2004), Revised Selected Papers}, LNCS. Springer, 2005, pp.~418--422.
 \newblock doi:10.1007/11535409\_60.
 
 \bibitem{lattner2004llvm}
@@ -181,6 +196,23 @@ N.~P.~Lopes, J.~Lee, C.-K.~Hur, Z.~Liu, and J.~Regehr.
 M.-A.~Lachaux, B.~Roziere, L.~Chanussot, and G.~Lample.
 \newblock Unsupervised translation of programming languages.
 \newblock arXiv:2006.03511, 2020.
+
+\bibitem{yang2025kernelgpt}
+C.~Yang, Z.~Zhao, and L.~Zhang.
+\newblock {KernelGPT}: Enhanced kernel fuzzing via large language models.
+\newblock In \emph{Proc. 30th ACM Int'l Conf. on Architectural Support for Programming Languages and Operating Systems (ASPLOS)}, 2025.
+\newblock doi:10.1145/3676641.3716022.
+
+\bibitem{kharlamova2025kernel}
+A.~Kharlamova et al.
+\newblock {LLM}-driven kernel evolution: Automating driver updates.
+\newblock arXiv:2511.18924, 2025.
+
+\bibitem{padioleau2007semantic}
+Y.~Padioleau, J.~Lawall, R.~R.~Hansen, and G.~Muller.
+\newblock Semantic patches: helping {Linux} evolution.
+\newblock In \emph{Testing: Academic and Industrial Conference, Practice and Research Techniques (TAICPART)}, 2007.
+\newblock doi:10.1109/TAICPART.2007.23.
 
 \bibitem{wang2021codet5}
 Y.~Wang, W.~Wang, S.~Joty, and S.~C.~H.~Hoi.

@@ -1,0 +1,1860 @@
+{
+  "class": "generic_mmio",
+  "functions": [
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "spi_controller.set_cs",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "dw_spi_set_cs",
+      "requires": [],
+      "ris_ref": "dw_spi_set_cs",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "enable",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-core.c:90"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "dw_spi.transfer_handler",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_RXFTLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_RXFTLR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_DR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_DR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "handles_interrupt()"
+        }
+      ],
+      "ensures": [
+        "interrupt_serviced"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_transfer_handler",
+      "requires": [],
+      "ris_ref": "dw_spi_transfer_handler",
+      "role": "interrupt_handler",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "dws",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-core.c:213"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "irq_handler.handler",
+      "context": "irq",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "handles_interrupt()"
+        }
+      ],
+      "ensures": [
+        "interrupt_serviced"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_irq",
+      "requires": [],
+      "ris_ref": "dw_spi_irq",
+      "role": "interrupt_handler",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "irq",
+            "type": "UInt"
+          },
+          {
+            "from_expr": null,
+            "name": "dev_id",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-core.c:251"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "spi_controller.transfer_one",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CTRLR0"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CTRLR0)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CTRLR1"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CTRLR1)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_BAUDR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_BAUDR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_RX_SAMPLE_DLY"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_RX_SAMPLE_DLY)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_DR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_DR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_TXFTLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_TXFTLR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_RXFTLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_RXFTLR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "configures_queue(queue)"
+        }
+      ],
+      "ensures": [
+        "queue_ready[queue] == true"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_transfer_one",
+      "requires": [],
+      "ris_ref": "dw_spi_transfer_one",
+      "role": "setup_queue",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "ctlr",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "transfer",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-core.c:416"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "spi_controller.handle_err",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "resets_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == RESET"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_handle_err",
+      "requires": [],
+      "ris_ref": "dw_spi_handle_err",
+      "role": "reset",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "ctlr",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "msg",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-core.c:478"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "spi_controller.target_abort",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "resets_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == RESET"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_target_abort",
+      "requires": [],
+      "ris_ref": "dw_spi_target_abort",
+      "role": "reset",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "ctlr",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-core.c:484"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "spi_controller_mem_ops.exec_op",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CTRLR0"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CTRLR0)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CTRLR1"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CTRLR1)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_BAUDR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_BAUDR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_RX_SAMPLE_DLY"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_RX_SAMPLE_DLY)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_DR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_DR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "dw_spi_exec_mem_op",
+      "requires": [],
+      "ris_ref": "dw_spi_exec_mem_op",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "mem",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "op",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-core.c:675"
+    },
+    {
+      "binds": [],
+      "callback_table": "spi_controller.setup",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_setup",
+      "requires": [],
+      "ris_ref": "dw_spi_setup",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-core.c:789"
+    },
+    {
+      "binds": [],
+      "callback_table": "spi_controller.cleanup",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "releases_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == OFF"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_cleanup",
+      "requires": [],
+      "ris_ref": "dw_spi_cleanup",
+      "role": "remove",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-core.c:825"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dwsmscc",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dwsmscc->spi_mst",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "dw_spi.set_cs",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "MSCC_SPI_MST_SW_MODE"
+          },
+          "kind": "reg",
+          "text": "writes_register(MSCC_SPI_MST_SW_MODE)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "dw_spi_mscc_set_cs",
+      "requires": [],
+      "ris_ref": "dw_spi_mscc_set_cs",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "enable",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-mmio.c:77"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dwsmscc",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dwsmscc->spi_mst",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "MSCC_SPI_MST_SW_MODE"
+          },
+          "kind": "reg",
+          "text": "writes_register(MSCC_SPI_MST_SW_MODE)"
+        },
+        {
+          "detail": {
+            "operation": "TransactionUpdate",
+            "selector": {
+              "Var": "MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL"
+            },
+            "transport": "regmap"
+          },
+          "kind": "transaction",
+          "text": "updates_transaction(regmap)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mscc_ocelot_init",
+      "requires": [],
+      "ris_ref": "dw_spi_mscc_ocelot_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:128"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dwsmscc",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dwsmscc->spi_mst",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "MSCC_SPI_MST_SW_MODE"
+          },
+          "kind": "reg",
+          "text": "writes_register(MSCC_SPI_MST_SW_MODE)"
+        },
+        {
+          "detail": {
+            "operation": "TransactionUpdate",
+            "selector": {
+              "Var": "MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL"
+            },
+            "transport": "regmap"
+          },
+          "kind": "transaction",
+          "text": "updates_transaction(regmap)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mscc_jaguar2_init",
+      "requires": [],
+      "ris_ref": "dw_spi_mscc_jaguar2_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:135"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "dw_spi.set_cs",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "operation": "TransactionWrite",
+            "selector": {
+              "Var": "SPARX5_FORCE_ENA"
+            },
+            "transport": "regmap"
+          },
+          "kind": "transaction",
+          "text": "writes_transaction(regmap)"
+        },
+        {
+          "detail": {
+            "operation": "TransactionWrite",
+            "selector": {
+              "Var": "SPARX5_FORCE_VAL"
+            },
+            "transport": "regmap"
+          },
+          "kind": "transaction",
+          "text": "writes_transaction(regmap)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "dw_spi_sparx5_set_cs",
+      "requires": [],
+      "ris_ref": "dw_spi_sparx5_set_cs",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "enable",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-mmio.c:148"
+    },
+    {
+      "binds": [],
+      "callback_table": null,
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mscc_sparx5_init",
+      "requires": [],
+      "ris_ref": "dw_spi_mscc_sparx5_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:174"
+    },
+    {
+      "binds": [],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_alpine_init",
+      "requires": [],
+      "ris_ref": "dw_spi_alpine_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:203"
+    },
+    {
+      "binds": [],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_hssi_init",
+      "requires": [],
+      "ris_ref": "dw_spi_hssi_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:219"
+    },
+    {
+      "binds": [],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_intel_init",
+      "requires": [],
+      "ris_ref": "dw_spi_intel_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:229"
+    },
+    {
+      "binds": [],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mountevans_imc_init",
+      "requires": [],
+      "ris_ref": "dw_spi_mountevans_imc_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:240"
+    },
+    {
+      "binds": [],
+      "callback_table": null,
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_canaan_k210_init",
+      "requires": [],
+      "ris_ref": "dw_spi_canaan_k210_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:255"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "dw_spi.set_cs",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "operation": "TransactionUpdate",
+            "selector": {
+              "Var": "ELBA_SPICS_REG"
+            },
+            "transport": "regmap"
+          },
+          "kind": "transaction",
+          "text": "updates_transaction(regmap)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "writes_config(offset)"
+        }
+      ],
+      "ensures": [],
+      "is_callback_entry": true,
+      "name": "dw_spi_elba_set_cs",
+      "requires": [],
+      "ris_ref": "dw_spi_elba_set_cs",
+      "role": "write_config",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "spi",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "enable",
+            "type": "UInt"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-mmio.c:276"
+    },
+    {
+      "binds": [],
+      "callback_table": "of_device_id.data",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_elba_init",
+      "requires": [],
+      "ris_ref": "dw_spi_elba_init",
+      "role": "init",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          },
+          {
+            "from_expr": null,
+            "name": "dwsmmio",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:296"
+    },
+    {
+      "binds": [
+        {
+          "from_expr": "dws",
+          "name": "dev",
+          "type": "DeviceState"
+        },
+        {
+          "from_expr": "dws->regs",
+          "name": "base",
+          "type": "MmioBase"
+        }
+      ],
+      "callback_table": "platform_driver.probe",
+      "context": "boot",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_TXFTLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_TXFTLR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CTRLR0"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CTRLR0)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CS_OVERRIDE"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CS_OVERRIDE)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "initializes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mmio_probe",
+      "requires": [
+        "resources_available"
+      ],
+      "ris_ref": "dw_spi_mmio_probe",
+      "role": "probe",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:313"
+    },
+    {
+      "binds": [],
+      "callback_table": "dev_pm_ops.suspend",
+      "context": "sleepable",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_BAUDR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_BAUDR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "suspends_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == SUSPENDED"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mmio_suspend",
+      "requires": [],
+      "ris_ref": "dw_spi_mmio_suspend",
+      "role": "suspend",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "dev",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:393"
+    },
+    {
+      "binds": [],
+      "callback_table": "dev_pm_ops.resume",
+      "context": "sleepable",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_IMR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_IMR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_SER"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SER)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_TXFTLR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_TXFTLR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CTRLR0"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CTRLR0)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_CS_OVERRIDE"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_CS_OVERRIDE)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "resumes_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == READY"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mmio_resume",
+      "requires": [],
+      "ris_ref": "dw_spi_mmio_resume",
+      "role": "resume",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "dev",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "UInt"
+      },
+      "source": "spi-dw-mmio.c:410"
+    },
+    {
+      "binds": [],
+      "callback_table": "platform_driver.remove",
+      "context": "thread",
+      "effects": [
+        {
+          "detail": {
+            "register": "DW_SPI_SSIENR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_SSIENR)"
+        },
+        {
+          "detail": {
+            "register": "DW_SPI_BAUDR"
+          },
+          "kind": "reg",
+          "text": "writes_register(DW_SPI_BAUDR)"
+        },
+        {
+          "detail": {},
+          "kind": "event",
+          "text": "releases_device()"
+        }
+      ],
+      "ensures": [
+        "device_state == OFF"
+      ],
+      "is_callback_entry": true,
+      "name": "dw_spi_mmio_remove",
+      "requires": [],
+      "ris_ref": "dw_spi_mmio_remove",
+      "role": "remove",
+      "signature": {
+        "params": [
+          {
+            "from_expr": null,
+            "name": "pdev",
+            "type": "DeviceState"
+          }
+        ],
+        "return_type": "Void"
+      },
+      "source": "spi-dw-mmio.c:425"
+    }
+  ],
+  "invariants": [
+    "forall line: UInt. line < num_irqs -> valid_interrupt_line(line)"
+  ],
+  "name": "dw-apb-ssi",
+  "registers": [
+    {
+      "base": "base",
+      "name": "DW_SPI_CTRLR0",
+      "offset": 0,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_CTRLR1",
+      "offset": 4,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_SSIENR",
+      "offset": 8,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_SER",
+      "offset": 16,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_BAUDR",
+      "offset": 20,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "MSCC_SPI_MST_SW_MODE",
+      "offset": 20,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_TXFTLR",
+      "offset": 24,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_RXFTLR",
+      "offset": 28,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_TXFLR",
+      "offset": 32,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_RXFLR",
+      "offset": 36,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_SR",
+      "offset": 40,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_IMR",
+      "offset": 44,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_ISR",
+      "offset": 48,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_RISR",
+      "offset": 52,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_ICR",
+      "offset": 72,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_VERSION",
+      "offset": 92,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_DR",
+      "offset": 96,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_RX_SAMPLE_DLY",
+      "offset": 240,
+      "width": "B4"
+    },
+    {
+      "base": "base",
+      "name": "DW_SPI_CS_OVERRIDE",
+      "offset": 244,
+      "width": "B4"
+    }
+  ],
+  "resources": [
+    {
+      "bind": "regmap",
+      "name": "transaction0",
+      "required": true,
+      "type": "TransactionResource"
+    },
+    {
+      "bind": "clk",
+      "name": "clk0",
+      "required": true,
+      "type": "ClockResource"
+    },
+    {
+      "bind": null,
+      "name": "irq0",
+      "required": true,
+      "type": "IrqResource"
+    }
+  ],
+  "schema": 1,
+  "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/multisource/dw-apb-ssi.json",
+  "state": [
+    {
+      "bind": null,
+      "name": "base",
+      "type": "MmioBase"
+    },
+    {
+      "bind": null,
+      "name": "clk",
+      "type": "Clock"
+    },
+    {
+      "bind": null,
+      "name": "num_irqs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->ctlr->cur_msg->status",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->rx",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->rx_len",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->tx",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->tx_len",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->dma_mapped",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->current_freq",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->cur_rx_sample_dly",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "transfer->effective_speed_hz",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "delay.unit",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "delay.value",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->transfer_handler",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->n_bytes",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "cfg.dfs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "cfg.tmode",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "cfg.ndf",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "spi->controller_state",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dwsmmio->dws.set_cs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dwsmmio->priv",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dwsmmio->dws.caps",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dwsmmio->dws.ip",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dwsmmio->dws.fifo_len",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->paddr",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->bus_num",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->reg_io_width",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->ctlr",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->dma_addr",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->num_cs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->fifo_len",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->caps",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->mem_ops.adjust_op_size",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->mem_ops.supports_op",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->mem_ops.exec_op",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->max_mem_freq",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->mode_bits",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->bus_num",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->num_chipselect",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->setup",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->cleanup",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->transfer_one",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->handle_err",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->auto_runtime_pm",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->use_gpio_descriptors",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->set_cs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->mem_ops",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->mem_caps",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->max_speed_hz",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->flags",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->target_abort",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "ctlr->can_dma",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "flags",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->regset.regs",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dws->regset.base",
+      "type": "UInt"
+    },
+    {
+      "bind": null,
+      "name": "dwsmmio->dws.num_cs",
+      "type": "UInt"
+    }
+  ]
+}

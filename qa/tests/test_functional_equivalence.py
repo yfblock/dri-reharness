@@ -5,9 +5,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from backends.llm_bridge import build_evidence_json, _modules_ris_text
-from extractor.extractor import ExtractorConfig, extract_ris
-from extractor.formal import walk_leaf_ops
+if __package__:
+    from . import _bootstrap as _paths  # noqa: F401
+else:
+    import _bootstrap as _paths  # noqa: F401
+
+from backends.llm_bridge import build_evidence_json, _modules_ris_text  # noqa: E402
+from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
+from extractor.formal import walk_leaf_ops  # noqa: E402
 
 
 class FunctionalEvidenceTests(unittest.TestCase):

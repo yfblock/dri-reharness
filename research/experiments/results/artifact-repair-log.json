@@ -1,0 +1,388 @@
+{
+  "runs": [
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg2/harness.c",
+      "backend": "harness",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T06:10:40+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "ation of \u2018calloc\u2019\n/tmp/tmplnn98g76/h/dw_spi_harness.c:1903:5: error: implicit declaration of function \u2018free\u2019 [-Werror=implicit-function-declaration]\n 1903 |     free(dws->buf);\n      |     ^~~~\n/tmp/tmplnn98g76/h/dw_spi_harness.c:1903:5: note: include \u2018<stdlib.h>\u2019 or provide a declaration of \u2018free\u2019\n/tmp/tmplnn98g76/h/dw_spi_harness.c:1903:5: error: incompatible implicit declaration of built-in function \u2018free\u2019 [-Werror=builtin-declaration-mismatch]\n/tmp/tmplnn98g76/h/dw_spi_harness.c:1903:5: note: include \u2018<stdlib.h>\u2019 or provide a declaration of \u2018free\u2019\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 488.2,
+          "round": 0,
+          "sha256_16": "063b4efaa84ac6f0",
+          "span": [
+            959,
+            1906
+          ]
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "         ^~~~~~~~~~\n/tmp/tmppcgyq3kz/h/dw_spi_harness.c:956:10: error: old-style parameter declarations in prototyped function definition\n  956 | uint32_t dw_spi_transfer_one(struct dw_apb_ssi_priv *ctlr,\n      |          ^~~~~~~~~~~~~~~~~~~\n/tmp/tmppcgyq3kz/h/dw_spi_harness.c: In function \u2018dw_spi_mscc_set_cs\u2019:\n/tmp/tmppcgyq3kz/h/dw_spi_harness.c:1236:19: error: implicit declaration of function \u2018spi_get_chipselect\u2019 [-Werror=implicit-function-declaration]\n 1236 |     uint32_t cs = spi_get_chipselect(spi, 0);\n      |                   ^~~~~~~~~~~~~~~~~~\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 56.4,
+          "round": 1,
+          "sha256_16": "f25290bb27b8077f",
+          "span": [
+            953,
+            1274
+          ]
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": " member named \u2018tx\u2019\n  875 |                     dws->tx = (void *)((uintptr_t)dws->tx + n_bytes);\n      |                        ^~\n/tmp/tmpsydwohzr/h/dw_spi_harness.c:875:54: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx\u2019\n  875 |                     dws->tx = (void *)((uintptr_t)dws->tx + n_bytes);\n      |                                                      ^~\n/tmp/tmpsydwohzr/h/dw_spi_harness.c:697:14: error: variable \u2018tx_room\u2019 set but not used [-Werror=unused-but-set-variable]\n  697 |     uint32_t tx_room = 0;\n      |              ^~~~~~~\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 27.8,
+          "round": 2,
+          "sha256_16": "e064ca27fb70bea1",
+          "span": [
+            691,
+            911
+          ]
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "                       txw = *(uint32_t *)dws->tx_buf;\n      |                                                   ^~\n/tmp/tmp0b2oyv2o/h/dw_spi_harness.c:875:24: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx_buf\u2019\n  875 |                     dws->tx_buf = (void *)((uintptr_t)dws->tx_buf + n_bytes);\n      |                        ^~\n/tmp/tmp0b2oyv2o/h/dw_spi_harness.c:875:58: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx_buf\u2019\n  875 |                     dws->tx_buf = (void *)((uintptr_t)dws->tx_buf + n_bytes);\n      |                                                          ^~\n",
+          "repair_seconds": 27.4,
+          "round": 3,
+          "sha256_16": "42bece92a1b7a2b8",
+          "span": [
+            691,
+            911
+          ]
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": " member named \u2018tx\u2019\n  869 |                             txw = *(uint32_t *)dws->tx;\n      |                                                   ^~\n/tmp/tmp7ke5n0ny/h/dw_spi_harness.c:875:24: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx\u2019\n  875 |                     dws->tx = (void *)((uintptr_t)dws->tx + n_bytes);\n      |                        ^~\n/tmp/tmp7ke5n0ny/h/dw_spi_harness.c:875:54: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx\u2019\n  875 |                     dws->tx = (void *)((uintptr_t)dws->tx + n_bytes);\n      |                                                      ^~\n",
+          "round": 4,
+          "sha256_16": "652095a72e78a69b"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg2/baremetal.c",
+      "backend": "baremetal",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T06:12:03+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "426 |         uint32_t r14 = 0;\n      |                  ^~~\n/tmp/tmpcqe_4o25/b/dw_spi_baremetal.c:342:14: error: variable \u2018txw\u2019 set but not used [-Werror=unused-but-set-variable]\n  342 |     uint32_t txw;\n      |              ^~~\n/tmp/tmpcqe_4o25/b/dw_spi_baremetal.c:339:14: error: unused variable \u2018rxw\u2019 [-Werror=unused-variable]\n  339 |     uint32_t rxw = 0;\n      |              ^~~\n/tmp/tmpcqe_4o25/b/dw_spi_baremetal.c: At top level:\n/tmp/tmpcqe_4o25/b/dw_spi_baremetal.c:802:2: error: expected identifier or \u2018(\u2019 before \u2018}\u2019 token\n  802 | }}\n      |  ^\ncc1: all warnings being treated as errors\n",
+          "error": "no fenced code block in repair response",
+          "raw_head": "{\n    uint32_t irq_status;\n    uint32_t ret;\n    uint32_t new_mask = 0;\n    uint32_t __return_read_0;\n    uint32_t rxw = 0;\n    (void)rxw;\n    uint32_t max;\n    uint32_t tx_room;\n    uint32_t txw;\n\n    /* REHARNESS_RIS_OP op_3: irq_status := R(B4, dws->regs.DW_SPI_ISR)\n     * Status [Exact] digest=1",
+          "repair_seconds": 83.4,
+          "round": 0,
+          "sha256_16": "88d4c699938b2c79",
+          "span": [
+            334,
+            802
+          ]
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg2/harness.c",
+      "backend": "harness",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T07:02:17+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": " member named \u2018tx\u2019\n  869 |                             txw = *(uint32_t *)dws->tx;\n      |                                                   ^~\n/tmp/tmpkuvs72xv/h/dw_spi_harness.c:875:24: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx\u2019\n  875 |                     dws->tx = (void *)((uintptr_t)dws->tx + n_bytes);\n      |                        ^~\n/tmp/tmpkuvs72xv/h/dw_spi_harness.c:875:54: error: \u2018struct dw_apb_ssi_priv\u2019 has no member named \u2018tx\u2019\n  875 |                     dws->tx = (void *)((uintptr_t)dws->tx + n_bytes);\n      |                                                      ^~\n",
+          "repair_seconds": 265.1,
+          "round": 0,
+          "sha256_16": "652095a72e78a69b",
+          "span": [
+            303,
+            911
+          ]
+        },
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "i_alpine_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x838): undefined reference to `dw_spi_hssi_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x85a): undefined reference to `dw_spi_intel_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x87c): undefined reference to `dw_spi_mountevans_imc_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x89e): undefined reference to `dw_spi_canaan_k210_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x8be): undefined reference to `dw_spi_elba_set_cs'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x8e0): undefined reference to `dw_spi_elba_init'\ncollect2: error: ld returned 1 exit status\n",
+          "error": "repair LLM call exceeded 900s",
+          "repair_seconds": 900.0,
+          "round": 1,
+          "sha256_16": "74f70a069328e5f2"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg2/baremetal.c",
+      "backend": "baremetal",
+      "compile_ok": true,
+      "generated_at": "2026-09-02T07:03:20+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "426 |         uint32_t r14 = 0;\n      |                  ^~~\n/tmp/tmpsk7ibz92/b/dw_spi_baremetal.c:342:14: error: variable \u2018txw\u2019 set but not used [-Werror=unused-but-set-variable]\n  342 |     uint32_t txw;\n      |              ^~~\n/tmp/tmpsk7ibz92/b/dw_spi_baremetal.c:339:14: error: unused variable \u2018rxw\u2019 [-Werror=unused-variable]\n  339 |     uint32_t rxw = 0;\n      |              ^~~\n/tmp/tmpsk7ibz92/b/dw_spi_baremetal.c: At top level:\n/tmp/tmpsk7ibz92/b/dw_spi_baremetal.c:802:2: error: expected identifier or \u2018(\u2019 before \u2018}\u2019 token\n  802 | }}\n      |  ^\ncc1: all warnings being treated as errors\n",
+          "repair_seconds": 61.9,
+          "round": 0,
+          "sha256_16": "88d4c699938b2c79",
+          "span": [
+            334,
+            802
+          ]
+        },
+        {
+          "compile_ok": true,
+          "diagnostics_tail": "",
+          "round": 1,
+          "sha256_16": "7d9a84dde9631b98"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg2/rust_baremetal.c",
+      "backend": "rust",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T07:19:31+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "o match `(`\n   --> /home/yfblock/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tock-registers-0.8.1/src/macros.rs:232:13\n    |\n232 |             ($offset_end:expr => $($next:tt)*),\n    |             ^\n    = note: this error originates in the macro `$crate::test_fields` which comes from the expansion of the macro `register_structs` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0255, E0753.\nFor more information about an error, try `rustc --explain E0255`.\nerror: could not compile `dw_apb_ssi_check` (lib) due to 21 previous errors\n",
+          "error": "no fenced code block in repair response",
+          "raw_head": "    Ctrlr0 [\n        /// Data frame size: 0=2-bit .. 15=16-bit (DSCR field, 4 bits)\n        DFS     OFFSET(0)  NUMBITS(4),\n        /// Frame format: 0=Moto SPI, 1=Texas SSP, 2=Nat MicroWire, 3=Reserved\n        FRF     OFFSET(4)  NUMBITS(2),\n        /// SPI mode (clock polarity/phase)\n        SCPH   ",
+          "repair_seconds": 70.8,
+          "round": 0,
+          "sha256_16": "67c2f4ec8e4d7bbc",
+          "span": [
+            20,
+            478
+          ]
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "examples/dw-apb-ssi/dw_spi_harness.c",
+      "backend": "harness",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T07:19:39+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "In file included from /tmp/tmpzhss5ibm/h/dw_spi_harness.c:1:\n/tmp/tmpzhss5ibm/h/dw_apb_ssi_harness.h:1: error: unterminated #ifndef\n    1 | #ifndef REHARNESS_DW_APB_SSI_HARNESS_H\n      | \n/tmp/tmpzhss5ibm/h/dw_spi_harness.c:3:2: error: #endif without #if\n    3 | #endif\n      |  ^~~~~\n",
+          "error": "no fenced code block in repair response",
+          "raw_head": "#include \"dw_apb_ssi_harness.h\"\n\n#ifndef REHARNESS_DW_APB_SSI_HARNESS_H\n#define REHARNESS_DW_APB_SSI_HARNESS_H\n#endif\n",
+          "repair_seconds": 7.5,
+          "round": 0,
+          "sha256_16": "6f600f89048153b5",
+          "span": [
+            1,
+            3
+          ]
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "examples/dw-apb-ssi/dw_spi_baremetal.c",
+      "backend": "baremetal",
+      "compile_ok": true,
+      "generated_at": "2026-09-02T07:19:39+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": true,
+          "diagnostics_tail": "",
+          "round": 0,
+          "sha256_16": "dc5961480b4aee9d"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg2/harness.c",
+      "backend": "harness",
+      "compile_ok": true,
+      "generated_at": "2026-09-02T07:46:47+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "i_alpine_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x838): undefined reference to `dw_spi_hssi_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x85a): undefined reference to `dw_spi_intel_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x87c): undefined reference to `dw_spi_mountevans_imc_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x89e): undefined reference to `dw_spi_canaan_k210_init'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x8be): undefined reference to `dw_spi_elba_set_cs'\n/usr/bin/ld: dw_spi_harness.c:(.text+0x8e0): undefined reference to `dw_spi_elba_init'\ncollect2: error: ld returned 1 exit status\n",
+          "repair_seconds": 39.5,
+          "round": 0,
+          "sha256_16": "74f70a069328e5f2",
+          "span": [
+            492,
+            652
+          ]
+        },
+        {
+          "compile_ok": true,
+          "diagnostics_tail": "",
+          "round": 1,
+          "sha256_16": "ef2c21849aedf792"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "examples/dw-apb-ssi/dw_spi_harness.c",
+      "backend": "harness",
+      "compile_ok": false,
+      "generated_at": "2026-09-02T07:47:01+0800",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "compile_ok": false,
+          "diagnostics_tail": "In file included from /tmp/tmpbx7ob38_/h/dw_spi_harness.c:1:\n/tmp/tmpbx7ob38_/h/dw_apb_ssi_harness.h:1: error: unterminated #ifndef\n    1 | #ifndef REHARNESS_DW_APB_SSI_HARNESS_H\n      | \n/tmp/tmpbx7ob38_/h/dw_spi_harness.c:3:2: error: #endif without #if\n    3 | #endif\n      |  ^~~~~\n",
+          "error": "no fenced code block in repair response",
+          "raw_head": "#include \"dw_apb_ssi_harness.h\"\n",
+          "repair_seconds": 13.7,
+          "round": 0,
+          "sha256_16": "9050aa580e8b234c",
+          "span": [
+            1,
+            3
+          ]
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/harness.c",
+      "backend": "harness",
+      "generated_at": "2026-09-02T11:09:14+0800",
+      "lowering_complete": false,
+      "mode": "lowering",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "repair_seconds": 2.7,
+          "round": 0,
+          "sha256_16": "39aa5f6263bf2af1"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "repair_seconds": 6.9,
+          "round": 1,
+          "sha256_16": "24a9b59da955818e"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "repair_seconds": 2.2,
+          "round": 2,
+          "sha256_16": "9e085cb7284cab82"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "repair_seconds": 3.0,
+          "round": 3,
+          "sha256_16": "e9b20cf475aeee0a"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "repair_seconds": 2.7,
+          "round": 4,
+          "sha256_16": "818c282e86c4418a"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "repair_seconds": 1.7,
+          "round": 5,
+          "sha256_16": "8d16fa6b3fc33842"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 1,
+          "round": 6,
+          "sha256_16": "b92820275500f28b"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/harness.c",
+      "backend": "harness",
+      "generated_at": "2026-09-02T11:10:33+0800",
+      "lowering_complete": false,
+      "mode": "lowering",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 0,
+          "round": 0,
+          "sha256_16": "58e48fe37df9d34b"
+        }
+      ],
+      "temperature": 0.0
+    },
+    {
+      "artifact": "/home/yfblock/.claude/jobs/939e3f46/tmp/dwreg3/pipeline/generated/harness.c",
+      "backend": "harness",
+      "generated_at": "2026-09-02T11:12:55+0800",
+      "lowering_complete": true,
+      "mode": "lowering",
+      "model": "glm-5.2",
+      "rounds": [
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": false,
+          "missing": 0,
+          "missing_transaction_markers": 6,
+          "repair_seconds": 8.2,
+          "round": 0,
+          "sha256_16": "b29b039ee572cad3"
+        },
+        {
+          "digest_mismatch": 0,
+          "duplicate": 0,
+          "kind_mismatch": 0,
+          "lowering_complete": true,
+          "missing": 0,
+          "missing_transaction_markers": 0,
+          "round": 1,
+          "sha256_16": "71c8016e920e7199"
+        }
+      ],
+      "temperature": 0.0
+    }
+  ],
+  "schema": 1
+}

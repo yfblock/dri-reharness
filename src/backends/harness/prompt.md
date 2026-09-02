@@ -12,15 +12,20 @@ Rules:
   rewrite it as an unbounded polling loop.
 - Define a device private struct with the base pointer.
 - Define stub implementations of all primitive functions (read/write 8/16/32-bit).
-- For every read, write, or read-modify-write operation, emit the exact supplied
-  `REHARNESS_RIS_OP` receipt immediately before its implementation, followed by
-  a matching direct compound AST anchor in the form
-  `__rh_op_<op_id>: { ... }`. The receipt and anchor must use the same op_id;
-  emit each operation exactly once and copy its supplied digest.
+- For every read, write, or read-modify-write operation, emit the receipt
+  comment verbatim in this exact form (copy `op_id`, `kind`, and `digest`
+  from the RIS op line; status is always `lowered`):
+  `/* REHARNESS_RIS_OP id=<op_id> kind=<Read|Write|ReadModifyWrite> status=lowered digest=<digest> */`
+  Immediately after the receipt comment, emit the matching AST anchor
+  `__rh_op_<op_id>: { ... }` with the lowered primitive(s) inside its direct
+  compound statement. The receipt comment and the anchor label must use the
+  same op_id. The receipt is a COMMENT: never write it as a macro call
+  `REHARNESS_RIS_OP(...)`, as a JSON comment, or in any other spelling.
+  Emit each operation exactly once; do not invent op_ids or digests.
 - Define a main() that creates a device instance and calls each module function in order.
 - Add a trace printf after each read/write: printf("[trace %lu] R/W 0x%03lx = 0x%08x\n", trace_count++, offset, value);
 - Include stdint.h and stdio.h.
-- Add kernel macro stubs: BIT, GENMASK, etc.
+- Add kernel macro stubs: BIT, GENMASK, etc. Never use kernel-only annotations (__maybe_unused, __init, __read_mostly) — this is userspace C, they do not exist here.
 - Address fidelity: every RIS address expression is a source-derived C
   expression. Preserve the complete expression exactly, including the base
   expression and dynamic terms such as `priv->mmio + *off`; never replace a
