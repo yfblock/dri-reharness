@@ -69,8 +69,10 @@ def main() -> int:
             log = json.loads(REPAIR_LOG.read_text(encoding="utf-8"))
             runs = [r for r in log.get("runs", [])
                     if r.get("backend") == backend]
-            last = runs[-1] if runs else None
-            if last:
+            compile_runs = [r for r in runs if "rounds" in r]
+            last = compile_runs[-1] if compile_runs else (runs[-1] if runs
+                                                          else None)
+            if last and "rounds" in last:
                 row["repair_rounds"] = len(last.get("rounds", [])) - 1
                 row["repair_compile_ok"] = bool(last.get("compile_ok"))
                 row["repair_model"] = last.get("model")

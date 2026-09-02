@@ -48,7 +48,7 @@
 \email{anonymous@example.com}
 
 \begin{abstract}
-设备驱动占据了操作系统代码的大部分，但其寄存器级行为在很大程度上仍然是隐式的——通过临时宏、指针运算和框架相关的惯用法埋藏于 C 源码中。我们提出了 \reharness，一个使用 libclang AST 分析结合流敏感数据流和污点追踪从 C 驱动中提取形式化寄存器交互序列（RIS）的流水线，并辅以 LLVM-IR 证据来恢复隐藏在头文件内联辅助函数中的 MMIO 操作。超越原始 MMIO，RIS 对有类型的 regmap/I2C/MFD 事务和功能状态操作（值绑定、驱动状态更新和输出写入）进行建模，捕获软件缓冲区与设备寄存器之间的数据流。提取的 RIS 为后端无关的函数/设备规约和可插拔的多后端生成器提供输入，后者通过提示驱动的 LLM 后端生成用户空间测试工具（harness）、裸金属 C、Linux 内核模块和 Rust \texttt{no\_std} 驱动；每个候选方案都通过独立的编译、AST 和追踪验证来把关，而非直接信任其输出。评估工件由版本固定的、机器可读的流水线生成，而非手工转录的表格。在 \EvalDrivers{} 个 Linux 驱动上，\reharness 提取了 \EvalOps{} 个操作：\EvalSymbolic{} 个符号地址、\EvalFixed{} 个固定地址和 \EvalComputed{} 个计算地址访问，包括 \EvalRMW{} 个读-改-写模式和 \EvalConditions{} 个条件。我们额外评估了 \MultiSourceDrivers{} 个真实多源 Linux 模块，包含 \MultiSourceTUs{} 个翻译单元和 \MultiSourceLines{} 行代码。在冻结的确定性发射器基线下，测试工具和裸金属输出在 \HarnessCompileCount{}/\EvalDrivers{} 个单源用例中编译通过，Linux 输出在 \LinuxCompileCount{}/\EvalDrivers{} 个用例中编译通过；所有三个后端均成功编译每个多源模块。严格的语义就绪性被刻意设定得更加保守（Linux 为 \LinuxReadyCount{}/\EvalDrivers{}），因为未知的变换、不安全的动态地址和未绑定的子系统状态被视为阻碍因素而非被静默近似。确定性生成的驱动额外通过了 edu PCI 设备上的值级 QEMU 验证和真实 gpio-ftgpio010 驱动上的偏移/顺序追踪验证，并且 LLM 生成的多源 DesignWare APB SSI 控制器四后端输出通过了全部 18 项独立语义检查。
+设备驱动占据了操作系统代码的大部分，但其寄存器级行为在很大程度上仍然是隐式的——通过临时宏、指针运算和框架相关的惯用法埋藏于 C 源码中。我们提出了 \reharness，一个使用 libclang AST 分析结合流敏感数据流和污点追踪从 C 驱动中提取形式化寄存器交互序列（RIS）的流水线，并辅以 LLVM-IR 证据来恢复隐藏在头文件内联辅助函数中的 MMIO 操作。超越原始 MMIO，RIS 对有类型的 regmap/I2C/MFD 事务和功能状态操作（值绑定、驱动状态更新和输出写入）进行建模，捕获软件缓冲区与设备寄存器之间的数据流。提取的 RIS 为后端无关的函数/设备规约和可插拔的多后端生成器提供输入，后者通过提示驱动的 LLM 后端生成用户空间测试工具（harness）、裸金属 C、Linux 内核模块和 Rust \texttt{no\_std} 驱动；每个候选方案都通过独立的编译、AST 和追踪验证来把关，而非直接信任其输出。评估工件由版本固定的、机器可读的流水线生成，而非手工转录的表格。在 \EvalDrivers{} 个 Linux 驱动上，\reharness 提取了 \EvalOps{} 个操作：\EvalSymbolic{} 个符号地址、\EvalFixed{} 个固定地址和 \EvalComputed{} 个计算地址访问，包括 \EvalRMW{} 个读-改-写模式和 \EvalConditions{} 个条件。我们额外评估了 \MultiSourceDrivers{} 个真实多源 Linux 模块，包含 \MultiSourceTUs{} 个翻译单元和 \MultiSourceLines{} 行代码。在冻结的确定性发射器基线下，测试工具和裸金属输出在 \HarnessCompileCount{}/\EvalDrivers{} 个单源用例中编译通过，Linux 输出在 \LinuxCompileCount{}/\EvalDrivers{} 个用例中编译通过；所有三个后端均成功编译每个多源模块。严格的语义就绪性被刻意设定得更加保守（Linux 为 \LinuxReadyCount{}/\EvalDrivers{}），因为未知的变换、不安全的动态地址和未绑定的子系统状态被视为阻碍因素而非被静默近似。确定性生成的驱动额外通过了 edu PCI 设备上的值级 QEMU 验证和真实 gpio-ftgpio010 驱动上的偏移/顺序追踪验证，并且 DesignWare APB SSI 控制器的四后端工件（三个后端由 LLM 桥发射，harness 后端由带守卫的确定性推导闭合）通过了全部 18 项独立语义检查。
 \end{abstract}
 
 \begin{CCSXML}
@@ -102,7 +102,7 @@
 \item 一个混合提取流水线：以基于 libclang 的 AST 分析和流敏感数据流及污点追踪作为主路径，辅以 LLVM-IR 证据来恢复隐藏在头文件内联 \texttt{static inline} 辅助函数中的 MMIO 操作。
 \item 从 \rislang 模块到函数级和设备级形式化规约的后端无关语义推断，包括回调角色推断、状态绑定和效果建模。
 \item 一种可插拔的多后端生成架构，其中每个后端是一个提示加模块的插件；四个后端（测试工具 C、裸金属 C、Linux 内核模块、带 \texttt{tock-registers} 的 Rust \texttt{no\_std}）共享一个证据合约，并且所有 LLM 发射的候选方案都通过独立的编译、AST 和追踪验证来把关。
-\item 在 \EvalDrivers{} 个 Linux 驱动上的可复现评估，生成的表格与机器可读的结果关联，在冻结的确定性基线下，测试工具、裸金属和 Linux 后端的编译通过率分别为 \HarnessCompileCount{}/\EvalDrivers{}、\BaremetalCompileCount{}/\EvalDrivers{} 和 \LinuxCompileCount{}/\EvalDrivers{}，PCI 和平台设备上的确定性 QEMU 验证，以及 LLM 生成的四后端 DesignWare APB SSI 输出的 18/18 独立语义检查结果。
+\item 在 \EvalDrivers{} 个 Linux 驱动上的可复现评估，生成的表格与机器可读的结果关联，在冻结的确定性基线下，测试工具、裸金属和 Linux 后端的编译通过率分别为 \HarnessCompileCount{}/\EvalDrivers{}、\BaremetalCompileCount{}/\EvalDrivers{} 和 \LinuxCompileCount{}/\EvalDrivers{}，PCI 和平台设备上的确定性 QEMU 验证，以及 DesignWare APB SSI 四后端工件（三个后端由 LLM 桥发射，harness 后端由带守卫的确定性推导闭合）的 18/18 独立语义检查结果。
 \end{itemize}
 
 \section{动机}
@@ -598,11 +598,11 @@ RMW 检测 & 不支持 & \EvalRMW{} 个 RMW 模式 \\
 
 为了综合评估混合 IR 增强提取、功能状态操作和 LLM 发射的四后端生成，我们将 \reharness 应用于 Synopsys DesignWare APB SSI SPI 控制器（\texttt{snps,dw-apb-ssi}），该驱动从一个多源清单中提取，清单覆盖了固定内核树的 SPI 核心和 MMIO 翻译单元。
 
-该驱动恰好暴露了促使混合流水线设计的盲区。其寄存器访问器（\texttt{dw\_readl}/\texttt{dw\_writel}）和中断掩码辅助函数（\texttt{dw\_spi\_mask\_intr}）是定义在头文件中的 \texttt{static inline} 函数；仅源文件的 AST 传递会遗漏通过它们路由的每一个访问。通过将头文件内联到提取缓存并按函数和偏移合并 IR 证据，提取的 RIS 覆盖了 28 个模块和 244 个带证据操作，涵盖控制寄存器（\texttt{SSIENR}、\texttt{BAUDR}、\texttt{CTRLR0/1}、\texttt{SER}、\texttt{IMR}）和数据通路（\texttt{DR}、\texttt{TXFLR}、\texttt{RXFLR}）。
+该驱动恰好暴露了促使混合流水线设计的盲区。其寄存器访问器（\texttt{dw\_readl}/\texttt{dw\_writel}）和中断掩码辅助函数（\texttt{dw\_spi\_mask\_intr}）是定义在头文件中的 \texttt{static inline} 函数；仅源文件的 AST 传递会遗漏通过它们路由的每一个访问。通过将头文件内联到提取缓存并按函数和偏移合并 IR 证据，提取的 RIS 覆盖了 \DWRISModules{} 个模块和 \DWRISOps{} 个带证据操作，涵盖控制寄存器（\texttt{SSIENR}、\texttt{BAUDR}、\texttt{CTRLR0/1}、\texttt{SER}、\texttt{IMR}）和数据通路（\texttt{DR}、\texttt{TXFLR}、\texttt{RXFLR}）。
 
 功能状态层通过发送和接收路径来验证：提取的 \texttt{dw\_writer} 模块保留 \texttt{txw := VALUE(*(u8 *)(dws->tx))} $\rightarrow$ \texttt{STATE(dws->tx) := dws->tx + dws->n\_bytes} $\rightarrow$ \texttt{W(B4, DW\_SPI\_DR) = txw} $\rightarrow$ \texttt{STATE(dws->tx\_len) := dws->tx\_len - 1}，而 \texttt{dw\_reader} 对称地保留通过 \texttt{OUT(*(u8 *)(dws->rx)) := rxw} 的读到缓冲区路径。宽度相关的 8/16/32 位缓冲区访问保持为不同的条件分支。
 
-全部四个后端均由此单一 RIS 通过 LLM 桥生成：harness C、裸金属 C、Linux 内核模块和使用 \texttt{tock-registers} 的 Rust \texttt{no\_std} 驱动。生成的输出通过了全部 18 项独立语义检查，涵盖各后端编译、\texttt{set\_cs} 中的片选断言、中断掩码/取消掩码序列、传输配置和上述有序的 tx/rx 缓冲区数据流。工件（包括中间的 \texttt{.ris}、\texttt{.dspec} 和 \texttt{.facts} 文件）版本化管理在 \texttt{examples/dw-apb-ssi/} 下。
+四个后端中，裸金属 C、Linux 内核模块和使用 \texttt{tock-registers} 的 Rust \texttt{no\_std} 驱动均由此单一 RIS 通过同一 LLM 桥生成（模型、端点与温度记录于版本化的运行元数据）；harness 后端与裸金属后端仅在宿主构建环境和 oracle \texttt{main()} 上存在契约差异，在端点无法继续服务长分块生成后，经由带守卫的确定性推导（头文件改名、寄存器文件 MMIO 模型、追加 oracle \texttt{main()}）从修复完成的裸金属工件对闭合，该次运行与其余规范化过程一同记录在修复日志中。生成的输出通过了全部 18 项独立语义检查，涵盖各后端编译、\texttt{set\_cs} 中的片选断言、中断掩码/取消掩码序列、传输配置和上述有序的 tx/rx 缓冲区数据流；检查脚本与逐项证据版本化管理于 \texttt{examples/dw-apb-ssi/} 与结果目录。工件（包括中间的 \texttt{.ris}、\texttt{.dspec} 和 \texttt{.facts} 文件）版本化管理在 \texttt{examples/dw-apb-ssi/} 下。
 
 本案例研究的两个观察影响了设计。第一，IR 证据是补充而非替代：IR 传递可靠地恢复了头文件内联的 MMIO，但宏名称、控制谓词和回调绑定仅存在于 AST 层面。第二，寄存器级等价对于数据搬运驱动是不够的：一个早期迭代删除了 \texttt{STATE}/\texttt{VALUE}/\texttt{OUT} 操作，生成的后端以正确顺序触及了正确的寄存器，却无法传输一个字节，因为缓冲区游标从未前进。
 

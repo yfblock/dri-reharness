@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1788289006.55159 "main.tex" "main.pdf" "main" 1788289007.46547 0
+["pdflatex"] 1788327853.07015 "main.tex" "main.pdf" "main" 1788327853.99865 0
   "/etc/texmf/web2c/texmf.cnf" 1779905134.28177 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/inconsolata/i4-t1-4.enc" 1558214095 7693 0f2dce6d313c82989ec3a67fc24df2a0 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_25tcsq.enc" 1490131464 2921 8ca0eb0831f9bc5da080d3697cfe67bf ""
@@ -78,6 +78,7 @@
   "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/LibertineMathMI.pfb" 1569879884 35829 268d1d114c9114e541f92817aec4230d ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/LibertineMathMI7.pfb" 1575323900 36894 0893e50696ed2a200373455c6aff080e ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/LibertineMathRM.pfb" 1569879884 17941 ddba6afdead1586dc42d18763749eddd ""
+  "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/NewTXMI.pfb" 1572128992 32409 1452fa0ce4fabfb48acd5d077e296f6d ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txexas.pfb" 1569879884 23767 60f658096ab41f859b518103790fc331 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txexs.pfb" 1621283831 33424 f912ebe54685d0a65d3c046e3d517e38 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb" 1635022465 56686 b959be5e2e4a0232f5aa4c1c4be4574a ""
@@ -309,14 +310,14 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1779905145.53874 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1779905171 8214127 5c34089a2eb4ffdbb95cb63351b292b9 ""
-  "generated_results.tex" 1788288941.65388 43603 e7cdc8e5f53ee2daec2cdd3ae2359217 ""
-  "main.aux" 1788289007.37566 19867 5ee94b5f5b7f42c6c3f6a235f2860a9e "pdflatex"
-  "main.out" 1788289007.37666 7800 b89aeab588a7ea34df5a1da9eaaccc0a "pdflatex"
-  "main.tex" 1788288850.32173 4487 5d7c540c77f47a78c2f63b3081b6e7a3 ""
-  "sections_1_2.tex" 1788288999.9328 13714 4145e0581169d7932bfe57e598f154c2 ""
-  "sections_3_5.tex" 1788287395.98085 30163 c0f64fb1f076c34eab289c34307f7614 ""
-  "sections_6_8.tex" 1788288935.38801 38201 e05bf15dc781d1ddf7dcfff36d424e2b ""
-  "sections_9_11.tex" 1788288986.37005 10544 60ea592bbcffd31c1e58100ed841d2a1 ""
+  "generated_results.tex" 1788327762.44654 45493 5fcb89196079ad126dd124400eeb78b1 ""
+  "main.aux" 1788327853.90796 19867 010345224232c463416867e00bedb34d "pdflatex"
+  "main.out" 1788327853.90896 7800 b89aeab588a7ea34df5a1da9eaaccc0a "pdflatex"
+  "main.tex" 1788326897.13864 4546 a289d5bb8efd5b1135d7133135c6998a ""
+  "sections_1_2.tex" 1788291607.1805 13762 613d40c2739ebc508f36e2d2c40722a1 ""
+  "sections_3_5.tex" 1788291498.14639 30163 c0f64fb1f076c34eab289c34307f7614 ""
+  "sections_6_8.tex" 1788327792.85567 45057 2193ece78a5074b51c06b06acec1017f ""
+  "sections_9_11.tex" 1788291498.14639 11506 222107148b887c664fdf6528a7dd89f1 ""
   (generated)
   "main.aux"
   "main.log"

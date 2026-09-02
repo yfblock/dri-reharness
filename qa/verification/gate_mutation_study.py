@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pickle
 import re
 import sys
@@ -75,20 +76,34 @@ def _load_extraction(manifest: str):
 
 def mut_extra_write(text: str) -> str | None:
     """M1: invented write to an offset no contract operation maps."""
-    anchor = re.search(r"\n([ \t]*)[^\n;]*?" + _DR_WRITE + r";", text)
+    anchor = re.search(r"\n([ \t]*)[^\n;]*?" + _DR_WRITE, text)
     if anchor is None:
         return None
+    stmt = anchor.group(0)
+    recv = re.search(r"(\w+)\s*->\s*regs\b", stmt)
+    base = f"{recv.group(1)}->regs" if recv else "base"
     indent = anchor.group(1)
     invented = (f"\n{indent}/* M1: invented DMA-command write (unmapped "
-                f"offset) */\n{indent}harness_write32(0x3, base + 0x9c);")
+                f"offset) */\n{indent}mmio_write32(0x3u, {base} + 0x9cu);")
     return text[:anchor.end()] + invented + text[anchor.end():]
 
 
 _STATUS_REG = r"DW_SPI_(?:ISR|RISR)"
 
-_DR_WRITE = (r"(?:harness_write32\([^;\n]*(?:DW_SPI_DR|regs_base \+ 0x0)"
-             r"[^;\n]*\)"
-             r"|(?:dw_write_io_reg|dw_read_io_reg)\([^;\n]*DW_SPI_DR[^;\n]*\))")
+# the DR write, in either accessor idiom the pipeline emits: a helper call
+# (harness_write32 / mmio_write32 / dw_write_io_reg) or the raw volatile
+# dereference form the anchors carry
+_DR_WRITE = (r"(?:(?:harness|mmio)_write32\([^;\n]*?"
+             r"(?:DW_SPI_DR|regs \+ 0x0)[^;\n]*?\)[^;\n]*?;"
+             r"|(?:dw_write_io_reg|dw_read_io_reg)\([^;\n]*DW_SPI_DR[^;\n]*\)[^;\n]*?;"
+             r"|\*\s*\(volatile uint32_t \*\)[^;\n]*?"
+             r"(?:DW_SPI_DR|regs \+ 0x0)[^;\n]*?;)")
+
+# any 32-bit status-register read, helper or raw-deref spelling
+_STATUS_READ32 = (r"(?:(?:harness|mmio)_read32\(([^)]*" + _STATUS_REG
+                  + r")\)"
+                  r"|\*\s*\(volatile uint32_t \*\)\(([^)]*" + _STATUS_REG
+                  + r")\))")
 
 
 def _drop_read_block(text: str, register: str) -> str | None:
@@ -114,48 +129,74 @@ def mut_drop_irq_ack(text: str) -> str | None:
 
 def mut_width_shrink(text: str) -> str | None:
     """M3: a 32-bit status read narrows to 16 bits."""
-    target = re.search(
-        r"harness_read32\(([^)]*" + _STATUS_REG + r")\)", text)
+    target = re.search(_STATUS_READ32, text)
     if target is None:
         return None
-    return (text[:target.start()] + "harness_read16("
-            + target.group(1) + ")" + text[target.end():])
+    if target.group(1) is not None:  # helper spelling
+        arg = target.group(1)
+        return (text[:target.start()] + "mmio_read16(" + arg + ")"
+                + text[target.end():])
+    # raw volatile dereference spelling: narrow the cast
+    addr = target.group(2)
+    return (text[:target.start()]
+            + "*(volatile uint16_t *)(" + addr + ")"
+            + text[target.end():])
 
 
-_RX_STORE = (r"([ \t]*)\*\s*\(u?int8_t\s*\*\)[^;\n=]*?"
+_RX_STORE = (r"\n([ \t]*)\*\s*\(u?int8_t\s*\*\)[^;\n=]*?"
              r"([\w]+(?:\.\w+)*(?:->\s*rx)?)\s*(?:\(void\s*\*\))?\s*=")
-_RX_ADV = (r"([ \t]*)([\w]+(?:\.\w+)*(?:->\s*rx)?)\s*(?:\+=|=\s*\(void \*\)"
-           r"\s*\(\(uintptr_t\)[^;\n]*?\+\s*(?:[\w.]+(?:->\s*)?)?n_bytes)")
+# rx cursor advance, statement-anchored so the match cannot start inside
+# another expression: byte-index `+=`, or pointer re-assignment through any
+# integer-width cast shape (`(uint32_t *)((uint8_t *)rx + n_bytes)` and
+# the `(void *)((uintptr_t)rx + n_bytes)` spelling alike)
+_RX_ADV = (r"\n([ \t]*)(?:[\w]+(?:\.\w+)*->\s*)?rx\s*(?:\+=|"
+           r"=\s*\(u?int\d+_t\s*\*\)\s*\(\(u?int\d+_t\s*\*\)[^;\n]*?"
+           r"n_bytes|=\s*\(void\s*\*\)\s*\(\(uintptr_t\)[^;\n]*?n_bytes)")
 
 
 def mut_reorder_rx_cursor(text: str) -> str | None:
-    """M4: rx cursor advances before the FIFO value is stored."""
-    store = re.search(_RX_STORE + r"[^;\n]*;", text)
+    """M4: rx cursor advances before the FIFO value is stored (moved to
+    right after the DR read, before the conditional buffer store)."""
+    fifo_read = re.compile(
+        r"\n([ \t]*)rxw\s*=\s*rh_dw_read32\([^;\n]*DW_SPI_DR[^;\n]*\);")
     advance = re.search(_RX_ADV + r"[^;\n]*;", text)
-    if store is None or advance is None:
+    read = fifo_read.search(text)
+    if advance is None or read is None:
         return None
-    indent = store.group(1)
     adv_full = advance.group(0).strip()
-    moved = (f"{indent}{adv_full}   /* M4: advanced early */\n"
-             f"{indent}{store.group(0).strip()}")
-    out = text[:store.start()] + moved + text[store.end():]
-    out = out[:advance.start()] + out[advance.end():]
-    return out
+    # delete the advance from the original text first, then re-locate the
+    # FIFO read in the shortened text: reusing offsets from the first
+    # search against modified text splices at stale positions
+    out = text[:advance.start()] + text[advance.end():]
+    read2 = fifo_read.search(out)
+    if read2 is None:
+        return None
+    indent = read2.group(1)
+    return (out[:read2.end()]
+            + f"\n{indent}{adv_full}   /* M4: advanced early */"
+            + out[read2.end():])
 
 
 def mut_receipt_without_semantics(text: str) -> str | None:
-    """M5: keep a well-formed receipt and anchor label, delete the actual
-    hardware access inside the anchor block."""
-    pat = re.compile(
-        r"(__rh_op_\S+:\s*\{)([^{}]*?harness_read32\([^)]*" + _STATUS_REG
-        + r"\)[^{}]*?)(\})")
-    m = pat.search(text)
-    if m is None:
-        return None
-    gutted = re.sub(
-        r"[ \t]*harness_read32\([^)]*" + _STATUS_REG + r"\);", "",
-        m.group(2))
-    return text[:m.start(2)] + gutted + text[m.end(2):]
+    """M5: keep a well-formed receipt and anchor label, replace the actual
+    hardware access inside the anchor block with a constant so the mutant
+    still compiles (receipt-without-semantics, not a syntax error)."""
+    block = re.compile(r"(__rh_op_\S+:\s*\{)([^{}]*?)(\})")
+    helper = re.compile(
+        r"(\w+)\s*=\s*(?:harness|mmio)_read32\([^)]*"
+        + _STATUS_REG + r"\);")
+    raw = re.compile(
+        r"(\w+)\s*=\s*\*\s*\(volatile uint32_t \*\)\([^)]*"
+        + _STATUS_REG + r"\)\s*;")
+    for m in block.finditer(text):
+        for pat in (helper, raw):
+            s = pat.search(m.group(2))
+            if s is not None:
+                gutted = (m.group(2)[:s.start()]
+                          + f"{s.group(1)} = 0u; /* M5: hw access deleted */"
+                          + m.group(2)[s.end():])
+                return text[:m.start(2)] + gutted + text[m.end(2):]
+    return None
 
 
 MUTATIONS = [
@@ -171,7 +212,15 @@ MUTATIONS = [
 # -- gate runner ------------------------------------------------------------
 
 def _run_gate(res, harness_text: str, workdir: Path) -> dict:
-    """Run the unchanged backend pipeline on injected harness text."""
+    """Run the unchanged backend pipeline on injected harness text.
+
+    The pipeline's LLM compile-repair loop is disabled for the replay
+    (REHARNESS_LLM_REPAIR_ROUNDS=0): the study measures whether the gate's
+    CHECKS reject each mutant, and letting a repair pass rewrite the
+    artifact first would measure the repair loop instead (an empty or
+    partial endpoint response during replay also truncates the artifact
+    under test).
+    """
     import backends.registry as registry
     from backends.pipeline import run_backend_pipeline
 
@@ -179,6 +228,8 @@ def _run_gate(res, harness_text: str, workdir: Path) -> dict:
                            GEN_KWARGS=[])
     workdir.mkdir(parents=True, exist_ok=True)
     original = registry.list_backends
+    original_repair_rounds = os.environ.get("REHARNESS_LLM_REPAIR_ROUNDS")
+    os.environ["REHARNESS_LLM_REPAIR_ROUNDS"] = "0"
     registry.list_backends = lambda: {"harness": stub}
     try:
         # third argument is the driver manifest path, not a run label
@@ -187,6 +238,10 @@ def _run_gate(res, harness_text: str, workdir: Path) -> dict:
             "benchmarks/drivers/multisource/dw-apb-ssi.json")
     finally:
         registry.list_backends = original
+        if original_repair_rounds is None:
+            os.environ.pop("REHARNESS_LLM_REPAIR_ROUNDS", None)
+        else:
+            os.environ["REHARNESS_LLM_REPAIR_ROUNDS"] = original_repair_rounds
     return result["gen_results"]["harness"]
 
 
@@ -236,19 +291,16 @@ def main() -> int:
     text = Path(args.harness_c).read_text(encoding="utf-8")
     if args.with_header:
         header = Path(args.with_header).read_text(encoding="utf-8")
-        # strip the include guard (#ifndef ... first #endif) and any
-        # self-include of the generated header, then inline the remainder
-        lines = header.split("\n")
-        guard = next((i for i, ln in enumerate(lines)
-                      if ln.strip().startswith("#ifndef")), None)
-        if guard is not None:
-            close = next(j for j in range(guard + 1, len(lines))
-                         if lines[j].strip().startswith("#endif"))
-            lines = lines[:guard] + lines[close + 1:]
-        header_body = "\n".join(lines)
+        # inline the header ahead of the source body; the source's
+        # self-include of the generated header is dropped so the pair
+        # replays through the single-file gate as one translation unit.
+        # The header's include guard is KEPT: it is inactive exactly once,
+        # and guard-stripping (by first-#endif or by depth-balancing the
+        # outer guard, which encloses the whole file) truncates a
+        # correctly-guarded header and silently drops its declarations.
         text = re.sub(r'^[ \t]*#[ \t]*include[ \t]*"'
                       r'[\w./+-]+"\n?', "", text, count=1)
-        text = header_body + "\n" + text
+        text = header + "\n" + text
         print(f"combined with header {args.with_header} "
               f"({len(text.splitlines())} lines)")
     print("extracting (cached after first run)...")

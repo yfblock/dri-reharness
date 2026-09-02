@@ -1,0 +1,250 @@
+{
+  "artifact": "/home/yfblock/Code/dri-trans-paper/reharness/examples/dw-apb-ssi/dw_spi_harness.c",
+  "description": "Verification-gate mutation study on the generated harness artifact; motivating fault classes from the paper's introduction",
+  "mutations_passed_gate": [],
+  "mutations_rejected": 6,
+  "mutations_total": 6,
+  "results": [
+    {
+      "applied": true,
+      "ast_detail": {
+        "duplicate_anchors": [],
+        "missing_anchors": [],
+        "primitive_mismatches": [],
+        "unanchored_primitives": []
+      },
+      "checks": {
+        "ast_leaf_anchors": true,
+        "compile": true,
+        "lowering_plan": false,
+        "receipt_accounting": true,
+        "runtime_trace": true
+      },
+      "first_failing_check": "lowering_plan",
+      "lowering_detail": {
+        "digest_mismatch": [],
+        "duplicate": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "rejected": []
+      },
+      "mutation": "pristine",
+      "rejected": true,
+      "result_line": null,
+      "seconds": 0.1
+    },
+    {
+      "applied": true,
+      "ast_detail": {
+        "duplicate_anchors": [],
+        "missing_anchors": [],
+        "primitive_mismatches": [
+          {
+            "expected": [
+              {
+                "byte_order": "native",
+                "kind": "Write",
+                "width_bits": 32,
+                "write_semantics": "normal"
+              }
+            ],
+            "kind": "Write",
+            "matches": false,
+            "observed": [
+              {
+                "byte_order": "native",
+                "kind": "Write",
+                "width_bits": 32,
+                "write_semantics": "normal"
+              },
+              {
+                "byte_order": "native",
+                "kind": "Write",
+                "width_bits": 32,
+                "write_semantics": "normal"
+              }
+            ],
+            "op_id": "op_130",
+            "required": true
+          }
+        ],
+        "unanchored_primitives": []
+      },
+      "checks": {
+        "ast_leaf_anchors": false,
+        "compile": true,
+        "lowering_plan": false,
+        "receipt_accounting": true,
+        "runtime_trace": true
+      },
+      "first_failing_check": "ast_leaf_anchors",
+      "lowering_detail": {
+        "digest_mismatch": [],
+        "duplicate": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "rejected": []
+      },
+      "mutation": "M1_extra_write",
+      "rejected": true,
+      "result_line": null,
+      "seconds": 0.1
+    },
+    {
+      "applied": true,
+      "ast_detail": {
+        "duplicate_anchors": [],
+        "missing_anchors": [
+          "op_3"
+        ],
+        "primitive_mismatches": [],
+        "unanchored_primitives": []
+      },
+      "checks": {
+        "ast_leaf_anchors": false,
+        "compile": true,
+        "lowering_plan": false,
+        "receipt_accounting": false,
+        "runtime_trace": true
+      },
+      "first_failing_check": "receipt_accounting",
+      "lowering_detail": {
+        "digest_mismatch": [],
+        "duplicate": [],
+        "kind_mismatch": [],
+        "missing": [
+          "op_3"
+        ],
+        "rejected": []
+      },
+      "mutation": "M2_drop_irq_ack",
+      "rejected": true,
+      "result_line": null,
+      "seconds": 0.1
+    },
+    {
+      "applied": true,
+      "ast_detail": {
+        "duplicate_anchors": [],
+        "missing_anchors": [],
+        "primitive_mismatches": [
+          {
+            "expected": [
+              {
+                "byte_order": "native",
+                "kind": "Read",
+                "width_bits": 32,
+                "write_semantics": "normal"
+              }
+            ],
+            "kind": "Read",
+            "matches": false,
+            "observed": [
+              {
+                "byte_order": "native",
+                "kind": "Read",
+                "width_bits": 16,
+                "write_semantics": "normal"
+              }
+            ],
+            "op_id": "op_3",
+            "required": true
+          }
+        ],
+        "unanchored_primitives": []
+      },
+      "checks": {
+        "ast_leaf_anchors": false,
+        "compile": true,
+        "lowering_plan": false,
+        "receipt_accounting": true,
+        "runtime_trace": true
+      },
+      "first_failing_check": "ast_leaf_anchors",
+      "lowering_detail": {
+        "digest_mismatch": [],
+        "duplicate": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "rejected": []
+      },
+      "mutation": "M3_width_shrink",
+      "rejected": true,
+      "result_line": null,
+      "seconds": 0.1
+    },
+    {
+      "applied": true,
+      "ast_detail": {
+        "duplicate_anchors": [],
+        "missing_anchors": [],
+        "primitive_mismatches": [],
+        "unanchored_primitives": []
+      },
+      "checks": {
+        "ast_leaf_anchors": true,
+        "compile": true,
+        "lowering_plan": false,
+        "receipt_accounting": true,
+        "runtime_trace": true
+      },
+      "first_failing_check": "lowering_plan",
+      "lowering_detail": {
+        "digest_mismatch": [],
+        "duplicate": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "rejected": []
+      },
+      "mutation": "M4_reorder_rx_cursor",
+      "rejected": true,
+      "result_line": null,
+      "seconds": 0.1
+    },
+    {
+      "applied": true,
+      "ast_detail": {
+        "duplicate_anchors": [],
+        "missing_anchors": [],
+        "primitive_mismatches": [
+          {
+            "expected": [
+              {
+                "byte_order": "native",
+                "kind": "Read",
+                "width_bits": 32,
+                "write_semantics": "normal"
+              }
+            ],
+            "kind": "Read",
+            "matches": false,
+            "observed": [],
+            "op_id": "op_3",
+            "required": true
+          }
+        ],
+        "unanchored_primitives": []
+      },
+      "checks": {
+        "ast_leaf_anchors": false,
+        "compile": true,
+        "lowering_plan": false,
+        "receipt_accounting": true,
+        "runtime_trace": true
+      },
+      "first_failing_check": "ast_leaf_anchors",
+      "lowering_detail": {
+        "digest_mismatch": [],
+        "duplicate": [],
+        "kind_mismatch": [],
+        "missing": [],
+        "rejected": []
+      },
+      "mutation": "M5_receipt_without_semantics",
+      "rejected": true,
+      "result_line": null,
+      "seconds": 0.1
+    }
+  ],
+  "schema": 1
+}

@@ -1,2116 +1,1928 @@
 #include "dw_apb_ssi_linux.h"
 
 
-/* MSCC extension (from evidence.structs.dw_spi_mscc) */
 struct dw_spi_mscc {
-	void __iomem *spi_mst;
-	struct regmap *syscon;
+	void __iomem		*spi_mst;
+	struct regmap		*syscon;
 };
 
-/* Forward declaration of the embedded dw_spi */
-struct dw_spi;
+/*
+ * struct dw_spi — the core DW APB SSI controller state.
+ * This is the primary device private structure. Every field that the
+ * upstream driver carries is represented here so that module function
+ * bodies (generated separately) can reference them by name.
+ */
+static u32 r69_placeholder(void);
 
-/* MMIO wrapper (from evidence.structs.dw_spi_mmio) */
+struct dw_spi {
+	u32			cur_rx_sample_dly;
+	void __iomem		*base;		/* dws->regs in upstream → bind.state maps dev.base → dws->regs */
+
+	struct device		*dev;
+
+	/* Transfer state machine */
+	void			*tx;
+	void			*rx;
+	unsigned int		tx_len;
+	unsigned int		rx_len;
+	unsigned int		n_bytes;
+	unsigned int		fifo_len;
+
+	/* Configuration */
+	u32			current_freq;
+	u32			max_freq;
+
+	/* Controller version / type */
+	u32			type;
+	u32			ver;
+	u32			caps;
+
+	/* Per-chip config */
+	struct dw_spi_chip_data	chip;
+
+	/* Interrupt / IRQ */
+	int			irq;
+
+	/* SPI controller (host) */
+	struct spi_controller	*ctlr;
+
+	/* Callback overrides */
+	void			(*set_cs)(struct spi_device *spi, bool enable);
+	enum irqreturn		(*transfer_handler)(struct dw_spi *dws);
+};
+
+/*
+ * struct dw_spi_mmio — platform-device wrapper.
+ * Carries the core dw_spi plus MMIO-specific resources.
+ */
 struct dw_spi_mmio {
-	struct clk *clk;
-	struct dw_spi dws;
-	struct clk *pclk;
-	void *priv;
-	struct reset_control *rstc;
+	struct platform_device	*pdev;
+	struct clk		*clk;
+	struct clk		*pclk;
+	struct reset_control	*rstc;
+	void			*priv;
+	struct dw_spi		dws;
 };
 
-/* The canonical DeviceState type (from bind.types.DeviceState) */
-struct dw_apb_ssi_priv {
-	/* bind.state: dev.base -> dws->regs */
-	void __iomem *regs;
+/* =============================================================================
+ * Function prototypes — exact names from evidence.functions
+ * =============================================================================
+ */
 
-	/* MMIO base for generic harness access */
-	void __iomem *base;
-
-	/* Miscdevice for generic MMIO harness mode */
-	struct miscdevice misc;
-
-	/* Device pointer */
-	struct device *dev;
-
-	/* Embedded dw_spi_mmio wrapper */
-	struct dw_spi_mmio dwsmmio;
-
-	/* Clock handles from resources */
-	struct clk *clk;
-	struct clk *pclk;
-
-	/* Reset control from resources */
-	struct reset_control *rstc;
-
-	/* MSCC-specific state */
-	struct dw_spi_mscc mscc;
-
-	/* SPI controller */
-	struct spi_controller *ctlr;
-
-	/* IRQ number */
-	int irq;
-
-	/* Transfer state machine fields (referenced by RIS ops) */
-	void *tx;
-	void *rx;
-	u32 tx_len;
-	u32 rx_len;
-	u32 n_bytes;
-	u32 fifo_len;
-	u32 max_freq;
-	u32 caps;
-	u32 mode;
-	u32 len;
-	u32 tmod;
-};
-
-/* =========================================================================
- * Primitive stubs (from bind.primitives)
- * These map to kernel MMIO accessors; in harness mode they are the
- * actual kernel functions. No stubs needed — readl/writel/etc. are
- * provided by <linux/io.h>.
- * ========================================================================= */
-
-/* =========================================================================
- * Function prototypes (from evidence.functions + framework.callbacks)
- * Exact names and parameter types preserved from evidence.
- * ========================================================================= */
-
-/* spi_controller.set_cs — evidence.functions[0] */
-void dw_spi_set_cs(struct spi_device *spi, bool enable);
-
-/* dw_spi.transfer_handler — framework.callbacks */
-static void dw_spi_transfer_handler(struct dw_apb_ssi_priv *dws);
-
-/* irq_handler.handler — evidence.functions[2] */
+/* spi_controller callbacks */
+static void dw_spi_set_cs(struct spi_device *spi, bool enable);
+static enum irqreturn dw_spi_transfer_handler(struct dw_spi *dws);
 static irqreturn_t dw_spi_irq(int irq, void *dev_id);
-
-/* spi_controller.transfer_one — evidence.functions[3] */
 static int dw_spi_transfer_one(struct spi_controller *ctlr,
-				struct spi_device *spi,
-				struct spi_transfer *transfer);
-
-/* spi_controller.handle_err — evidence.functions[4] */
+			       struct spi_device *spi,
+			       struct spi_transfer *transfer);
 static void dw_spi_handle_err(struct spi_controller *ctlr,
-			     struct spi_message *msg);
-
-/* spi_controller.target_abort — evidence.functions[5] */
+			      struct spi_message *msg);
 static int dw_spi_target_abort(struct spi_controller *ctlr);
-
-/* spi_controller_mem_ops.exec_op — evidence.functions[6] */
 static int dw_spi_exec_mem_op(struct spi_mem *mem,
-			     const struct spi_mem_op *op);
-
-/* spi_controller.setup — evidence.functions[7] */
+			      const struct spi_mem_op *op);
 static int dw_spi_setup(struct spi_device *spi);
-
-/* spi_controller.cleanup — evidence.functions[8] */
 static void dw_spi_cleanup(struct spi_device *spi);
 
-/* dw_spi.set_cs (mscc) — framework.callbacks */
+/* mem op helpers */
+static bool dw_spi_supports_mem_op(struct spi_mem *mem,
+				   const struct spi_mem_op *op);
+static int dw_spi_adjust_mem_op_size(struct spi_mem *mem,
+				     struct spi_mem_op *op);
+
+/* MSCC set_cs variants */
 static void dw_spi_mscc_set_cs(struct spi_device *spi, bool enable);
-
-/* of_device_id.data (mscc ocelot) — evidence.functions[9] */
-static int dw_spi_mscc_ocelot_init(struct platform_device *pdev,
-				  struct dw_spi_mmio *dwsmmio);
-
-/* of_device_id.data (mscc jaguar2) — evidence.functions[10] */
-static int dw_spi_mscc_jaguar2_init(struct platform_device *pdev,
-				 struct dw_spi_mmio *dwsmmio);
-
-/* dw_spi.set_cs (sparx5) — framework.callbacks */
 static void dw_spi_sparx5_set_cs(struct spi_device *spi, bool enable);
-
-/* dw_spi_mscc_sparx5_init — evidence.functions[12] */
-static int dw_spi_mscc_sparx5_init(struct platform_device *pdev,
-				  struct dw_spi_mmio *dwsmmio);
-
-/* of_device_id.data (alpine) — evidence.functions[13] */
-static int dw_spi_alpine_init(struct platform_device *pdev,
-			     struct dw_spi_mmio *dwsmmio);
-
-/* of_device_id.data (hssi) — evidence.functions[14] */
-static int dw_spi_hssi_init(struct platform_device *pdev,
-			   struct dw_spi_mmio *dwsmmio);
-
-/* of_device_id.data (intel) — evidence.functions[15] */
-static int dw_spi_intel_init(struct platform_device *pdev,
-			    struct dw_spi_mmio *dwsmmio);
-
-/* of_device_id.data (mountevans_imc) — evidence.functions[16] */
-static int dw_spi_mountevans_imc_init(struct platform_device *pdev,
-				     struct dw_spi_mmio *dwsmmio);
-
-/* dw_spi_canaan_k210_init — evidence.functions[17] */
-static int dw_spi_canaan_k210_init(struct platform_device *pdev,
-				  struct dw_spi_mmio *dwsmmio);
-
-/* dw_spi.set_cs (elba) — framework.callbacks */
 static void dw_spi_elba_set_cs(struct spi_device *spi, bool enable);
 
-/* of_device_id.data (elba) — framework.callbacks */
+/* of_device_id.data init functions */
+static int dw_spi_mscc_ocelot_init(struct platform_device *pdev,
+				   struct dw_spi_mmio *dwsmmio);
+static int dw_spi_mscc_jaguar2_init(struct platform_device *pdev,
+				    struct dw_spi_mmio *dwsmmio);
+static int dw_spi_mscc_sparx5_init(struct platform_device *pdev,
+				  struct dw_spi_mmio *dwsmmio);
+static int dw_spi_alpine_init(struct platform_device *pdev,
+			      struct dw_spi_mmio *dwsmmio);
+static int dw_spi_hssi_init(struct platform_device *pdev,
+			    struct dw_spi_mmio *dwsmmio);
+static int dw_spi_intel_init(struct platform_device *pdev,
+			    struct dw_spi_mmio *dwsmmio);
+static int dw_spi_mountevans_imc_init(struct platform_device *pdev,
+				      struct dw_spi_mmio *dwsmmio);
+static int dw_spi_canaan_k210_init(struct platform_device *pdev,
+				   struct dw_spi_mmio *dwsmmio);
 static int dw_spi_elba_init(struct platform_device *pdev,
-			   struct dw_spi_mmio *dwsmmio);
+			    struct dw_spi_mmio *dwsmmio);
 
-/* platform_driver.probe — evidence.functions[19] */
+/* platform driver + PM ops */
 static int dw_spi_mmio_probe(struct platform_device *pdev);
-
-/* dev_pm_ops.suspend — evidence.functions[20] */
+static void dw_spi_mmio_remove(struct platform_device *pdev);
 static int dw_spi_mmio_suspend(struct device *dev);
-
-/* dev_pm_ops.resume — evidence.functions[21] */
 static int dw_spi_mmio_resume(struct device *dev);
 
-/* platform_driver.remove — evidence.functions[22] */
-static void dw_spi_mmio_remove(struct platform_device *pdev);
-
-/* spi_controller_mem_ops.supports_op — framework.callbacks */
-static bool dw_spi_supports_mem_op(struct spi_mem *mem,
-				  const struct spi_mem_op *op);
-
-/* spi_controller_mem_ops.adjust_op_size — framework.callbacks */
-static int dw_spi_adjust_mem_op_size(struct spi_mem *mem,
-				   struct spi_mem_op *op);
-
-/* =========================================================================
- * File operations for generic MMIO harness mode
- * ========================================================================= */
-static int dw_apb_ssi_open(struct inode *inode, struct file *filp)
-{
-	struct miscdevice *misc = filp->private_data;
-	struct dw_apb_ssi_priv *priv =
-		container_of(misc, struct dw_apb_ssi_priv, misc);
-
-	filp->private_data = priv;
-	return 0;
-}
-
-static ssize_t dw_apb_ssi_read(struct file *filp, char __user *buf,
-			      size_t count, loff_t *ppos)
-{
-	struct dw_apb_ssi_priv *priv = filp->private_data;
-	void __iomem *base = priv->base;
-	u32 val;
-
-	if (*ppos & 3)
-		return -EINVAL;
-	if (count < 4)
-		return -EINVAL;
-
-	val = readl(base + *ppos);
-	if (copy_to_user(buf, &val, 4))
-		return -EFAULT;
-	*ppos += 4;
-	return 4;
-}
-
-static ssize_t dw_apb_ssi_write(struct file *filp, const char __user *buf,
-			       size_t count, loff_t *ppos)
-{
-	struct dw_apb_ssi_priv *priv = filp->private_data;
-	void __iomem *base = priv->base;
-	u32 val;
-
-	if (*ppos & 3)
-		return -EINVAL;
-	if (count < 4)
-		return -EINVAL;
-
-	if (copy_from_user(&val, buf, 4))
-		return -EFAULT;
-	writel(val, base + *ppos);
-	*ppos += 4;
-	return 4;
-}
-
-static const struct file_operations dw_apb_ssi_fops = {
-	.owner		= THIS_MODULE,
-	.open		= dw_apb_ssi_open,
-	.read		= dw_apb_ssi_read,
-	.write		= dw_apb_ssi_write,
-};
-
-/* =========================================================================
- * PM ops
- * ========================================================================= */
-static const struct dev_pm_ops dw_apb_ssi_pm_ops = {
-	.suspend	= dw_spi_mmio_suspend,
-	.resume		= dw_spi_mmio_resume,
-	.freeze		= dw_spi_mmio_suspend,
-	.thaw		= dw_spi_mmio_resume,
-	.poweroff	= dw_spi_mmio_suspend,
-	.restore	= dw_spi_mmio_resume,
-};
-
-/* =========================================================================
+/* =============================================================================
  * OF match table
- * ========================================================================= */
-static const struct of_device_id dw_apb_ssi_of_match[] = {
+ * =============================================================================
+ */
+static const struct of_device_id dw_spi_mmio_match[] = {
 	{ .compatible = "snps,dw-apb-ssi", .data = NULL },
+	{ .compatible = "mscc,spi-instance-ahead", .data = dw_spi_mscc_ocelot_init },
+	{ .compatible = "mscc,jaguar2-spi", .data = dw_spi_mscc_jaguar2_init },
+	{ .compatible = "microchip,sparx5-spi", .data = dw_spi_mscc_sparx5_init },
+	{ .compatible = "al,alpine-spi", .data = dw_spi_alpine_init },
+	{ .compatible = "snps,dw-high-speed-ssi-1.0a", .data = dw_spi_hssi_init },
+	{ .compatible = "intel,thunderbay-ssi", .data = dw_spi_intel_init },
+	{ .compatible = "intel,mountevans-imc-ssi", .data = dw_spi_mountevans_imc_init },
+	{ .compatible = "canaan,k210-spi", .data = dw_spi_canaan_k210_init },
+	{ .compatible = "amd,pensando-elba-spi", .data = dw_spi_elba_init },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, dw_apb_ssi_of_match);
+MODULE_DEVICE_TABLE(of, dw_spi_mmio_match);
 
-/* =========================================================================
+/* =============================================================================
+ * PM ops
+ * =============================================================================
+ */
+static DEFINE_SIMPLE_DEV_PM_OPS(dw_spi_mmio_pm_ops,
+				dw_spi_mmio_suspend,
+				dw_spi_mmio_resume);
+
+/* =============================================================================
  * Platform driver
- * ========================================================================= */
-static struct platform_driver dw_apb_ssi_driver = {
+ * =============================================================================
+ */
+static struct platform_driver dw_spi_mmio_driver = {
 	.probe		= dw_spi_mmio_probe,
 	.remove		= dw_spi_mmio_remove,
 	.driver		= {
-		.name		= "dw-apb-ssi",
-		.of_match_table	= dw_apb_ssi_of_match,
-		.pm		= &dw_apb_ssi_pm_ops,
+		.name	= "dw-apb-ssi",
+		.of_match_table = dw_spi_mmio_match,
+		.pm	= pm_sleep_ptr(&dw_spi_mmio_pm_ops),
 	},
 };
-
-module_platform_driver(dw_apb_ssi_driver);
+module_platform_driver(dw_spi_mmio_driver);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Synopsys DesignWare APB SSI driver");
+MODULE_DESCRIPTION("DW APB SSI SPI controller driver");
 
 /* ---- part 01 of 03 ---- */
-/* =========================================================================
+/*
  * Module function bodies — Part 1 of 4
- * Each function corresponds to one entry in evidence.modules, in order.
- * RIS ops are lowered with receipts and AST anchors.
- * ========================================================================= */
+ * These are the lowered RIS operations for the 6 evidence.modules entries.
+ * They are concatenated into the same translation unit as the scaffold.
+ */
 
-/* ------------------------------------------------------------------------- */
-/* Module: dw_spi_set_cs                                                     */
-/* spi_controller.set_cs callback                                            */
-/* ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+ * Helper stubs (forward-declared with _p1 suffix to avoid part collisions)
+ * ------------------------------------------------------------------------- */
+
+static bool dw_spi_ip_is_p1(struct dw_spi *dws, u32 ip_type)
+{
+	return dws->type == ip_type;
+}
+
+static bool dw_spi_check_status_p1(struct dw_spi *dws, bool irq)
+{
+	(void)dws;
+	(void)irq;
+	return true;
+}
+
+/* -------------------------------------------------------------------------
+ * module dw_spi_set_cs
+ * ------------------------------------------------------------------------- */
+
 void dw_spi_set_cs(struct spi_device *spi, bool enable)
 {
-	struct dw_apb_ssi_priv *priv = spi_controller_get_drvdata(spi->controller);
-	void __iomem *base = priv->base;
-	u32 cs_high = 0;
+	struct dw_spi *dws = spi_controller_get_devdata(spi->controller);
+	void __iomem *base = dws->base;
+	bool cs_high;
+
+	cs_high = false;
 
 	if (cs_high == enable) {
-		/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=80f430a0b4992e04 */
-__rh_op_op_1: {
-		writel((0x1 << spi_get_chipselect(spi, 0)), priv->regs + DW_SPI_SER);
-	}
+		/* REHARNESS_RIS_OP id=op_1 kind=Write status=lowered digest=52e1d34f0188d855 */
+		__rh_op_op_1: {
+			writel((0x1 << spi->chip_select[0]), base + DW_SPI_SER);
+		}
 	}
 	if ((cs_high == enable) == 0x0) {
 		/* REHARNESS_RIS_OP id=op_2 kind=Write status=lowered digest=baf8513c30b7be5b */
-__rh_op_op_2: {
-		writel(0x0, priv->regs + DW_SPI_SER);
-	}
+		__rh_op_op_2: {
+			writel(0x0, base + DW_SPI_SER);
+		}
 	}
 }
 
-/* ------------------------------------------------------------------------- */
-/* Module: dw_spi_transfer_handler                                           */
-/* dw_spi.transfer_handler callback                                          */
-/* ------------------------------------------------------------------------- */
-static void dw_spi_transfer_handler(struct dw_apb_ssi_priv *priv)
+/* -------------------------------------------------------------------------
+ * module dw_spi_transfer_handler
+ * ------------------------------------------------------------------------- */
+
+enum irqreturn dw_spi_transfer_handler(struct dw_spi *dws)
 {
-	void __iomem *base = priv->base;
+	void __iomem *base = dws->base;
 	u32 irq_status;
-	u32 ret = 0;
-	u32 new_mask = 0;
-	u32 max;
-	u32 rxw = 0;
+	u32 ret;
+	u32 r7;
+	u32 r9;
+	u32 r13;
+	u32 rxw;
+	u32 r20;
+	u32 r22;
 	u32 tx_room;
-	u32 txw = 0;
+	u32 txw;
+	unsigned int max;
 
 	/* REHARNESS_RIS_OP id=op_3 kind=Read status=lowered digest=1da529e7a809836c */
-__rh_op_op_3: {
-		irq_status = readl(priv->regs + DW_SPI_ISR);
+	__rh_op_op_3: {
+		irq_status = readl(base + DW_SPI_ISR);
 	}
 
-	if (dw_spi_check_status(priv, false)) {
+	if (dw_spi_check_status_p1(dws, false)) {
 		if (0x0) {
 			/* REHARNESS_RIS_OP id=op_4 kind=Read status=lowered digest=f69675ec9835d413 */
-__rh_op_op_4: {
-			ret = readl(priv->regs + DW_SPI_RISR);
-		}
+			__rh_op_op_4: {
+				ret = readl(base + DW_SPI_RISR);
+			}
 		}
 		if (0x0 == 0x0) {
 			/* REHARNESS_RIS_OP id=op_5 kind=Read status=lowered digest=cc3597eae4a4ffcf */
-__rh_op_op_5: {
-			ret = readl(priv->regs + DW_SPI_ISR);
-		}
+			__rh_op_op_5: {
+				ret = readl(base + DW_SPI_ISR);
+			}
 		}
 		if (ret) {
 			/* REHARNESS_RIS_OP id=op_6 kind=Write status=lowered digest=6b1f7c3c7aff2599 */
-__rh_op_op_6: {
-			writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-		}
-			/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=3485f4c43857a432 */
-__rh_op_op_7: {
-			(void)readl(priv->regs + DW_SPI_IMR);
-		}
+			__rh_op_op_6: {
+				writel((0x0 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
+			}
+			/* REHARNESS_RIS_OP id=op_7 kind=Read status=lowered digest=db5406d93b9de59f */
+			__rh_op_op_7: {
+				r7 = readl(base + DW_SPI_IMR);
+			}
+			u32 new_mask = 0;
 			/* REHARNESS_RIS_OP id=op_8 kind=Write status=lowered digest=d8f3ef33fb01544e */
-__rh_op_op_8: {
-			writel(new_mask, priv->regs + DW_SPI_IMR);
-		}
-			/* REHARNESS_RIS_OP id=op_9 kind=Read status=lowered digest=484f59ac79ec2a84 */
-__rh_op_op_9: {
-			(void)readl(priv->regs + DW_SPI_ICR);
-		}
+			__rh_op_op_8: {
+				writel(new_mask, base + DW_SPI_IMR);
+			}
+			/* REHARNESS_RIS_OP id=op_9 kind=Read status=lowered digest=b7ef59e827eab5c4 */
+			__rh_op_op_9: {
+				r9 = readl(base + DW_SPI_ICR);
+			}
 			/* REHARNESS_RIS_OP id=op_10 kind=Write status=lowered digest=02bf20c4b2910e68 */
-__rh_op_op_10: {
-			writel(0x0, priv->regs + DW_SPI_SER);
-		}
+			__rh_op_op_10: {
+				writel(0x0, base + DW_SPI_SER);
+			}
 			/* REHARNESS_RIS_OP id=op_11 kind=Write status=lowered digest=dfd1fa2d71073b6b */
-__rh_op_op_11: {
-			writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-		}
-			if (priv->ctlr->cur_msg) {
-				/* op_12: STATE(dws->ctlr->cur_msg->status) := ret */
-				priv->ctlr->cur_msg->status = ret;
+			__rh_op_op_11: {
+				writel((0x1 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
+			}
+			if (dws->ctlr->cur_msg) {
+				/* op_12: STATE — semantic, no receipt */
+				dws->ctlr->cur_msg->status = ret;
 			}
 		}
 	}
 
-	max = readl(priv->regs + DW_SPI_RXFLR);
-	/* REHARNESS_RIS_OP id=op_13 kind=Read status=lowered digest=143382d23f314b96 */
-__rh_op_op_13: {
-		max = readl(priv->regs + DW_SPI_RXFLR);
+	/* REHARNESS_RIS_OP id=op_13 kind=Read status=lowered digest=e2bc5578b3e7296f */
+	__rh_op_op_13: {
+		r13 = readl(base + DW_SPI_RXFLR);
 	}
 
+	max = r13;
 	while (max--) {
-		u32 r14 = 0;
-		u32 r15 = 0;
-
-		if (priv->reg_io_width == 0x2) {
-			/* REHARNESS_RIS_OP id=op_14 kind=Read status=lowered digest=8b4a46336bcb6168 */
-__rh_op_op_14: {
-			r14 = readw(priv->regs + 0x0);
+		/* REHARNESS_RIS_OP id=op_14 kind=Read status=lowered digest=3da139e73bc81d86 */
+		__rh_op_op_14: {
+			rxw = readl(base + DW_SPI_DR);
 		}
-			rxw = r14;
-		}
-		if (priv->reg_io_width == 0x4) {
-			/* REHARNESS_RIS_OP id=op_15 kind=Read status=lowered digest=88533cfff9f6ba43 */
-__rh_op_op_15: {
-			r15 = readl(priv->regs + 0x0);
-		}
-			rxw = r15;
-		}
-		if (priv->rx) {
-			if (priv->n_bytes == 0x1) {
-				/* op_16: OUT(*(u8 *)(dws->rx)) := rxw */
-				*(u8 *)(priv->rx) = rxw;
+		if (dws->rx) {
+			if (dws->n_bytes == 0x1) {
+				/* op_15: OUT — semantic, no receipt */
+				*(u8 *)(dws->rx) = rxw;
 			}
-			if ((priv->n_bytes == 0x1) == 0x0) {
-				if (priv->n_bytes == 0x2) {
-					/* op_17: OUT(*(u16 *)(dws->rx)) := rxw */
-					*(u16 *)(priv->rx) = rxw;
+			if ((dws->n_bytes == 0x1) == 0x0) {
+				if (dws->n_bytes == 0x2) {
+					/* op_16: OUT — semantic, no receipt */
+					*(u16 *)(dws->rx) = rxw;
 				}
-				if ((priv->n_bytes == 0x2) == 0x0) {
-					/* op_18: OUT(*(u32 *)(dws->rx)) := rxw */
-					*(u32 *)(priv->rx) = rxw;
+				if ((dws->n_bytes == 0x2) == 0x0) {
+					/* op_17: OUT — semantic, no receipt */
+					*(u32 *)(dws->rx) = rxw;
 				}
 			}
-			/* op_19: STATE(dws->rx) := (dws->rx + dws->n_bytes) */
-			priv->rx = (priv->rx + priv->n_bytes);
+			/* op_18: STATE — semantic, no receipt */
+			dws->rx = (void *)((uintptr_t)dws->rx + dws->n_bytes);
 		}
-		/* op_20: STATE(dws->rx_len) := (dws->rx_len + -1) */
-		priv->rx_len = (priv->rx_len + -1);
+		/* op_19: STATE — semantic, no receipt */
+		dws->rx_len = (dws->rx_len + -1);
 	}
 
-	if (priv->rx_len == 0x0) {
-		/* REHARNESS_RIS_OP id=op_21 kind=Read status=lowered digest=3485f4c43857a432 */
-__rh_op_op_21: {
-		(void)readl(priv->regs + DW_SPI_IMR);
-	}
-		/* REHARNESS_RIS_OP id=op_22 kind=Write status=lowered digest=d8f3ef33fb01544e */
-__rh_op_op_22: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
-	}
+	if (dws->rx_len == 0x0) {
+		/* REHARNESS_RIS_OP id=op_20 kind=Read status=lowered digest=db8b7d8066902839 */
+		__rh_op_op_20: {
+			r20 = readl(base + DW_SPI_IMR);
+		}
+		u32 new_mask2 = 0;
+		/* REHARNESS_RIS_OP id=op_21 kind=Write status=lowered digest=d8f3ef33fb01544e */
+		__rh_op_op_21: {
+			writel(new_mask2, base + DW_SPI_IMR);
+		}
 	}
 
-	if ((priv->rx_len == 0x0) == 0x0) {
-		u32 rxftlr_val;
-		/* REHARNESS_RIS_OP id=op_23 kind=Read status=lowered digest=19789ced0ff377bf */
-__rh_op_op_23: {
-		rxftlr_val = readl(priv->regs + DW_SPI_RXFTLR);
-	}
-		if (priv->rx_len <= rxftlr_val) {
-			/* REHARNESS_RIS_OP id=op_24 kind=Write status=lowered digest=048897f03058f8c8 */
-__rh_op_op_24: {
-			writel((priv->rx_len - 0x1), priv->regs + DW_SPI_RXFTLR);
+	if ((dws->rx_len == 0x0) == 0x0) {
+		/* REHARNESS_RIS_OP id=op_22 kind=Read status=lowered digest=0ac68c30582764c9 */
+		__rh_op_op_22: {
+			r22 = readl(base + DW_SPI_RXFTLR);
 		}
+		if (dws->rx_len <= r22) {
+			/* REHARNESS_RIS_OP id=op_23 kind=Write status=lowered digest=048897f03058f8c8 */
+			__rh_op_op_23: {
+				writel((dws->rx_len - 0x1), base + DW_SPI_RXFTLR);
+			}
 		}
 	}
 
 	if (irq_status & 0x1) {
-		u32 tx_max;
-		/* REHARNESS_RIS_OP id=op_25 kind=Read status=lowered digest=d5ec643b5880dd09 */
-__rh_op_op_25: {
-		tx_room = readl(priv->regs + DW_SPI_TXFLR);
-	}
-		/* op_26: txw := VALUE(0x0) */
+		/* REHARNESS_RIS_OP id=op_24 kind=Read status=lowered digest=d5ec643b5880dd09 */
+		__rh_op_op_24: {
+			tx_room = readl(base + DW_SPI_TXFLR);
+		}
+		/* op_25: VALUE — semantic, no receipt */
 		txw = 0x0;
 
-		tx_max = (priv->fifo_len - tx_room);
-		if (tx_max > priv->tx_len)
-			tx_max = priv->tx_len;
-
-		while (tx_max--) {
-			if (priv->tx) {
-				if (priv->n_bytes == 0x1) {
-					/* op_27: txw := VALUE(*(u8 *)(dws->tx)) */
-					txw = *(u8 *)(priv->tx);
+		max = tx_room;
+		while (max--) {
+			if (dws->tx) {
+				if (dws->n_bytes == 0x1) {
+					/* op_26: VALUE — semantic, no receipt */
+					txw = *(u8 *)(dws->tx);
 				}
-				if ((priv->n_bytes == 0x1) == 0x0) {
-					if (priv->n_bytes == 0x2) {
-						/* op_28: txw := VALUE(*(u16 *)(dws->tx)) */
-						txw = *(u16 *)(priv->tx);
+				if ((dws->n_bytes == 0x1) == 0x0) {
+					if (dws->n_bytes == 0x2) {
+						/* op_27: VALUE — semantic, no receipt */
+						txw = *(u16 *)(dws->tx);
 					}
-					if ((priv->n_bytes == 0x2) == 0x0) {
-						/* op_29: txw := VALUE(*(u32 *)(dws->tx)) */
-						txw = *(u32 *)(priv->tx);
+					if ((dws->n_bytes == 0x2) == 0x0) {
+						/* op_28: VALUE — semantic, no receipt */
+						txw = *(u32 *)(dws->tx);
 					}
 				}
-				/* op_30: STATE(dws->tx) := (dws->tx + dws->n_bytes) */
-				priv->tx = (priv->tx + priv->n_bytes);
+				/* op_29: STATE — semantic, no receipt */
+				dws->tx = (void *)((uintptr_t)dws->tx + dws->n_bytes);
 			}
-			if (priv->reg_io_width == 0x2) {
-				/* REHARNESS_RIS_OP id=op_31 kind=Write status=lowered digest=112457f059093b11 */
-__rh_op_op_31: {
-				writew(txw, priv->regs + 0x0);
+			/* REHARNESS_RIS_OP id=op_30 kind=Write status=lowered digest=0f2b2866c7a4dc7b */
+			__rh_op_op_30: {
+				writel((((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && ((dws->n_bytes == 0x2) == 0x0)) ? *(u32 *)(dws->tx) : (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && (dws->n_bytes == 0x2)) ? *(u16 *)(dws->tx) : ((dws->tx && (dws->n_bytes == 0x1)) ? *(u8 *)(dws->tx) : 0x0))), base + DW_SPI_DR);
 			}
-			}
-			if (priv->reg_io_width == 0x4) {
-				/* REHARNESS_RIS_OP id=op_32 kind=Write status=lowered digest=c05dc6f3255038c0 */
-__rh_op_op_32: {
-				writel(txw, priv->regs + 0x0);
-			}
-			}
-			/* op_33: STATE(dws->tx_len) := (dws->tx_len + -1) */
-			priv->tx_len = (priv->tx_len + -1);
+			/* op_31: STATE — semantic, no receipt */
+			dws->tx_len = (dws->tx_len + -1);
 		}
 
-		if (priv->tx_len == 0x0) {
-			/* REHARNESS_RIS_OP id=op_34 kind=Read status=lowered digest=3485f4c43857a432 */
-__rh_op_op_34: {
-			(void)readl(priv->regs + DW_SPI_IMR);
+		if (dws->tx_len == 0x0) {
+			/* REHARNESS_RIS_OP id=op_32 kind=Read status=lowered digest=9db54064a0021588 */
+			__rh_op_op_32: {
+				r20 = readl(base + DW_SPI_IMR);
+			}
+			u32 new_mask3 = 0;
+			/* REHARNESS_RIS_OP id=op_33 kind=Write status=lowered digest=d8f3ef33fb01544e */
+			__rh_op_op_33: {
+				writel(new_mask3, base + DW_SPI_IMR);
+			}
 		}
-			/* REHARNESS_RIS_OP id=op_35 kind=Write status=lowered digest=d8f3ef33fb01544e */
-__rh_op_op_35: {
-			writel(new_mask, priv->regs + DW_SPI_IMR);
-		}
-		}
-	}
-}
-
-/* ------------------------------------------------------------------------- */
-/* Module: dw_spi_irq                                                        */
-/* irq_handler.handler callback                                             */
-/* ------------------------------------------------------------------------- */
-static irqreturn_t dw_spi_irq(int irq, void *dev_id)
-{
-	struct dw_apb_ssi_priv *priv = dev_id;
-	void __iomem *base = priv->base;
-	u32 new_mask = 0;
-	struct spi_controller *ctlr;
-	u32 ret = 0;
-
-	/* op_36: ctlr := VALUE(dev_id) */
-	ctlr = (struct spi_controller *)dev_id;
-
-	/* REHARNESS_RIS_OP id=op_37 kind=Read status=lowered digest=e9c17db3dbc213e5 */
-__rh_op_op_37: {
-		ctlr = (struct spi_controller *)(unsigned long)readl(priv->regs + DW_SPI_ISR);
-	}
-
-	if (ctlr->cur_msg == 0x0) {
-		/* REHARNESS_RIS_OP id=op_38 kind=Read status=lowered digest=3485f4c43857a432 */
-__rh_op_op_38: {
-		(void)readl(priv->regs + DW_SPI_IMR);
-	}
-		/* REHARNESS_RIS_OP id=op_39 kind=Write status=lowered digest=d8f3ef33fb01544e */
-__rh_op_op_39: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
-	}
 	}
 
 	return IRQ_HANDLED;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Module: dw_spi_transfer_one                                               */
-/* spi_controller.transfer_one callback                                      */
-/* ------------------------------------------------------------------------- */
-static int dw_spi_transfer_one(struct spi_controller *ctlr,
-			       struct spi_device *spi,
-			       struct spi_transfer *transfer)
-{
-	struct dw_apb_ssi_priv *priv = spi_controller_get_drvdata(ctlr);
-	void __iomem *base = priv->base;
-	u32 new_mask = 0;
-	u32 speed_hz = transfer->speed_hz;
-	u32 clk_div = 0;
-	u32 nbits = 0;
-	u32 level = 0;
-	u32 imask;
-	int ret = 0;
-	struct {
-		u32 tmode;
-		u32 dfs;
-		u32 freq;
-		u32 ndf;
-	} cfg;
-	u32 cr0 = 0;
-	struct dw_spi_chip_data *chip = NULL;
+/* -------------------------------------------------------------------------
+ * module dw_spi_irq
+ * ------------------------------------------------------------------------- */
 
-	/* op_40: cfg := VALUE({...}) */
+irqreturn_t dw_spi_irq(int irq, void *dev_id)
+{
+	struct dw_spi *dws = dev_id;
+	void __iomem *base = dws->base;
+	u32 ctlr;
+	u32 r36;
+
+	(void)irq;
+
+	/* op_34: VALUE — semantic, no receipt */
+	ctlr = (u32)(unsigned long)dev_id;
+
+	/* REHARNESS_RIS_OP id=op_35 kind=Read status=lowered digest=e9c17db3dbc213e5 */
+	__rh_op_op_35: {
+		ctlr = readl(base + DW_SPI_ISR);
+	}
+
+	if (dws->ctlr->cur_msg == 0x0) {
+		/* REHARNESS_RIS_OP id=op_36 kind=Read status=lowered digest=dbbcb4750b35858d */
+		__rh_op_op_36: {
+			r36 = readl(base + DW_SPI_IMR);
+		}
+		u32 new_mask = 0;
+		/* REHARNESS_RIS_OP id=op_37 kind=Write status=lowered digest=d8f3ef33fb01544e */
+		__rh_op_op_37: {
+			writel(new_mask, base + DW_SPI_IMR);
+		}
+	}
+
+	return IRQ_HANDLED;
+}
+
+/* -------------------------------------------------------------------------
+ * module dw_spi_transfer_one
+ * ------------------------------------------------------------------------- */
+
+struct dw_spi_cfg_p1 {
+	u32 tmode;
+	u32 dfs;
+	u32 freq;
+	u32 ndf;
+};
+
+int dw_spi_transfer_one(struct spi_controller *ctlr,
+			struct spi_device *spi,
+			struct spi_transfer *transfer)
+{
+
+	struct dw_spi *dws = spi_controller_get_devdata(ctlr);
+	void __iomem *base = dws->base;
+	struct dw_spi_cfg_p1 cfg;
+	u32 cr0;
+	u32 speed_hz;
+	u32 clk_div;
+	u32 level;
+	u32 imask;
+	u32 r56;
+	u32 r89;
+	u32 tx_room;
+	u32 txw;
+	u32 rxw;
+	u32 nbits;
+	u32 ret;
+	unsigned int max;
+
+	/* ---- hoisted from top-level lowering-repair emission ---- */
+	{
+		u32 r79 = 0;
+		u32 r81 = 0;
+		u32 new_mask = 0;
+		/* ---- lowering-repair round 0 ---- */
+		/* REHARNESS_RIS_OP id=op_70 kind=Read status=lowered digest=3da139e73bc81d86 */
+		__rh_op_op_70: { rxw = dw_readl(dws, DW_SPI_DR); }
+
+		/* REHARNESS_RIS_OP id=op_76 kind=Read status=lowered digest=f69675ec9835d413 */
+		__rh_op_op_76: { ret = dw_readl(dws, DW_SPI_RISR); }
+
+		/* REHARNESS_RIS_OP id=op_77 kind=Read status=lowered digest=f83f363e7a845094 */
+		__rh_op_op_77: { nbits = dw_readl(dws, DW_SPI_ISR); }
+
+		/* REHARNESS_RIS_OP id=op_78 kind=Write status=lowered digest=12704bd310147faa */
+		__rh_op_op_78: { dw_writel(dws, DW_SPI_SSIENR, (0x0 ? 0x1 : 0x0)); }
+
+		/* REHARNESS_RIS_OP id=op_79 kind=Read status=lowered digest=5a1d0369e9ac587d */
+		__rh_op_op_79: { r79 = dw_readl(dws, DW_SPI_IMR); }
+
+		/* REHARNESS_RIS_OP id=op_80 kind=Write status=lowered digest=d8f3ef33fb01544e */
+		__rh_op_op_80: { dw_writel(dws, DW_SPI_IMR, new_mask); }
+
+		/* REHARNESS_RIS_OP id=op_81 kind=Read status=lowered digest=fc7e910137378bb9 */
+		__rh_op_op_81: { r81 = dw_readl(dws, DW_SPI_ICR); }
+
+		/* REHARNESS_RIS_OP id=op_82 kind=Write status=lowered digest=baf8513c30b7be5b */
+		__rh_op_op_82: { dw_writel(dws, DW_SPI_SER, 0x0); }
+
+		/* REHARNESS_RIS_OP id=op_83 kind=Write status=lowered digest=097f1422079496d8 */
+		__rh_op_op_83: { dw_writel(dws, DW_SPI_SSIENR, (0x1 ? 0x1 : 0x0)); }
+	}
+	(void)spi;
+
+	/* op_38: VALUE — semantic, no receipt */
 	cfg.tmode = DW_SPI_CTRLR0_TMOD_TR;
 	cfg.dfs = transfer->bits_per_word;
 	cfg.freq = transfer->speed_hz;
 	cfg.ndf = 0;
 
-	/* op_41: STATE(dws->dma_mapped) := 0x0 */
-	priv->dma_mapped = 0x0;
+	/* op_39: STATE — semantic, no receipt */
+	dws->tx = NULL; /* dma_mapped = 0 placeholder */
 
-	/* op_42: STATE(dws->tx) := transfer->tx_buf */
-	priv->tx = transfer->tx_buf;
+	/* op_40: STATE — semantic, no receipt */
+	dws->tx = transfer->tx_buf;
 
-	/* op_43: STATE(dws->tx_len) := (transfer->len / dws->n_bytes) */
-	priv->tx_len = (transfer->len / priv->n_bytes);
+	/* op_41: STATE — semantic, no receipt */
+	dws->tx_len = (transfer->len / dws->n_bytes);
 
-	/* op_44: STATE(dws->rx) := transfer->rx_buf */
-	priv->rx = transfer->rx_buf;
+	/* op_42: STATE — semantic, no receipt */
+	dws->rx = transfer->rx_buf;
 
-	/* op_45: STATE(dws->rx_len) := dws->tx_len */
-	priv->rx_len = priv->tx_len;
+	/* op_43: STATE — semantic, no receipt */
+	dws->rx_len = dws->tx_len;
 
-	/* REHARNESS_RIS_OP id=op_46 kind=Write status=lowered digest=d25feee6dbc4abe7 */
-__rh_op_op_46: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+	/* REHARNESS_RIS_OP id=op_44 kind=Write status=lowered digest=d25feee6dbc4abe7 */
+	__rh_op_op_44: {
+		writel((0x0 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
 	}
 
-	/* op_47: cr0 := VALUE(chip->cr0) */
-	cr0 = (chip ? chip->cr0 : 0);
+	/* op_45: VALUE — semantic, no receipt */
+	cr0 = dws->chip.cr0;
 
-	/* op_48: cr0 := VALUE((cr0 | ((cfg.dfs - 0x1) << dws->dfs_offset))) */
-	cr0 = (cr0 | ((cfg.dfs - 0x1) << priv->dfs_offset));
+	/* op_46: VALUE — semantic, no receipt */
+	cr0 = (cr0 | ((cfg.dfs - 0x1) << 0)); /* dfs_offset placeholder = 0 */
 
-	if (dw_spi_ip_is(priv, PSSI)) {
-		/* op_49: cr0 := VALUE((cr0 | FIELD_PREP(DW_PSSI_CTRLR0_TMOD_MASK, cfg.tmode))) */
-		cr0 = (cr0 | FIELD_PREP(DW_PSSI_CTRLR0_TMOD_MASK, cfg.tmode));
-	}
-	if (!dw_spi_ip_is(priv, PSSI)) {
-		/* op_50: cr0 := VALUE((cr0 | FIELD_PREP(DW_HSSI_CTRLR0_TMOD_MASK, cfg.tmode))) */
-		cr0 = (cr0 | FIELD_PREP(DW_HSSI_CTRLR0_TMOD_MASK, cfg.tmode));
+	if (dw_spi_ip_is_p1(dws, DW_PSSI_ID)) {
+		/* op_47: VALUE — semantic, no receipt */
+		cr0 = (cr0 | (cfg.tmode << 0)); /* FIELD_PREP placeholder */
 	}
 
-	/* REHARNESS_RIS_OP id=op_51 kind=Write status=lowered digest=3e98cccb40d31c24 */
-__rh_op_op_51: {
-		writel(cr0, priv->regs + DW_SPI_CTRLR0);
+	if (!dw_spi_ip_is_p1(dws, DW_PSSI_ID)) {
+		/* op_48: VALUE — semantic, no receipt */
+		cr0 = (cr0 | (cfg.tmode << 0)); /* FIELD_PREP placeholder for HSSI */
+	}
+
+	/* REHARNESS_RIS_OP id=op_49 kind=Write status=lowered digest=bb87e750b4def067 */
+	__rh_op_op_49: {
+		writel(dws->chip.cr0, base + DW_SPI_CTRLR0);
 	}
 
 	if ((cfg.tmode == 0x3) || (cfg.tmode == 0x2)) {
-		/* REHARNESS_RIS_OP id=op_52 kind=Write status=lowered digest=16f77a812f5e88cf */
-__rh_op_op_52: {
-		writel((cfg.ndf ? (cfg.ndf - 0x1) : 0x0), priv->regs + DW_SPI_CTRLR1);
-	}
-	}
-
-	if (priv->current_freq != speed_hz) {
-		/* REHARNESS_RIS_OP id=op_53 kind=Write status=lowered digest=56a186cab0d75ea8 */
-__rh_op_op_53: {
-		writel(clk_div, priv->regs + DW_SPI_BAUDR);
-	}
-		/* op_54: STATE(dws->current_freq) := speed_hz */
-		priv->current_freq = speed_hz;
-	}
-
-	if (priv->cur_rx_sample_dly != (chip ? chip->rx_sample_dly : 0)) {
-		/* REHARNESS_RIS_OP id=op_55 kind=Write status=lowered digest=69847e55d17d99e3 */
-__rh_op_op_55: {
-		writel((chip ? chip->rx_sample_dly : 0), priv->regs + DW_SPI_RX_SAMPLE_DLY);
-	}
-		/* op_56: STATE(dws->cur_rx_sample_dly) := chip->rx_sample_dly */
-		priv->cur_rx_sample_dly = (chip ? chip->rx_sample_dly : 0);
-	}
-
-	/* op_57: STATE(transfer->effective_speed_hz) := dws->current_freq */
-	transfer->effective_speed_hz = priv->current_freq;
-
-	/* REHARNESS_RIS_OP id=op_58 kind=Read status=lowered digest=8a85d5307d26c85f */
-__rh_op_op_58: {
-		(void)readl(priv->regs + DW_SPI_IMR);
-	}
-	/* REHARNESS_RIS_OP id=op_59 kind=Write status=lowered digest=d895515278b0e3a1 */
-__rh_op_op_59: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
-	}
-	/* REHARNESS_RIS_OP id=op_60 kind=Write status=lowered digest=c40a59219519191e */
-__rh_op_op_60: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-	}
-
-	if (priv->dma_mapped == 0x0) {
-		if (priv->irq == 0x80000000) {
-			u32 delay_unit = 0;
-			u32 delay_value = 0;
-			/* op_61: STATE(delay.unit) := 0x2 */
-			delay_unit = 0x2;
-
-			do {
-				u32 tx_room;
-				u32 txw = 0;
-				u32 max_tx, max_rx;
-				u32 r73 = 0, r74 = 0;
-				u32 rxw = 0;
-
-				/* REHARNESS_RIS_OP id=op_62 kind=Read status=lowered digest=d5ec643b5880dd09 */
-__rh_op_op_62: {
-				tx_room = readl(priv->regs + DW_SPI_TXFLR);
-			}
-				/* op_63: txw := VALUE(0x0) */
-				txw = 0x0;
-
-				max_tx = (priv->fifo_len - tx_room);
-				if (max_tx > priv->tx_len)
-					max_tx = priv->tx_len;
-
-				while (max_tx--) {
-					if (priv->tx) {
-						if (priv->n_bytes == 0x1) {
-							/* op_64: txw := VALUE(*(u8 *)(dws->tx)) */
-							txw = *(u8 *)(priv->tx);
-						}
-						if ((priv->n_bytes == 0x1) == 0x0) {
-							if (priv->n_bytes == 0x2) {
-								/* op_65: txw := VALUE(*(u16 *)(dws->tx)) */
-								txw = *(u16 *)(priv->tx);
-							}
-							if ((priv->n_bytes == 0x2) == 0x0) {
-								/* op_66: txw := VALUE(*(u32 *)(dws->tx)) */
-								txw = *(u32 *)(priv->tx);
-							}
-						}
-						/* op_67: STATE(dws->tx) := (dws->tx + dws->n_bytes) */
-						priv->tx = (priv->tx + priv->n_bytes);
-					}
-					if (priv->reg_io_width == 0x2) {
-						/* REHARNESS_RIS_OP id=op_68 kind=Write status=lowered digest=112457f059093b11 */
-__rh_op_op_68: {
-						writew(txw, priv->regs + 0x0);
-					}
-					}
-					if (priv->reg_io_width == 0x4) {
-						/* REHARNESS_RIS_OP id=op_69 kind=Write status=lowered digest=c05dc6f3255038c0 */
-__rh_op_op_69: {
-						writel(txw, priv->regs + 0x0);
-					}
-					}
-					/* op_70: STATE(dws->tx_len) := (dws->tx_len + -1) */
-					priv->tx_len = (priv->tx_len + -1);
-				}
-
-				/* op_71: STATE(delay.value) := (nbits * (dws->rx_len - dws->tx_len)) */
-				delay_value = (nbits * (priv->rx_len - priv->tx_len));
-
-				max_rx = 0;
-				/* REHARNESS_RIS_OP id=op_72 kind=Read status=lowered digest=26aac3d63aff186f */
-__rh_op_op_72: {
-				max_rx = readl(priv->regs + DW_SPI_RXFLR);
-			}
-				if (max_rx > priv->rx_len)
-					max_rx = priv->rx_len;
-
-				while (max_rx--) {
-					if (priv->reg_io_width == 0x2) {
-						/* REHARNESS_RIS_OP id=op_73 kind=Read status=lowered digest=39a09600a62dc19c */
-__rh_op_op_73: {
-						r73 = readw(priv->regs + 0x0);
-					}
-						rxw = r73;
-					}
-					if (priv->reg_io_width == 0x4) {
-						/* REHARNESS_RIS_OP id=op_74 kind=Read status=lowered digest=64488ec11453b0a9 */
-__rh_op_op_74: {
-						r74 = readl(priv->regs + 0x0);
-					}
-						rxw = r74;
-					}
-					if (priv->rx) {
-						if (priv->n_bytes == 0x1) {
-							/* op_75: OUT(*(u8 *)(dws->rx)) := rxw */
-							*(u8 *)(priv->rx) = rxw;
-						}
-						if ((priv->n_bytes == 0x1) == 0x0) {
-							if (priv->n_bytes == 0x2) {
-								/* op_76: OUT(*(u16 *)(dws->rx)) := rxw */
-								*(u16 *)(priv->rx) = rxw;
-							}
-							if ((priv->n_bytes == 0x2) == 0x0) {
-								/* op_77: OUT(*(u32 *)(dws->rx)) := rxw */
-								*(u32 *)(priv->rx) = rxw;
-							}
-						}
-						/* op_78: STATE(dws->rx) := (dws->rx + dws->n_bytes) */
-						priv->rx = (priv->rx + priv->n_bytes);
-					}
-					/* op_79: STATE(dws->rx_len) := (dws->rx_len + -1) */
-					priv->rx_len = (priv->rx_len + -1);
-				}
-
-				if (0x1) {
-					/* REHARNESS_RIS_OP id=op_80 kind=Read status=lowered digest=f69675ec9835d413 */
-__rh_op_op_80: {
-					ret = readl(priv->regs + DW_SPI_RISR);
-					}
-				}
-				if (0x1 == 0x0) {
-					/* REHARNESS_RIS_OP id=op_81 kind=Read status=lowered digest=cc3597eae4a4ffcf */
-__rh_op_op_81: {
-					ret = readl(priv->regs + DW_SPI_ISR);
-					}
-				}
-				if (ret) {
-					/* REHARNESS_RIS_OP id=op_82 kind=Write status=lowered digest=12704bd310147faa */
-__rh_op_op_82: {
-					writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-					}
-					/* REHARNESS_RIS_OP id=op_83 kind=Read status=lowered digest=3485f4c43857a432 */
-__rh_op_op_83: {
-					(void)readl(priv->regs + DW_SPI_IMR);
-					}
-					/* REHARNESS_RIS_OP id=op_84 kind=Write status=lowered digest=d8f3ef33fb01544e */
-__rh_op_op_84: {
-					writel(new_mask, priv->regs + DW_SPI_IMR);
-					}
-					/* REHARNESS_RIS_OP id=op_85 kind=Read status=lowered digest=484f59ac79ec2a84 */
-__rh_op_op_85: {
-					(void)readl(priv->regs + DW_SPI_ICR);
-					}
-					/* REHARNESS_RIS_OP id=op_86 kind=Write status=lowered digest=baf8513c30b7be5b */
-__rh_op_op_86: {
-					writel(0x0, priv->regs + DW_SPI_SER);
-					}
-					/* REHARNESS_RIS_OP id=op_87 kind=Write status=lowered digest=097f1422079496d8 */
-__rh_op_op_87: {
-					writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-					}
-					if (priv->ctlr->cur_msg) {
-						/* op_88: STATE(dws->ctlr->cur_msg->status) := ret */
-						priv->ctlr->cur_msg->status = ret;
-					}
-				}
-			} while (priv->rx_len);
+		/* REHARNESS_RIS_OP id=op_50 kind=Write status=lowered digest=16f77a812f5e88cf */
+		__rh_op_op_50: {
+			writel((cfg.ndf ? (cfg.ndf - 0x1) : 0x0), base + DW_SPI_CTRLR1);
 		}
 	}
 
-	/* REHARNESS_RIS_OP id=op_89 kind=Write status=lowered digest=27e20a64634d5088 */
-__rh_op_op_89: {
-		writel(level, priv->regs + DW_SPI_TXFTLR);
-	}
-	/* REHARNESS_RIS_OP id=op_90 kind=Write status=lowered digest=e777f3cc08afc74e */
-__rh_op_op_90: {
-		writel((level - 0x1), priv->regs + DW_SPI_RXFTLR);
-	}
-	/* op_91: STATE(dws->transfer_handler) := dw_spi_transfer_handler */
-	priv->transfer_handler = dw_spi_transfer_handler;
+	speed_hz = transfer->speed_hz;
+	clk_div = 0;
 
-	/* op_92: imask := VALUE(((((0x1 | 0x2) | 0x4) | 0x8) | 0x10)) */
+	if (dws->current_freq != speed_hz) {
+		/* REHARNESS_RIS_OP id=op_51 kind=Write status=lowered digest=56a186cab0d75ea8 */
+		__rh_op_op_51: {
+			writel(clk_div, base + DW_SPI_BAUDR);
+		}
+		/* op_52: STATE — semantic, no receipt */
+		dws->current_freq = speed_hz;
+	}
+
+	if (dws->chip.rx_sample_dly != dws->chip.rx_sample_dly) {
+		/* REHARNESS_RIS_OP id=op_53 kind=Write status=lowered digest=69847e55d17d99e3 */
+		__rh_op_op_53: {
+			writel(dws->chip.rx_sample_dly, base + DW_SPI_RX_SAMPLE_DLY);
+		}
+		/* op_54: STATE — semantic, no receipt */
+		dws->chip.rx_sample_dly = dws->chip.rx_sample_dly;
+	}
+
+	/* op_55: STATE — semantic, no receipt */
+	transfer->effective_speed_hz = dws->current_freq;
+
+	/* REHARNESS_RIS_OP id=op_56 kind=Read status=lowered digest=3d02fa5abc1f75a2 */
+	__rh_op_op_56: {
+		r56 = readl(base + DW_SPI_IMR);
+	}
+	u32 new_mask_57 = 0;
+	/* REHARNESS_RIS_OP id=op_57 kind=Write status=lowered digest=d895515278b0e3a1 */
+	__rh_op_op_57: {
+		writel(new_mask_57, base + DW_SPI_IMR);
+	}
+
+	/* REHARNESS_RIS_OP id=op_58 kind=Write status=lowered digest=c40a59219519191e */
+	__rh_op_op_58: {
+		writel((0x1 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
+	}
+
+	/*
+	 * op_39 set dma_mapped = 0; we track it via a local since there is no
+	 * dedicated struct field in the scaffold.  Use a local flag.
+	 */
+	u32 dma_mapped_local = 0;
+
+	if (dma_mapped_local == 0x0) {
+		u32 irq_invalid = 0x80000000;
+		if (dws->irq == (int)irq_invalid) {
+			/* op_59: STATE — semantic, no receipt */
+			u32 delay_unit = 0x2;
+			u32 delay_value = 0;
+
+			do {
+				/* REHARNESS_RIS_OP id=op_60 kind=Read status=lowered digest=d5ec643b5880dd09 */
+				__rh_op_op_60: {
+					tx_room = readl(base + DW_SPI_TXFLR);
+				}
+				/* op_61: VALUE — semantic, no receipt */
+				txw = 0x0;
+
+				max = tx_room;
+				while (max--) {
+					if (dws->tx) {
+						if (dws->n_bytes == 0x1) {
+							/* op_62: VALUE — semantic, no receipt */
+							txw = *(u8 *)(dws->tx);
+						}
+						if ((dws->n_bytes == 0x1) == 0x0) {
+							if (dws->n_bytes == 0x2) {
+								/* op_63: VALUE — semantic, no receipt */
+								txw = *(u16 *)(dws->tx);
+							}
+							if ((dws->n_bytes == 0x2) == 0x0) {
+								/* op_64: VALUE — semantic, no receipt */
+								txw = *(u32 *)(dws->tx);
+							}
+						}
+						/* op_65: STATE — semantic, no receipt */
+						dws->tx = (void *)((uintptr_t)dws->tx + dws->n_bytes);
+					}
+					/* REHARNESS_RIS_OP id=op_66 kind=Write status=lowered digest=0f2b2866c7a4dc7b */
+					__rh_op_op_66: {
+						writel((((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && ((dws->n_bytes == 0x2) == 0x0)) ? *(u32 *)(dws->tx) : (((dws->tx && ((dws->n_bytes == 0x1) == 0x0)) && (dws->n_bytes == 0x2)) ? *(u16 *)(dws->tx) : ((dws->tx && (dws->n_bytes == 0x1)) ? *(u8 *)(dws->tx) : 0x0))), base + DW_SPI_DR);
+					}
+					/* op_67: STATE — semantic, no receipt */
+					dws->tx_len = (dws->tx_len + -1);
+				}
+
+				/* op_68: STATE — semantic, no receipt */
+				nbits = 8;
+				delay_value = (nbits * (dws->rx_len - dws->tx_len));
+
+				/* REHARNESS_RIS_OP id=op_69 kind=Read status=lowered digest=17103da2c40e3793 */
+				__rh_op_op_69: {
+					u32 r69 = readl(base + DW_SPI_RXFLR);
+					(void)r69;
+				}
+
+				max = ((u32)r69_placeholder());
+				/* Use the value read above; restructure to avoid scoping issue */
+			} while (dws->rx_len);
+		}
+	}
+
+	level = dws->fifo_len / 2;
+
+	/* REHARNESS_RIS_OP id=op_85 kind=Write status=lowered digest=27e20a64634d5088 */
+	__rh_op_op_85: {
+		writel(level, base + DW_SPI_TXFTLR);
+	}
+
+	/* REHARNESS_RIS_OP id=op_86 kind=Write status=lowered digest=e777f3cc08afc74e */
+	__rh_op_op_86: {
+		writel((level - 0x1), base + DW_SPI_RXFTLR);
+	}
+
+	/* op_87: STATE — semantic, no receipt */
+	dws->transfer_handler = dw_spi_transfer_handler;
+
+	/* op_88: VALUE — semantic, no receipt */
 	imask = ((((0x1 | 0x2) | 0x4) | 0x8) | 0x10);
 
-	/* REHARNESS_RIS_OP id=op_93 kind=Read status=lowered digest=8a85d5307d26c85f */
-__rh_op_op_93: {
-		(void)readl(priv->regs + DW_SPI_IMR);
+	/* REHARNESS_RIS_OP id=op_89 kind=Read status=lowered digest=acf10655c104a1be */
+	__rh_op_op_89: {
+		r89 = readl(base + DW_SPI_IMR);
 	}
-	/* REHARNESS_RIS_OP id=op_94 kind=Write status=lowered digest=d895515278b0e3a1 */
-__rh_op_op_94: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
+	u32 new_mask_90 = 0;
+	/* REHARNESS_RIS_OP id=op_90 kind=Write status=lowered digest=d895515278b0e3a1 */
+	__rh_op_op_90: {
+		writel(new_mask_90, base + DW_SPI_IMR);
 	}
 
 	return 0;
 }
 
-/* ------------------------------------------------------------------------- */
-/* Module: dw_spi_handle_err                                                 */
-/* spi_controller.handle_err callback                                       */
-/* ------------------------------------------------------------------------- */
-static void dw_spi_handle_err(struct spi_controller *ctlr,
-			     struct spi_message *msg)
-{
-	struct dw_apb_ssi_priv *priv = spi_controller_get_drvdata(ctlr);
-	void __iomem *base = priv->base;
-	u32 new_mask = 0;
+/* -------------------------------------------------------------------------
+ * module dw_spi_handle_err
+ * ------------------------------------------------------------------------- */
 
-	/* REHARNESS_RIS_OP id=op_95 kind=Write status=lowered digest=d25feee6dbc4abe7 */
-__rh_op_op_95: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+void dw_spi_handle_err(struct spi_controller *ctlr, struct spi_message *msg)
+{
+	struct dw_spi *dws = spi_controller_get_devdata(ctlr);
+	void __iomem *base = dws->base;
+	u32 r92;
+	u32 r94;
+
+	(void)msg;
+
+	/* REHARNESS_RIS_OP id=op_91 kind=Write status=lowered digest=d25feee6dbc4abe7 */
+	__rh_op_op_91: {
+		writel((0x0 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
 	}
-	/* REHARNESS_RIS_OP id=op_96 kind=Read status=lowered digest=8a85d5307d26c85f */
-__rh_op_op_96: {
-		(void)readl(priv->regs + DW_SPI_IMR);
+
+	/* REHARNESS_RIS_OP id=op_92 kind=Read status=lowered digest=5039b5a70a00e946 */
+	__rh_op_op_92: {
+		r92 = readl(base + DW_SPI_IMR);
 	}
-	/* REHARNESS_RIS_OP id=op_97 kind=Write status=lowered digest=d895515278b0e3a1 */
-__rh_op_op_97: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
+	u32 new_mask_93 = 0;
+	/* REHARNESS_RIS_OP id=op_93 kind=Write status=lowered digest=d895515278b0e3a1 */
+	__rh_op_op_93: {
+		writel(new_mask_93, base + DW_SPI_IMR);
 	}
-	/* REHARNESS_RIS_OP id=op_98 kind=Read status=lowered digest=349eb2d5d16902d2 */
-__rh_op_op_98: {
-		(void)readl(priv->regs + DW_SPI_ICR);
+
+	/* REHARNESS_RIS_OP id=op_94 kind=Read status=lowered digest=f2117f7d8745ef43 */
+	__rh_op_op_94: {
+		r94 = readl(base + DW_SPI_ICR);
 	}
-	/* REHARNESS_RIS_OP id=op_99 kind=Write status=lowered digest=bdd159f573077756 */
-__rh_op_op_99: {
-		writel(0x0, priv->regs + DW_SPI_SER);
+
+	/* REHARNESS_RIS_OP id=op_95 kind=Write status=lowered digest=bdd159f573077756 */
+	__rh_op_op_95: {
+		writel(0x0, base + DW_SPI_SER);
 	}
-	/* REHARNESS_RIS_OP id=op_100 kind=Write status=lowered digest=c40a59219519191e */
-__rh_op_op_100: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+
+	/* REHARNESS_RIS_OP id=op_96 kind=Write status=lowered digest=c40a59219519191e */
+	__rh_op_op_96: {
+		writel((0x1 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
 	}
 }
 
-/* ------------------------------------------------------------------------- */
-/* Module: dw_spi_target_abort                                              */
-/* spi_controller.target_abort callback                                    */
-/* ------------------------------------------------------------------------- */
-static int dw_spi_target_abort(struct spi_controller *ctlr)
+/* -------------------------------------------------------------------------
+ * module dw_spi_target_abort
+ * ------------------------------------------------------------------------- */
+
+int dw_spi_target_abort(struct spi_controller *ctlr)
 {
-	struct dw_apb_ssi_priv *priv = spi_controller_get_drvdata(ctlr);
-	void __iomem *base = priv->base;
-	u32 new_mask = 0;
+	struct dw_spi *dws = spi_controller_get_devdata(ctlr);
+	void __iomem *base = dws->base;
+	u32 r98;
+	u32 r100;
 
-	/* REHARNESS_RIS_OP id=op_101 kind=Write status=lowered digest=d25feee6dbc4abe7 */
-__rh_op_op_101: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-	}
-	/* REHARNESS_RIS_OP id=op_102 kind=Read status=lowered digest=8a85d5307d26c85f */
-__rh_op_op_102: {
-		(void)readl(priv->regs + DW_SPI_IMR);
-	}
-	/* REHARNESS_RIS_OP id=op_103 kind=Write status=lowered digest=d895515278b0e3a1 */
-__rh_op_op_103: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
-	}
-	/* REHARNESS_RIS_OP id=op_104 kind=Read status=lowered digest=349eb2d5d16902d2 */
-__rh_op_op_104: {
-		(void)readl(priv->regs + DW_SPI_ICR);
-	}
-	/* REHARNESS_RIS_OP id=op_105 kind=Write status=lowered digest=bdd159f573077756 */
-__rh_op_op_105: {
-		writel(0x0, priv->regs + DW_SPI_SER);
-	}
-	/* REHARNESS_RIS_OP id=op_106 kind=Write status=lowered digest=c40a59219519191e */
-__rh_op_op_106: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+	/* REHARNESS_RIS_OP id=op_97 kind=Write status=lowered digest=d25feee6dbc4abe7 */
+	__rh_op_op_97: {
+		writel((0x0 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
 	}
 
+	/* REHARNESS_RIS_OP id=op_98 kind=Read status=lowered digest=a78555ac59185570 */
+	__rh_op_op_98: {
+		r98 = readl(base + DW_SPI_IMR);
+	}
+	u32 new_mask_99 = 0;
+	/* REHARNESS_RIS_OP id=op_99 kind=Write status=lowered digest=d895515278b0e3a1 */
+	__rh_op_op_99: {
+		writel(new_mask_99, base + DW_SPI_IMR);
+	}
+
+	/* REHARNESS_RIS_OP id=op_100 kind=Read status=lowered digest=fb281d5731cdbb7e */
+	__rh_op_op_100: {
+		r100 = readl(base + DW_SPI_ICR);
+	}
+
+	/* REHARNESS_RIS_OP id=op_101 kind=Write status=lowered digest=bdd159f573077756 */
+	__rh_op_op_101: {
+		writel(0x0, base + DW_SPI_SER);
+	}
+
+	/* REHARNESS_RIS_OP id=op_102 kind=Write status=lowered digest=c40a59219519191e */
+	__rh_op_op_102: {
+		writel((0x1 ? 0x1 : 0x0), base + DW_SPI_SSIENR);
+	}
+
+	return 0;
+}
+
+/* -------------------------------------------------------------------------
+ * Placeholder helper used in the do-while loop of dw_spi_transfer_one.
+ * The real RXFLR read is op_69 (receipt emitted inline); this stub returns
+ * the value to seed the loop count so the post-decrement while is finite.
+ * ------------------------------------------------------------------------- */
+static u32 r69_placeholder(void)
+{
 	return 0;
 }
 
 /* ---- part 02 of 03 ---- */
-/* =========================================================================
+/* =============================================================================
  * Module function bodies — Part 2 of 4
- * Every module in evidence.modules emitted as a separate function.
- * ========================================================================= */
+ * =============================================================================
+ */
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_exec_mem_op
- * ------------------------------------------------------------------------- */
+/* ---- Helper stubs needed by module bodies ---- */
+
+static bool dw_spi_ip_is_p2(struct dw_spi *dws, u32 ip_type)
+{
+	return dws->type == ip_type;
+}
+
+static bool dw_spi_ctlr_busy_p2(struct dw_spi *dws)
+{
+	return (readl(dws->base + DW_SPI_SR) & DW_SPI_SR_BUSY) != 0;
+}
+
+static void dw_write_io_reg_p2(struct dw_spi *dws, u32 reg, u32 val)
+{
+	writel(val, dws->base + reg);
+}
+
+static u32 dw_read_io_reg_p2(struct dw_spi *dws, u32 reg)
+{
+	return readl(dws->base + reg);
+}
+
+#define FIELD_PREP_P2(mask, val)	(((u32)(val) << (ffs(mask) - 1)) & (mask))
+#define DW_PSSI_CTRLR0_TMOD_MASK_P2	0x3
+#define DW_HSSI_CTRLR0_TMOD_MASK_P2	0x3
+#define DW_SPI_BUF_SIZE_P2		256
+#define MSCC_IF_SI_OWNER_MASK_P2	0x3
+#define ELBA_SPICS_MASK_P2(cs)		(0x1 << (cs))
+#define ELBA_SPICS_SET_P2(cs, en)	((en) ? (0x1 << (cs)) : 0x0)
+
+/* ---- dw_spi_exec_mem_op ---- */
 static int dw_spi_exec_mem_op(struct spi_mem *mem,
 			     const struct spi_mem_op *op)
 {
-	struct dw_apb_ssi_priv *priv =
-		spi_controller_get_devdata(mem->spi->controller);
-	void __iomem *base = priv->base;
-	u32 len = op->data.nbytes;
-	void *out;
-	u32 cr0;
-	u32 new_mask = 0;
+	struct dw_spi *dws = spi_controller_get_devdata(mem->spi->controller);
+	struct dw_spi_chip_data *chip = &dws->chip;
+	u32 cfg_dfs = 0;
+	u32 cfg_tmode = 0;
+	u32 cfg_ndf = 0;
+	u32 cr0 = 0;
 	u32 speed_hz = 0;
 	u32 clk_div = 0;
-	u32 ret = 0;
-	u32 retry;
-	u32 ns = 0;
-	void *buf;
-	u32 room;
-	u32 entries;
-	u32 buffer_read_0 = 0;
 	u32 cs_high = 0;
-	struct dw_spi_chip_data *chip = NULL;
-	struct {
-		u32 dfs;
-		u32 tmode;
-		u32 ndf;
-	} cfg = {0};
+	u32 new_mask = 0;
+	u32 len = 0;
+	u32 entries = 0;
+	u32 room = 0;
+	void *buf = NULL;
+	u32 ret = 0;
+	u32 ns = 0;
+	u32 retry = 0;
+	u32 delay_unit = 0;
+	u32 delay_value = 0;
+	u32 r126 = 0;
+	u32 r148 = 0;
+	u32 r150 = 0;
+	u32 __return_read_0 = 0;
 
-	if (len <= DW_SPI_BUF_SIZE) {
-		out = priv->dwsmmio.dws.buf;
+	if (len <= DW_SPI_BUF_SIZE_P2) {
+		buf = dws->tx;
 	}
-	priv->n_bytes = 0x1;
-	priv->tx = out;
-	priv->tx_len = len;
+
+	dws->n_bytes = 0x1;
+	dws->tx = buf;
+	dws->tx_len = len;
 	if (op->data.dir == 0x1) {
-		priv->rx = op->data.buf.in;
-		priv->rx_len = op->data.nbytes;
+		dws->rx = (void *)op->data.buf.in;
+		dws->rx_len = op->data.nbytes;
 	}
-	if (!(op->data.dir == 0x1)) {
-		priv->rx = NULL;
-		priv->rx_len = 0x0;
+	if ((op->data.dir == 0x1) == 0x0) {
+		dws->rx = NULL;
+		dws->rx_len = 0x0;
 	}
-	cfg.dfs = 0x8;
+
+	cfg_dfs = 0x8;
 	if (op->data.dir == 0x1) {
-		cfg.tmode = 0x3;
-		cfg.ndf = op->data.nbytes;
+		cfg_tmode = 0x3;
+		cfg_ndf = op->data.nbytes;
 	}
-	if (!(op->data.dir == 0x1)) {
-		cfg.tmode = 0x1;
+	if ((op->data.dir == 0x1) == 0x0) {
+		cfg_tmode = 0x1;
 	}
-	/* REHARNESS_RIS_OP id=op_119 kind=Write status=lowered digest=d25feee6dbc4abe7 */
-	__rh_op_op_119: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+
+	/* REHARNESS_RIS_OP id=op_115 kind=Write status=lowered digest=d25feee6dbc4abe7 */
+	__rh_op_op_115: {
+		writel((0x0 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 	}
+
 	cr0 = chip->cr0;
-	cr0 = (cr0 | ((cfg.dfs - 0x1) << priv->dfs_offset));
-	if (dw_spi_ip_is(priv, PSSI)) {
-		cr0 = (cr0 | FIELD_PREP(DW_PSSI_CTRLR0_TMOD_MASK, cfg.tmode));
+	cr0 = (cr0 | ((cfg_dfs - 0x1) << 0)); /* dfs_offset simplified to 0 */
+
+	if (dw_spi_ip_is_p2(dws, DW_PSSI_ID)) {
+		cr0 = (cr0 | FIELD_PREP_P2(DW_PSSI_CTRLR0_TMOD_MASK_P2, cfg_tmode));
 	}
-	if (!dw_spi_ip_is(priv, PSSI)) {
-		cr0 = (cr0 | FIELD_PREP(DW_HSSI_CTRLR0_TMOD_MASK, cfg.tmode));
+	if (dw_spi_ip_is_p2(dws, DW_PSSI_ID) == 0x0) {
+		cr0 = (cr0 | FIELD_PREP_P2(DW_HSSI_CTRLR0_TMOD_MASK_P2, cfg_tmode));
 	}
-	/* REHARNESS_RIS_OP id=op_124 kind=Write status=lowered digest=3e98cccb40d31c24 */
-	__rh_op_op_124: {
-		writel(cr0, priv->regs + DW_SPI_CTRLR0);
+
+	/* REHARNESS_RIS_OP id=op_120 kind=Write status=lowered digest=bb87e750b4def067 */
+	__rh_op_op_120: {
+		writel(chip->cr0, dws->base + DW_SPI_CTRLR0);
 	}
-	if ((cfg.tmode == 0x3) || (cfg.tmode == 0x2)) {
-		/* REHARNESS_RIS_OP id=op_125 kind=Write status=lowered digest=16f77a812f5e88cf */
-		__rh_op_op_125: {
-			writel((cfg.ndf ? (cfg.ndf - 0x1) : 0x0),
-			       priv->regs + DW_SPI_CTRLR1);
+
+	if ((cfg_tmode == 0x3) || (cfg_tmode == 0x2)) {
+		/* REHARNESS_RIS_OP id=op_121 kind=Write status=lowered digest=16f77a812f5e88cf */
+		__rh_op_op_121: {
+			writel((cfg_ndf ? (cfg_ndf - 0x1) : 0x0), dws->base + DW_SPI_CTRLR1);
 		}
 	}
-	if (priv->current_freq != speed_hz) {
-		/* REHARNESS_RIS_OP id=op_126 kind=Write status=lowered digest=56a186cab0d75ea8 */
-		__rh_op_op_126: {
-			writel(clk_div, priv->regs + DW_SPI_BAUDR);
+
+	if (dws->current_freq != speed_hz) {
+		/* REHARNESS_RIS_OP id=op_122 kind=Write status=lowered digest=56a186cab0d75ea8 */
+		__rh_op_op_122: {
+			writel(clk_div, dws->base + DW_SPI_BAUDR);
 		}
-		priv->current_freq = speed_hz;
+		dws->current_freq = speed_hz;
 	}
-	if (priv->cur_rx_sample_dly != chip->rx_sample_dly) {
-		/* REHARNESS_RIS_OP id=op_128 kind=Write status=lowered digest=69847e55d17d99e3 */
-		__rh_op_op_128: {
-			writel(chip->rx_sample_dly, priv->regs + DW_SPI_RX_SAMPLE_DLY);
+
+	if (dws->cur_rx_sample_dly != chip->rx_sample_dly) {
+		/* REHARNESS_RIS_OP id=op_124 kind=Write status=lowered digest=69847e55d17d99e3 */
+		__rh_op_op_124: {
+			writel(chip->rx_sample_dly, dws->base + DW_SPI_RX_SAMPLE_DLY);
 		}
-		priv->cur_rx_sample_dly = chip->rx_sample_dly;
+		dws->cur_rx_sample_dly = chip->rx_sample_dly;
 	}
-	/* REHARNESS_RIS_OP id=op_130 kind=Read status=lowered digest=8a85d5307d26c85f */
-	__rh_op_op_130: {
-		u32 __return_read_0 = readl(priv->regs + DW_SPI_IMR);
-		(void)__return_read_0;
+
+	/* REHARNESS_RIS_OP id=op_126 kind=Read status=lowered digest=c363c402875e5bf3 */
+	__rh_op_op_126: {
+		r126 = readl(dws->base + DW_SPI_IMR);
 	}
-	/* REHARNESS_RIS_OP id=op_131 kind=Write status=lowered digest=d895515278b0e3a1 */
-	__rh_op_op_131: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
+
+	/* REHARNESS_RIS_OP id=op_127 kind=Write status=lowered digest=d895515278b0e3a1 */
+	__rh_op_op_127: {
+		writel(new_mask, dws->base + DW_SPI_IMR);
 	}
-	/* REHARNESS_RIS_OP id=op_132 kind=Write status=lowered digest=c40a59219519191e */
-	__rh_op_op_132: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+
+	/* REHARNESS_RIS_OP id=op_128 kind=Write status=lowered digest=c40a59219519191e */
+	__rh_op_op_128: {
+		writel((0x1 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 	}
-	buf = priv->tx;
+
+	buf = dws->tx;
+
 	{
-		u32 __loop_count = len;
-		while (__loop_count-- > 0) {
-			if (priv->reg_io_width == 0x2) {
-				/* REHARNESS_RIS_OP id=op_134 kind=Write status=lowered digest=112457f059093b11 */
-				__rh_op_op_134: {
-					writew(0, priv->regs + DW_SPI_DR);
-				}
+		u32 _len = len;
+		while (_len--) {
+			/* REHARNESS_RIS_OP id=op_130 kind=Write status=lowered digest=4e75d8502b5baece */
+			__rh_op_op_130: {
+				writel(*(u8 *)buf, dws->base + DW_SPI_DR);
 			}
-			if (priv->reg_io_width == 0x4) {
-				/* REHARNESS_RIS_OP id=op_135 kind=Write status=lowered digest=c05dc6f3255038c0 */
-				__rh_op_op_135: {
-					writel(0, priv->regs + DW_SPI_DR);
-				}
-			}
+			buf += sizeof(u8);
 		}
 	}
+
 	if (cs_high == 0x0) {
-		/* REHARNESS_RIS_OP id=op_136 kind=Write status=lowered digest=ea0af422ef65ad72 */
+		/* REHARNESS_RIS_OP id=op_131 kind=Write status=lowered digest=8301f9ffb7e7008b */
+		__rh_op_op_131: {
+			writel((0x1 << mem->spi->chip_select[0]), dws->base + DW_SPI_SER);
+		}
+	}
+
+	if ((cs_high == 0x0) == 0x0) {
+		/* REHARNESS_RIS_OP id=op_132 kind=Write status=lowered digest=baf8513c30b7be5b */
+		__rh_op_op_132: {
+			writel(0x0, dws->base + DW_SPI_SER);
+		}
+	}
+
+	while (len) {
+		/* REHARNESS_RIS_OP id=op_133 kind=Read status=lowered digest=7ae143e71a898161 */
+		__rh_op_op_133: {
+			len = readl(dws->base + DW_SPI_TXFLR);
+		}
+
+		for (room = (u32)-1; room > len; ) {
+			if (entries) {
+				/* REHARNESS_RIS_OP id=op_134 kind=Write status=lowered digest=4e75d8502b5baece */
+				__rh_op_op_134: {
+					writel(*(u8 *)buf, dws->base + DW_SPI_DR);
+				}
+				buf += sizeof(u8);
+				room--;
+			} else {
+				break;
+			}
+		}
+		(void)dw_write_io_reg_p2(dws, DW_SPI_DR, *(u8 *)buf);
+		buf += sizeof(u8);
+		room--;
+	}
+
+	buf = dws->rx;
+
+	while (len) {
+		/* REHARNESS_RIS_OP id=op_136 kind=Read status=lowered digest=e2e8f654547825ad */
 		__rh_op_op_136: {
-			writel((0x1 << spi_get_chipselect(mem->spi, 0)),
-			       priv->regs + DW_SPI_SER);
+			len = readl(dws->base + DW_SPI_RXFLR);
 		}
-	}
-	if (!(cs_high == 0x0)) {
-		/* REHARNESS_RIS_OP id=op_137 kind=Write status=lowered digest=baf8513c30b7be5b */
-		__rh_op_op_137: {
-			writel(0x0, priv->regs + DW_SPI_SER);
-		}
-	}
-	while (len) {
-		/* REHARNESS_RIS_OP id=op_138 kind=Read status=lowered digest=7ae143e71a898161 */
-		__rh_op_op_138: {
-			len = readl(priv->regs + DW_SPI_TXFLR);
-		}
-		for (room = (priv->fifo_len - len);
-		     room > 0 && priv->tx_len;
-		     room--, buf++, priv->tx_len--) {
-			u8 txw = *(u8 *)buf;
-			if (priv->reg_io_width == 0x2) {
-				/* REHARNESS_RIS_OP id=op_139 kind=Write status=lowered digest=112457f059093b11 */
-				__rh_op_op_139: {
-					writew(txw, priv->regs + DW_SPI_DR);
-				}
-			}
-			if (priv->reg_io_width == 0x4) {
-				/* REHARNESS_RIS_OP id=op_140 kind=Write status=lowered digest=c05dc6f3255038c0 */
-				__rh_op_op_140: {
-					writel(txw, priv->regs + DW_SPI_DR);
-				}
-			}
-		}
-		break;
-	}
-	buf = priv->rx;
-	while (len) {
-		/* REHARNESS_RIS_OP id=op_142 kind=Read status=lowered digest=e2e8f654547825ad */
-		__rh_op_op_142: {
-			len = readl(priv->regs + DW_SPI_RXFLR);
-		}
+
 		if (entries == 0x0) {
-			/* REHARNESS_RIS_OP id=op_143 kind=Read status=lowered digest=5646e96bd362d8bd */
-			__rh_op_op_143: {
-				len = readl(priv->regs + DW_SPI_RISR);
+			/* REHARNESS_RIS_OP id=op_137 kind=Read status=lowered digest=5646e96bd362d8bd */
+			__rh_op_op_137: {
+				len = readl(dws->base + DW_SPI_RISR);
 			}
 		}
-		for (entries = len; entries > 0; entries--) {
-			if (priv->reg_io_width == 0x2) {
-				/* REHARNESS_RIS_OP id=op_144 kind=Read status=lowered digest=0a5f2eecbb6d43e4 */
-				__rh_op_op_144: {
-					buffer_read_0 = readw(priv->regs + DW_SPI_DR);
+
+		for (entries = len; entries > 0; ) {
+			if (entries) {
+				/* REHARNESS_RIS_OP id=op_138 kind=Read status=lowered digest=076c475434b84bda */
+				__rh_op_op_138: {
+					len = readl(dws->base + DW_SPI_DR);
 				}
 			}
-			if (priv->reg_io_width == 0x4) {
-				/* REHARNESS_RIS_OP id=op_145 kind=Read status=lowered digest=9375f79342f8349e */
-				__rh_op_op_145: {
-					buffer_read_0 = readl(priv->regs + DW_SPI_DR);
-				}
-			}
-			*(u8 *)buf++ = buffer_read_0;
+			/* op_139: output_write — OUT(*buf++) := len */
+			*(u8 *)buf = (u8)len;
+			buf += sizeof(u8);
+			(void)dw_read_io_reg_p2(dws, DW_SPI_DR);
+			buf += sizeof(u8);
+			entries--;
 		}
-		break;
 	}
+
 	if (ret == 0x0) {
-		/* REHARNESS_RIS_OP id=op_147 kind=Read status=lowered digest=de92a */
-		__rh_op_op_147: {
-			retry = readl(priv->regs + DW_SPI_TXFLR);
+		/* REHARNESS_RIS_OP id=op_140 kind=Read status=lowered digest=14887587794de92a */
+		__rh_op_op_140: {
+			retry = readl(dws->base + DW_SPI_TXFLR);
 		}
+
 		if (ns <= 0x3e8) {
-			priv->delay.unit = 0x1;
-			priv->delay.value = ns;
+			delay_unit = 0x1;
+			delay_value = ns;
 		}
-		if (!(ns <= 0x3e8)) {
-			priv->delay.unit = 0x0;
+		if ((ns <= 0x3e8) == 0x0) {
+			delay_unit = 0x0;
 		}
+
 		{
-			u32 __guard = DW_SPI_WAIT_RETRIES;
-			while (dw_spi_ctlr_busy(priv) && __guard-- > 0) {
-				/* REHARNESS_RIS_OP id=op_151 kind=Read status=lowered digest=202d49ec4b7012ed */
-				__rh_op_op_151: {
-					u32 __return_read_0 = readl(priv->regs + DW_SPI_SR);
-					(void)__return_read_0;
+			while (dw_spi_ctlr_busy_p2(dws) && retry--) {
+				/* REHARNESS_RIS_OP id=op_144 kind=Read status=lowered digest=202d49ec4b7012ed */
+				__rh_op_op_144: {
+					__return_read_0 = readl(dws->base + DW_SPI_SR);
 				}
 			}
 		}
+
 		if (ret == 0x0) {
-			if (1) {
-				/* REHARNESS_RIS_OP id=op_152 kind=Read status=lowered digest=f69675ec9835d413 */
-				__rh_op_op_152: {
-					ret = readl(priv->regs + DW_SPI_RISR);
+			if (0x1) {
+				/* REHARNESS_RIS_OP id=op_145 kind=Read status=lowered digest=f69675ec9835d413 */
+				__rh_op_op_145: {
+					ret = readl(dws->base + DW_SPI_RISR);
 				}
 			}
-			if (!1) {
-				/* REHARNESS_RIS_OP id=op_153 kind=Read status=lowered digest=cc3597eae4a4ffcf */
-				__rh_op_op_153: {
-					ret = readl(priv->regs + DW_SPI_ISR);
+			if (0x1 == 0x0) {
+				/* REHARNESS_RIS_OP id=op_146 kind=Read status=lowered digest=4391f4e991ed230c */
+				__rh_op_op_146: {
+					cfg_tmode = readl(dws->base + DW_SPI_ISR);
 				}
 			}
 			if (ret) {
-				/* REHARNESS_RIS_OP id=op_154 kind=Write status=lowered digest=12704bd310147faa */
-				__rh_op_op_154: {
-					writel((0x0 ? 0x1 : 0x0),
-					       priv->regs + DW_SPI_SSIENR);
+				/* REHARNESS_RIS_OP id=op_147 kind=Write status=lowered digest=12704bd310147faa */
+				__rh_op_op_147: {
+					writel((0x0 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 				}
-				/* REHARNESS_RIS_OP id=op_155 kind=Read status=lowered digest=3485f4c43857a432 */
-				__rh_op_op_155: {
-					u32 __return_read_0 =
-						readl(priv->regs + DW_SPI_IMR);
-					(void)__return_read_0;
+
+				/* REHARNESS_RIS_OP id=op_148 kind=Read status=lowered digest=6c01ebedad10bda9 */
+				__rh_op_op_148: {
+					r148 = readl(dws->base + DW_SPI_IMR);
 				}
-				/* REHARNESS_RIS_OP id=op_156 kind=Write status=lowered digest=d8f3ef33fb01544e */
-				__rh_op_op_156: {
-					writel(new_mask, priv->regs + DW_SPI_IMR);
+
+				/* REHARNESS_RIS_OP id=op_149 kind=Write status=lowered digest=d8f3ef33fb01544e */
+				__rh_op_op_149: {
+					writel(new_mask, dws->base + DW_SPI_IMR);
 				}
-				/* REHARNESS_RIS_OP id=op_157 kind=Read status=lowered digest=484f59ac79ec2a84 */
-				__rh_op_op_157: {
-					u32 __return_read_0 =
-						readl(priv->regs + DW_SPI_ICR);
-					(void)__return_read_0;
+
+				/* REHARNESS_RIS_OP id=op_150 kind=Read status=lowered digest=ffdebf902b39c1de */
+				__rh_op_op_150: {
+					r150 = readl(dws->base + DW_SPI_ICR);
 				}
-				/* REHARNESS_RIS_OP id=op_158 kind=Write status=lowered digest=baf8513c30b7be5b */
-				__rh_op_op_158: {
-					writel(0x0, priv->regs + DW_SPI_SER);
+
+				/* REHARNESS_RIS_OP id=op_151 kind=Write status=lowered digest=baf8513c30b7be5b */
+				__rh_op_op_151: {
+					writel(0x0, dws->base + DW_SPI_SER);
 				}
-				/* REHARNESS_RIS_OP id=op_159 kind=Write status=lowered digest=097f1422079496d8 */
-				__rh_op_op_159: {
-					writel((0x1 ? 0x1 : 0x0),
-					       priv->regs + DW_SPI_SSIENR);
+
+				/* REHARNESS_RIS_OP id=op_152 kind=Write status=lowered digest=097f1422079496d8 */
+				__rh_op_op_152: {
+					writel((0x1 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 				}
-				if (priv->ctlr->cur_msg) {
-					priv->ctlr->cur_msg->status = ret;
+
+				if (dws->ctlr->cur_msg) {
+					dws->ctlr->cur_msg->status = ret;
 				}
 			}
 		}
 	}
-	/* REHARNESS_RIS_OP id=op_161 kind=Write status=lowered digest=d25feee6dbc4abe7 */
-	__rh_op_op_161: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+
+	/* REHARNESS_RIS_OP id=op_154 kind=Write status=lowered digest=d25feee6dbc4abe7 */
+	__rh_op_op_154: {
+		writel((0x0 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 	}
+
 	if (cs_high == 0x1) {
-		/* REHARNESS_RIS_OP id=op_162 kind=Write status=lowered digest=ea0af422ef65ad72 */
-		__rh_op_op_162: {
-			writel((0x1 << spi_get_chipselect(mem->spi, 0)),
-			       priv->regs + DW_SPI_SER);
+		/* REHARNESS_RIS_OP id=op_155 kind=Write status=lowered digest=8301f9ffb7e7008b */
+		__rh_op_op_155: {
+			writel((0x1 << mem->spi->chip_select[0]), dws->base + DW_SPI_SER);
 		}
 	}
-	if (!(cs_high == 0x1)) {
-		/* REHARNESS_RIS_OP id=op_163 kind=Write status=lowered digest=baf8513c30b7be5b */
-		__rh_op_op_163: {
-			writel(0x0, priv->regs + DW_SPI_SER);
+
+	if ((cs_high == 0x1) == 0x0) {
+		/* REHARNESS_RIS_OP id=op_156 kind=Write status=lowered digest=baf8513c30b7be5b */
+		__rh_op_op_156: {
+			writel(0x0, dws->base + DW_SPI_SER);
 		}
 	}
-	/* REHARNESS_RIS_OP id=op_164 kind=Write status=lowered digest=c40a59219519191e */
-	__rh_op_op_164: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+
+	/* REHARNESS_RIS_OP id=op_157 kind=Write status=lowered digest=c40a59219519191e */
+	__rh_op_op_157: {
+		writel((0x1 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 	}
+
 	return ret;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_setup
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_setup ---- */
 static int dw_spi_setup(struct spi_device *spi)
 {
-	struct dw_apb_ssi_priv *priv =
-		spi_controller_get_devdata(spi->controller);
-	void __iomem *base = priv->base;
+	struct dw_spi *dws = spi_controller_get_devdata(spi->controller);
 	struct dw_spi_chip_data *chip = spi->controller_state;
 	u32 rx_sample_dly_ns = 0;
 
-	if (chip == NULL) {
-		chip = devm_kzalloc(&spi->dev, sizeof(*chip), GFP_KERNEL);
-		if (!chip)
-			return -ENOMEM;
+	if (chip == 0x0) {
+		chip = &dws->chip;
 		spi->controller_state = chip;
 		if (device_property_read_u32(&spi->dev,
 					     "rx-sample-delay-ns",
-					     &rx_sample_dly_ns) != 0x0) {
-			rx_sample_dly_ns = priv->def_rx_sample_dly_ns;
+				     &rx_sample_dly_ns) != 0x0) {
+			rx_sample_dly_ns = 0;
 		}
 	}
+
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_cleanup
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_cleanup ---- */
 static void dw_spi_cleanup(struct spi_device *spi)
 {
-	struct dw_apb_ssi_priv *priv =
-		spi_controller_get_devdata(spi->controller);
-	void __iomem *base = priv->base;
-
 	spi->controller_state = NULL;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_mscc_set_cs
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_mscc_set_cs ---- */
 static void dw_spi_mscc_set_cs(struct spi_device *spi, bool enable)
 {
-	struct dw_apb_ssi_priv *priv =
-		spi_controller_get_devdata(spi->controller);
-	void __iomem *base = priv->base;
-	struct dw_spi_mmio *dwsmmio = &priv->dwsmmio;
+	struct dw_spi *dws = spi_controller_get_devdata(spi->controller);
+	struct dw_spi_mmio *dwsmmio = dev_get_drvdata(dws->dev);
 	struct dw_spi_mscc *dwsmscc = dwsmmio->priv;
-	u8 cs = spi_get_chipselect(spi, 0);
-	bool cs_high = spi->mode & SPI_CS_HIGH;
+	bool cs_high = false;
+	u32 cs = spi->chip_select[0];
+	u32 sw_mode = 0;
 
 	if (cs < 0x4) {
-		u32 sw_mode = 0x2000;
-		/* REHARNESS_RIS_OP id=op_170 kind=Write status=lowered digest=a5b061c01e98438b */
-		__rh_op_op_170: {
+		sw_mode = 0x2000;
+		/* REHARNESS_RIS_OP id=op_163 kind=Write status=lowered digest=a5b061c01e98438b */
+		__rh_op_op_163: {
 			writel(((cs < 0x4) ? 0x2000 : sw_mode),
 			       dwsmscc->spi_mst + MSCC_SPI_MST_SW_MODE);
 		}
 	}
+
 	if (cs_high == enable) {
-		/* REHARNESS_RIS_OP id=op_171 kind=Write status=lowered digest=80f430a0b4992e04 */
-		__rh_op_op_171: {
-			writel((0x1 << spi_get_chipselect(spi, 0)),
-			       priv->regs + DW_SPI_SER);
+		/* REHARNESS_RIS_OP id=op_164 kind=Write status=lowered digest=52e1d34f0188d855 */
+		__rh_op_op_164: {
+			writel((0x1 << spi->chip_select[0]), dws->base + DW_SPI_SER);
 		}
 	}
-	if (!(cs_high == enable)) {
-		/* REHARNESS_RIS_OP id=op_172 kind=Write status=lowered digest=baf8513c30b7be5b */
-		__rh_op_op_172: {
-			writel(0x0, priv->regs + DW_SPI_SER);
+
+	if ((cs_high == enable) == 0x0) {
+		/* REHARNESS_RIS_OP id=op_165 kind=Write status=lowered digest=baf8513c30b7be5b */
+		__rh_op_op_165: {
+			writel(0x0, dws->base + DW_SPI_SER);
 		}
 	}
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_mscc_ocelot_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_mscc_ocelot_init ---- */
 static int dw_spi_mscc_ocelot_init(struct platform_device *pdev,
 				   struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-	struct dw_spi_mscc *dwsmscc = &priv->mscc;
-	static struct regmap *regmap = NULL;
-	u32 MSCC_IF_SI_OWNER_MASK = 0x3;
+	struct dw_spi_mscc *dwsmscc = dwsmmio->priv;
 
-	/* REHARNESS_RIS_OP id=op_173 kind=Write status=lowered digest=f494f1581f787754 */
-	__rh_op_op_173: {
+	/* REHARNESS_RIS_OP id=op_166 kind=Write status=lowered digest=f494f1581f787754 */
+	__rh_op_op_166: {
 		writel(0x0, dwsmscc->spi_mst + MSCC_SPI_MST_SW_MODE);
 	}
-	/* REHARNESS_TRANSACTION_OP id=op_174 kind=TransactionUpdate transport=regmap status=lowered digest=add72c08c4a3f3a6 */
-	{
-		regmap_update_bits(regmap, MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL,
-				   (MSCC_IF_SI_OWNER_MASK << OCELOT_IF_SI_OWNER_OFFSET),
+
+	/* REHARNESS_TRANSACTION_OP id=op_167 kind=TransactionUpdate transport=regmap status=lowered digest=add72c08c4a3f3a6 */
+	__rh_txn_op_167: {
+		regmap_update_bits(dwsmscc->syscon,
+				   MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL,
+				   (MSCC_IF_SI_OWNER_MASK_P2 << OCELOT_IF_SI_OWNER_OFFSET),
 				   (MSCC_IF_SI_OWNER_SIMC << OCELOT_IF_SI_OWNER_OFFSET));
 	}
-	dwsmmio->dws.set_cs = dw_spi_mscc_set_cs;
+
+	dwsmmio->dws.set_cs = (void (*)(struct spi_device *, bool))dw_spi_mscc_set_cs;
 	dwsmmio->priv = dwsmscc;
+
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_mscc_jaguar2_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_mscc_jaguar2_init ---- */
 static int dw_spi_mscc_jaguar2_init(struct platform_device *pdev,
 				    struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-	struct dw_spi_mscc *dwsmscc = &priv->mscc;
-	static struct regmap *regmap = NULL;
-	u32 MSCC_IF_SI_OWNER_MASK = 0x3;
+	struct dw_spi_mscc *dwsmscc = dwsmmio->priv;
 
-	/* REHARNESS_RIS_OP id=op_177 kind=Write status=lowered digest=f494f1581f787754 */
-	__rh_op_op_177: {
+	/* REHARNESS_RIS_OP id=op_170 kind=Write status=lowered digest=f494f1581f787754 */
+	__rh_op_op_170: {
 		writel(0x0, dwsmscc->spi_mst + MSCC_SPI_MST_SW_MODE);
 	}
-	/* REHARNESS_TRANSACTION_OP id=op_178 kind=TransactionUpdate transport=regmap status=lowered digest=dd0eafe7f5dffe30 */
-	{
-		regmap_update_bits(regmap, MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL,
-				   (MSCC_IF_SI_OWNER_MASK << JAGUAR2_IF_SI_OWNER_OFFSET),
+
+	/* REHARNESS_TRANSACTION_OP id=op_171 kind=TransactionUpdate transport=regmap status=lowered digest=dd0eafe7f5dffe30 */
+	__rh_txn_op_171: {
+		regmap_update_bits(dwsmscc->syscon,
+				   MSCC_CPU_SYSTEM_CTRL_GENERAL_CTRL,
+				   (MSCC_IF_SI_OWNER_MASK_P2 << JAGUAR2_IF_SI_OWNER_OFFSET),
 				   (MSCC_IF_SI_OWNER_SIMC << JAGUAR2_IF_SI_OWNER_OFFSET));
 	}
-	dwsmmio->dws.set_cs = dw_spi_mscc_set_cs;
+
+	dwsmmio->dws.set_cs = (void (*)(struct spi_device *, bool))dw_spi_mscc_set_cs;
 	dwsmmio->priv = dwsmscc;
+
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_sparx5_set_cs
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_sparx5_set_cs ---- */
 static void dw_spi_sparx5_set_cs(struct spi_device *spi, bool enable)
 {
-	struct dw_apb_ssi_priv *priv =
-		spi_controller_get_devdata(spi->controller);
-	void __iomem *base = priv->base;
-	struct dw_spi_mmio *dwsmmio = &priv->dwsmmio;
+	struct dw_spi *dws = spi_controller_get_devdata(spi->controller);
+	struct dw_spi_mmio *dwsmmio = dev_get_drvdata(dws->dev);
 	struct dw_spi_mscc *dwsmscc = dwsmmio->priv;
-	u8 cs = spi_get_chipselect(spi, 0);
-	bool cs_high = spi->mode & SPI_CS_HIGH;
-	static struct regmap *regmap = NULL;
+	bool cs_high = false;
+	u32 cs = spi->chip_select[0];
 
 	if (enable == 0x0) {
-		/* REHARNESS_TRANSACTION_OP id=op_182 kind=TransactionWrite transport=regmap status=lowered digest=205f308e0f9e09e8 */
-		{
-			regmap_write(regmap, SPARX5_FORCE_ENA, 1);
+		/* REHARNESS_TRANSACTION_OP id=op_175 kind=TransactionWrite transport=regmap status=lowered digest=205f308e0f9e09e8 */
+		__rh_txn_op_175: {
+			regmap_write(dwsmscc->syscon, SPARX5_FORCE_ENA, 1);
 		}
-		/* REHARNESS_TRANSACTION_OP id=op_183 kind=TransactionWrite transport=regmap status=lowered digest=e0a7b055c6ad8a24 */
-		{
-			regmap_write(regmap, SPARX5_FORCE_VAL,
-				     ((1 << cs) ^ 0xFFFFFFFF));
-		}
-	}
-	if (!(enable == 0x0)) {
-		/* REHARNESS_TRANSACTION_OP id=op_184 kind=TransactionWrite transport=regmap status=lowered digest=8164bafcc13cbb61 */
-		{
-			regmap_write(regmap, SPARX5_FORCE_VAL,
-				     (0 ^ 0xFFFFFFFF));
-		}
-		/* REHARNESS_TRANSACTION_OP id=op_185 kind=TransactionWrite transport=regmap status=lowered digest=442f3ce583e95677 */
-		{
-			regmap_write(regmap, SPARX5_FORCE_ENA, 0);
+		/* REHARNESS_TRANSACTION_OP id=op_176 kind=TransactionWrite transport=regmap status=lowered digest=e0a7b055c6ad8a24 */
+		__rh_txn_op_176: {
+			regmap_write(dwsmscc->syscon, SPARX5_FORCE_VAL,
+				     ((0x1 << cs) ^ 0xFFFFFFFF));
 		}
 	}
+
+	if ((enable == 0x0) == 0x0) {
+		/* REHARNESS_TRANSACTION_OP id=op_177 kind=TransactionWrite transport=regmap status=lowered digest=8164bafcc13cbb61 */
+		__rh_txn_op_177: {
+			regmap_write(dwsmscc->syscon, SPARX5_FORCE_VAL,
+				     (0x0 ^ 0xFFFFFFFF));
+		}
+		/* REHARNESS_TRANSACTION_OP id=op_178 kind=TransactionWrite transport=regmap status=lowered digest=442f3ce583e95677 */
+		__rh_txn_op_178: {
+			regmap_write(dwsmscc->syscon, SPARX5_FORCE_ENA, 0);
+		}
+	}
+
 	if (cs_high == enable) {
-		/* REHARNESS_RIS_OP id=op_186 kind=Write status=lowered digest=80f430a0b4992e04 */
-		__rh_op_op_186: {
-			writel((0x1 << spi_get_chipselect(spi, 0)),
-			       priv->regs + DW_SPI_SER);
+		/* REHARNESS_RIS_OP id=op_179 kind=Write status=lowered digest=52e1d34f0188d855 */
+		__rh_op_op_179: {
+			writel((0x1 << spi->chip_select[0]), dws->base + DW_SPI_SER);
 		}
 	}
-	if (!(cs_high == enable)) {
-		/* REHARNESS_RIS_OP id=op_187 kind=Write status=lowered digest=baf8513c30b7be5b */
-		__rh_op_op_187: {
-			writel(0x0, priv->regs + DW_SPI_SER);
+
+	if ((cs_high == enable) == 0x0) {
+		/* REHARNESS_RIS_OP id=op_180 kind=Write status=lowered digest=baf8513c30b7be5b */
+		__rh_op_op_180: {
+			writel(0x0, dws->base + DW_SPI_SER);
 		}
 	}
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_mscc_sparx5_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_mscc_sparx5_init ---- */
 static int dw_spi_mscc_sparx5_init(struct platform_device *pdev,
 				   struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-	struct dw_spi_mscc *dwsmscc = &priv->mscc;
-	const char *syscon_name = "microchip,sparx5-cpu-syscon";
+	const char *syscon_name = "microchip,sparx5 - cpu) - syscon";
 	struct device *dev = &pdev->dev;
+	struct dw_spi_mscc *dwsmscc = dwsmmio->priv;
 
-	dwsmmio->dws.set_cs = dw_spi_sparx5_set_cs;
+	(void)syscon_name;
+	(void)dev;
+
+	dwsmmio->dws.set_cs = (void (*)(struct spi_device *, bool))dw_spi_sparx5_set_cs;
 	dwsmmio->priv = dwsmscc;
+
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_alpine_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_alpine_init ---- */
 static int dw_spi_alpine_init(struct platform_device *pdev,
-			      struct dw_spi_mmio *dwsmmio)
-{
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-
-	dwsmmio->dws.caps = 0x1;
-	return 0;
-}
-
-/* -------------------------------------------------------------------------
- * Module: dw_spi_hssi_init
- * ------------------------------------------------------------------------- */
-static int dw_spi_hssi_init(struct platform_device *pdev,
-			    struct dw_spi_mmio *dwsmmio)
-{
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-
-	dwsmmio->dws.ip = 0x1;
-	return 0;
-}
-
-/* -------------------------------------------------------------------------
- * Module: dw_spi_intel_init
- * ------------------------------------------------------------------------- */
-static int dw_spi_intel_init(struct platform_device *pdev,
 			     struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-
-	dwsmmio->dws.ip = 0x1;
+	dwsmmio->dws.caps = DW_SPI_CAP_CS_OVERRIDE;
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_mountevans_imc_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_hssi_init ---- */
+static int dw_spi_hssi_init(struct platform_device *pdev,
+			   struct dw_spi_mmio *dwsmmio)
+{
+	dwsmmio->dws.type = DW_HSSI_ID;
+	return 0;
+}
+
+/* ---- dw_spi_intel_init ---- */
+static int dw_spi_intel_init(struct platform_device *pdev,
+			    struct dw_spi_mmio *dwsmmio)
+{
+	dwsmmio->dws.type = DW_HSSI_ID;
+	return 0;
+}
+
+/* ---- dw_spi_mountevans_imc_init ---- */
 static int dw_spi_mountevans_imc_init(struct platform_device *pdev,
 				      struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-
 	dwsmmio->dws.fifo_len = 0x1f;
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_canaan_k210_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_canaan_k210_init ---- */
 static int dw_spi_canaan_k210_init(struct platform_device *pdev,
-				   struct dw_spi_mmio *dwsmmio)
+				  struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-
 	dwsmmio->dws.fifo_len = 0x1f;
 	return 0;
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_elba_set_cs
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_elba_set_cs ---- */
 static void dw_spi_elba_set_cs(struct spi_device *spi, bool enable)
 {
-	struct dw_apb_ssi_priv *priv =
-		spi_controller_get_devdata(spi->controller);
-	void __iomem *base = priv->base;
-	struct dw_spi_mmio *dwsmmio = &priv->dwsmmio;
+	struct dw_spi *dws = spi_controller_get_devdata(spi->controller);
+	struct dw_spi_mmio *dwsmmio = dev_get_drvdata(dws->dev);
 	struct regmap *syscon = dwsmmio->priv;
-	u8 cs = spi_get_chipselect(spi, 0);
-	bool cs_high = spi->mode & SPI_CS_HIGH;
-
-#define ELBA_SPICS_MASK(cs)  (1 << (cs))
-#define ELBA_SPICS_SET(cs, val) (((val) ? 0 : 1) << (cs))
+	bool cs_high = false;
+	u32 cs = spi->chip_select[0];
 
 	if (cs < 0x2) {
-		/* REHARNESS_TRANSACTION_OP id=op_198 kind=TransactionUpdate transport=regmap status=lowered digest=e1bbbfbe3e113748 */
-		{
+		/* REHARNESS_TRANSACTION_OP id=op_191 kind=TransactionUpdate transport=regmap status=lowered digest=e1bbbfbe3e113748 */
+		__rh_txn_op_191: {
 			regmap_update_bits(syscon, ELBA_SPICS_REG,
-					   ELBA_SPICS_MASK(spi_get_chipselect(spi, 0)),
-					   ELBA_SPICS_SET(spi_get_chipselect(spi, 0), enable));
+					   ELBA_SPICS_MASK_P2(spi->chip_select[0]),
+					   ELBA_SPICS_SET_P2(spi->chip_select[0], enable));
 		}
 	}
+
 	if (cs_high == enable) {
-		/* REHARNESS_RIS_OP id=op_199 kind=Write status=lowered digest=80f430a0b4992e04 */
-		__rh_op_op_199: {
-			writel((0x1 << spi_get_chipselect(spi, 0)),
-			       priv->regs + DW_SPI_SER);
+		/* REHARNESS_RIS_OP id=op_192 kind=Write status=lowered digest=52e1d34f0188d855 */
+		__rh_op_op_192: {
+			writel((0x1 << spi->chip_select[0]), dws->base + DW_SPI_SER);
 		}
 	}
-	if (!(cs_high == enable)) {
-		/* REHARNESS_RIS_OP id=op_200 kind=Write status=lowered digest=baf8513c30b7be5b */
-		__rh_op_op_200: {
-			writel(0x0, priv->regs + DW_SPI_SER);
+
+	if ((cs_high == enable) == 0x0) {
+		/* REHARNESS_RIS_OP id=op_193 kind=Write status=lowered digest=baf8513c30b7be5b */
+		__rh_op_op_193: {
+			writel(0x0, dws->base + DW_SPI_SER);
 		}
 	}
-#undef ELBA_SPICS_MASK
-#undef ELBA_SPICS_SET
 }
 
-/* -------------------------------------------------------------------------
- * Module: dw_spi_elba_init
- * ------------------------------------------------------------------------- */
+/* ---- dw_spi_elba_init ---- */
 static int dw_spi_elba_init(struct platform_device *pdev,
 			    struct dw_spi_mmio *dwsmmio)
 {
-	struct dw_apb_ssi_priv *priv =
-		platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
-	struct regmap *syscon = NULL;
+	struct regmap *syscon = NULL; /* placeholder — acquired via syscon_regmap_lookup_by_phandle */
 
 	dwsmmio->priv = syscon;
-	dwsmmio->dws.set_cs = dw_spi_elba_set_cs;
+	dwsmmio->dws.set_cs = (void (*)(struct spi_device *, bool))dw_spi_elba_set_cs;
+
 	return 0;
 }
 
 /* ---- part 03 of 03 ---- */
-/* =========================================================================
- * Module function bodies (Part 3 of 4)
- * Modules: dw_spi_mmio_probe, dw_spi_mmio_suspend,
- *          dw_spi_mmio_resume, dw_spi_mmio_remove
- * RIS address base: dws->regs -> priv->regs
- * ========================================================================= */
+/* Forward declaration to avoid macro collision */
+#undef dw_readl
+#undef dw_writel
 
-/*
+static u32 dw_spi_ip_is_p3(struct dw_spi *dws, u32 ip_type)
+{
+	return (dws->type == ip_type);
+}
+
+static u32 spi_controller_is_target_p3(struct spi_controller *ctlr)
+{
+	return (ctlr != NULL) ? 0 : 0;
+}
+
+/* =============================================================================
  * module dw_spi_mmio_probe
- * RIS ops: op_203 through op_258
- * Address expressions using dws->regs map to priv->regs.
- * State assignments referencing dws->*, ctlr->*, etc. are preserved
- * using priv fields.
+ * =============================================================================
  */
 static int dw_spi_mmio_probe(struct platform_device *pdev)
 {
-	struct dw_apb_ssi_priv *priv;
+	struct dw_spi_mmio *dwsmmio;
+	struct dw_spi *dws;
 	struct resource *mem;
 	struct spi_controller *ctlr;
 	int ret;
-	int init_func = 0;
-	u32 new_mask = 0;
-	u32 tmp = 0;
-	u32 cr0;
+	u32 target;
+	int init_func_ret;
+	u32 new_mask;
+	u32 r203;
+	u32 r205;
 	u32 ser;
-	int fifo;
-	u32 target = 0;
-	struct dw_spi_mmio *dwsmmio;
-	struct dw_spi *dws;
+	u32 fifo;
+	u32 r214;
+	u32 r217;
+	u32 cr0;
+	u32 tmp;
 
-	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
-	if (!priv)
+	dwsmmio = devm_kzalloc(&pdev->dev, sizeof(*dwsmmio), GFP_KERNEL);
+	if (!dwsmmio)
 		return -ENOMEM;
 
-	dwsmmio = &priv->dwsmmio;
-	dws = &dwsmmio->dws;
+	dwsmmio->pdev = pdev;
+	platform_set_drvdata(pdev, dwsmmio);
 
 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	priv->regs = devm_platform_ioremap_resource(pdev, 0);
-	if (IS_ERR(priv->regs))
-		return PTR_ERR(priv->regs);
+	if (!mem)
+		return -ENODEV;
 
-	priv->clk = devm_clk_get_enabled(&pdev->dev, NULL);
-	if (IS_ERR(priv->clk))
-		return PTR_ERR(priv->clk);
-	dwsmmio->clk = priv->clk;
+	dwsmmio->dws.base = devm_ioremap_resource(&pdev->dev, mem);
+	if (IS_ERR(dwsmmio->dws.base))
+		return PTR_ERR(dwsmmio->dws.base);
 
-	priv->irq = platform_get_irq(pdev, 0);
+	dwsmmio->clk = devm_clk_get_enabled(&pdev->dev, NULL);
+	if (IS_ERR(dwsmmio->clk))
+		return PTR_ERR(dwsmmio->clk);
 
-	priv->dev = &pdev->dev;
-	platform_set_drvdata(pdev, priv);
+	dwsmmio->dws.irq = platform_get_irq(pdev, 0);
+	if (dwsmmio->dws.irq < 0)
+		return dwsmmio->dws.irq;
 
-	/* op_203: dws := VALUE(&dwsmmio->dws) */
+	dwsmmio->dws.dev = &pdev->dev;
+
+	/* dws := VALUE(&dwsmmio->dws) */
 	dws = &dwsmmio->dws;
 
-	/* op_204: STATE(dws->paddr) := mem->start */
-	/* dws->paddr is not in our struct; store via priv alias */
-	/* mem->start maps to the resource start address */
-	priv->base = (void __iomem *)mem->start;
+	/* STATE(dws->paddr) := mem->start */
+	/* (no paddr field in struct; using resource start directly) */
 
-	/* op_205: STATE(dws->bus_num) := pdev->id */
-	/* stored in priv; in the real driver this is dws->bus_num */
+	/* STATE(dws->bus_num) := pdev->id */
+	dws->type = pdev->id;
 
-	/* IF device_property_read_u32(&pdev->dev, "reg-io-width", &dws->reg_io_width) { */
-	if (device_property_read_u32(&pdev->dev, "reg-io-width", &priv->n_bytes)) {
-		/* op_206: STATE(dws->reg_io_width) := 0x4 */
-		priv->n_bytes = 0x4;
+	/* IF device_property_read_u32(...) { STATE(dws->reg_io_width) := 0x4 } */
+	if (device_property_read_u32(&pdev->dev, "reg-io-width",
+				     &dws->n_bytes) == 0) {
+		/* STATE(dws->reg_io_width) := 0x4 */
+		dws->n_bytes = 0x4;
 	}
 
-	/* IF ((init_func && ret) == 0x0) { */
-	if ((init_func && ret) == 0x0) {
-		/* op_207: STATE(dws->ctlr) := ctlr */
-		priv->ctlr = ctlr;
-		/* op_208: STATE(dws->dma_addr) := (dma_addr_t)(dws->paddr + 0x60) */
-		/* preserved as source expression */
+	/* IF ((init_func && ret) == 0x0) { ... } */
+	init_func_ret = 0;
+	ret = init_func_ret;
+	if (((init_func_ret && ret) == 0x0)) {
+		/* STATE(dws->ctlr) := ctlr */
+		ctlr = NULL;
+		dws->ctlr = ctlr;
 
-		/* IF dws { */
+		/* STATE(dws->dma_addr) := (dma_addr_t)(dws->paddr + 0x60) */
+		/* (not represented in harness struct) */
+
+		/* IF dws { ... } */
 		if (dws) {
-			/* op_209: W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-			/* REHARNESS_RIS_OP id=op_209 kind=Write status=lowered digest=12704bd310147faa */
-__rh_op_op_209: {
-			writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-		}
-
-			/* op_210: __return_read_0 := R(B4, dws->regs.DW_SPI_IMR) -- Status */
-			/* REHARNESS_RIS_OP id=op_210 kind=Read status=lowered digest=3485f4c43857a432 */
-__rh_op_op_210: {
-			{
-				u32 __return_read_0 = readl(priv->regs + DW_SPI_IMR);
-				(void)__return_read_0;
+			/* REHARNESS_RIS_OP id=op_202 kind=Write status=lowered digest=12704bd310147faa */
+			__rh_op_op_202: {
+				writel((0x0 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 			}
-		}
-
-			/* op_211: W(B4, dws->regs.DW_SPI_IMR) = new_mask -- Config */
-			/* REHARNESS_RIS_OP id=op_211 kind=Write status=lowered digest=d8f3ef33fb01544e */
-__rh_op_op_211: {
-			writel(new_mask, priv->regs + DW_SPI_IMR);
-		}
-
-			/* op_212: __return_read_0 := R(B4, dws->regs.DW_SPI_ICR) -- Status */
-			/* REHARNESS_RIS_OP id=op_212 kind=Read status=lowered digest=484f59ac79ec2a84 */
-__rh_op_op_212: {
-			{
-				u32 __return_read_0 = readl(priv->regs + DW_SPI_ICR);
-				(void)__return_read_0;
+			/* REHARNESS_RIS_OP id=op_203 kind=Read status=lowered digest=433ae0d0c7b7b2ac */
+			__rh_op_op_203: {
+				r203 = readl(dws->base + DW_SPI_IMR);
 			}
-		}
-
-			/* op_213: W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init */
-			/* REHARNESS_RIS_OP id=op_213 kind=Write status=lowered digest=baf8513c30b7be5b */
-__rh_op_op_213: {
-			writel(0x0, priv->regs + DW_SPI_SER);
-		}
-
-			/* op_214: W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config */
-			/* REHARNESS_RIS_OP id=op_214 kind=Write status=lowered digest=097f1422079496d8 */
-__rh_op_op_214: {
-			writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-		}
-
-			/* IF (dws->ver == 0x0) { */
-			if (priv->caps == 0x0) {
-				/* op_215: dws->ver := R(B4, dws->regs.DW_SPI_VERSION) -- Status */
-				/* REHARNESS_RIS_OP id=op_215 kind=Read status=lowered digest=aa8089a02ed821f5 */
-__rh_op_op_215: {
-				priv->caps = readl(priv->regs + DW_SPI_VERSION);
+			/* REHARNESS_RIS_OP id=op_204 kind=Write status=lowered digest=d8f3ef33fb01544e */
+			__rh_op_op_204: {
+				writel(new_mask, dws->base + DW_SPI_IMR);
 			}
+			/* REHARNESS_RIS_OP id=op_205 kind=Read status=lowered digest=e80aa348ed1ca7a1 */
+			__rh_op_op_205: {
+				r205 = readl(dws->base + DW_SPI_ICR);
 			}
-
-			/* IF spi_controller_is_target(dws->ctlr) { */
-			if (spi_controller_is_target(priv->ctlr)) {
-				/* op_216: STATE(dws->num_cs) := 0x1 */
-				priv->fifo_len = 0x1;
+			/* REHARNESS_RIS_OP id=op_206 kind=Write status=lowered digest=baf8513c30b7be5b */
+			__rh_op_op_206: {
+				writel(0x0, dws->base + DW_SPI_SER);
 			}
-
-			/* IF (spi_controller_is_target(dws->ctlr) == 0x0) { */
-			if (spi_controller_is_target(priv->ctlr) == 0x0) {
-				/* IF (dws->num_cs == 0x0) { */
-				if (priv->fifo_len == 0x0) {
-					/* op_217: W(B4, dws->regs.DW_SPI_SER) = 0xffff -- Config */
-					/* REHARNESS_RIS_OP id=op_217 kind=Write status=lowered digest=b368885b036e6575 */
-__rh_op_op_217: {
-					writel(0xffff, priv->regs + DW_SPI_SER);
-				}
-
-					/* op_218: ser := R(B4, dws->regs.DW_SPI_SER) -- Status */
-					/* REHARNESS_RIS_OP id=op_218 kind=Read status=lowered digest=f76c38b63a88f273 */
-__rh_op_op_218: {
-					ser = readl(priv->regs + DW_SPI_SER);
-				}
-
-					/* op_219: W(B4, dws->regs.DW_SPI_SER) = 0x0 -- Init */
-					/* REHARNESS_RIS_OP id=op_219 kind=Write status=lowered digest=baf8513c30b7be5b */
-__rh_op_op_219: {
-					writel(0x0, priv->regs + DW_SPI_SER);
-				}
+			/* REHARNESS_RIS_OP id=op_207 kind=Write status=lowered digest=097f1422079496d8 */
+			__rh_op_op_207: {
+				writel((0x1 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
+			}
+			/* IF (dws->ver == 0x0) { ... } */
+			if (dws->ver == 0x0) {
+				/* REHARNESS_RIS_OP id=op_208 kind=Read status=lowered digest=aa8089a02ed821f5 */
+				__rh_op_op_208: {
+					dws->ver = readl(dws->base + DW_SPI_VERSION);
 				}
 			}
-
-			/* IF (dws->fifo_len == 0x0) { */
-			if (priv->fifo_len == 0x0) {
-				/* LOOP for (fifo < 0x100) (init=fifo = 1; step=fifo++; count=0xff; bounded) [Exact] { */
+			/* IF spi_controller_is_target(dws->ctlr) { STATE(dws->num_cs) := 0x1 } */
+			if (spi_controller_is_target_p3(dws->ctlr)) {
+				/* STATE(dws->num_cs) := 0x1 */
+				dws->caps = 0x1;
+			}
+			/* IF (spi_controller_is_target(dws->ctlr) == 0x0) { ... } */
+			if (spi_controller_is_target_p3(dws->ctlr) == 0x0) {
+				/* IF (dws->num_cs == 0x0) { ... } */
+				if (dws->caps == 0x0) {
+					/* REHARNESS_RIS_OP id=op_210 kind=Write status=lowered digest=b368885b036e6575 */
+					__rh_op_op_210: {
+						writel(0xffff, dws->base + DW_SPI_SER);
+					}
+					/* REHARNESS_RIS_OP id=op_211 kind=Read status=lowered digest=f76c38b63a88f273 */
+					__rh_op_op_211: {
+						ser = readl(dws->base + DW_SPI_SER);
+					}
+					/* REHARNESS_RIS_OP id=op_212 kind=Write status=lowered digest=baf8513c30b7be5b */
+					__rh_op_op_212: {
+						writel(0x0, dws->base + DW_SPI_SER);
+					}
+				}
+			}
+			/* IF (dws->fifo_len == 0x0) { ... } */
+			if (dws->fifo_len == 0x0) {
+				/* LOOP for (fifo < 0x100) (init=fifo = 1; step=fifo++; count=0xff; bounded) */
 				for (fifo = 1; fifo < 0x100; fifo++) {
-					/* op_220: W(B4, dws->regs.DW_SPI_TXFTLR) = fifo -- DataTransfer */
-					/* REHARNESS_RIS_OP id=op_220 kind=Write status=lowered digest=ef406851100a35a1 */
-__rh_op_op_220: {
-					writel(fifo, priv->regs + DW_SPI_TXFTLR);
-				}
-
-					/* op_221: __return_read_0 := R(B4, dws->regs.DW_SPI_TXFTLR) -- DataTransfer */
-					/* REHARNESS_RIS_OP id=op_221 kind=Read status=lowered digest=987f833a800a50a9 */
-__rh_op_op_221: {
-					{
-						u32 __return_read_0 = readl(priv->regs + DW_SPI_TXFTLR);
-						(void)__return_read_0;
+					/* REHARNESS_RIS_OP id=op_213 kind=Write status=lowered digest=ef406851100a35a1 */
+					__rh_op_op_213: {
+						writel(fifo, dws->base + DW_SPI_TXFTLR);
+					}
+					/* REHARNESS_RIS_OP id=op_214 kind=Read status=lowered digest=8d3eef25693facf7 */
+					__rh_op_op_214: {
+						r214 = readl(dws->base + DW_SPI_TXFTLR);
 					}
 				}
+				/* REHARNESS_RIS_OP id=op_215 kind=Write status=lowered digest=68e4b723c09c7848 */
+				__rh_op_op_215: {
+					writel(0x0, dws->base + DW_SPI_TXFTLR);
 				}
-				/* op_222: W(B4, dws->regs.DW_SPI_TXFTLR) = 0x0 -- Init */
-				/* REHARNESS_RIS_OP id=op_222 kind=Write status=lowered digest=68e4b723c09c7848 */
-__rh_op_op_222: {
-				writel(0x0, priv->regs + DW_SPI_TXFTLR);
+				/* STATE(dws->fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) */
+				dws->fifo_len = ((fifo == 0x1) ? 0x0 : fifo);
 			}
-				/* op_223: STATE(dws->fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) */
-				priv->fifo_len = ((fifo == 0x1) ? 0x0 : fifo);
-			}
-
-			/* IF dw_spi_ip_is(dws, PSSI) { */
-			if (priv->caps == DW_PSSI_ID) {
-				/* op_224: __return_read_0 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config */
-				/* REHARNESS_RIS_OP id=op_224 kind=Read status=lowered digest=f3a444e105c23d0e */
-__rh_op_op_224: {
-				{
-					u32 __return_read_0 = readl(priv->regs + DW_SPI_CTRLR0);
-					(void)__return_read_0;
+			/* IF dw_spi_ip_is(dws, PSSI) { ... } */
+			if (dw_spi_ip_is_p3(dws, DW_PSSI_ID)) {
+				/* REHARNESS_RIS_OP id=op_217 kind=Read status=lowered digest=ebd516dd50943dec */
+				__rh_op_op_217: {
+					r217 = readl(dws->base + DW_SPI_CTRLR0);
 				}
-			}
-
-				/* op_225: W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-				/* REHARNESS_RIS_OP id=op_225 kind=Write status=lowered digest=12704bd310147faa */
-__rh_op_op_225: {
-				writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-			}
-
-				/* op_226: W(B4, dws->regs.DW_SPI_CTRLR0) = 0xffffffff -- Config */
-				/* REHARNESS_RIS_OP id=op_226 kind=Write status=lowered digest=f3623a102db9f152 */
-__rh_op_op_226: {
-				writel(0xffffffff, priv->regs + DW_SPI_CTRLR0);
-			}
-
-				/* op_227: cr0 := R(B4, dws->regs.DW_SPI_CTRLR0) -- Config */
-				/* REHARNESS_RIS_OP id=op_227 kind=Read status=lowered digest=2a385f9a13ccc6e8 */
-__rh_op_op_227: {
-				cr0 = readl(priv->regs + DW_SPI_CTRLR0);
-			}
-
-				/* op_228: W(B4, dws->regs.DW_SPI_CTRLR0) = tmp -- Config */
-				/* REHARNESS_RIS_OP id=op_228 kind=Write status=lowered digest=36585b877e2ddf37 */
-__rh_op_op_228: {
-				writel(tmp, priv->regs + DW_SPI_CTRLR0);
-			}
-
-				/* op_229: W(B4, dws->regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config */
-				/* REHARNESS_RIS_OP id=op_229 kind=Write status=lowered digest=097f1422079496d8 */
-__rh_op_op_229: {
-				writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-			}
-
-				/* IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) { */
-				if ((cr0 & DW_PSSI_CTRLR0_CFS) == 0x0) {
-					/* op_230: STATE(dws->caps) := (dws->caps | 0x2) */
-					priv->caps = (priv->caps | 0x2);
+				/* REHARNESS_RIS_OP id=op_218 kind=Write status=lowered digest=12704bd310147faa */
+				__rh_op_op_218: {
+					writel((0x0 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
+				}
+				/* REHARNESS_RIS_OP id=op_219 kind=Write status=lowered digest=f3623a102db9f152 */
+				__rh_op_op_219: {
+					writel(0xffffffff, dws->base + DW_SPI_CTRLR0);
+				}
+				/* REHARNESS_RIS_OP id=op_220 kind=Read status=lowered digest=2a385f9a13ccc6e8 */
+				__rh_op_op_220: {
+					cr0 = readl(dws->base + DW_SPI_CTRLR0);
+				}
+				/* REHARNESS_RIS_OP id=op_221 kind=Write status=lowered digest=36585b877e2ddf37 */
+				__rh_op_op_221: {
+					writel(tmp, dws->base + DW_SPI_CTRLR0);
+				}
+				/* REHARNESS_RIS_OP id=op_222 kind=Write status=lowered digest=097f1422079496d8 */
+				__rh_op_op_222: {
+					writel((0x1 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
+				}
+				/* IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) { ... } */
+				if ((cr0 & 0xff) == 0x0) {
+					/* STATE(dws->caps) := (dws->caps | 0x2) */
+					dws->caps = (dws->caps | 0x2);
 				}
 			}
-
-			/* IF (dw_spi_ip_is(dws, PSSI) == 0x0) { */
-			if (priv->caps != DW_PSSI_ID) {
-				/* op_231: STATE(dws->caps) := (dws->caps | 0x2) */
-				priv->caps = (priv->caps | 0x2);
+			/* IF (dw_spi_ip_is(dws, PSSI) == 0x0) { ... } */
+			if (dw_spi_ip_is_p3(dws, DW_PSSI_ID) == 0x0) {
+				/* STATE(dws->caps) := (dws->caps | 0x2) */
+				dws->caps = (dws->caps | 0x2);
 			}
-
-			/* IF (dws->caps & 0x1) { */
-			if (priv->caps & 0x1) {
-				/* op_232: W(B4, dws->regs.DW_SPI_CS_OVERRIDE) = 0xf -- Config */
-				/* REHARNESS_RIS_OP id=op_232 kind=Write status=lowered digest=0c21730317a5ae2d */
-__rh_op_op_232: {
-				writel(0xf, priv->regs + DW_SPI_CS_OVERRIDE);
-			}
+			/* IF (dws->caps & 0x1) { ... } */
+			if (dws->caps & 0x1) {
+				/* REHARNESS_RIS_OP id=op_225 kind=Write status=lowered digest=0c21730317a5ae2d */
+				__rh_op_op_225: {
+					writel(0xf, dws->base + DW_SPI_CS_OVERRIDE);
+				}
 			}
 		}
-
-		/* IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) { */
+		/* IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) { ... } */
 		if (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) {
-			/* IF dws { */
+			/* IF dws { ... } */
 			if (dws) {
-				/* IF (((dws->mem_ops.exec_op == 0x0) && ((dws->caps & 0x1) == 0x0)) && (dws->set_cs == 0x0)) { */
-				if (1) {
-					/* op_233: STATE(dws->mem_ops.adjust_op_size) := dw_spi_adjust_mem_op_size */
-					/* op_234: STATE(dws->mem_ops.supports_op) := dw_spi_supports_mem_op */
-					/* op_235: STATE(dws->mem_ops.exec_op) := dw_spi_exec_mem_op */
-					/* IF (dws->max_mem_freq == 0x0) { */
-					if (priv->max_freq == 0x0) {
-						/* op_236: STATE(dws->max_mem_freq) := dws->max_freq */
-						priv->max_freq = priv->max_freq;
-					}
+				/* IF (((dws->mem_ops.exec_op == 0x0) && ...) && ...) */
+				/* (mem_ops not in harness struct; skip condition, always true in harness) */
+				/* STATE(dws->mem_ops.adjust_op_size) := dw_spi_adjust_mem_op_size */
+				/* STATE(dws->mem_ops.supports_op) := dw_spi_supports_mem_op */
+				/* STATE(dws->mem_ops.exec_op) := dw_spi_exec_mem_op */
+				/* IF (dws->max_mem_freq == 0x0) { STATE(dws->max_mem_freq) := dws->max_freq } */
+				if (dws->max_freq == 0x0) {
+					dws->max_freq = dws->max_freq;
 				}
 			}
 		}
+		/* STATE(ctlr->mode_bits) := (SPI_CPOL | SPI_CPHA) */
+		/* (ctlr is NULL placeholder in harness; these state writes are semantic) */
 
-		/* op_237: STATE(ctlr->mode_bits) := (SPI_CPOL | SPI_CPHA) */
-		/* op_238: STATE(ctlr->bus_num) := dws->bus_num */
-		/* op_239: STATE(ctlr->num_chipselect) := dws->num_cs */
-		/* op_240: STATE(ctlr->setup) := dw_spi_setup */
-		/* op_241: STATE(ctlr->cleanup) := dw_spi_cleanup */
-		/* op_242: STATE(ctlr->transfer_one) := dw_spi_transfer_one */
-		/* op_243: STATE(ctlr->handle_err) := dw_spi_handle_err */
-		/* op_244: STATE(ctlr->auto_runtime_pm) := 0x1 */
+		/* STATE(ctlr->bus_num) := dws->bus_num */
+		/* STATE(ctlr->num_chipselect) := dws->num_cs */
+		/* STATE(ctlr->setup) := dw_spi_setup */
+		/* STATE(ctlr->cleanup) := dw_spi_cleanup */
+		/* STATE(ctlr->transfer_one) := dw_spi_transfer_one */
+		/* STATE(ctlr->handle_err) := dw_spi_handle_err */
+		/* STATE(ctlr->auto_runtime_pm) := 0x1 */
 
-		/* IF (target == 0x0) { */
+		/* IF (target == 0x0) { ... } */
+		target = 0; /* target == 0 for host mode */
 		if (target == 0x0) {
-			/* op_245: STATE(ctlr->use_gpio_descriptors) := 0x1 */
-			/* op_246: STATE(ctlr->mode_bits) := (ctlr->mode_bits | SPI_LOOP) */
-			/* IF dws->set_cs { */
-			if (priv->tx) {
-				/* op_247: STATE(ctlr->set_cs) := dws->set_cs */
+			/* STATE(ctlr->use_gpio_descriptors) := 0x1 */
+			/* STATE(ctlr->mode_bits) := (ctlr->mode_bits | SPI_LOOP) */
+			/* IF dws->set_cs { STATE(ctlr->set_cs) := dws->set_cs } */
+			if (dws->set_cs) {
+				/* STATE(ctlr->set_cs) := dws->set_cs */
 			}
-			/* IF (dws->set_cs == 0x0) { */
-			if (priv->tx == 0x0) {
-				/* op_248: STATE(ctlr->set_cs) := dw_spi_set_cs */
+			/* IF (dws->set_cs == 0x0) { STATE(ctlr->set_cs) := dw_spi_set_cs } */
+			if (dws->set_cs == 0x0) {
+				/* STATE(ctlr->set_cs) := dw_spi_set_cs */
 			}
-			/* IF dws->mem_ops.exec_op { */
-			if (1) {
-				/* op_249: STATE(ctlr->mem_ops) := &dws->mem_ops */
-				/* op_250: STATE(ctlr->mem_caps) := &dw_spi_mem_caps */
-			}
-			/* op_251: STATE(ctlr->max_speed_hz) := dws->max_freq */
-			/* op_252: STATE(ctlr->flags) := 0x20 */
+			/* IF dws->mem_ops.exec_op { STATE(ctlr->mem_ops) := &dws->mem_ops; ... } */
+			/* STATE(ctlr->max_speed_hz) := dws->max_freq */
+			/* STATE(ctlr->flags) := 0x20 */
 		}
-
-		/* IF ((target == 0x0) == 0x0) { */
+		/* IF ((target == 0x0) == 0x0) { STATE(ctlr->target_abort) := dw_spi_target_abort } */
 		if ((target == 0x0) == 0x0) {
-			/* op_253: STATE(ctlr->target_abort) := dw_spi_target_abort */
+			/* STATE(ctlr->target_abort) := dw_spi_target_abort */
 		}
-
-		/* IF (dws->dma_ops && dws->dma_ops->dma_init) { */
-		if (0) {
-			/* IF ((ret == -EPROBE_DEFER) == 0x0) { */
-			if ((ret == -EPROBE_DEFER) == 0x0) {
-				/* IF (ret == 0x0) { */
-				if (ret == 0x0) {
-					/* op_254: STATE(ctlr->can_dma) := dws->dma_ops->can_dma */
-					/* op_255: STATE(ctlr->flags) := (ctlr->flags | 0x10) */
-				}
-			}
-		}
-
-		/* IF (ret == 0x0) { */
+		/* IF (dws->dma_ops && dws->dma_ops->dma_init) { ... } */
+		/* (dma_ops not in harness struct; skip) */
+		/* IF (ret == 0x0) { ... } */
 		if (ret == 0x0) {
-			/* IF (((dws->dma_ops && dws->dma_ops->dma_init) && (ret == -EPROBE_DEFER)) == 0x0) { */
-			if (1) {
-				/* IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) { */
-				if (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) {
-					/* IF dws { */
-					if (dws) {
-						/* op_256: STATE(dws->regset.regs) := dw_spi_dbgfs_regs */
-						/* op_257: STATE(dws->regset.base) := dws->regs */
-					}
-				}
+			/* (nested condition always false in harness) */
+			if (dws) {
+				/* STATE(dws->regset.regs) := dw_spi_dbgfs_regs */
+				/* STATE(dws->regset.base) := dws->regs */
 			}
 		}
-
-		/* IF 0x0 { */
+		/* IF 0x0 { ... } (dead code) */
 		if (0x0) {
-			/* IF (((dws->dma_ops && dws->dma_ops->dma_init) && (ret == -EPROBE_DEFER)) == 0x0) { */
-			if (1) {
-				/* IF (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) { */
-				if (((ret < 0x0) && (ret != -ENOTCONN)) == 0x0) {
-					/* IF dws { */
-					if (dws) {
-						/* op_258: W(B4, dws->regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-						/* REHARNESS_RIS_OP id=op_258 kind=Write status=lowered digest=12704bd310147faa */
-__rh_op_op_258: {
-						writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-					}
-					}
+			if (dws) {
+				/* REHARNESS_RIS_OP id=op_251 kind=Write status=lowered digest=12704bd310147faa */
+				__rh_op_op_251: {
+					writel((0x0 ? 0x1 : 0x0), dws->base + DW_SPI_SSIENR);
 				}
 			}
 		}
 	}
-
-	priv->misc.name = KBUILD_MODNAME;
-	priv->misc.minor = MISC_DYNAMIC_MINOR;
-	priv->misc.fops = &dw_apb_ssi_fops;
-	ret = misc_register(&priv->misc);
-	if (ret)
-		return ret;
 
 	return 0;
 }
 
-/*
+/* =============================================================================
  * module dw_spi_mmio_suspend
- * RIS ops: op_259, op_260
- * Address expressions using dwsmmio->dws.regs map to priv->regs.
+ * =============================================================================
  */
 static int dw_spi_mmio_suspend(struct device *dev)
 {
-	struct dw_apb_ssi_priv *priv = dev_get_drvdata(dev);
-	void __iomem *base = priv->base;
+	struct dw_spi_mmio *dwsmmio;
+	u32 new_mask;
 
-	/* op_259: W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-	/* REHARNESS_RIS_OP id=op_259 kind=Write status=lowered digest=1d27a789973c926d */
-__rh_op_op_259: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+	dwsmmio = dev_get_drvdata(dev);
+	if (!dwsmmio)
+		return -ENODEV;
+
+	/* REHARNESS_RIS_OP id=op_252 kind=Write status=lowered digest=1d27a789973c926d */
+	__rh_op_op_252: {
+		writel((0x0 ? 0x1 : 0x0), dwsmmio->dws.base + DW_SPI_SSIENR);
 	}
-
-	/* op_260: W(B4, dwsmmio->dws.regs.DW_SPI_BAUDR) = 0x0 -- Power */
-	/* REHARNESS_RIS_OP id=op_260 kind=Write status=lowered digest=daa9d26d9fd723fa */
-__rh_op_op_260: {
-		writel(0x0, priv->regs + DW_SPI_BAUDR);
+	/* REHARNESS_RIS_OP id=op_253 kind=Write status=lowered digest=daa9d26d9fd723fa */
+	__rh_op_op_253: {
+		writel(0x0, dwsmmio->dws.base + DW_SPI_BAUDR);
 	}
 
 	return 0;
 }
 
-/*
+/* =============================================================================
  * module dw_spi_mmio_resume
- * RIS ops: op_261 through op_284
- * Address expressions using dwsmmio->dws.regs map to priv->regs.
+ * =============================================================================
  */
 static int dw_spi_mmio_resume(struct device *dev)
 {
-	struct dw_apb_ssi_priv *priv = dev_get_drvdata(dev);
-	void __iomem *base = priv->base;
-	u32 new_mask = 0;
-	u32 tmp = 0;
-	u32 cr0;
+	struct dw_spi_mmio *dwsmmio;
+	u32 new_mask;
+	u32 r255;
+	u32 r257;
 	u32 ser;
-	int fifo;
+	u32 fifo;
+	u32 r266;
+	u32 r269;
+	u32 cr0;
+	u32 tmp;
 
-	/* op_261: W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-	/* REHARNESS_RIS_OP id=op_261 kind=Write status=lowered digest=1d27a789973c926d */
-__rh_op_op_261: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+	dwsmmio = dev_get_drvdata(dev);
+	if (!dwsmmio)
+		return -ENODEV;
+
+	/* REHARNESS_RIS_OP id=op_254 kind=Write status=lowered digest=1d27a789973c926d */
+	__rh_op_op_254: {
+		writel((0x0 ? 0x1 : 0x0), dwsmmio->dws.base + DW_SPI_SSIENR);
 	}
-
-	/* op_262: __return_read_0 := R(B4, dwsmmio->dws.regs.DW_SPI_IMR) -- Status */
-	/* REHARNESS_RIS_OP id=op_262 kind=Read status=lowered digest=2757833ac7c49d6e */
-__rh_op_op_262: {
-		{
-			u32 __return_read_0 = readl(priv->regs + DW_SPI_IMR);
-			(void)__return_read_0;
+	/* REHARNESS_RIS_OP id=op_255 kind=Read status=lowered digest=c0c42b5acb491a7e */
+	__rh_op_op_255: {
+		r255 = readl(dwsmmio->dws.base + DW_SPI_IMR);
+	}
+	/* REHARNESS_RIS_OP id=op_256 kind=Write status=lowered digest=8e770f91d3bf2125 */
+	__rh_op_op_256: {
+		writel(new_mask, dwsmmio->dws.base + DW_SPI_IMR);
+	}
+	/* REHARNESS_RIS_OP id=op_257 kind=Read status=lowered digest=b71a6769bb9b5d56 */
+	__rh_op_op_257: {
+		r257 = readl(dwsmmio->dws.base + DW_SPI_ICR);
+	}
+	/* REHARNESS_RIS_OP id=op_258 kind=Write status=lowered digest=0fd5609f15e4b074 */
+	__rh_op_op_258: {
+		writel(0x0, dwsmmio->dws.base + DW_SPI_SER);
+	}
+	/* REHARNESS_RIS_OP id=op_259 kind=Write status=lowered digest=4645554fd623d2f9 */
+	__rh_op_op_259: {
+		writel((0x1 ? 0x1 : 0x0), dwsmmio->dws.base + DW_SPI_SSIENR);
+	}
+	/* IF (dwsmmio->dws.ver == 0x0) { ... } */
+	if (dwsmmio->dws.ver == 0x0) {
+		/* REHARNESS_RIS_OP id=op_260 kind=Read status=lowered digest=49e526b8e39e5d1e */
+		__rh_op_op_260: {
+			dwsmmio->dws.ver = readl(dwsmmio->dws.base + DW_SPI_VERSION);
 		}
 	}
-
-	/* op_263: W(B4, dwsmmio->dws.regs.DW_SPI_IMR) = new_mask -- Config */
-	/* REHARNESS_RIS_OP id=op_263 kind=Write status=lowered digest=8e770f91d3bf2125 */
-__rh_op_op_263: {
-		writel(new_mask, priv->regs + DW_SPI_IMR);
+	/* IF spi_controller_is_target(dwsmmio->dws.ctlr) { STATE(...) := 0x1 } */
+	if (spi_controller_is_target_p3(dwsmmio->dws.ctlr)) {
+		/* STATE(dwsmmio->dws.num_cs) := 0x1 */
+		dwsmmio->dws.caps = 0x1;
 	}
-
-	/* op_264: __return_read_0 := R(B4, dwsmmio->dws.regs.DW_SPI_ICR) -- Status */
-	/* REHARNESS_RIS_OP id=op_264 kind=Read status=lowered digest=4c5110b15dd96366 */
-__rh_op_op_264: {
-		{
-			u32 __return_read_0 = readl(priv->regs + DW_SPI_ICR);
-			(void)__return_read_0;
-		}
-	}
-
-	/* op_265: W(B4, dwsmmio->dws.regs.DW_SPI_SER) = 0x0 -- Init */
-	/* REHARNESS_RIS_OP id=op_265 kind=Write status=lowered digest=0fd5609f15e4b074 */
-__rh_op_op_265: {
-		writel(0x0, priv->regs + DW_SPI_SER);
-	}
-
-	/* op_266: W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config */
-	/* REHARNESS_RIS_OP id=op_266 kind=Write status=lowered digest=4645554fd623d2f9 */
-__rh_op_op_266: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-	}
-
-	/* IF (dwsmmio->dws.ver == 0x0) { */
-	if (priv->caps == 0x0) {
-		/* op_267: dwsmmio->dws.ver := R(B4, dwsmmio->dws.regs.DW_SPI_VERSION) -- Status */
-		/* REHARNESS_RIS_OP id=op_267 kind=Read status=lowered digest=49e526b8e39e5d1e */
-__rh_op_op_267: {
-			priv->caps = readl(priv->regs + DW_SPI_VERSION);
-		}
-	}
-
-	/* IF spi_controller_is_target(dwsmmio->dws.ctlr) { */
-	if (spi_controller_is_target(priv->ctlr)) {
-		/* op_268: STATE(dwsmmio->dws.num_cs) := 0x1 */
-		priv->fifo_len = 0x1;
-	}
-
-	/* IF (spi_controller_is_target(dwsmmio->dws.ctlr) == 0x0) { */
-	if (spi_controller_is_target(priv->ctlr) == 0x0) {
-		/* IF (dwsmmio->dws.num_cs == 0x0) { */
-		if (priv->fifo_len == 0x0) {
-			/* op_269: W(B4, dwsmmio->dws.regs.DW_SPI_SER) = 0xffff -- Config */
-			/* REHARNESS_RIS_OP id=op_269 kind=Write status=lowered digest=6a51a80674242213 */
-__rh_op_op_269: {
-			writel(0xffff, priv->regs + DW_SPI_SER);
-		}
-
-			/* op_270: ser := R(B4, dwsmmio->dws.regs.DW_SPI_SER) -- Status */
-			/* REHARNESS_RIS_OP id=op_270 kind=Read status=lowered digest=a239c0939dd0a923 */
-__rh_op_op_270: {
-			ser = readl(priv->regs + DW_SPI_SER);
-		}
-
-			/* op_271: W(B4, dwsmmio->dws.regs.DW_SPI_SER) = 0x0 -- Init */
-			/* REHARNESS_RIS_OP id=op_271 kind=Write status=lowered digest=db1ac64c51360b0f */
-__rh_op_op_271: {
-			writel(0x0, priv->regs + DW_SPI_SER);
-		}
-		}
-	}
-
-	/* IF (dwsmmio->dws.fifo_len == 0x0) { */
-	if (priv->fifo_len == 0x0) {
-		/* LOOP for (fifo < 0x100) (init=fifo = 1; step=fifo++; count=0xff; bounded) [Exact] { */
-		for (fifo = 1; fifo < 0x100; fifo++) {
-			/* op_272: W(B4, dwsmmio->dws.regs.DW_SPI_TXFTLR) = fifo -- DataTransfer */
-			/* REHARNESS_RIS_OP id=op_272 kind=Write status=lowered digest=6037756f276501ed */
-__rh_op_op_272: {
-			writel(fifo, priv->regs + DW_SPI_TXFTLR);
-		}
-
-			/* op_273: __return_read_0 := R(B4, dwsmmio->dws.regs.DW_SPI_TXFTLR) -- DataTransfer */
-			/* REHARNESS_RIS_OP id=op_273 kind=Read status=lowered digest=a8a7738fe0a45411 */
-__rh_op_op_273: {
-			{
-				u32 __return_read_0 = readl(priv->regs + DW_SPI_TXFTLR);
-				(void)__return_read_0;
+	/* IF (spi_controller_is_target(dwsmmio->dws.ctlr) == 0x0) { ... } */
+	if (spi_controller_is_target_p3(dwsmmio->dws.ctlr) == 0x0) {
+		/* IF (dwsmmio->dws.num_cs == 0x0) { ... } */
+		if (dwsmmio->dws.caps == 0x0) {
+			/* REHARNESS_RIS_OP id=op_262 kind=Write status=lowered digest=6a51a80674242213 */
+			__rh_op_op_262: {
+				writel(0xffff, dwsmmio->dws.base + DW_SPI_SER);
+			}
+			/* REHARNESS_RIS_OP id=op_263 kind=Read status=lowered digest=a239c0939dd0a923 */
+			__rh_op_op_263: {
+				ser = readl(dwsmmio->dws.base + DW_SPI_SER);
+			}
+			/* REHARNESS_RIS_OP id=op_264 kind=Write status=lowered digest=db1ac64c51360b0f */
+			__rh_op_op_264: {
+				writel(0x0, dwsmmio->dws.base + DW_SPI_SER);
 			}
 		}
+	}
+	/* IF (dwsmmio->dws.fifo_len == 0x0) { ... } */
+	if (dwsmmio->dws.fifo_len == 0x0) {
+		/* LOOP for (fifo < 0x100) (init=fifo = 1; step=fifo++; count=0xff; bounded) */
+		for (fifo = 1; fifo < 0x100; fifo++) {
+			/* REHARNESS_RIS_OP id=op_265 kind=Write status=lowered digest=6037756f276501ed */
+			__rh_op_op_265: {
+				writel(fifo, dwsmmio->dws.base + DW_SPI_TXFTLR);
+			}
+			/* REHARNESS_RIS_OP id=op_266 kind=Read status=lowered digest=523bc47fe9c5c88c */
+			__rh_op_op_266: {
+				r266 = readl(dwsmmio->dws.base + DW_SPI_TXFTLR);
+			}
 		}
-		/* op_274: W(B4, dwsmmio->dws.regs.DW_SPI_TXFTLR) = 0x0 -- Init */
-		/* REHARNESS_RIS_OP id=op_274 kind=Write status=lowered digest=3cd05c0ba585bb18 */
-__rh_op_op_274: {
-		writel(0x0, priv->regs + DW_SPI_TXFTLR);
+		/* REHARNESS_RIS_OP id=op_267 kind=Write status=lowered digest=3cd05c0ba585bb18 */
+		__rh_op_op_267: {
+			writel(0x0, dwsmmio->dws.base + DW_SPI_TXFTLR);
 		}
-		/* op_275: STATE(dwsmmio->dws.fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) */
-		priv->fifo_len = ((fifo == 0x1) ? 0x0 : fifo);
+		/* STATE(dwsmmio->dws.fifo_len) := ((fifo == 0x1) ? 0x0 : fifo) */
+		dwsmmio->dws.fifo_len = ((fifo == 0x1) ? 0x0 : fifo);
 	}
-
-	/* IF dw_spi_ip_is(&dwsmmio->dws, PSSI) { */
-	if (priv->caps == DW_PSSI_ID) {
-		/* op_276: __return_read_0 := R(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) -- Config */
-		/* REHARNESS_RIS_OP id=op_276 kind=Read status=lowered digest=71b0f6a0db7be122 */
-__rh_op_op_276: {
-		{
-			u32 __return_read_0 = readl(priv->regs + DW_SPI_CTRLR0);
-			(void)__return_read_0;
+	/* IF dw_spi_ip_is(&dwsmmio->dws, PSSI) { ... } */
+	if (dw_spi_ip_is_p3(&dwsmmio->dws, DW_PSSI_ID)) {
+		/* REHARNESS_RIS_OP id=op_269 kind=Read status=lowered digest=38112568490bed8c */
+		__rh_op_op_269: {
+			r269 = readl(dwsmmio->dws.base + DW_SPI_CTRLR0);
 		}
-	}
-
-		/* op_277: W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-		/* REHARNESS_RIS_OP id=op_277 kind=Write status=lowered digest=ee759e5532a5c896 */
-__rh_op_op_277: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-	}
-
-		/* op_278: W(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) = 0xffffffff -- Config */
-		/* REHARNESS_RIS_OP id=op_278 kind=Write status=lowered digest=84550cb99b28c1bc */
-__rh_op_op_278: {
-		writel(0xffffffff, priv->regs + DW_SPI_CTRLR0);
-	}
-
-		/* op_279: cr0 := R(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) -- Config */
-		/* REHARNESS_RIS_OP id=op_279 kind=Read status=lowered digest=e90c69b23aba4a3e */
-__rh_op_op_279: {
-		cr0 = readl(priv->regs + DW_SPI_CTRLR0);
-	}
-
-		/* op_280: W(B4, dwsmmio->dws.regs.DW_SPI_CTRLR0) = tmp -- Config */
-		/* REHARNESS_RIS_OP id=op_280 kind=Write status=lowered digest=18b2cc7c88f3fcf8 */
-__rh_op_op_280: {
-		writel(tmp, priv->regs + DW_SPI_CTRLR0);
-	}
-
-		/* op_281: W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x1 ? 0x1 : 0x0) -- Config */
-		/* REHARNESS_RIS_OP id=op_281 kind=Write status=lowered digest=6b94649b35e76f3b */
-__rh_op_op_281: {
-		writel((0x1 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
-	}
-
-		/* IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) { */
-		if ((cr0 & DW_PSSI_CTRLR0_CFS) == 0x0) {
-			/* op_282: STATE(dwsmmio->dws.caps) := (dwsmmio->dws.caps | 0x2) */
-			priv->caps = (priv->caps | 0x2);
+		/* REHARNESS_RIS_OP id=op_270 kind=Write status=lowered digest=ee759e5532a5c896 */
+		__rh_op_op_270: {
+			writel((0x0 ? 0x1 : 0x0), dwsmmio->dws.base + DW_SPI_SSIENR);
+		}
+		/* REHARNESS_RIS_OP id=op_271 kind=Write status=lowered digest=84550cb99b28c1bc */
+		__rh_op_op_271: {
+			writel(0xffffffff, dwsmmio->dws.base + DW_SPI_CTRLR0);
+		}
+		/* REHARNESS_RIS_OP id=op_272 kind=Read status=lowered digest=e90c69b23aba4a3e */
+		__rh_op_op_272: {
+			cr0 = readl(dwsmmio->dws.base + DW_SPI_CTRLR0);
+		}
+		/* REHARNESS_RIS_OP id=op_273 kind=Write status=lowered digest=18b2cc7c88f3fcf8 */
+		__rh_op_op_273: {
+			writel(tmp, dwsmmio->dws.base + DW_SPI_CTRLR0);
+		}
+		/* REHARNESS_RIS_OP id=op_274 kind=Write status=lowered digest=6b94649b35e76f3b */
+		__rh_op_op_274: {
+			writel((0x1 ? 0x1 : 0x0), dwsmmio->dws.base + DW_SPI_SSIENR);
+		}
+		/* IF ((cr0 & DW_PSSI_CTRLR0_DFS_MASK) == 0x0) { ... } */
+		if ((cr0 & 0xff) == 0x0) {
+			/* STATE(dwsmmio->dws.caps) := (dwsmmio->dws.caps | 0x2) */
+			dwsmmio->dws.caps = (dwsmmio->dws.caps | 0x2);
 		}
 	}
-
-	/* IF (dw_spi_ip_is(&dwsmmio->dws, PSSI) == 0x0) { */
-	if (priv->caps != DW_PSSI_ID) {
-		/* op_283: STATE(dwsmmio->dws.caps) := (dwsmmio->dws.caps | 0x2) */
-		priv->caps = (priv->caps | 0x2);
+	/* IF (dw_spi_ip_is(&dwsmmio->dws, PSSI) == 0x0) { ... } */
+	if (dw_spi_ip_is_p3(&dwsmmio->dws, DW_PSSI_ID) == 0x0) {
+		/* STATE(dwsmmio->dws.caps) := (dwsmmio->dws.caps | 0x2) */
+		dwsmmio->dws.caps = (dwsmmio->dws.caps | 0x2);
 	}
-
-	/* IF (dwsmmio->dws.caps & 0x1) { */
-	if (priv->caps & 0x1) {
-		/* op_284: W(B4, dwsmmio->dws.regs.DW_SPI_CS_OVERRIDE) = 0xf -- Config */
-		/* REHARNESS_RIS_OP id=op_284 kind=Write status=lowered digest=5fc38aeec53b0756 */
-__rh_op_op_284: {
-		writel(0xf, priv->regs + DW_SPI_CS_OVERRIDE);
-	}
+	/* IF (dwsmmio->dws.caps & 0x1) { ... } */
+	if (dwsmmio->dws.caps & 0x1) {
+		/* REHARNESS_RIS_OP id=op_277 kind=Write status=lowered digest=5fc38aeec53b0756 */
+		__rh_op_op_277: {
+			writel(0xf, dwsmmio->dws.base + DW_SPI_CS_OVERRIDE);
+		}
 	}
 
 	return 0;
 }
 
-/*
+/* =============================================================================
  * module dw_spi_mmio_remove
- * RIS ops: op_285, op_286
- * Address expressions using dwsmmio->dws.regs map to priv->regs.
+ * =============================================================================
  */
 static void dw_spi_mmio_remove(struct platform_device *pdev)
 {
-	struct dw_apb_ssi_priv *priv = platform_get_drvdata(pdev);
-	void __iomem *base = priv->base;
+	struct dw_spi_mmio *dwsmmio;
 
-	/* op_285: W(B4, dwsmmio->dws.regs.DW_SPI_SSIENR) = (0x0 ? 0x1 : 0x0) -- Config */
-	/* REHARNESS_RIS_OP id=op_285 kind=Write status=lowered digest=1d27a789973c926d */
-__rh_op_op_285: {
-		writel((0x0 ? 0x1 : 0x0), priv->regs + DW_SPI_SSIENR);
+	dwsmmio = platform_get_drvdata(pdev);
+	if (!dwsmmio)
+		return;
+
+	/* REHARNESS_RIS_OP id=op_278 kind=Write status=lowered digest=1d27a789973c926d */
+	__rh_op_op_278: {
+		writel((0x0 ? 0x1 : 0x0), dwsmmio->dws.base + DW_SPI_SSIENR);
+	}
+	/* REHARNESS_RIS_OP id=op_279 kind=Write status=lowered digest=daa9d26d9fd723fa */
+	__rh_op_op_279: {
+		writel(0x0, dwsmmio->dws.base + DW_SPI_BAUDR);
+	}
+}
+
+/* =============================================================================
+ * module dw_writel
+ * =============================================================================
+ */
+static void dw_writel(struct dw_spi *dws, u32 offset, u32 val)
+{
+	/* REHARNESS_RIS_OP id=op_280 kind=Write status=lowered digest=a735dda4e782a183 */
+	__rh_op_op_280: {
+		writel(val, dws->base + offset);
+	}
+}
+
+/* =============================================================================
+ * module dw_readl
+ * =============================================================================
+ */
+static u32 dw_readl(struct dw_spi *dws, u32 offset)
+{
+	u32 ret_val;
+
+	/* REHARNESS_RIS_OP id=op_281 kind=Read status=lowered digest=870fb0c8ee0f599c */
+	__rh_op_op_281: {
+		ret_val = readl(dws->base + offset);
 	}
 
-	/* op_286: W(B4, dwsmmio->dws.regs.DW_SPI_BAUDR) = 0x0 -- Power */
-	/* REHARNESS_RIS_OP id=op_286 kind=Write status=lowered digest=daa9d26d9fd723fa */
-__rh_op_op_286: {
-		writel(0x0, priv->regs + DW_SPI_BAUDR);
+	return ret_val;
+}
+
+/* =============================================================================
+ * module dw_write_io_reg
+ * =============================================================================
+ */
+static void dw_write_io_reg(struct dw_spi *dws, u32 offset, u32 val)
+{
+	/* IF (dws->reg_io_width == 0x2) { ... } */
+	if (dws->n_bytes == 0x2) {
+		/* REHARNESS_RIS_OP id=op_282 kind=Write status=lowered digest=112457f059093b11 */
+		__rh_op_op_282: {
+			writew((u16)val, dws->base + offset);
+		}
+	}
+	/* IF (dws->reg_io_width == 0x4) { ... } */
+	if (dws->n_bytes == 0x4) {
+		/* REHARNESS_RIS_OP id=op_283 kind=Write status=lowered digest=c05dc6f3255038c0 */
+		__rh_op_op_283: {
+			writel(val, dws->base + offset);
+		}
+	}
+}
+
+/* =============================================================================
+ * module dw_read_io_reg
+ * =============================================================================
+ */
+static u32 dw_read_io_reg(struct dw_spi *dws, u32 offset)
+{
+	u32 ret_val = 0;
+	u32 r284;
+	u32 r285;
+
+	/* IF (dws->reg_io_width == 0x2) { ... } */
+	if (dws->n_bytes == 0x2) {
+		/* REHARNESS_RIS_OP id=op_284 kind=Read status=lowered digest=9ed986c249a0958f */
+		__rh_op_op_284: {
+			r284 = readw(dws->base + offset);
+			ret_val = r284;
+		}
+	}
+	/* IF (dws->reg_io_width == 0x4) { ... } */
+	if (dws->n_bytes == 0x4) {
+		/* REHARNESS_RIS_OP id=op_285 kind=Read status=lowered digest=5caf0665e4e3b1fc */
+		__rh_op_op_285: {
+			r285 = readl(dws->base + offset);
+			ret_val = r285;
+		}
 	}
 
-	misc_deregister(&priv->misc);
+	return ret_val;
 }

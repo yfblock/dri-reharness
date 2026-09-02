@@ -1,0 +1,50 @@
+{
+  "api_key_recorded": false,
+  "backends": {
+    "baremetal": {
+      "artifact": "examples/dw-apb-ssi/dw_spi_baremetal.c",
+      "lowering_complete": true,
+      "lowering_rounds": 6,
+      "repair_compile_ok": true,
+      "repair_model": "glm-5.3-highspeed",
+      "repair_rounds": 0,
+      "sha256_16": "629da8db3a8f6b2d"
+    },
+    "harness": {
+      "artifact": "examples/dw-apb-ssi/dw_spi_harness.c",
+      "lowering_complete": true,
+      "lowering_rounds": 0,
+      "repair_compile_ok": false,
+      "repair_model": "glm-5.3-highspeed",
+      "repair_rounds": 0,
+      "sha256_16": "59cfad6602e5b3aa"
+    },
+    "linux": {
+      "artifact": "examples/dw-apb-ssi/dw_apb_ssi_linux.c",
+      "lowering_complete": true,
+      "lowering_rounds": 0,
+      "repair_compile_ok": false,
+      "repair_model": "glm-5.3-highspeed",
+      "repair_rounds": 0,
+      "sha256_16": "b2a696736bcce910"
+    },
+    "rust": {
+      "artifact": "examples/dw-apb-ssi/dw_spi_rust_baremetal.rs",
+      "lowering_complete": true,
+      "lowering_rounds": 0,
+      "repair_compile_ok": true,
+      "repair_model": "glm-5.3-highspeed",
+      "repair_rounds": -1,
+      "sha256_16": "52b4fb1382ce2a79"
+    }
+  },
+  "endpoint_host": "ai.yfblock.cn",
+  "generation_command": "python3 -m extractor gen -s <manifest> -b <backend> --pair",
+  "model": "glm-5.3-highspeed",
+  "model_family": "glm",
+  "recorded_at": "2026-09-02T13:13:01+0800",
+  "schema": 1,
+  "temperature": 0.0,
+  "trial": 1,
+  "artifact_digest_note": "digests refreshed after the deterministic canonicalization pass recorded in artifact-repair-log.json (anchor labels, anchor-body primitive spellings, transaction anchors); model/endpoint/round metadata unchanged"
+}

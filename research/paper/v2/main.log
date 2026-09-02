@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.28)  2 SEP 2026 05:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2026.5.28)  2 SEP 2026 13:44
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1436,12 +1436,12 @@ dist/fonts/enc/dvips/libertine/lbtn_25tcsq.enc}{/usr/share/texlive/texmf-dist/f
 onts/enc/dvips/libertine/lbtn_ki75ao.enc}]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/n' will be
 (Font)              scaled to size 10.0pt on input line 49.
- [2.2])
+ [2.2]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+)
 (./sections_3_5.tex
 Overfull \hbox (4.19708pt too wide) in paragraph at lines 11--12
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) forms C dri-ver source into verification-g
@@ -1452,7 +1452,7 @@ ated, backend-specific
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 LaTeX Font Info:    Font shape `T1/LinuxBiolinumT-TLF/m/sc' will be
-(Font)              scaled to size 8.0pt on input line 13.
+(Font)              scaled to size 8.0pt on input line 12.
  [3.3{/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_omcwp2.enc}]
 LaTeX Font Info:    Font shape `T1/zi4/m/n' will be
 (Font)              scaled to size 8.0pt on input line 51.
@@ -1485,16 +1485,12 @@ Overfull \hbox (4.90184pt too wide) detected at line 132
 
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 153.
-
+[5.5]
 Overfull \hbox (4.23709pt too wide) in paragraph at lines 192--193
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) The ex-trac-tion stage trans-forms com-ple
 te Linux dri-ver sources
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [5.5]
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/it' will be
 (Font)              scaled to size 10.0pt on input line 206.
 LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/it' will be
@@ -1507,9 +1503,12 @@ Overfull \hbox (1.2896pt too wide) in paragraph at lines 219--220
 ates the ad-dress ex-pres-sion against
  []
 
-[6.6{/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_oexx6f.enc}{/
-usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_kijugd.enc}]
-Underfull \vbox (badness 6157) has occurred while \output is active []
+
+Underfull \vbox (badness 2698) has occurred while \output is active []
+
+ [6.6{/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_oexx6f.enc}{
+/usr/share/texlive/texmf-dist/fonts/enc/dvips/libertine/lbtn_kijugd.enc}]
+Underfull \vbox (badness 4582) has occurred while \output is active []
 
  [7.7]
 Overfull \hbox (5.04675pt too wide) in paragraph at lines 316--317
@@ -1542,7 +1541,10 @@ Overfull \hbox (2.31459pt too wide) in paragraph at lines 40--48
 mpt.md
  []
 
-[8.8]
+
+Underfull \vbox (badness 3701) has occurred while \output is active []
+
+ [8.8]
 Overfull \hbox (1.13719pt too wide) in paragraph at lines 56--63
 []\T1/LinuxLibertineT-TLF/m/n/10 (-20) The bridge is im-ple-mented against any 
 OpenAI-compatible
@@ -1577,7 +1579,7 @@ Overfull \hbox (5.95085pt too wide) in paragraph at lines 230--237
  []
 
 
-Underfull \vbox (badness 2253) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 Underfull \hbox (badness 1303) in paragraph at lines 278--278
@@ -1608,55 +1610,38 @@ LaTeX Font Info:    Font shape `OT1/LinuxLibertineT-TLF/m/it' will be
 (Font)              scaled to size 9.0pt on input line 319.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/b/n' will be
 (Font)              scaled to size 7.0pt on input line 364.
-
-Underfull \vbox (badness 1205) has occurred while \output is active []
-
  [11.11]
 Overfull \hbox (2.47256pt too wide) in paragraph at lines 487--493
 \T1/LinuxLibertineT-TLF/m/n/10 (-20) for bind-ings, un-sup-ported op-er-a-tions
 , and source facts needed
  []
 
-[12.12]
+[12.12] [13.13]
+Overfull \hbox (23.99435pt too wide) in paragraph at lines 698--753
+\T1/LinuxLibertineT-TLF/m/n/10 (-20) sioned in $\T1/zi4/m/n/10 research / exper
+iments / results / llm -[] run -[] metadata .
+ []
+
+
+Overfull \hbox (1.10233pt too wide) in paragraph at lines 698--753
+\T1/LinuxLibertineT-TLF/m/n/10 (-20) (tx/rx cur-sor ad-vance, length decre-ment
+, FIFO-to-buffer store)
+ []
+
+
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [13.13]
-! Undefined control sequence.
-l.730 gate on each mutant. \GateMutationsRejected
-                                                 {} of \GateMutationsApplied{}
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-l.730 ...ationsRejected{} of \GateMutationsApplied
-                                                  {}
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-! Undefined control sequence.
-l.732 ...eported as rejected=\GatePristineRejected
-                                                  {} under the
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
-) (./sections_9_11.tex
+ [14.14])
+(./sections_9_11.tex
 Overfull \hbox (2.0801pt too wide) in paragraph at lines 13--19
 \T1/LinuxLibertineT-TLF/m/sc/10 (-20) reharness \T1/LinuxLibertineT-TLF/m/n/10 
 (-20) mod-els com-mon GPIO, IRQ, plat-form, PCI, AMBA,
  []
 
-[14.14]
+
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
+ [15.15]
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/n' will be
 (Font)              scaled to size 6.0pt on input line 108.
 LaTeX Font Info:    Font shape `T1/LinuxLibertineT-TLF/m/it' will be
@@ -1667,17 +1652,12 @@ Underfull \hbox (badness 2884) in paragraph at lines 207--210
 l evo-lu-tion: Au-tomat-ing dri-ver up-dates.
  []
 
-)
-
-Package balance Warning: You have called \balance in second column
-(balance)                Columns might not be balanced.
-
-(/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
+) (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-utf8.def
 File: se-utf8.def 2019/11/29 v1.12 stringenc: UTF-8
-) [15.15]
+) [16.16]
 (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
@@ -1691,13 +1671,13 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: B89AEAB588A7EA34DF5A1DA9EAACCC0A;7800.
  ) 
 Here is how much of TeX's memory you used:
- 38405 strings out of 474222
- 725887 string characters out of 5748733
+ 38425 strings out of 474222
+ 726223 string characters out of 5748733
  2042975 words of memory out of 5000000
- 58963 multiletter control sequences out of 15000+600000
- 832516 words of font info for 624 fonts, out of 8000000 for 9000
+ 58985 multiletter control sequences out of 15000+600000
+ 832251 words of font info for 622 fonts, out of 8000000 for 9000
  1302 hyphenation exceptions out of 8191
- 90i,17n,131p,26959b,1700s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 90i,17n,131p,26959b,1696s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/inconsolata/Inconsolata-zi4
 b.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/inconsolata/Inconsolata
 -zi4r.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/newtx/LibertineMath
@@ -1708,15 +1688,16 @@ b></usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinBiolinumT.pfb>
 /usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineTB.pfb><
 /usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineTBI.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineTI.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txexas.pfb></usr/share/
-texlive/texmf-dist/fonts/type1/public/newtx/txexs.pfb></usr/share/texlive/texmf
--dist/fonts/type1/public/newtx/txmiaX.pfb></usr/share/texlive/texmf-dist/fonts/
-type1/public/newtx/txsym.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
-newtx/txsys.pfb>
-Output written on main.pdf (15 pages, 612477 bytes).
+</usr/share/texlive/texmf-dist/fonts/type1/public/newtx/NewTXMI.pfb></usr/share
+/texlive/texmf-dist/fonts/type1/public/newtx/txexas.pfb></usr/share/texlive/tex
+mf-dist/fonts/type1/public/newtx/txexs.pfb></usr/share/texlive/texmf-dist/fonts
+/type1/public/newtx/txmiaX.pfb></usr/share/texlive/texmf-dist/fonts/type1/publi
+c/newtx/txsym.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txsys
+.pfb>
+Output written on main.pdf (16 pages, 618825 bytes).
 PDF statistics:
- 457 PDF objects out of 1000 (max. 8388607)
- 398 compressed objects within 4 object streams
- 127 named destinations out of 1000 (max. 500000)
+ 467 PDF objects out of 1000 (max. 8388607)
+ 404 compressed objects within 5 object streams
+ 128 named destinations out of 1000 (max. 500000)
  164637 words of extra memory for PDF output out of 184870 (max. 10000000)
 

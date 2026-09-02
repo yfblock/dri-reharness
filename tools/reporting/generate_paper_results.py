@@ -360,10 +360,20 @@ def main() -> None:
         for backend, runs in by_backend.items():
             tag = {"harness": "Harn", "baremetal": "Bare",
                    "linux": "Linux", "rust": "Rust"}.get(backend, backend)
-            last = runs[-1]
-            macros[f"Dw{tag}RepairRounds"] = len(last.get("rounds", [])) - 1
-            macros[f"Dw{tag}CompileOk"] = (
-                "true" if last.get("compile_ok") else "false")
+            # the log is append-only history: intermediate failed repair
+            # attempts precede the final state.  Compile status comes from
+            # the NEWEST entry that records an explicit compile_ok (the
+            # last LLM compile-repair attempt, or the deterministic
+            # normalization entry when that closed the backend).
+            compile_runs = [r for r in runs
+                            if r.get("compile_ok") is not None]
+            last = compile_runs[-1] if compile_runs else None
+            if last is not None:
+                rounds = last.get("rounds")
+                macros[f"Dw{tag}RepairRounds"] = (
+                    len(rounds) - 1 if rounds else 0)
+                macros[f"Dw{tag}CompileOk"] = (
+                    "true" if last.get("compile_ok") else "false")
             lowering_runs = [r for r in runs if r.get("mode") == "lowering"]
             if lowering_runs:
                 lrow = lowering_runs[-1]

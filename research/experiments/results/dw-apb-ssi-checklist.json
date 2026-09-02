@@ -27,41 +27,41 @@
     {
       "backends": {
         "linux": {
-          "evidence": " *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2\nmake: *** [/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/Makefile:248: __sub-make] Error 2",
-          "pass": false
+          "evidence": "kbuild modules ok",
+          "pass": true
         }
       },
       "item": 3,
       "name": "compile_linux",
-      "pass": false
+      "pass": true
     },
     {
       "backends": {
         "rust": {
-          "evidence": "ation about an error, try `rustc --explain E0034`.\nwarning: `dw_apb_ssi_check` (lib) generated 1 warning\nerror: could not compile `dw_apb_ssi_check` (lib) due to 167 previous errors; 1 warning emitted",
-          "pass": false
+          "evidence": "cargo build --offline ok",
+          "pass": true
         }
       },
       "item": 4,
       "name": "compile_rust",
-      "pass": false
+      "pass": true
     },
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 269",
+          "evidence": "line 281",
           "pass": true
         },
         "harness": {
-          "evidence": "line 1114",
+          "evidence": "line 289",
           "pass": true
         },
         "linux": {
-          "evidence": "line 294",
+          "evidence": "line 207",
           "pass": true
         },
         "rust": {
-          "evidence": "line 626",
+          "evidence": "line 376",
           "pass": true
         }
       },
@@ -72,19 +72,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "4 zero write(s)",
-          "pass": true
-        },
-        "harness": {
-          "evidence": "10 zero write(s)",
-          "pass": true
-        },
-        "linux": {
           "evidence": "15 zero write(s)",
           "pass": true
         },
+        "harness": {
+          "evidence": "15 zero write(s)",
+          "pass": true
+        },
+        "linux": {
+          "evidence": "14 zero write(s)",
+          "pass": true
+        },
         "rust": {
-          "evidence": "line 629",
+          "evidence": "line 376",
           "pass": true
         }
       },
@@ -95,19 +95,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 301",
+          "evidence": "line 365",
           "pass": true
         },
         "harness": {
-          "evidence": "line 550",
+          "evidence": "line 373",
           "pass": true
         },
         "linux": {
-          "evidence": "line 322",
+          "evidence": "line 239",
           "pass": true
         },
         "rust": {
-          "evidence": "line 667",
+          "evidence": "line 23",
           "pass": true
         }
       },
@@ -118,19 +118,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 338",
+          "evidence": "line 336",
           "pass": true
         },
         "harness": {
-          "evidence": "line 579",
+          "evidence": "line 344",
           "pass": true
         },
         "linux": {
-          "evidence": "line 349",
+          "evidence": "line 267",
           "pass": true
         },
         "rust": {
-          "evidence": "line 691",
+          "evidence": "line 43",
           "pass": true
         }
       },
@@ -141,19 +141,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 344",
+          "evidence": "line 405",
           "pass": true
         },
         "harness": {
-          "evidence": "line 583",
+          "evidence": "line 413",
           "pass": true
         },
         "linux": {
-          "evidence": "line 353",
+          "evidence": "line 271",
           "pass": true
         },
         "rust": {
-          "evidence": "line 1448",
+          "evidence": "line 25",
           "pass": true
         }
       },
@@ -164,19 +164,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 962",
+          "evidence": "line 1080",
           "pass": true
         },
         "harness": {
-          "evidence": "line 856",
+          "evidence": "line 1088",
           "pass": true
         },
         "linux": {
-          "evidence": "line 605",
+          "evidence": "line 546",
           "pass": true
         },
         "rust": {
-          "evidence": "line 908",
+          "evidence": "line 36",
           "pass": true
         }
       },
@@ -187,19 +187,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 1053",
+          "evidence": "line 814",
           "pass": true
         },
         "harness": {
-          "evidence": "line 865",
+          "evidence": "line 822",
           "pass": true
         },
         "linux": {
-          "evidence": "line 618",
+          "evidence": "line 562",
           "pass": true
         },
         "rust": {
-          "evidence": "line 920",
+          "evidence": "line 40",
           "pass": true
         }
       },
@@ -210,19 +210,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "disable@1 enable@1",
+          "evidence": "disable@14 enable@11",
           "pass": true
         },
         "harness": {
-          "evidence": "disable@5 enable@5",
+          "evidence": "disable@14 enable@11",
           "pass": true
         },
         "linux": {
-          "evidence": "disable@15 enable@12",
+          "evidence": "disable@14 enable@11",
           "pass": true
         },
         "rust": {
-          "evidence": "disable@5 enable@5",
+          "evidence": "disable@14 enable@12",
           "pass": true
         }
       },
@@ -233,19 +233,19 @@
     {
       "backends": {
         "baremetal": {
-          "evidence": "line 496",
+          "evidence": "line 439",
           "pass": true
         },
         "harness": {
-          "evidence": "line 703",
+          "evidence": "line 447",
           "pass": true
         },
         "linux": {
-          "evidence": "line 458",
+          "evidence": "line 359",
           "pass": true
         },
         "rust": {
-          "evidence": "line 786",
+          "evidence": "line 393",
           "pass": true
         }
       },
@@ -268,82 +268,82 @@
           "pass": true
         },
         "rust": {
-          "evidence": "pattern 2 not found (advance present, order not)",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         }
       },
       "item": 14,
       "name": "dataflow_tx_cursor_advance",
-      "pass": false
+      "pass": true
     },
     {
       "backends": {
         "baremetal": {
-          "evidence": "pattern 1 not found (decrement present, order not)",
+          "evidence": "order ok",
           "pass": true
         },
         "harness": {
-          "evidence": "pattern 1 not found (decrement present, order not)",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         },
         "linux": {
-          "evidence": "order violated (decrement present, order not)",
+          "evidence": "order ok",
           "pass": true
         },
         "rust": {
-          "evidence": "pattern 1 not found (decrement present, order not)",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         }
       },
       "item": 15,
       "name": "dataflow_tx_len_decrement",
-      "pass": false
+      "pass": true
     },
     {
       "backends": {
         "baremetal": {
-          "evidence": "not found",
-          "pass": false
+          "evidence": "line 318",
+          "pass": true
         },
         "harness": {
-          "evidence": "not found",
-          "pass": false
+          "evidence": "line 326",
+          "pass": true
         },
         "linux": {
-          "evidence": "line 1019",
+          "evidence": "line 376",
           "pass": true
         },
         "rust": {
-          "evidence": "not found",
-          "pass": false
+          "evidence": "line 45",
+          "pass": true
         }
       },
       "item": 16,
       "name": "dataflow_fifo_dr_write",
-      "pass": false
+      "pass": true
     },
     {
       "backends": {
         "baremetal": {
-          "evidence": "pattern 1 not found",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         },
         "harness": {
-          "evidence": "pattern 1 not found",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         },
         "linux": {
-          "evidence": "order violated",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         },
         "rust": {
-          "evidence": "pattern 1 not found",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         }
       },
       "item": 17,
       "name": "dataflow_rx_fifo_to_buffer",
-      "pass": false
+      "pass": true
     },
     {
       "backends": {
@@ -360,16 +360,16 @@
           "pass": true
         },
         "rust": {
-          "evidence": "pattern 1 not found (advance present, order not)",
-          "pass": false
+          "evidence": "order ok",
+          "pass": true
         }
       },
       "item": 18,
       "name": "dataflow_rx_cursor_advance",
-      "pass": false
+      "pass": true
     }
   ],
-  "items_passed": 11,
+  "items_passed": 18,
   "items_total": 18,
   "schema": 1
 }

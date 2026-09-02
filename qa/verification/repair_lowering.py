@@ -118,10 +118,18 @@ def _ris_lines(ris_text: str, op_ids: list[str]) -> str:
 
 
 def _normalize_anchors(text: str) -> str:
-    """Collapse model-emitted double prefixes (__rh_op_op_24 -> __rh_op_24)
-    and drop stray REMOVE_RECEIPT directive lines the model left inline
-    (they are commands to this tool, not artifact content)."""
-    text = re.sub(r"__rh_op_(op_\d+)", r"__rh_\1", text)
+    """Normalize anchor labels to the canonical doubled form
+    (__rh_op_24 -> __rh_op_op_24, matching src/backends/common.py which
+    renders f"__rh_op_{op_id}" for op_id="op_24") and drop stray
+    REMOVE_RECEIPT directive lines the model left inline (they are
+    commands to this tool, not artifact content)."""
+    text = re.sub(r"__rh_op_(\d+)\b", r"__rh_op_op_\1", text)
+    # transaction anchors are canonicalized to __rh_txn_<op_id>
+    # (src/backends/common.py transaction_anchor), not __rh_op_
+    text = re.sub(
+        r"(REHARNESS_TRANSACTION_OP id=op_(\d+)[^\n]*\*/[ \t]*\n[ \t]*)"
+        r"__rh_op_(?:op_)?\2:",
+        r"\1__rh_txn_op_\2:", text)
     return re.sub(r"^[ \t]*REMOVE_RECEIPT\s+\S+[ \t]*$\n?", "", text,
                   flags=re.M)
 
@@ -207,13 +215,68 @@ def _extract_block(raw: str, lang: str) -> str:
     if fence is None:
         fence = re.search(r"```(?:\s|\n)(.*?)```", raw, re.S)
     if fence is not None:
-        return fence.group(1).strip() + "\n"
-    stripped = raw.strip()
-    plausible = ("REHARNESS_RIS_OP" in stripped
-                 or "REMOVE_RECEIPT" in stripped or "{" in stripped)
-    if not stripped or not plausible:
-        raise RuntimeError("no usable repair block in lowering response")
-    return stripped + "\n"
+        block = fence.group(1).strip() + "\n"
+    else:
+        stripped = raw.strip()
+        plausible = ("REHARNESS_RIS_OP" in stripped
+                     or "REMOVE_RECEIPT" in stripped or "{" in stripped)
+        if not stripped or not plausible:
+            raise RuntimeError("no usable repair block in lowering response")
+        block = stripped + "\n"
+    # responses occasionally carry fence markers or directive prose the
+    # regex above cannot consume; neither is valid artifact content
+    block = re.sub(r"^[ \t]*```[^`\n]*[ \t]*$\n?", "", block, flags=re.M)
+    block = re.sub(r"^[ \t]*REMOVE_RECEIPT\s+\S+[ \t]*$\n?", "", block,
+                   flags=re.M)
+    return block
+
+
+def _brace_delta(block: str) -> int:
+    depth = 0
+    in_block_comment = False
+    for line in block.split("\n"):
+        stripped = line.strip()
+        if in_block_comment:
+            if "*/" in stripped:
+                stripped = stripped.split("*/", 1)[1]
+                in_block_comment = False
+            else:
+                continue
+        # strip line comments and string/char literals before counting
+        cleaned = re.sub(r"/\*.*?\*/", "", stripped)
+        if "/*" in cleaned:
+            cleaned = cleaned.split("/*", 1)[0]
+            in_block_comment = True
+        cleaned = re.sub(r"//[^\n]*", "", cleaned)
+        cleaned = re.sub(r'"(?:[^"\\]|\\.)*"', '""', cleaned)
+        cleaned = re.sub(r"'(?:[^'\\]|\\.)*'", "''", cleaned)
+        depth += cleaned.count("{") - cleaned.count("}")
+    return depth
+
+
+def _comments_closed(block: str) -> bool:
+    """No block comment left open at end (rust nests them; C does not —
+    being conservative about nesting keeps the check sound for both)."""
+    depth = 0
+    pos = 0
+    n = len(block)
+    while pos < n:
+        if block.startswith("//", pos):
+            nl = block.find("\n", pos)
+            if nl < 0:
+                return depth == 0
+            pos = nl
+            continue
+        if block.startswith("/*", pos):
+            depth += 1
+            pos += 2
+            continue
+        if depth > 0 and block.startswith("*/", pos):
+            depth -= 1
+            pos += 2
+            continue
+        pos += 1
+    return depth == 0
 
 
 def main() -> int:
@@ -298,6 +361,13 @@ def main() -> int:
             break
         missing = sorted(v.get("missing", []))
         missing_txn = sorted(v.get("missing_transaction_markers", []))
+        # bound the response size: one function per missing op overruns the
+        # endpoint's output cap, so repair in batches
+        BATCH = 30
+        if len(missing) > BATCH:
+            print(f"batching: repairing {BATCH} of {len(missing)} missing "
+                  "operations this round")
+            missing = missing[:BATCH]
         ops_lines = []
         modules = []
         if missing:
@@ -341,40 +411,50 @@ def main() -> int:
         if not missing and not missing_txn:
             break
         t0 = time.time()
-        raw = ""
+        block = None
         for attempt in range(3):
+            raw = ""
             try:
                 raw = _call(prompt)
             except Exception as exc:  # noqa: BLE001 - retry
                 rounds[-1]["error"] = str(exc)[-200:]
                 time.sleep(10 * (attempt + 1))
                 continue
-            if raw and raw.strip():
-                break
-        rounds[-1]["repair_seconds"] = round(time.time() - t0, 1)
-        if not raw or not raw.strip():
-            print("no usable response; stopping")
+            if not raw or not raw.strip():
+                print(f"empty response (attempt {attempt + 1}); retrying")
+                time.sleep(10)
+                continue
+            dump = Path(os.environ.get("CLAUDE_JOB_DIR", "/tmp")) / "tmp" / (
+                f"lowering-raw-{args.backend}-{i}-{attempt}.txt")
+            try:
+                dump.write_text(raw, encoding="utf-8")
+            except OSError:
+                pass
+            try:
+                cand = _extract_block(raw, lang)
+            except RuntimeError as exc:
+                rounds[-1]["error"] = str(exc)
+                print(f"{exc}; retrying")
+                time.sleep(10)
+                continue
+            delta = _brace_delta(cand)
+            if delta != 0:
+                rounds[-1]["error"] = (
+                    f"unbalanced appended block (delta {delta}) rejected")
+                print(f"guard: appended block brace delta {delta}; retrying")
+                time.sleep(10)
+                continue
+            if not _comments_closed(cand):
+                rounds[-1]["error"] = "appended block leaves comment open"
+                print("guard: appended block leaves a comment open; retrying")
+                time.sleep(10)
+                continue
+            block = cand
+            rounds[-1]["repair_seconds"] = round(time.time() - t0, 1)
             break
-        dump = Path(os.environ.get("CLAUDE_JOB_DIR", "/tmp")) / "tmp" / (
-            f"lowering-raw-{args.backend}-{i}.txt")
-        try:
-            dump.write_text(raw, encoding="utf-8")
-        except OSError:
-            pass
-        try:
-            block = _extract_block(raw, lang)
-        except RuntimeError as exc:
-            rounds[-1]["error"] = str(exc)
-            print(f"{exc}; stopping")
+        if block is None:
+            print("no usable repair block; stopping")
             break
-        # remove duplicate receipts as directed
-        for m in re.finditer(r"REMOVE_RECEIPT\s+(\S+)", raw):
-            op = m.group(1)
-            pat = re.compile(
-                r"[ \t]*/\* REHARNESS_RIS_OP id=" + re.escape(op)
-                + r"[^*]*\*/\s*\n[ \t]*__rh_" + re.escape(op)
-                + r"[^;]*;\s*\n?", )
-            text = pat.sub("", text, count=1)
         artifact.write_text(
             text.rstrip("\n") + "\n\n/* ---- lowering-repair round "
             f"{i} ---- */\n" + block, encoding="utf-8")

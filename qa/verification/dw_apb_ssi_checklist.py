@@ -135,11 +135,15 @@ def check_compile_rust(tmp: Path) -> tuple[bool, str]:
 def item_set_cs_enable(backend: str) -> tuple[bool, str]:
     text = _src(backend)
     if backend == "rust":
-        return _has(r"ser\.set\(\s*0x1\s*<<\s*chip_select", text)
-    return _has(r"(write\w*|writel)\s*\(\s*\(?\s*0x1\s*<<[^;]*?SER", text)
+        # mirror the C variant: any shift into SER, variable name agnostic
+        # (the flattened artifact drives chip select from `self.dws.cs`)
+        return _has(r"ser\.set\(\s*0x1[uUl]*\s*<<", text)
+    return _has(r"(write\w*|writel)\s*\(\s*\(?\s*0x1[uUl]*\s*<<[^;]*?SER", text)
 
 
-_CONST_VALUE = r"(?:0x[0-9a-f]+|\d+)(?:\s*\?\s*(?:0x[0-9a-f]+|\d+)\s*:\s*(?:0x[0-9a-f]+|\d+))?"
+# integer-literal suffixes (u/U/l/L) are standard C spelling of the same
+# constant; the emitted bare-metal artifact uses suffixed hex literals
+_CONST_VALUE = r"(?:0x[0-9a-f]+|\d+)[uUl]*(?:\s*\?\s*(?:0x[0-9a-f]+|\d+)[uUl]*\s*:\s*(?:0x[0-9a-f]+|\d+)[uUl]*)?"
 
 
 def _const_writes(reg: str, text: str, value: int) -> list[int]:
@@ -150,13 +154,13 @@ def _const_writes(reg: str, text: str, value: int) -> list[int]:
     for m in re.finditer(pat, text, re.I):
         raw = m.group(1)
         fold = re.match(
-            r"^(0x[0-9a-f]+|\d+)\s*\?\s*(0x[0-9a-f]+|\d+)"
-            r"\s*:\s*(0x[0-9a-f]+|\d+)$", raw)
+            r"^(0x[0-9a-f]+|\d+)[uUl]*\s*\?\s*(0x[0-9a-f]+|\d+)[uUl]*"
+            r"\s*:\s*(0x[0-9a-f]+|\d+)[uUl]*$", raw)
         if fold:
             val = fold.group(2) if int(fold.group(1), 0) else fold.group(3)
         else:
             val = raw
-        if int(val, 0) == value:
+        if int(val.rstrip("uUl"), 0) == value:
             out.append(m.start())
     return out
 
@@ -244,13 +248,17 @@ _RX_STORE_C = (r"\*\s*\((?:u\d+|uint\d+_t)\s*\*\)\s*\(?[^;]*?->\s*rx\)?"
                r"\s*=")
 _RX_ADV_C = r"->\s*rx\s*(\+=|=\s*[^;]*->\s*rx\s*\+)"
 
+# Rust variants accept the two equivalent cursor idioms: `+=` arithmetic on
+# a byte index, or raw-pointer `.add()`/deref-store on `tx_buf`/`rx_buf`.
 _TX_DEREF_R = r"\*\s*\(.*tx|read_volatile.*tx|\bptr::read"
-_TX_ADV_R = r"\btx\s*(\+=|=\s*\w+\s*\+\s*n_bytes)"
-_TX_LEN_R = r"tx_len\s*(-=|=\s*[^;]*tx_len\s*-\s*1|--)"
+_TX_ADV_R = r"\btx(?:_buf)?\s*(?:\+=|=\s*[^;\n]*?\.add\()"
+_TX_LEN_R = (r"tx_len\s*(?:-=|=\s*[^;]*tx_len\s*-\s*1|--"
+             r"|=\s*[^;\n]*saturating_sub)")
 _DR_WRITE_R = r"\bdr\.set\("
 _DR_READ_R = r"\bdr\.get\(\)"
-_RX_STORE_R = r"\bdr\.get\(\)[^;]{0,80}\*\s*\(.*rx|write_volatile.*rx"
-_RX_ADV_R = r"\brx\s*(\+=|=\s*\w+\s*\+\s*n_bytes)"
+_RX_STORE_R = (r"\*\s*\([^;\n]*rx(?:_buf)?[^;\n]*\)\s*="
+               r"|\bdr\.get\(\)[^;]{0,80}\*\s*\(.*rx|write_volatile.*rx")
+_RX_ADV_R = r"\brx(?:_buf)?\s*(?:\+=|=\s*[^;\n]*?\.add\()"
 
 
 def _ordered(text: str, *patterns: str) -> tuple[bool, str]:

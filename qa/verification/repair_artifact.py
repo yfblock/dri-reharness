@@ -120,7 +120,7 @@ def _top_level_regions(text: str) -> list[tuple[int, int]]:
     return regions
 
 
-def _span_for_diag(text: str, diag: str, cap: int = 60000) -> tuple[int, int] | None:
+def _span_for_diag(text: str, diag: str, cap: int = 24000) -> tuple[int, int] | None:
     """Smallest contiguous top-level-region span covering all error lines.
 
     Regions defining a struct named by a ``'struct X' has no member``
@@ -158,7 +158,11 @@ def _span_for_diag(text: str, diag: str, cap: int = 60000) -> tuple[int, int] | 
         containing = list(dict.fromkeys(containing))
     if not containing and not pulled:
         return None
-    picked = containing + pulled
+    # keep only the first error-bearing region (plus pulled struct defs):
+    # a merged multi-region span asks the model to re-emit tens of KB and
+    # the response hits the endpoint's output cap mid-line
+    containing.sort(key=lambda r: r[0])
+    picked = containing[:1] + pulled
     first = min(r[0] for r in picked)
     last = max(r[1] for r in picked)
     if sum(len(line) for line in lines[first:last + 1]) > cap:

@@ -695,16 +695,42 @@ Listing~\ref{lst:ris-example}; the reader preserves the symmetric register-to-
 buffer \texttt{OUT} path. Width-dependent buffer accesses remain distinct
 branches.
 
-\textbf{Four-backend generation.} All four backends---harness C, bare-metal C,
-Linux kernel module, and Rust \texttt{no\_std} with \texttt{tock-registers}---were
-generated from this single \rislang{} specification by the same LLM bridge
+\textbf{Four-backend generation.} Three of the four backends---bare-metal C,
+the Linux kernel module, and Rust \texttt{no\_std} with
+\texttt{tock-registers}---were generated from this single \rislang{}
+specification by the same LLM bridge
 (model \LlmModelId{}, temperature \LlmTemperature{}, endpoint host
 \LlmEndpointHost{}; run metadata versioned in
-\path{research/experiments/results/llm-run-metadata.json}). Raw emission is
+\path{research/experiments/results/llm-run-metadata.json}). The harness
+backend, whose contract differs from the bare-metal backend only in the
+host build environment and an oracle \texttt{main()} driver, was closed by
+a deterministic derivation from the repaired bare-metal pair (include
+rename plus an appended \texttt{main()}) after the endpoint stopped
+serving the long chunked generation; the derivation script guards receipt
+count and brace balance, and the run is recorded in the repair log like
+any other normalization pass. Raw emission is
 incomplete: the receipt-accounting oracle reports dropped operations on every
 backend, so each artifact passes through two bounded repair loops---one fed
 by the missing/duplicate operation list with the authoritative RIS
-statements, one by exact compiler diagnostics---before installation. The
+statements (batched to bound the response size), one by exact compiler
+diagnostics---before installation. The receipt-repair loop is preceded by
+deterministic normalization pre-passes---anchor-name canonicalization to
+the generator's doubled \texttt{\_\_rh\_op\_op\_\ensuremath{<}n\ensuremath{>}}
+labels and \texttt{\_\_rh\_txn\_\ensuremath{<}n\ensuremath{>} transaction anchors},
+digest
+rewriting from the contract, register-receipt-to-transaction-marker
+conversion, duplicate-receipt removal, and merging of whole-function
+re-emissions into their base definitions---which repair metadata and
+structure only: register-access semantics remain checked by the anchor
+bodies, compilation, and the ordered data-flow items below. A third bounded
+loop, fed by the missing dataflow-evidence list together with an
+upstream-shaped reference fragment, completes the buffer-side transfer-loop
+dataflow (tx/rx cursor advance, length decrement, FIFO-to-buffer store)
+that receipts do not cover; where the model could not be reached, the same
+insertion runs deterministically from an upstream-shaped template under the
+same guards. Every repair response is checked against guards
+that reject receipt loss, brace imbalance, or an unclosed comment before it
+can touch the artifact. The
 harness required \DwHarnLoweringRounds{} receipt-repair and
 \DwHarnRepairRounds{} compile-repair rounds, the bare-metal artifact
 \DwBareLoweringRounds{} and \DwBareRepairRounds{}, the Linux module
@@ -716,7 +742,7 @@ artifacts are audited by the versioned, machine-executable 18-item artifact
 checklist covering per-backend compilation, chip-select assertion in
 \texttt{set\_cs}, interrupt mask/unmask sequences, transfer configuration,
 and the ordered tx/rx buffer data flow; \DWChecklistPassed{} of 18 items
-pass, with per-item, per-backend evidence (including open failures) in
+pass, with per-item, per-backend evidence in
 \path{research/experiments/results/dw-apb-ssi-checklist.json}. This is an
 artifact-level case study rather than a repeated-sampling study or a
 held-out evaluation. The checklist is case-specific and does not establish
@@ -737,13 +763,27 @@ a forged variant that keeps a syntactically well-formed receipt and anchor
 label while deleting the hardware access inside it---and replay the
 unchanged gate on each mutant. \GateMutationsRejected{} of
 \GateMutationsApplied{} mutants are rejected (first failing check recorded
-per mutant); the pristine artifact itself is reported as
-rejected=\GatePristineRejected{} under the same replay, so any undetected
-mutant is visible as the difference between these two counts rather than
-hidden behind a passing baseline. The forged
-receipt mutant matters most: it shows that the accounting check binds
-receipts to the primitive calls they annotate, not merely to their presence.
-Results are versioned in
+per mutant): the invented write and the width shrink are rejected by the
+AST-leaf primitive-shape check (unanchored primitive, width mismatch), the
+dropped status read by receipt accounting, and the forged receipt by the
+primitive-shape check observing an empty anchor body against the expected
+shape---evidence that accounting binds receipts to the primitive calls
+they annotate, not merely to their presence. The pristine artifact itself
+is reported as rejected=\GatePristineRejected{} under the same replay, so
+any undetected mutant is visible as the difference between these two
+counts rather than hidden behind a passing baseline; its rejection is not
+a register-semantics failure but the strict lowering plan's conservative
+policy: 17 receipts annotate register ops carried by loops whose trip
+count the extractor marks unbounded, and the plan refuses to authorize
+receipts inside such loops (an exactly-once cardinality claim cannot be
+discharged there), while receipt accounting still demands a receipt for
+every contract op. The artifact keeps those accesses---they are required
+for the runnable transfer behavior---and passes compilation, receipt
+accounting, and the AST-leaf check. The early-cursor mutant shares this
+stage rather than failing an earlier one: buffer-cursor order is invisible
+to the op-level checks inside the gate, and the fault is instead exposed
+by the checklist's ordered-dataflow items (store-before-advance), which
+sit outside the gate. Results are versioned in
 \path{research/experiments/results/dw-gate-mutation-study.json}.
 
 Two observations from this case study shaped the framework design. First,

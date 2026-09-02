@@ -722,6 +722,7 @@ INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineT.p
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineTB.pfb
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineTBI.pfb
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/libertine/LinLibertineTI.pfb
+INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/newtx/NewTXMI.pfb
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txexas.pfb
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txexs.pfb
 INPUT /usr/share/texlive/texmf-dist/fonts/type1/public/newtx/txmiaX.pfb

@@ -46,3 +46,6 @@ artifacts/intermediates/
 modules.order
 .claude/
 .worktrees/
+
+# gate mutation study replay workdirs (regenerable)
+artifacts/cache/
