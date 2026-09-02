@@ -89,7 +89,10 @@ compile errors attributable to this part. Typical fixes:
 - reference only types defined by the includes or the scaffold struct;
 - if an external function has no prototype in scope, do not call it:
   replace the call with its effect on locals (or a no-op statement)
-  unless the scaffold declares it.
+  unless the scaffold declares it;
+- when a struct-field initializer type-mismatches (e.g. a callback table
+  entry), change the function's signature/return type to the field's
+  type, not the initializer.
 
 Hard constraints — the receipt chain is machine-verified after you:
 - Preserve every `/* REHARNESS_RIS_OP ... */` and
@@ -236,36 +239,56 @@ def _repair_compile(backend, name, cpath, entries, ver_dir, root, tmp_dir):
                 log.append("part %d too large to echo (%d chars)"
                            % (idx, len(part)))
                 continue
-            prompt = _REPAIR_PROMPT.format(
+            base_prompt = _REPAIR_PROMPT.format(
                 dialect=dialect, lo=lo,
                 hi=text.count("\n", 0, end) + 1,
                 scaffold=(scaffold_text if idx != 0
                           else "(this IS the scaffold part)"),
                 part=part, errors="".join(errs_by_part[idx])[:8000])
-            try:
-                fixed = call_llm(prompt)
-            except Exception as exc:
-                log.append("part %d: llm failed: %s" % (idx, exc))
-                continue
-            m = _REPAIR_FENCE.search(fixed)
-            if not m:
-                # unfenced but C-looking answer (model dropped the fence):
-                # accept the whole response when it carries receipts
-                stripped = fixed.strip()
-                if ("REHARNESS_RIS_OP" in stripped or part.count(
-                        "REHARNESS_RIS_OP") == 0) and stripped.count("{") >= 3:
-                    log.append("part %d: unfenced response accepted" % idx)
-                    new = stripped
+            new = None
+            for attempt in (0, 1):  # one guarded retry: temp is 0, so
+                # the retry prompt must differ to produce a different fix
+                extra = ""
+                if attempt:
+                    extra = ("\nREMINDER: your previous attempt was rejected"
+                             " (it lost a receipt comment, dropped the fence,"
+                             " or was not usable). Preserve every receipt"
+                             " comment and every __rh_op_ anchor byte-for-"
+                             "byte; change ONLY what the diagnostics require;"
+                             " answer inside one ```c fence.\n")
+                try:
+                    fixed = call_llm(base_prompt + extra)
+                except Exception as exc:
+                    log.append("part %d: llm failed: %s" % (idx, exc))
+                    break
+                m = _REPAIR_FENCE.search(fixed)
+                if m:
+                    cand = m.group(1)
                 else:
-                    log.append("part %d: no fenced block" % idx)
+                    # unfenced but C-looking answer (model dropped the
+                    # fence): accept the whole response when it carries
+                    # receipts
+                    stripped = fixed.strip()
+                    if ("REHARNESS_RIS_OP" in stripped or part.count(
+                            "REHARNESS_RIS_OP") == 0) and stripped.count(
+                                "{") >= 3:
+                        cand = stripped
+                        log.append("part %d: unfenced response accepted"
+                                   % idx)
+                    else:
+                        log.append("part %d: attempt %d: no fenced block"
+                                   % (idx, attempt))
+                        continue
+                if (_receipt_count(cand) < _receipt_count(part)
+                        or len(cand) < 0.6 * len(part) or "TODO" in cand):
+                    log.append("part %d: attempt %d rejected (receipts "
+                               "%d<%d, len %d/%d)"
+                               % (idx, attempt, _receipt_count(cand),
+                                  _receipt_count(part), len(cand), len(part)))
                     continue
-            else:
-                new = m.group(1)
-            if (_receipt_count(new) < _receipt_count(part)
-                    or len(new) < 0.6 * len(part) or "TODO" in new):
-                log.append("part %d: rejected (receipts %d<%d, len %d/%d)"
-                           % (idx, _receipt_count(new), _receipt_count(part),
-                              len(new), len(part)))
+                new = cand
+                break
+            if new is None:
                 continue
             text = text[:start] + new + text[end:]
             changed = True
