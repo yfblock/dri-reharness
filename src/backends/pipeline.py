@@ -607,17 +607,21 @@ def _repair_receipts(backend, name, cpath, formal, entries,
         changed_parts.append((idx, sel))
         log.append("part %d: receipts completed (%d -> %d chars)"
                    % (idx, len(part), len(fixed)))
-    if not changed:
-        (Path(ver_dir) / f"{backend}.receipt-repair.log").write_text(
-            ("\n".join(log) + "\n") if log else "(no changes)\n",
-            encoding="utf-8")
-        return False
-    Path(cpath).write_text(text, encoding="utf-8")
-    # deterministic duplicate suppression before the compile gate
+    # Deterministic duplicate suppression runs unconditionally — before the
+    # early return.  At e1000 scale (12 parts, 30KB each) flash rejects
+    # every part echo, but the generated text still carries hundreds of
+    # required-id duplicate receipts; pure deletion needs no LLM and must
+    # not be gated on a successful splice.
     text, removed = _dedup_receipts(text, rows)
     if removed:
         log.append("dedup: removed %d duplicate receipt comment(s)" % removed)
         Path(cpath).write_text(text, encoding="utf-8")
+    if not changed:
+        (Path(ver_dir) / f"{backend}.receipt-repair.log").write_text(
+            ("\n".join(log) + "\n") if log else "(no changes)\n",
+            encoding="utf-8")
+        return removed > 0
+    Path(cpath).write_text(text, encoding="utf-8")
     # the edit must not break the build; on probe failure retry the same
     # parts with the compiler diagnostics appended, then revert as a
     # last resort
@@ -685,11 +689,15 @@ def _repair_receipts(backend, name, cpath, formal, entries,
             break
         probe = _compile_probe(backend, cpath, name, root, tmp_dir)
     if probe.returncode != 0:
-        Path(cpath).write_text(original, encoding="utf-8")
-        log.append("reverted: compile probe failed after receipt repair")
+        # revert the splices, but keep the dedup pass: deleting duplicate
+        # comment lines cannot break a build that compiled before.
+        orig_dedup, _dropped = _dedup_receipts(original, rows)
+        Path(cpath).write_text(orig_dedup, encoding="utf-8")
+        log.append("reverted: compile probe failed after receipt repair "
+                   "(dedup retained)")
         (Path(ver_dir) / f"{backend}.receipt-repair.log").write_text(
             "\n".join(log) + "\n", encoding="utf-8")
-        return False
+        return _dropped > 0
     # persist part files + entries so downstream file consumers stay fresh
     # (recompute bounds: earlier splices shifted offsets)
     final_bounds = _part_bounds(text)
