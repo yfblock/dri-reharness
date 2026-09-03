@@ -367,6 +367,11 @@ For each required operation:
 4. Each op id must appear exactly once in the whole program. If this part
    contains a receipt for one of the required ids in a function OTHER
    than its owner, delete that stray receipt comment (keep the statement).
+5. Match the RIS access width inside the anchor braces: B8 means ONE
+   64-bit access (readq/writeq or the dialect's 8-byte primitive) —
+   never two 32-bit halves; B4 32-bit, B2 16-bit, B1 8-bit. If you find
+   a required op whose anchor body uses the wrong width, replace the
+   access with the correct-width primitive.
 
 MODULE RIS for the owner functions (authoritative ops, source order):
 {module_ris}

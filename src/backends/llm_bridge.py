@@ -281,6 +281,10 @@ into one translation unit, so these are compile gates):
 - A register or field name from the evidence is data, not a C identifier:
   never use it bare as a variable or constant; map it to a declared local
   or a #define'd constant.
+- Match the RIS access width exactly: B8 means ONE 64-bit access
+  (readq/writeq or the dialect's 8-byte primitive) — never two 32-bit
+  halves; B4 is 32-bit, B2 16-bit, B1 8-bit. The verifier compares the
+  primitive width against the RIS width per operation.
 - If a RIS name is in a CALL position, declare it as a function pointer
   type before calling it; never call a non-function variable.
 - Never apply << or >> to a pointer; cast to uintptr_t first.
