@@ -361,6 +361,9 @@ For each required operation:
 3. Immediately after that comment, emit the anchor label and put the
    access statement inside its braces:
    __rh_op_<op_id>: {{ <access statement> }}
+   The anchor label is MANDATORY — a receipt comment without its
+   __rh_op_<op_id>: anchor fails verification. Every required op you
+   touch must end up with BOTH the comment and the anchor.
 4. Each op id must appear exactly once in the whole program. If this part
    contains a receipt for one of the required ids in a function OTHER
    than its owner, delete that stray receipt comment (keep the statement).
@@ -475,10 +478,19 @@ def _repair_receipts(backend, name, cpath, formal, entries,
             if ln >= lo:
                 idx = i if i is not None else 0
         have.setdefault(m.group(1), []).append(idx)
+    # Receipt comments satisfy the text reconciliation, but the AST-leaf
+    # oracle additionally needs the anchor statement (`__rh_op_<id>: { ... }`)
+    # next to every lowered access; generation sometimes emits the comment
+    # without the anchor (8250 baremetal: 21 receipts, 0 anchors).  Linux is
+    # exempt: its plan legitimately blocks ops that can never anchor, and a
+    # hard anchor guard there would veto good receipt fixes wholesale.
+    need_anchor = backend in ("harness", "baremetal")
     broken = [r for r in rows
               if len(re.findall(r"REHARNESS_RIS_OP\s+id=%s\s" % re.escape(r[0]),
                                 text)) != 1
-              or not _receipt_line_ok(text, r[0], r[1], r[2])]
+              or not _receipt_line_ok(text, r[0], r[1], r[2])
+              or (need_anchor
+                  and not re.search(r"__rh_op_%s\b" % re.escape(r[0]), text))]
     if not broken:
         return False
     # route each broken op to the part that owns (or should own) it
@@ -575,6 +587,12 @@ def _repair_receipts(backend, name, cpath, formal, entries,
                 log.append("part %d: rejected (required receipt absent "
                            "or malformed)" % idx)
                 continue
+            if need_anchor and not all(
+                    re.search(r"__rh_op_%s\b" % re.escape(o), new)
+                    for o, k, d, _m in sel):
+                log.append("part %d: rejected (anchor statements absent)"
+                           % idx)
+                continue
             fixed = new
             break
         if fixed is None:
@@ -648,6 +666,10 @@ def _repair_receipts(backend, name, cpath, formal, entries,
                 continue
             if not all(_receipt_line_ok(new2, o, k, d)
                        for o, k, d, _m in sel):
+                continue
+            if need_anchor and not all(
+                    re.search(r"__rh_op_%s\b" % re.escape(o), new2)
+                    for o, k, d, _m in sel):
                 continue
             text = text[:lo2] + new2.rstrip("\n") + "\n\n" + text[end2:]
             Path(cpath).write_text(text, encoding="utf-8")
