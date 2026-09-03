@@ -1,0 +1,241 @@
+{
+  "anchors_instrumented": 150,
+  "description": "Prototype of the Section 7.2 loop-aware receipt design: deterministic anchor-provenance runtime instrumentation of the accepted DW harness, interval-bounded multiplicity discharge for loop-blocked plan entries",
+  "discharged": [
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_60",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x20",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_66",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "W",
+          "0x60",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_69",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x24",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_70",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x60",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_76",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x34",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_77",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x30",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_78",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "W",
+          "0x8",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_79",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x2c",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_80",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "W",
+          "0x2c",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_81",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "R",
+          "0x48",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_82",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "W",
+          "0x10",
+          1
+        ]
+      ]
+    },
+    {
+      "discharged": true,
+      "loop_count": "Top",
+      "module": "dw_spi_transfer_one",
+      "observed": 1,
+      "op_id": "op_83",
+      "shape_ok": true,
+      "shapes": [
+        [
+          "W",
+          "0x8",
+          1
+        ]
+      ]
+    }
+  ],
+  "loop_aware_strict_complete": false,
+  "loop_blocked_entries": 17,
+  "plan_entries": 150,
+  "run_exit": 0,
+  "schema": 1,
+  "shape_mismatches": [],
+  "total_logged_accesses": 44,
+  "unattributed_accesses": [],
+  "unobserved": [
+    {
+      "discharged": false,
+      "loop_count": "Top",
+      "module": "dw_spi_exec_mem_op",
+      "observed": 0,
+      "op_id": "op_133",
+      "shape_ok": false,
+      "shapes": []
+    },
+    {
+      "discharged": false,
+      "loop_count": "Top",
+      "module": "dw_spi_exec_mem_op",
+      "observed": 0,
+      "op_id": "op_134",
+      "shape_ok": false,
+      "shapes": []
+    },
+    {
+      "discharged": false,
+      "loop_count": "Top",
+      "module": "dw_spi_exec_mem_op",
+      "observed": 0,
+      "op_id": "op_136",
+      "shape_ok": false,
+      "shapes": []
+    },
+    {
+      "discharged": false,
+      "loop_count": "Top",
+      "module": "dw_spi_exec_mem_op",
+      "observed": 0,
+      "op_id": "op_137",
+      "shape_ok": false,
+      "shapes": []
+    },
+    {
+      "discharged": false,
+      "loop_count": "Top",
+      "module": "dw_spi_exec_mem_op",
+      "observed": 0,
+      "op_id": "op_138",
+      "shape_ok": false,
+      "shapes": []
+    }
+  ]
+}

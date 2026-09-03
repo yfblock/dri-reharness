@@ -103,7 +103,7 @@
 \newcommand{\ExtQemuMmioOffsets}{11}
 \newcommand{\ExtDriverOffsets}{3}
 \newcommand{\ExtTranspileUnsafePct}{100}
-\newcommand{\TrialsK}{5}
+\newcommand{\DwTrialsK}{5}
 \newcommand{\DwHarnTrialsN}{5}
 \newcommand{\DwHarnTrialsFirstCompile}{0}
 \newcommand{\DwHarnTrialsFirstCheckbacked}{0}
@@ -140,10 +140,54 @@
 \newcommand{\DwLinuxTrialsFinalStrict}{0}
 \newcommand{\DwLinuxTrialsReceiptRounds}{0}
 \newcommand{\DwLinuxTrialsReceiptCalls}{0}
+\newcommand{\DwTrialsGenSecondsMedian}{343.8}
+\newcommand{\TrialsK}{5}
 \newcommand{\TrialsGenSecondsMedian}{343.8}
+\newcommand{\CadenceTrialsK}{5}
+\newcommand{\CadenceHarnTrialsN}{5}
+\newcommand{\CadenceHarnTrialsFirstCompile}{1}
+\newcommand{\CadenceHarnTrialsFirstCheckbacked}{1}
+\newcommand{\CadenceHarnTrialsFirstStrict}{1}
+\newcommand{\CadenceHarnTrialsPostCompile}{5}
+\newcommand{\CadenceHarnTrialsPostCheckbacked}{1}
+\newcommand{\CadenceHarnTrialsPostStrict}{1}
+\newcommand{\CadenceHarnTrialsFinalCompile}{5}
+\newcommand{\CadenceHarnTrialsFinalCheckbacked}{5}
+\newcommand{\CadenceHarnTrialsFinalStrict}{1}
+\newcommand{\CadenceHarnTrialsReceiptRounds}{5}
+\newcommand{\CadenceHarnTrialsReceiptCalls}{9}
+\newcommand{\CadenceBareTrialsN}{5}
+\newcommand{\CadenceBareTrialsFirstCompile}{3}
+\newcommand{\CadenceBareTrialsFirstCheckbacked}{1}
+\newcommand{\CadenceBareTrialsFirstStrict}{0}
+\newcommand{\CadenceBareTrialsPostCompile}{5}
+\newcommand{\CadenceBareTrialsPostCheckbacked}{1}
+\newcommand{\CadenceBareTrialsPostStrict}{0}
+\newcommand{\CadenceBareTrialsFinalCompile}{5}
+\newcommand{\CadenceBareTrialsFinalCheckbacked}{3}
+\newcommand{\CadenceBareTrialsFinalStrict}{0}
+\newcommand{\CadenceBareTrialsReceiptRounds}{9}
+\newcommand{\CadenceBareTrialsReceiptCalls}{16}
+\newcommand{\CadenceLinuxTrialsN}{3}
+\newcommand{\CadenceLinuxTrialsFirstCompile}{0}
+\newcommand{\CadenceLinuxTrialsFirstCheckbacked}{0}
+\newcommand{\CadenceLinuxTrialsFirstStrict}{0}
+\newcommand{\CadenceLinuxTrialsPostCompile}{0}
+\newcommand{\CadenceLinuxTrialsPostCheckbacked}{0}
+\newcommand{\CadenceLinuxTrialsPostStrict}{0}
+\newcommand{\CadenceLinuxTrialsFinalCompile}{0}
+\newcommand{\CadenceLinuxTrialsFinalCheckbacked}{0}
+\newcommand{\CadenceLinuxTrialsFinalStrict}{0}
+\newcommand{\CadenceLinuxTrialsReceiptRounds}{0}
+\newcommand{\CadenceLinuxTrialsReceiptCalls}{0}
+\newcommand{\CadenceTrialsGenSecondsMedian}{560.8}
+\newcommand{\CadenceRisOps}{32}
 \newcommand{\GateMutationsApplied}{6}
 \newcommand{\GateMutationsRejected}{6}
 \newcommand{\GatePristineRejected}{true}
+\newcommand{\LoopAwareBlocked}{17}
+\newcommand{\LoopAwareDischarged}{12}
+\newcommand{\LoopAwareUnobserved}{5}
 \newcommand{\DwHarnRepairRounds}{0}
 \newcommand{\DwHarnCompileOk}{true}
 \newcommand{\DwHarnLoweringRounds}{0}
@@ -163,6 +207,7 @@
 \newcommand{\LlmModelId}{glm-5.3-highspeed}
 \newcommand{\LlmEndpointHost}{a private OpenAI-compatible endpoint}
 \newcommand{\LlmTemperature}{0}
+\newcommand{\DirectLlmModelId}{glm-5.2}
 \newcommand{\EvalSecondsMin}{6.0}
 \newcommand{\EvalSecondsMedian}{9.6}
 \newcommand{\EvalSecondsMax}{11.8}
@@ -202,7 +247,7 @@
   \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.00) rectangle (20.70,-0.26);
   \path[fill=figorange, draw=black, line width=0.3pt] (20.70,-0.00) rectangle (30.80,-0.26);
   \path[fill=gray!45, draw=black, line width=0.3pt] (30.80,-0.00) rectangle (62.20,-0.26);
-  \path[fill=gray!15, draw=black, line width=0.3pt] (62.20,-0.00) rectangle (100.10,-0.26);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (62.20,-0.00) rectangle (100.00,-0.26);
   \node[left, font=\scriptsize] at (-0.18,-0.13) {wmt\_ge\_rops};
   \node[right, font=\scriptsize] at (101.2,-0.13) {20.7\%};
   \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-0.36) rectangle (18.10,-0.62);
@@ -274,7 +319,7 @@
   \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-4.32) rectangle (8.40,-4.58);
   \path[fill=figorange, draw=black, line width=0.3pt] (8.40,-4.32) rectangle (27.60,-4.58);
   \path[fill=gray!45, draw=black, line width=0.3pt] (27.60,-4.32) rectangle (55.20,-4.58);
-  \path[fill=gray!15, draw=black, line width=0.3pt] (55.20,-4.32) rectangle (100.10,-4.58);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (55.20,-4.32) rectangle (100.00,-4.58);
   \node[left, font=\scriptsize] at (-0.18,-4.45) {ahci\_mvebu};
   \node[right, font=\scriptsize] at (101.2,-4.45) {8.4\%};
   \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-4.68) rectangle (8.20,-4.94);
@@ -304,7 +349,7 @@
   \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-6.12) rectangle (6.40,-6.38);
   \path[fill=figorange, draw=black, line width=0.3pt] (6.40,-6.12) rectangle (19.20,-6.38);
   \path[fill=gray!45, draw=black, line width=0.3pt] (19.20,-6.12) rectangle (63.00,-6.38);
-  \path[fill=gray!15, draw=black, line width=0.3pt] (63.00,-6.12) rectangle (100.10,-6.38);
+  \path[fill=gray!15, draw=black, line width=0.3pt] (63.00,-6.12) rectangle (100.00,-6.38);
   \node[left, font=\scriptsize] at (-0.18,-6.25) {ahci\_dwc};
   \node[right, font=\scriptsize] at (101.2,-6.25) {6.4\%};
   \path[fill=figblue, draw=black, line width=0.3pt] (0.00,-6.48) rectangle (4.00,-6.74);
@@ -353,10 +398,10 @@ edu & 5 & 3 & 2 & 0 & 0 & 0 & 2 & 3 & 60.0\%\\
 \textbf{Driver} & \textbf{RIS} & \textbf{FuncSpec} & \textbf{DevSpec} & \textbf{H/B/L compile} & \textbf{Linux ready} & \textbf{Synth.-eligible}\\
 \hline
 gpio-ftgpio010 & 1.000 & 1.000 & 1.000 & \checkmark/\checkmark/\checkmark & \checkmark & \checkmark\\
-virtio\_mmio & 0.897 & 0.875 & 1.000 & \checkmark/\checkmark/\checkmark & -- & --\\
-gpio-pl061 & 0.924 & 1.000 & 0.938 & \checkmark/\checkmark/\checkmark & -- & \checkmark\\
-gpio-cadence & 1.000 & 1.000 & 1.000 & \checkmark/\checkmark/\checkmark & -- & \checkmark\\
-edu & 0.920 & 1.000 & 0.688 & \checkmark/\checkmark/\checkmark & -- & \checkmark\\
+virtio\_mmio & 0.897 & 0.875 & 1.000 & \checkmark/\checkmark/\checkmark & $\times$ & $\times$\\
+gpio-pl061 & 0.924 & 1.000 & 0.938 & \checkmark/\checkmark/\checkmark & $\times$ & \checkmark\\
+gpio-cadence & 1.000 & 1.000 & 1.000 & \checkmark/\checkmark/\checkmark & $\times$ & \checkmark\\
+edu & 0.920 & 1.000 & 0.688 & \checkmark/\checkmark/\checkmark & $\times$ & \checkmark\\
 \hline
 \end{tabular}
 }

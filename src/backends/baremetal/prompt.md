@@ -12,7 +12,20 @@ Rules:
   must retain its guard and finite counter.
 - Define a device private struct with uintptr_t base.
 - Define static inline mmio read/write helpers using volatile pointer dereference.
+  If a Write's value expression needs the register's current value
+  (read-modify-write), never call a read helper inside the Write anchor: read
+  the current value with a raw
+  `(*(volatile const uint32_t *)(uintptr_t)(base + offset))` dereference inside
+  the value expression. A Write anchor body must contain exactly one primitive
+  call — the write.
 - Export one function per module, each taking a pointer to the device struct.
+- Add a trace printf inside every mmio helper, distinguish direction and
+  include the value (the host oracle parses it):
+  after a read:  printf("[trace %lu] R 0x%03lx = 0x%08x\n", n++, (unsigned long)(addr & 0xffffu), v);
+  after a write: printf("[trace %lu] W 0x%03lx = 0x%08x\n", n++, (unsigned long)(addr & 0xffffu), v);
+  (guard them with #ifdef REHARNESS_BAREMETAL_ORACLE plus #include <stdio.h>
+  so the freestanding build stays printf-free; the direction letter must be
+  R or W, never "R/W").
 - For every read, write, or read-modify-write operation, emit the receipt
   comment verbatim in this exact form (copy `op_id`, `kind`, and `digest`
   from the RIS op line; status is always `lowered`):
@@ -24,7 +37,24 @@ Rules:
   `REHARNESS_RIS_OP(...)`, as a JSON comment, or in any other spelling.
   Emit each operation exactly once; do not invent op_ids or digests.
 - No main() function - this is a library.
-- Add #ifdef REHARNESS_BAREMETAL_ORACLE guard with a main() for testing.
+- Add #ifdef REHARNESS_BAREMETAL_ORACLE guard with a main() that drives the
+  subsystem callbacks in plan order, using EXACTLY these output lines (the
+  host oracle parses them):
+  1. one line before any call:
+     printf("[reharness-callback-begin] %d\n", N);   /* N = number of calls */
+  2. per callback module <mod>, before calling it:
+     printf("[reharness-callback] %s\n", "<mod>");
+     then call the module function with a static device instance whose base
+     member points at a static backing array;
+  3. after each call, in order:
+     printf("[reharness-result] 0x%08x\n", ret);        /* 0 if void */
+     printf("[reharness-output] <name>=0x%08x\n", v);   /* per written out-param */
+     printf("[reharness-state] sdata=0x%08x sdir=0x%08x\n",
+            dev.sdata, dev.sdir);   /* GPIO shadow value/direction members,
+                                        or the virtio seven-field line:
+     printf("[reharness-virtio-state] ea=0x%08x ec=0x%08x so=0x%08x sc=0x%08x en=0x%08x sn=0x%08x ready=0x%08x\n", ...); */
+  4. one line after the last call:
+     printf("[reharness-callback-end]\n");
 - Address fidelity: every RIS address expression is a source-derived C
   expression. Preserve the complete expression exactly, including the base
   expression and dynamic terms such as `priv->mmio + *off`; never replace a

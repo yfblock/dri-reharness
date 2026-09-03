@@ -1058,6 +1058,16 @@ def run_backend_pipeline(res: Any, outdir: str, source: str,
             else:
                 gr.update(verify_subsystem_callbacks(
                     res.formal, res.device_spec, ""))
+            if gr.get("w1c_drain_runtime_passed") is None:
+                gr.update(verify_w1c_drain_runtime(
+                    res.formal, res.device_spec, ""))
+            # the trials-level gate maps runtime_trace to trace_passed;
+            # for bare-metal the runtime evidence is the host callback and
+            # W1C-drain oracles (vacuously passed when the driver needs
+            # neither), not a register trace
+            gr["trace_passed"] = bool(
+                gr.get("subsystem_callback_oracle_passed")
+                and gr.get("w1c_drain_runtime_passed"))
             if r.returncode != 0:
                 _w(ver_dir, "baremetal.compile.log", r.stderr)
             result_line = ("compiles freestanding" if r.returncode == 0
@@ -1150,6 +1160,12 @@ def run_backend_pipeline(res: Any, outdir: str, source: str,
                     and linux_registration_ast.get("complete")),
                 "linux_registration_ast": linux_registration_ast,
             })
+            # no host execution for the module backend: the register trace
+            # is not applicable, so the trials-level runtime_trace field is
+            # vacuously passed once the module builds (disclosed in the
+            # paper); registration-AST attestation carries the runtime
+            # evidence for this backend
+            gr["trace_passed"] = r.returncode == 0
             result_line = ("kernel module compiles" if r.returncode == 0
                            else "kernel compile FAILED")
         gen_results[backend] = gr

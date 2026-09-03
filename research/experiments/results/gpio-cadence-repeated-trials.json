@@ -1,0 +1,541 @@
+{
+  "backends": [
+    "harness",
+    "baremetal",
+    "linux"
+  ],
+  "description": "Repeated constrained-pipeline trials; per backend, first pass (compile repair disabled), post compile-repair, and post receipt-repair gate check states on the same candidate",
+  "driver": "gpio-cadence",
+  "model": "glm-5.3-highspeed",
+  "schema": 1,
+  "source": "/home/yfblock/Code/dri-trans-paper/reharness/benchmarks/drivers/baseline/gpio-cadence.c",
+  "temperature": 0.0,
+  "trials": [
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "ast_leaf_anchors",
+          "gen_seconds": 647.5,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": true,
+            "driver_main_completed": false,
+            "guard_rejects": 1,
+            "llm_calls": 3,
+            "missing_final": 0,
+            "rounds": 2,
+            "stubs_windowed": 0
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 783.5,
+          "llm_generate_calls": 2,
+          "receipt_repair": {
+            "complete": false,
+            "driver_main_completed": true,
+            "guard_rejects": 0,
+            "llm_calls": 1,
+            "missing_final": 0,
+            "rounds": 1,
+            "stubs_windowed": 0
+          }
+        },
+        "linux": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 581.5,
+          "llm_generate_calls": 4,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        }
+      },
+      "seconds": 4801.4,
+      "trial": 1
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 282.0,
+          "llm_generate_calls": 2,
+          "receipt_repair": {
+            "complete": false,
+            "driver_main_completed": false,
+            "guard_rejects": 0,
+            "llm_calls": 1,
+            "missing_final": 0,
+            "rounds": 1,
+            "stubs_windowed": 0
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 469.1,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": true,
+            "driver_main_completed": false,
+            "guard_rejects": 2,
+            "llm_calls": 5,
+            "missing_final": 0,
+            "rounds": 2,
+            "stubs_windowed": 0
+          }
+        },
+        "linux": {
+          "error": "exception (see log)"
+        }
+      },
+      "seconds": 3913.6,
+      "trial": 2
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 269.1,
+          "llm_generate_calls": 3,
+          "receipt_repair": {
+            "complete": true,
+            "driver_main_completed": false,
+            "guard_rejects": 0,
+            "llm_calls": 0,
+            "missing_final": 0,
+            "rounds": 0,
+            "stubs_windowed": 0
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 650.7,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": false,
+            "driver_main_completed": false,
+            "guard_rejects": 1,
+            "llm_calls": 2,
+            "missing_final": 0,
+            "rounds": 1,
+            "stubs_windowed": 0
+          }
+        },
+        "linux": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 691.1,
+          "llm_generate_calls": 2,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        }
+      },
+      "seconds": 3770.1,
+      "trial": 3
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 477.6,
+          "llm_generate_calls": 2,
+          "receipt_repair": {
+            "complete": false,
+            "driver_main_completed": false,
+            "guard_rejects": 0,
+            "llm_calls": 0,
+            "missing_final": 0,
+            "rounds": 0,
+            "stubs_windowed": 0
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": true,
+          "accepted_strict": true,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": true
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": true
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": true
+            }
+          },
+          "first_failing_check_final": null,
+          "gen_seconds": 501.2,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": true,
+            "driver_main_completed": false,
+            "guard_rejects": 0,
+            "llm_calls": 0,
+            "missing_final": 0,
+            "rounds": 0,
+            "stubs_windowed": 0
+          }
+        },
+        "linux": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 579.5,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        }
+      },
+      "seconds": 2539.6,
+      "trial": 4
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "receipt_accounting",
+          "gen_seconds": 560.8,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": false,
+            "driver_main_completed": false,
+            "guard_rejects": 12,
+            "llm_calls": 12,
+            "missing_final": 32,
+            "rounds": 6,
+            "stubs_windowed": 0
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": true,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": true,
+              "compile": true,
+              "lowering_plan": true,
+              "receipt_accounting": true,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "runtime_trace",
+          "gen_seconds": 224.8,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": false,
+            "driver_main_completed": true,
+            "guard_rejects": 0,
+            "llm_calls": 1,
+            "missing_final": 0,
+            "rounds": 1,
+            "stubs_windowed": 0
+          }
+        },
+        "linux": {
+          "error": "exception (see log)"
+        }
+      },
+      "seconds": 4080.2,
+      "trial": 5
+    }
+  ],
+  "trials_requested": 5
+}

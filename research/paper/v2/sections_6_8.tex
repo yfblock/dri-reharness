@@ -399,7 +399,10 @@ accessor contract lacks a passing source-contract oracle.
 FuncSpec = function-spec quality, DevSpec = device-spec quality. H/B/L =
 harness / bare-metal / Linux compilation. Linux ready denotes strict artifact
 readiness; synthesis-eligible denotes sufficient context to attempt LLM
-synthesis.}
+synthesis. ``--'' means the check does not apply to that driver/backend
+(e.g., strict Linux readiness without a kernel-side lifecycle model);
+$\times$ means the check applied and failed; no ``--'' entry masks a
+failing check.}
 \label{tab:readiness}
 \resizebox{\columnwidth}{!}{\ReadinessResultsTable}
 \end{table}
@@ -633,6 +636,33 @@ fails its unload step), while the e1000e module fails its guest exerciser.
 versioned but were not executed. The 2/2 structured-oracle pass rate thus
 has its denominator set by oracle availability, not by selective reporting.
 
+The remainder of this subsection and the DesignWare case study that
+follows assemble the LLM-side evidence as six heterogeneous studies;
+Table~\ref{tab:llm-studies} indexes them with their sizes, outcomes, and
+versioned records.
+
+\begin{table}[t]
+\centering
+\caption{Index of the LLM-side evidence studies. Each study's size,
+outcome, and versioned record; records live under
+\texttt{research/experiments/results/}.}
+\label{tab:llm-studies}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}llll@{}}
+\toprule
+Study & $n$ & Outcome & Record \\
+\midrule
+Closed-loop QEMU record & \ClosedLoopCases{} & \ClosedLoopAccepted{} accepted (edu), ftgpio010 rejected & edu-/ftgpio010-generation.json \\
+Direct-translation baseline & 1 cand. & gate reject at compile; budget-matched runs endpoint-blocked & direct-llm-baseline.json \\
+Repeated pipeline trials & \DwHarnTrialsN{}+\DwBareTrialsN{}+\DwLinuxTrialsN{} & 0 accepted at any stage & dw-repeated-trials.json \\
+Cross-driver trials (gpio-cadence) & \CadenceHarnTrialsN{}+\CadenceBareTrialsN{}+\CadenceLinuxTrialsN{} & \CadenceHarnTrialsFinalStrict{} strict, \CadenceHarnTrialsFinalCheckbacked{} check-backed (harness) & gpio-cadence-repeated-trials.json \\
+Existing-tool comparison & 1 device & explicit, receipted protocol only in \reharness{} & existing-tool-comparison.json \\
+DW artifact case study & 4 backends & 18/18 checklist; chain partially supervised & dw-apb-ssi-checklist.json \\
+Gate mutation study & 6 cands. & 6/6 rejected (incl.\ pristine at strict plan) & dw-gate-mutation-study.json \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
 \textbf{QEMU edu (PCI).} The deterministic PCI backend generates a
 miscdevice providing positional reads and writes over the mapped BAR. The
 guest exerciser validates the device ID at offset 0x00, the complemented
@@ -673,8 +703,10 @@ not replace, the deterministic-baseline QEMU numbers above.
 \textbf{Scoped direct-translation baseline.} To isolate the effect of the
 evidence boundary on the same task, we also ran an unconstrained baseline:
 the raw pinned DesignWare sources (core and header, \DwSourceLines{} source
-lines in total for the three files) were given to the \emph{same} model
-with a minimal ``translate this driver to a host harness'' prompt, and the
+lines in total for the three files) were given to the same endpoint at
+temperature~0 with the model then in service (\DirectLlmModelId{}; the
+constrained pipeline's recorded chain uses \LlmModelId{}) and a minimal
+``translate this driver to a host harness'' prompt, and the
 candidate was passed through the identical verification gate and the same
 pattern items of the DesignWare checklist. The recorded baseline candidate
 passes all \DirectLlmPatternTotal{} presence-and-order pattern items yet
@@ -687,21 +719,21 @@ additionally demands the per-operation receipt accounting and
 exercised-path trace that the constrained pipeline enforces. To remove the
 repair-budget confound, the baseline tool implements the same bounded
 compile-diagnostic repair loop as the pipeline (probe-compile, exact
-\texttt{cc} diagnostics fed back, region-bounded echo of only the failing
-definitions, bounded rounds). During the measurement window the private
-endpoint could not serve it: twelve fresh full-source generation attempts
-returned no usable fenced body, and two repair runs on the versioned
-candidate stalled on unanswered repair calls (all attempts are recorded in
-\path{research/experiments/results/direct-llm-baseline-endpoint-failures.json}).
-The budget-matched measurement is therefore listed as endpoint-blocked
-rather than reported with a number the endpoint never produced; the
-recorded pre-repair verdict above is unchanged by budget in every
+\texttt{cc} diagnostics fed back, region-bounded echo of the failing
+definitions, bounded rounds); the budget-matched measurement is
+endpoint-blocked---in the measurement window every attempt failed at the
+endpoint itself, with generation responses carrying no usable fenced body
+and repair calls stalling unanswered (all attempts are versioned in
+\path{research/experiments/results/direct-llm-baseline-endpoint-failures.json})---so
+we report the blocked status rather than a number the endpoint never
+produced. The recorded pre-repair verdict is unchanged by budget in every
 completed observation, and the pipeline-side repeated trials below show
-bounded compile repair closing compilation for a constrained candidate
-only in 3/5 bare-metal trials and 0/5 harness trials --- there is no
-completed run in which the baseline's unconstrained candidate compiles
-under any budget. Like the closed-loop record, this is an
-endpoint-bound comparison, not a repeated-sample study.
+bounded compile repair closing compilation for a constrained candidate in
+only \DwBareTrialsPostCompile{}/\DwBareTrialsN{} bare-metal trials and
+\DwHarnTrialsPostCompile{}/\DwHarnTrialsN{} harness trials; no completed
+run compiles the baseline's unconstrained candidate under any budget.
+Like the closed-loop record, this is an endpoint-bound comparison, not a
+repeated-sample study.
 
 \textbf{Repeated trials of the constrained pipeline.} To measure
 sample-to-sample variance rather than a single draw, the constrained
@@ -733,6 +765,37 @@ bounded automated repair is insufficient for this driver family and the
 accepted artifact rests on the recorded human-supervised chain, whose
 effort is disclosed rather than amortized. Full per-trial check states are
 versioned in \path{research/experiments/results/dw-repeated-trials.json}.
+
+\textbf{Cross-driver repeated trials (op-count hypothesis).} The
+DesignWare result conflates two explanations: bounded budgets are
+insufficient, or 285-operation drivers are simply past what raw emission
+reliably delivers. The rerun review asked for a graded-size data point, so
+the same protocol was run on \texttt{gpio-cadence} (\CadenceRisOps{}
+operations, no loops; record
+\path{research/experiments/results/gpio-cadence-repeated-trials.json}),
+after three further deterministic normalizations were added to the
+protocol because the first run exposed them: primitive stubs are rewritten
+into a windowed backing array (so a degenerate zero base cannot fault),
+a stub \texttt{main()} is completed from the formal module list (the
+recorded chain appended the DW main the same way), and a missing
+\texttt{MODULE\_LICENSE()} line is appended for the Linux module build.
+The op-count hypothesis is confirmed at the small end: with the bounded
+budgets alone, \CadenceHarnTrialsFinalCheckbacked{}/\CadenceHarnTrialsN{}
+harness trials reach check-backed acceptance (compile, receipts, AST
+leaf) and \CadenceHarnTrialsFinalStrict{}/\CadenceHarnTrialsN{} passes the
+full strict gate---including \CadenceHarnTrialsFirstStrict{} trial whose
+raw first pass needed no repair round at all---against 0/\DwHarnTrialsN{}
+for DesignWare at either level; the remaining four fail only the runtime
+trace (uncovered guard paths leave the expected op sequence a strict
+subsequence mismatch). The bare-metal and Linux trials were rerun with the
+same normalizations after the first round showed a measurement gap of the
+harness itself (the gate's runtime-trace field was only ever populated
+for the harness backend; it is now derived from the bare-metal callback
+and W1C-drain oracles and recorded as not-applicable for the module
+backend once it builds), so their verdicts are read from the rerun
+record. Automated bounded acceptance is thus not a fixed property of the
+framework but a function of contract size and driver shape, which the
+per-driver readiness columns of Table~\ref{tab:readiness} reflect.
 
 \textbf{Existing-tool comparison.} Table~\ref{tab:existing-tools} places
 the same device's realizations side by side on the QEMU \texttt{edu}
@@ -909,7 +972,17 @@ stage rather than failing an earlier one: buffer-cursor order is invisible
 to the op-level checks inside the gate, and the fault is instead exposed
 by the checklist's ordered-dataflow items (store-before-advance), which
 sit outside the gate. Results are versioned in
-\path{research/experiments/results/dw-gate-mutation-study.json}.
+\path{research/experiments/results/dw-gate-mutation-study.json}. A
+prototype of the loop-aware receipt discharge sketched in
+Section~\ref{sec:limitations} then measures these 17 entries on the pristine
+artifact with anchor-provenance runtime instrumentation: \LoopAwareDischarged{}
+discharge by an
+observed multiplicity of at least one with exact kind and register offset,
+and the \LoopAwareUnobserved{} FIFO-loop receipts of \texttt{dw\_spi\_exec\_mem\_op} are never
+observed at all --- the human-merged duplicate emission returns before the
+loops --- so the runtime multiplicity check rejects dead receipts that the
+checklist level tolerates and localizes the defect to the merge
+(\path{research/experiments/results/dw-loop-aware-receipts.json}).
 
 Two observations from this case study shaped the framework design. First,
 IR evidence is a supplement, not a replacement: in this case the IR pass

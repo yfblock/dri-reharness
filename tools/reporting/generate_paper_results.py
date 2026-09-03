@@ -20,8 +20,14 @@ def esc(name: str) -> str:
     return name.replace("_", r"\_")
 
 
-def yn(value: bool) -> str:
-    return r"\checkmark" if value else "--"
+def yn(value) -> str:
+    """三态：True=✓，False=✗（适用的检查失败），None=不适用 '--'。
+    旧版 False 也渲染 '--'，会把真实失败藏进不适用记号（rerun 评审 minor）。"""
+    if value is True:
+        return r"\checkmark"
+    if value is False:
+        return r"$\times$"
+    return "--"
 
 
 def _glue_chart(rows, gagg) -> str:
@@ -45,8 +51,11 @@ def _glue_chart(rows, gagg) -> str:
     y = 0.0
     for row in rows:
         x = 0.0
-        for key, color in segs:
+        for i, (key, color) in enumerate(segs):
             span = float(row[key])
+            if i == len(segs) - 1 and x + span > 100.0:
+                # 各段百分比独立舍入，末段钳到 100：条长不超过坐标轴
+                span = 100.0 - x
             out.append(
                 "  \\path[fill=" + color + ", draw=black, line width=0.3pt] "
                 f"({x:.2f},-{y:.2f}) rectangle ({x + span:.2f},-{y + 0.26:.2f});")
@@ -61,8 +70,10 @@ def _glue_chart(rows, gagg) -> str:
     out.append(f"  \\draw[line width=0.5pt] (0,-{y:.2f}) -- (106,-{y:.2f});")
     ysep = y + 0.12
     x = 0.0
-    for key, color in segs:
+    for i, (key, color) in enumerate(segs):
         span = float(gagg[key])
+        if i == len(segs) - 1 and x + span > 100.0:
+            span = 100.0 - x
         out.append(
             "  \\path[fill=" + color + ", draw=black, line width=0.5pt] "
             f"({x:.2f},-{ysep:.2f}) rectangle ({x + span:.2f},-{ysep + 0.32:.2f});")
@@ -395,51 +406,73 @@ def main() -> None:
             macros["ExtTranspileUnsafePct"] = f'{uns["unsafe_function_pct"]:g}'
 
     # DW 重复试验（W1：同一候选三阶段门状态，k 次独立试验）
+    def _trials_macros(tr: dict, prefix: str) -> None:
+        trials = tr.get("trials", [])
+        if not trials:
+            return
+        macros[f"{prefix}TrialsK"] = len(trials)
+        _stage_keys = (("First", "first_pass"),
+                       ("Post", "post_compile_repair"),
+                       ("Final", "post_receipt_repair"))
+        for backend in ("harness", "baremetal", "linux", "rust"):
+            t_rows = [t["backends"][backend] for t in trials
+                      if "checks" in t.get("backends", {}).get(
+                          backend, {})]
+            if not t_rows:
+                continue
+            tag = {"harness": "Harn", "baremetal": "Bare",
+                   "linux": "Linux", "rust": "Rust"}.get(
+                       backend, backend)
+            macros[f"{prefix}{tag}TrialsN"] = len(t_rows)
+            for stage_name, stage_key in _stage_keys:
+                stages = [r["checks"][stage_key] for r in t_rows]
+                macros[f"{prefix}{tag}Trials{stage_name}Compile"] = sum(
+                    1 for c in stages if c.get("compile"))
+                macros[f"{prefix}{tag}Trials{stage_name}Checkbacked"] = sum(
+                    1 for c in stages if all(
+                        c.get(k) for k in ("compile",
+                                           "receipt_accounting",
+                                           "ast_leaf_anchors")))
+                macros[f"{prefix}{tag}Trials{stage_name}Strict"] = sum(
+                    1 for c in stages if all(c.get(k) for k in (
+                        "compile", "receipt_accounting",
+                        "ast_leaf_anchors", "lowering_plan",
+                        "runtime_trace")))
+            rr = [r.get("receipt_repair", {}) for r in t_rows]
+            macros[f"{prefix}{tag}TrialsReceiptRounds"] = sum(
+                x.get("rounds", 0) for x in rr)
+            macros[f"{prefix}{tag}TrialsReceiptCalls"] = sum(
+                x.get("llm_calls", 0) for x in rr)
+        gsec = sorted(r.get("gen_seconds", 0) for r in
+                      (b for t in trials
+                       for b in t.get("backends", {}).values()
+                       if "gen_seconds" in b))
+        if gsec:
+            macros[f"{prefix}TrialsGenSecondsMedian"] = gsec[
+                len(gsec) // 2]
+
     tr_path = (ROOT / "research" / "experiments" / "results"
                / "dw-repeated-trials.json")
     if tr_path.is_file():
-        tr = json.load(open(tr_path, encoding="utf-8"))
-        trials = tr.get("trials", [])
-        if trials:
-            macros["TrialsK"] = len(trials)
-            _stage_keys = (("First", "first_pass"),
-                           ("Post", "post_compile_repair"),
-                           ("Final", "post_receipt_repair"))
-            for backend in ("harness", "baremetal", "linux", "rust"):
-                t_rows = [t["backends"][backend] for t in trials
-                          if "checks" in t.get("backends", {}).get(
-                              backend, {})]
-                if not t_rows:
-                    continue
-                tag = {"harness": "Harn", "baremetal": "Bare",
-                       "linux": "Linux", "rust": "Rust"}.get(
-                           backend, backend)
-                macros[f"Dw{tag}TrialsN"] = len(t_rows)
-                for stage_name, stage_key in _stage_keys:
-                    stages = [r["checks"][stage_key] for r in t_rows]
-                    macros[f"Dw{tag}Trials{stage_name}Compile"] = sum(
-                        1 for c in stages if c.get("compile"))
-                    macros[f"Dw{tag}Trials{stage_name}Checkbacked"] = sum(
-                        1 for c in stages if all(
-                            c.get(k) for k in ("compile",
-                                               "receipt_accounting",
-                                               "ast_leaf_anchors")))
-                    macros[f"Dw{tag}Trials{stage_name}Strict"] = sum(
-                        1 for c in stages if all(c.get(k) for k in (
-                            "compile", "receipt_accounting",
-                            "ast_leaf_anchors", "lowering_plan",
-                            "runtime_trace")))
-                rr = [r.get("receipt_repair", {}) for r in t_rows]
-                macros[f"Dw{tag}TrialsReceiptRounds"] = sum(
-                    x.get("rounds", 0) for x in rr)
-                macros[f"Dw{tag}TrialsReceiptCalls"] = sum(
-                    x.get("llm_calls", 0) for x in rr)
-            gsec = sorted(r.get("gen_seconds", 0) for r in
-                          (b for t in trials
-                           for b in t.get("backends", {}).values()
-                           if "gen_seconds" in b))
-            if gsec:
-                macros["TrialsGenSecondsMedian"] = gsec[len(gsec) // 2]
+        tr_dw = json.load(open(tr_path, encoding="utf-8"))
+        _trials_macros(tr_dw, "Dw")
+        # legacy un-prefixed aliases used by the DW paragraph
+        if "DwTrialsK" in macros:
+            macros["TrialsK"] = macros["DwTrialsK"]
+        if "DwTrialsGenSecondsMedian" in macros:
+            macros["TrialsGenSecondsMedian"] = macros[
+                "DwTrialsGenSecondsMedian"]
+
+    # gpio-cadence 跨驱动重复试验（重审 W1：操作数假设，小驱动）
+    cad_path = (ROOT / "research" / "experiments" / "results"
+                / "gpio-cadence-repeated-trials.json")
+    if cad_path.is_file():
+        _trials_macros(json.load(open(cad_path, encoding="utf-8")),
+                       "Cadence")
+        cad_row = next((r for r in rows
+                        if r["driver"] == "gpio-cadence"), None)
+        if cad_row:
+            macros["CadenceRisOps"] = cad_row["metrics"]["ops"]
 
     # 验证门变异研究（Q2/W4）
     mut_path = (ROOT / "research" / "experiments" / "results"
@@ -457,6 +490,17 @@ def main() -> None:
         if pristine:
             macros["GatePristineRejected"] = (
                 "true" if pristine.get("rejected") else "false")
+
+    # loop-aware receipt prototype（§7.2 设计路径：被未证循环阻塞的回执
+    # 由带锚点溯源的运行时多重性放电）
+    law_path = (ROOT / "research" / "experiments" / "results"
+                / "dw-loop-aware-receipts.json")
+    if law_path.is_file():
+        law = json.load(open(law_path, encoding="utf-8"))
+        if law.get("loop_blocked_entries"):
+            macros["LoopAwareBlocked"] = law["loop_blocked_entries"]
+            macros["LoopAwareDischarged"] = len(law.get("discharged", []))
+            macros["LoopAwareUnobserved"] = len(law.get("unobserved", []))
 
     # DW 再生成修复循环轮次（W1：LLM 产物经有界修复后的编译状态）
     rep_path = (ROOT / "research" / "experiments" / "results"
@@ -505,6 +549,16 @@ def main() -> None:
                 "a private OpenAI-compatible endpoint")
         if meta.get("temperature") is not None:
             macros["LlmTemperature"] = f'{meta["temperature"]:g}'
+
+    # W3 修复（rerun 评审）：直接 LLM 基线候选的模型来自其自己的
+    # 版本化记录（glm-5.2，2026-09-02 采录），与流水线当时的
+    # glm-5.3-highspeed 不同 —— 论文如实写两个标识，不写 "same model"
+    dmeta_path = (ROOT / "research" / "experiments" / "results"
+                  / "direct-llm-baseline.json")
+    if dmeta_path.is_file():
+        dmeta = json.load(open(dmeta_path, encoding="utf-8"))
+        if dmeta.get("model"):
+            macros["DirectLlmModelId"] = esc(dmeta["model"])
 
     # 单驱动提取耗时（matrix.json seconds）与严格就绪名单
     seconds = sorted(r.get("seconds", 0.0) for r in rows)

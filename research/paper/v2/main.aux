@@ -104,13 +104,13 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Composition of non-blank lines per driver, measured by source-line provenance of emitted operations. Device-core lines are referenced by $\ge $1 recorded operation; framework entry bodies are the non-core lines of callback and lifecycle functions; glue wrappers and helpers are remaining function bodies; file-scope lines are declarations, macros, and registration tables outside functions (blank lines excluded). The aggregate is 9.5\%{} device-core versus 90.5\%{} integration. Line-level attribution is an approximation: a line interleaving a guard and a register access counts as device-core.}}{12}{figure.caption.27}\protected@file@percent }
 \newlabel{fig:glue-ratio}{{3}{12}{Composition of non-blank lines per driver, measured by source-line provenance of emitted operations. Device-core lines are referenced by $\ge $1 recorded operation; framework entry bodies are the non-core lines of callback and lifecycle functions; glue wrappers and helpers are remaining function bodies; file-scope lines are declarations, macros, and registration tables outside functions (blank lines excluded). The aggregate is \GlueCorePct {} device-core versus \GlueGluePct {} integration. Line-level attribution is an approximation: a line interleaving a guard and a register access counts as device-core}{figure.caption.27}{}}
 \newlabel{fig:glue-ratio@cref}{{[figure][3][]3}{[1][11][]12}}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Readiness results. RIS = internal RIS quality heuristic (0--1), FuncSpec = function-spec quality, DevSpec = device-spec quality. H/B/L = harness / bare-metal / Linux compilation. Linux ready denotes strict artifact readiness; synthesis-eligible denotes sufficient context to attempt LLM synthesis.}}{12}{table.caption.28}\protected@file@percent }
-\newlabel{tab:readiness}{{3}{12}{Readiness results. RIS = internal RIS quality heuristic (0--1), FuncSpec = function-spec quality, DevSpec = device-spec quality. H/B/L = harness / bare-metal / Linux compilation. Linux ready denotes strict artifact readiness; synthesis-eligible denotes sufficient context to attempt LLM synthesis}{table.caption.28}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Readiness results. RIS = internal RIS quality heuristic (0--1), FuncSpec = function-spec quality, DevSpec = device-spec quality. H/B/L = harness / bare-metal / Linux compilation. Linux ready denotes strict artifact readiness; synthesis-eligible denotes sufficient context to attempt LLM synthesis. ``--'' means the check does not apply to that driver/backend (e.g., strict Linux readiness without a kernel-side lifecycle model); $\times $ means the check applied and failed; no ``--'' entry masks a failing check.}}{12}{table.caption.28}\protected@file@percent }
+\newlabel{tab:readiness}{{3}{12}{Readiness results. RIS = internal RIS quality heuristic (0--1), FuncSpec = function-spec quality, DevSpec = device-spec quality. H/B/L = harness / bare-metal / Linux compilation. Linux ready denotes strict artifact readiness; synthesis-eligible denotes sufficient context to attempt LLM synthesis. ``--'' means the check does not apply to that driver/backend (e.g., strict Linux readiness without a kernel-side lifecycle model); $\times $ means the check applied and failed; no ``--'' entry masks a failing check}{table.caption.28}{}}
 \newlabel{tab:readiness@cref}{{[table][3][]3}{[1][11][]12}}
-\@writefile{toc}{\contentsline {paragraph}{Strict artifact readiness.}{12}{section*.29}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Compilation versus strict artifact readiness across the 19{}-driver evaluation. Blue bars count compilable deterministic outputs; orange bars count artifacts passing the modeled strict gate. Compilation is necessary but not sufficient, and neither result establishes whole-driver equivalence.}}{12}{figure.caption.30}\protected@file@percent }
 \newlabel{fig:readiness-gap}{{4}{12}{Compilation versus strict artifact readiness across the \EvalDrivers {}-driver evaluation. Blue bars count compilable deterministic outputs; orange bars count artifacts passing the modeled strict gate. Compilation is necessary but not sufficient, and neither result establishes whole-driver equivalence}{figure.caption.30}{}}
 \newlabel{fig:readiness-gap@cref}{{[figure][4][]4}{[1][12][]12}}
+\@writefile{toc}{\contentsline {paragraph}{Strict artifact readiness.}{12}{section*.29}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Multi-source results. TUs = translation units, LoC = source lines, Funcs = functions analyzed, X-TU = resolved cross-TU call edges, Prop = propagated MMIO edges, Src MMIO = source-level MMIO primitives, RIS MMIO = propagated RIS MMIO operations, H/B/L = backend compilation.}}{13}{table.caption.31}\protected@file@percent }
 \newlabel{tab:multisource}{{4}{13}{Multi-source results. TUs = translation units, LoC = source lines, Funcs = functions analyzed, X-TU = resolved cross-TU call edges, Prop = propagated MMIO edges, Src MMIO = source-level MMIO primitives, RIS MMIO = propagated RIS MMIO operations, H/B/L = backend compilation}{table.caption.31}{}}
 \newlabel{tab:multisource@cref}{{[table][4][]4}{[1][13][]13}}
@@ -119,17 +119,23 @@
 \newlabel{fig:multisource-mmio}{{5}{13}{Source MMIO primitives and propagated RIS MMIO operations for the three multi-source modules (log scale). Counts show recorded evidence after propagation; they are not precision/recall measurements and do not establish a complete hardware-access footprint}{figure.caption.32}{}}
 \newlabel{fig:multisource-mmio@cref}{{[figure][5][]5}{[1][13][]13}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Runtime and End-to-End LLM Validation (RQ6)}{13}{subsection.6.6}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Existing-tool comparison on the QEMU \texttt  {edu} device. Lines are total/source-line counts of the versioned inputs; ``binding'' is what the realization depends on to run; the register protocol column is how register identity and order are expressed.}}{15}{table.caption.33}\protected@file@percent }
-\newlabel{tab:existing-tools}{{5}{15}{Existing-tool comparison on the QEMU \texttt {edu} device. Lines are total/source-line counts of the versioned inputs; ``binding'' is what the realization depends on to run; the register protocol column is how register identity and order are expressed}{table.caption.33}{}}
-\newlabel{tab:existing-tools@cref}{{[table][5][]5}{[1][15][]15}}
-\newlabel{sec:dw-apb-ssi}{{6.6}{15}{End-to-end LLM translation: DesignWare APB SSI}{section*.34}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Index of the LLM-side evidence studies. Each study's size, outcome, and versioned record; records live under \texttt  {research/experiments/results/}.}}{14}{table.caption.33}\protected@file@percent }
+\newlabel{tab:llm-studies}{{5}{14}{Index of the LLM-side evidence studies. Each study's size, outcome, and versioned record; records live under \texttt {research/experiments/results/}}{table.caption.33}{}}
+\newlabel{tab:llm-studies@cref}{{[table][5][]5}{[1][14][]14}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Existing-tool comparison on the QEMU \texttt  {edu} device. Lines are total/source-line counts of the versioned inputs; ``binding'' is what the realization depends on to run; the register protocol column is how register identity and order are expressed.}}{15}{table.caption.34}\protected@file@percent }
+\newlabel{tab:existing-tools}{{6}{15}{Existing-tool comparison on the QEMU \texttt {edu} device. Lines are total/source-line counts of the versioned inputs; ``binding'' is what the realization depends on to run; the register protocol column is how register identity and order are expressed}{table.caption.34}{}}
+\newlabel{tab:existing-tools@cref}{{[table][6][]6}{[1][15][]15}}
+\newlabel{sec:dw-apb-ssi}{{6.6}{15}{End-to-end LLM translation: DesignWare APB SSI}{section*.35}{}}
 \newlabel{sec:dw-apb-ssi@cref}{{[subsection][6][6]6.6}{[1][15][]15}}
-\@writefile{toc}{\contentsline {paragraph}{End-to-end LLM translation: DesignWare APB SSI.}{15}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{End-to-end LLM translation: DesignWare APB SSI.}{15}{section*.35}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7}Discussion and Limitations}{16}{section.7}\protected@file@percent }
 \newlabel{sec:discussion}{{7}{16}{Discussion and Limitations}{section.7}{}}
 \newlabel{sec:discussion@cref}{{[section][7][]7}{[1][16][]16}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Analysis and Subsystem Boundaries}{16}{subsection.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}What the Verification Gate Establishes}{16}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}What the Verification Gate Establishes}{17}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Scalability and Threats to Validity}{17}{subsection.7.3}\protected@file@percent }
+\newlabel{sec:limitations}{{7.3}{17}{Scalability and Threats to Validity}{subsection.7.3}{}}
+\newlabel{sec:limitations@cref}{{[subsection][3][7]7.3}{[1][17][]17}}
 \bibcite{chou2001empirical}{{1}{}{{}}{{}}}
 \bibcite{swift2005nexus}{{2}{}{{}}{{}}}
 \bibcite{ball2006thorough}{{3}{}{{}}{{}}}
@@ -145,13 +151,6 @@
 \bibcite{barthe2009certificate}{{13}{}{{}}{{}}}
 \bibcite{kang2018crellvm}{{14}{}{{}}{{}}}
 \bibcite{lopes2021alive2}{{15}{}{{}}{{}}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Scalability and Threats to Validity}{17}{subsection.7.3}\protected@file@percent }
-\newlabel{sec:limitations}{{7.3}{17}{Scalability and Threats to Validity}{subsection.7.3}{}}
-\newlabel{sec:limitations@cref}{{[subsection][3][7]7.3}{[1][17][]17}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{17}{section.8}\protected@file@percent }
-\newlabel{sec:conclusion}{{8}{17}{Conclusion}{section.8}{}}
-\newlabel{sec:conclusion@cref}{{[section][8][]8}{[1][17][]17}}
-\@writefile{toc}{\contentsline {section}{References}{17}{section*.36}\protected@file@percent }
 \bibcite{lachaux2020transcoder}{{16}{}{{}}{{}}}
 \bibcite{yang2025kernelgpt}{{17}{}{{}}{{}}}
 \bibcite{kharlamova2025kernel}{{18}{}{{}}{{}}}
@@ -165,5 +164,9 @@
 \newlabel{tocindent2}{11.5pt}
 \newlabel{tocindent3}{0pt}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{18}{section.8}\protected@file@percent }
+\newlabel{sec:conclusion}{{8}{18}{Conclusion}{section.8}{}}
+\newlabel{sec:conclusion@cref}{{[section][8][]8}{[1][18][]18}}
+\@writefile{toc}{\contentsline {section}{References}{18}{section*.37}\protected@file@percent }
 \newlabel{TotPages}{{18}{18}{}{page.18}{}}
 \gdef \@abspage@last{18}

@@ -49,16 +49,29 @@ demands a receipt per contract operation. No artifact satisfies both
 constraints; the flagship artifact therefore passes compilation, receipt
 accounting, and the primitive-shape check, and is accepted through the
 case-specific 18-item checklist rather than the corpus-wide strict gate.
-A design path to remove the tension exists but is not implemented: the
-harness register-file log already records every MMIO access with its anchor
-provenance, so the runtime trace oracle could count receipts dynamically---a
-per-iteration multiplicity (receipt observed at least once per loop
-iteration, or an interval bound derived from the loop summary) would
-discharge exactly-once on unbounded loops without weakening the
-anchor-to-primitive binding. Until such loop-aware receipts are
-implemented, data-moving drivers whose core is a FIFO loop are outside the
-general strict gate; we report this as a measured limitation rather than
-routing them through it.
+A design path to remove the tension exists and has been prototyped on the
+flagship artifact (\texttt{qa/verification/loop\_aware\_receipts.py}; record
+\texttt{research/experiments/results/dw-loop-aware-receipts.json}): a
+deterministic instrumentation pass inserts anchor-provenance logging into
+every primitive of the accepted harness, the binary is built and run on the
+oracle input, and each logged (anchor, direction, register-offset) triple is
+matched against the contract operation that owns the anchor.
+\LoopAwareDischarged{} of the
+\LoopAwareBlocked{} loop-blocked receipts are discharged by an observed multiplicity
+of at least one with exact kind-and-offset shape; the remaining
+\LoopAwareUnobserved{} are
+never observed because they are unreachable: the human-supervised merge of
+a duplicate repair emission in \texttt{dw\_spi\_exec\_mem\_op} returns
+before the module's FIFO loops, so their anchors execute zero times on
+every input. The prototype therefore does not admit the artifact at a
+loop-aware strict gate --- and that is what building it was for: the runtime
+multiplicity check detects dead receipts that compilation, receipt
+accounting, and primitive shape all tolerate, and localizes the defect to
+the merge that introduced them. Loop-aware receipts remain a prototype
+(harness backend only, one discharge rule: \texttt{Top}-count loops bounded
+by observed multiplicity $\geq$~1); data-moving drivers stay outside the
+general strict gate until the design is integrated, and we report this as a
+measured limitation rather than routing them through it.
 
 \subsection{Scalability and Threats to Validity}
 \label{sec:limitations}
