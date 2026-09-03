@@ -93,9 +93,27 @@ def main() -> int:
         else:
             prompt = PROMPT + source_text
             t0 = time.time()
-            raw = call_langchain(prompt, timeout=600)
+            # the private endpoint intermittently returns empty or
+            # fenceless bodies on long prompts; retry the ENDPOINT
+            # bounded times before recording the round as failed
+            code = None
+            raw = ""
+            for _gen_attempt in range(4):
+                try:
+                    raw = call_langchain(prompt, timeout=600)
+                    code = _extract_c_block(raw)
+                    break
+                except RuntimeError:
+                    continue
             gen_seconds = time.time() - t0
-            code = _extract_c_block(raw)
+            if code is None:
+                rounds.append({
+                    "sample": i,
+                    "error": ("no fenced C block in response after "
+                              "bounded retries"),
+                    "response_chars": len(raw),
+                    "gen_seconds": round(gen_seconds, 1)})
+                continue
             raw_len = len(raw)
         rounds.append(_evaluate(code, args, gate, checklist,
                                 sample=i, prompt_chars=len(PROMPT)
@@ -136,18 +154,48 @@ def main() -> int:
     cand_dir = Path(args.out).with_suffix("")
     cand_dir.mkdir(parents=True, exist_ok=True)
     for i, r in enumerate(rounds):
-        (cand_dir / f"candidate-{i}.c").write_text(
-            r["candidate_c"], encoding="utf-8")
+        if "candidate_c" in r:
+            (cand_dir / f"candidate-{i}.c").write_text(
+                r["candidate_c"], encoding="utf-8")
     print(f"baseline report -> {args.out}")
     return 0
+
+
+def _failing_regions(code: str, stderr: str, max_regions: int = 3):
+    """Top-level (column-0) regions of the file the diagnostics point at.
+
+    Mirrors the constrained pipeline's bounded per-part echo (_repair_compile
+    rewrites only the failing PART, not the whole driver): the baseline
+    candidate is one file, so the failing top-level definition(s) are the
+    echo unit.  Returns [(start_line, end_line)] 0-based, end exclusive.
+    """
+    import re as _re
+    lines = code.split("\n")
+    err_lines = [int(m.group(1)) - 1 for m in _re.finditer(
+        r"candidate\.c:(\d+):\d+:", stderr)]
+    if not err_lines:
+        return []
+    # top-level boundaries: lines starting at column 0
+    tops = [i for i, l in enumerate(lines) if l and not l[0].isspace()]
+    tops.append(len(lines))
+    regions = []
+    for ln in err_lines:
+        idx = max(i for i, t in enumerate(tops) if t <= ln)
+        lo, hi = tops[idx], tops[idx + 1] if idx + 1 < len(tops) else len(lines)
+        if regions and lo <= regions[-1][1]:
+            regions[-1] = (regions[-1][0], max(hi, regions[-1][1]))
+        elif len(regions) < max_regions:
+            regions.append((lo, hi))
+    return regions
 
 
 def _compile_repair(code: str, workdir: Path, max_rounds: int) -> tuple[str, int]:
     """Give the baseline the same compile-diagnostic repair budget the
     constrained pipeline grants its own candidates (_repair_compile in
     backends/pipeline.py): probe-compile, feed the exact cc diagnostics
-    back, bounded rounds.  Baseline candidates are single files, so the
-    repair rewrites the whole file per round."""
+    back, bounded rounds, and echo ONLY the failing region — the pipeline
+    rewrites failing parts, not the whole driver, and a whole-file echo
+    exceeds what the endpoint serves."""
     import subprocess
     from langchain_bridge import call_langchain
     cpath = workdir / "candidate.c"
@@ -160,17 +208,43 @@ def _compile_repair(code: str, workdir: Path, max_rounds: int) -> tuple[str, int
         if p.returncode == 0:
             break
         rounds_used = r + 1
-        prompt = (
-            "You are fixing compile errors in a host C program (dialect: "
-            "userspace program with main()). Fix ONLY the compile errors "
-            "the compiler reports; keep the program's structure, register "
-            "accesses, and behavior. Return the COMPLETE fixed file in a "
-            "single ```c fenced block, nothing else.\n\n"
-            "===== COMPILER DIAGNOSTICS =====\n"
-            + p.stderr[-4000:]
-            + "\n\n===== CURRENT FILE =====\n```c\n" + code + "\n```\n")
-        raw = call_langchain(prompt, timeout=600)
-        code = _extract_c_block(raw)
+        regions = _failing_regions(code, p.stderr)
+        if not regions:
+            break  # no per-line errors (e.g. link-only failure): no region
+                   # to echo; the round budget is not spent on a hang
+        new_code = code
+        changed = False
+        # fix regions bottom-up so earlier splices stay valid
+        for lo, hi in sorted(regions, reverse=True):
+            region = "\n".join(code.split("\n")[lo:hi])
+            prompt = (
+                "You are fixing compile errors in one region of a host C "
+                "program (dialect: userspace program with main()). Fix ONLY "
+                "what the compiler reports; keep structure, register "
+                "accesses, and behavior. Return the COMPLETE fixed REGION "
+                "in a single ```c fenced block, nothing else.\n\n"
+                "===== COMPILER DIAGNOSTICS =====\n"
+                + p.stderr[-4000:]
+                + "\n\n===== REGION (lines "
+                + f"{lo + 1}-{hi}) =====\n```c\n" + region + "\n```\n")
+            raw = ""
+            for _fix_attempt in range(3):
+                try:
+                    raw = call_langchain(prompt, timeout=600)
+                    break
+                except Exception:
+                    continue
+            try:
+                fixed = _extract_c_block(raw) if raw else None
+            except RuntimeError:
+                fixed = None
+            if fixed:
+                ls = new_code.split("\n")
+                new_code = "\n".join(ls[:lo] + fixed.rstrip("\n").split("\n")
+                                     + ls[hi:])
+                changed = True
+        if changed:
+            code = new_code
     cpath.write_text(code, encoding="utf-8")
     p = subprocess.run(["cc", "-o", str(binp), str(cpath)],
                        capture_output=True, text=True)

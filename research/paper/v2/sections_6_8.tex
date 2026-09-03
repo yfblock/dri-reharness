@@ -673,19 +673,66 @@ not replace, the deterministic-baseline QEMU numbers above.
 \textbf{Scoped direct-translation baseline.} To isolate the effect of the
 evidence boundary on the same task, we also ran an unconstrained baseline:
 the raw pinned DesignWare sources (core and header, \DwSourceLines{} source
-lines in total for the three files) were given to the \emph{same} model with
-a minimal ``translate this driver to a host harness'' prompt, and the
+lines in total for the three files) were given to the \emph{same} model
+with a minimal ``translate this driver to a host harness'' prompt, and the
 candidate was passed through the identical verification gate and the same
-pattern items of the DesignWare checklist. The baseline candidate passes all
-\DirectLlmPatternTotal{} presence-and-order pattern items yet is rejected by
-the gate at its first check (\DirectLlmFirstFail{}), because unconstrained
-emission compiles against neither the harness interface contract nor the
-receipt and anchor obligations. The pattern items alone are therefore
-necessary but not sufficient: they reward textual presence of the right
-register idioms, while acceptance additionally demands the per-operation
-receipt accounting and exercised-path trace that the constrained pipeline
-enforces. Like the closed-loop record, this is a single-trial,
-single-endpoint comparison, not a repeated-sample study.
+pattern items of the DesignWare checklist. The recorded baseline candidate
+passes all \DirectLlmPatternTotal{} presence-and-order pattern items yet
+is rejected by the gate at its first check (\DirectLlmFirstFail{}),
+because unconstrained emission compiles against neither the harness
+interface contract nor the receipt and anchor obligations. The pattern
+items alone are therefore necessary but not sufficient: they reward
+textual presence of the right register idioms, while acceptance
+additionally demands the per-operation receipt accounting and
+exercised-path trace that the constrained pipeline enforces. To remove the
+repair-budget confound, the baseline tool implements the same bounded
+compile-diagnostic repair loop as the pipeline (probe-compile, exact
+\texttt{cc} diagnostics fed back, region-bounded echo of only the failing
+definitions, bounded rounds). During the measurement window the private
+endpoint could not serve it: twelve fresh full-source generation attempts
+returned no usable fenced body, and two repair runs on the versioned
+candidate stalled on unanswered repair calls (all attempts are recorded in
+\path{research/experiments/results/direct-llm-baseline-endpoint-failures.json}).
+The budget-matched measurement is therefore listed as endpoint-blocked
+rather than reported with a number the endpoint never produced; the
+recorded pre-repair verdict above is unchanged by budget in every
+completed observation, and the pipeline-side repeated trials below show
+bounded compile repair closing compilation for a constrained candidate
+only in 3/5 bare-metal trials and 0/5 harness trials --- there is no
+completed run in which the baseline's unconstrained candidate compiles
+under any budget. Like the closed-loop record, this is an
+endpoint-bound comparison, not a repeated-sample study.
+
+\textbf{Repeated trials of the constrained pipeline.} To measure
+sample-to-sample variance rather than a single draw, the constrained
+DesignWare pipeline itself was rerun \TrialsK{} times on the pinned
+extraction (same model, temperature~0, same endpoint; at temperature~0 the
+trials measure endpoint-level serving variance, not deliberate sampling
+diversity). Each trial measures the \emph{same} candidate at three stages:
+raw first pass (compile repair disabled), post compile-repair (the
+pipeline's default bounded budget), and post receipt-repair (the bounded
+\texttt{repair\_lowering} protocol, up to six rounds, guarded by brace,
+comment, and re-compilation checks). Under these in-process bounded
+budgets, no trial reaches acceptance at any stage: the harness candidates
+fail compilation in \DwHarnTrialsN{}/\DwHarnTrialsN{} trials even after
+compile repair; the bare-metal candidates compile after repair in
+\DwBareTrialsPostCompile{}/\DwBareTrialsN{} trials but receipt accounting
+remains incomplete after six repair rounds (32--76 operations still
+missing; the compile guard rejects 8--10 style-violating or redefining
+emissions per trial); the Linux candidates fail compilation in all
+\DwLinuxTrialsN{} measured trials (two further trials were lost to
+endpoint failures that return empty bodies on long prompts and are
+recorded as such). The accepted flagship artifact of
+Section~\ref{sec:dw-apb-ssi} therefore does \emph{not} reproduce under the
+pipeline's own bounded budgets alone: its recorded chain additionally used
+interactive compile repair, the lowering-repair rounds, dataflow repair,
+deterministic normalization, and a hand merge of duplicate lowering
+emissions, all logged in the versioned repair log. The bounded gate is
+thus a rejection instrument in practice---the honest reading is that
+bounded automated repair is insufficient for this driver family and the
+accepted artifact rests on the recorded human-supervised chain, whose
+effort is disclosed rather than amortized. Full per-trial check states are
+versioned in \path{research/experiments/results/dw-repeated-trials.json}.
 
 \textbf{Existing-tool comparison.} Table~\ref{tab:existing-tools} places
 the same device's realizations side by side on the QEMU \texttt{edu}
@@ -818,8 +865,10 @@ checklist covering per-backend compilation, chip-select assertion in
 and the ordered tx/rx buffer data flow; \DWChecklistPassed{} of 18 items
 pass, with per-item, per-backend evidence in
 \path{research/experiments/results/dw-apb-ssi-checklist.json}. This is an
-artifact-level case study rather than a repeated-sampling study or a
-held-out evaluation. The checklist is case-specific and does not establish
+artifact-level case study rather than a held-out evaluation; the
+pipeline-level repeated-trial measurement (Section~\ref{sec:evaluation})
+quantifies how far the bounded in-process budgets alone reproduce it. The
+checklist is case-specific and does not establish
 whole-driver semantic equivalence; acceptance itself is the gate's job, and
 the mutation study below replays that gate on the installed harness pair.
 The artifacts and checklist script are versioned under

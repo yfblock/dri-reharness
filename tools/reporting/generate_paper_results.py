@@ -346,6 +346,23 @@ def main() -> None:
             macros["DirectLlmPatternTotal"] = sum(
                 r.get("checklist_patterns_total", 0) for r in rounds
                 if r.get("checklist_patterns_total"))
+            # matched repair budget (W3): pre-repair vs post-repair verdict
+            pre = [r.get("gate_pre_repair", {}).get("first_failing_check")
+                   for r in rounds if r.get("gate_pre_repair")]
+            if pre:
+                macros["DirectLlmPreFirstFail"] = esc(
+                    ", ".join(sorted({f for f in pre if f})) or "none")
+            macro_n = sum(1 for r in rounds
+                          if r.get("compile_repair_rounds") is not None)
+            if macro_n:
+                macros["DirectLlmRepairRoundsMax"] = max(
+                    r.get("compile_repair_rounds") or 0 for r in rounds)
+            post = [r.get("gate", {}).get("first_failing_check")
+                    for r in rounds]
+            macros["DirectLlmPostFirstFail"] = esc(
+                ", ".join(sorted({f for f in post if f})) or "none")
+            macros["DirectLlmPostRejected"] = sum(
+                1 for r in rounds if r.get("gate", {}).get("rejected"))
 
     # 既有工具对比（edu 设备：QEMU 手写模型 / C2Rust 转译 / reharness）
     ext_path = (ROOT / "research" / "experiments" / "results"
@@ -376,6 +393,53 @@ def main() -> None:
         uns = objs.get("c2rust", {}).get("unsafe", {})
         if uns.get("unsafe_function_pct") is not None:
             macros["ExtTranspileUnsafePct"] = f'{uns["unsafe_function_pct"]:g}'
+
+    # DW 重复试验（W1：同一候选三阶段门状态，k 次独立试验）
+    tr_path = (ROOT / "research" / "experiments" / "results"
+               / "dw-repeated-trials.json")
+    if tr_path.is_file():
+        tr = json.load(open(tr_path, encoding="utf-8"))
+        trials = tr.get("trials", [])
+        if trials:
+            macros["TrialsK"] = len(trials)
+            _stage_keys = (("First", "first_pass"),
+                           ("Post", "post_compile_repair"),
+                           ("Final", "post_receipt_repair"))
+            for backend in ("harness", "baremetal", "linux", "rust"):
+                t_rows = [t["backends"][backend] for t in trials
+                          if "checks" in t.get("backends", {}).get(
+                              backend, {})]
+                if not t_rows:
+                    continue
+                tag = {"harness": "Harn", "baremetal": "Bare",
+                       "linux": "Linux", "rust": "Rust"}.get(
+                           backend, backend)
+                macros[f"Dw{tag}TrialsN"] = len(t_rows)
+                for stage_name, stage_key in _stage_keys:
+                    stages = [r["checks"][stage_key] for r in t_rows]
+                    macros[f"Dw{tag}Trials{stage_name}Compile"] = sum(
+                        1 for c in stages if c.get("compile"))
+                    macros[f"Dw{tag}Trials{stage_name}Checkbacked"] = sum(
+                        1 for c in stages if all(
+                            c.get(k) for k in ("compile",
+                                               "receipt_accounting",
+                                               "ast_leaf_anchors")))
+                    macros[f"Dw{tag}Trials{stage_name}Strict"] = sum(
+                        1 for c in stages if all(c.get(k) for k in (
+                            "compile", "receipt_accounting",
+                            "ast_leaf_anchors", "lowering_plan",
+                            "runtime_trace")))
+                rr = [r.get("receipt_repair", {}) for r in t_rows]
+                macros[f"Dw{tag}TrialsReceiptRounds"] = sum(
+                    x.get("rounds", 0) for x in rr)
+                macros[f"Dw{tag}TrialsReceiptCalls"] = sum(
+                    x.get("llm_calls", 0) for x in rr)
+            gsec = sorted(r.get("gen_seconds", 0) for r in
+                          (b for t in trials
+                           for b in t.get("backends", {}).values()
+                           if "gen_seconds" in b))
+            if gsec:
+                macros["TrialsGenSecondsMedian"] = gsec[len(gsec) // 2]
 
     # 验证门变异研究（Q2/W4）
     mut_path = (ROOT / "research" / "experiments" / "results"

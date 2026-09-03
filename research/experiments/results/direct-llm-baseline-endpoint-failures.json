@@ -1,0 +1,40 @@
+{
+  "base_url_host": "ai.yfblock.cn",
+  "description": "Endpoint-failure record for the budget-matched direct-LLM baseline re-run attempts (2026-09-03): fresh full-source generations and repair calls that the private endpoint could not serve; the recorded baseline verdict stays in direct-llm-baseline.json",
+  "model": "glm-5.3-highspeed",
+  "prompt_source_chars": 37320,
+  "prompt_sources": [
+    "vendor/linux/drivers/spi/spi-dw-core.c",
+    "vendor/linux/drivers/spi/spi-dw.h"
+  ],
+  "repair_attempts": [
+    {
+      "candidate": "direct-llm-baseline/candidate-0.c",
+      "date": "2026-09-03",
+      "outcome": "endpoint accepted the repair call and never answered; process killed after >2 h (first attempt) and ~40 min (second attempt, region-bounded prompt); no verdict produced",
+      "protocol": "bounded compile-diagnostic repair, region-bounded echo, 3 rounds"
+    }
+  ],
+  "rounds": [
+    {
+      "error": "no fenced C block in response after bounded retries",
+      "gen_seconds": 359.6,
+      "response_chars": 0,
+      "sample": 0
+    },
+    {
+      "error": "no fenced C block in response after bounded retries",
+      "gen_seconds": 357.5,
+      "response_chars": 0,
+      "sample": 1
+    },
+    {
+      "error": "no fenced C block in response after bounded retries",
+      "gen_seconds": 359.9,
+      "response_chars": 0,
+      "sample": 2
+    }
+  ],
+  "schema": 1,
+  "temperature": 0.0
+}

@@ -68,6 +68,7 @@ def _transaction_source_paths(source: str | os.PathLike[str]) -> list[str]:
 _PART_MARKER = re.compile(r"^/\* ---- part (\d+) of \d+ ---- \*/$", re.M)
 _ERR_LINE = re.compile(r"^[^\s:]+:(\d+):\d+: (?:fatal )?error", re.M)
 _UNDEF_REF = re.compile(r"undefined reference to [`'`](\w+)", re.M)
+_MODPOST_UNDEF = re.compile(r'modpost: "(\w+)".*undefined', re.M)
 _REPAIR_FENCE = re.compile(r"```(?:c|C)?\s*\n(.*?)```", re.S)
 # max part size worth one LLM echo round (~28k output tokens at 32k cap)
 _REPAIR_ECHO_LIMIT = 100_000
@@ -207,26 +208,28 @@ def _repair_compile(backend, name, cpath, entries, ver_dir, root, tmp_dir):
             line_end = diags.find("\n", m.end())
             errs_by_part.setdefault(idx, []).append(
                 diags[m.start():line_end if line_end != -1 else len(diags)])
+        # modpost (kernel) and ld (userspace) both report missing symbols
+        # without file:line; the scaffold part owns the prototypes/entry
+        # point, so missing or renamed definitions are routed there
+        undef = sorted(set(_UNDEF_REF.findall(diags))
+                       | set(_MODPOST_UNDEF.findall(diags)))
         if not errs_by_part:
-            # linker diagnostics carry no line numbers; the scaffold part
-            # owns prototypes/entry point, so missing definitions go there
-            undef = sorted(set(_UNDEF_REF.findall(diags)))
             if undef:
                 errs_by_part[0] = [
                     "undefined reference to `%s' — define it (static stub "
-                    "{ return 0; }) or remove the call\n" % s
+                    "{ return 0; }), rename the reference to the existing "
+                    "definition, or remove the call\n" % s
                     for s in undef]
                 log.append("round %d: %d undefined refs -> scaffold part"
                            % (_round, len(undef)))
             else:
                 log.append("round %d: no per-line errors parsed" % _round)
                 break
-        else:
-            undef = sorted(set(_UNDEF_REF.findall(diags)))
-            if undef:
-                errs_by_part.setdefault(0, []).extend(
-                    "undefined reference to `%s' — define it (static stub "
-                    "{ return 0; }) or remove the call\n" % s for s in undef)
+        elif undef:
+            errs_by_part.setdefault(0, []).extend(
+                "undefined reference to `%s' — define it (static stub "
+                "{ return 0; }), rename the reference to the existing "
+                "definition, or remove the call\n" % s for s in undef)
         scaffold_text = ("(single-file program)" if len(bounds) < 2
                          else text[bounds[0][1]:bounds[0][2]])
         # fix parts highest-offset-first so earlier splices stay valid

@@ -1,0 +1,491 @@
+{
+  "backends": [
+    "harness",
+    "baremetal",
+    "linux"
+  ],
+  "description": "Repeated constrained-pipeline trials on the pinned DW APB SSI extraction; per backend, first pass (compile repair disabled), post compile-repair, and post receipt-repair gate check states on the same candidate",
+  "model": "glm-5.3-highspeed",
+  "schema": 1,
+  "temperature": 0.0,
+  "trials": [
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "receipt_accounting",
+          "gen_seconds": 225.7,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": false,
+            "guard_rejects": 8,
+            "llm_calls": 11,
+            "missing_final": 32,
+            "rounds": 6
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 276.7,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "linux": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 350.1,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        }
+      },
+      "seconds": 2471.8,
+      "trial": 1
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 275.1,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 238.7,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "linux": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 738.0,
+          "llm_generate_calls": 3,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        }
+      },
+      "seconds": 3152.0,
+      "trial": 2
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "receipt_accounting",
+          "gen_seconds": 299.3,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": false,
+            "guard_rejects": 10,
+            "llm_calls": 12,
+            "missing_final": 76,
+            "rounds": 6
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 358.1,
+          "llm_generate_calls": 3,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "linux": {
+          "error": "exception (see log)"
+        }
+      },
+      "seconds": 4474.0,
+      "trial": 3
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": true,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "receipt_accounting",
+          "gen_seconds": 224.5,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "complete": false,
+            "guard_rejects": 9,
+            "llm_calls": 13,
+            "missing_final": 64,
+            "rounds": 6
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 392.3,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "linux": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 499.2,
+          "llm_generate_calls": 4,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        }
+      },
+      "seconds": 3323.6,
+      "trial": 4
+    },
+    {
+      "backends": {
+        "baremetal": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 433.3,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "harness": {
+          "accepted_checkbacked": false,
+          "accepted_strict": false,
+          "checks": {
+            "first_pass": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_compile_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            },
+            "post_receipt_repair": {
+              "ast_leaf_anchors": false,
+              "compile": false,
+              "lowering_plan": false,
+              "receipt_accounting": false,
+              "runtime_trace": false
+            }
+          },
+          "first_failing_check_final": "compile",
+          "gen_seconds": 343.8,
+          "llm_generate_calls": 1,
+          "receipt_repair": {
+            "skipped": "compile_failed"
+          }
+        },
+        "linux": {
+          "error": "exception (see log)"
+        }
+      },
+      "seconds": 3472.0,
+      "trial": 5
+    }
+  ],
+  "trials_requested": 5
+}

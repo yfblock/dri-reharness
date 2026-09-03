@@ -74,9 +74,12 @@ and parallel execution.
 Internal validity depends on libclang, macro resolution, and IR merging; the
 \texttt{(function, offset)} key can collide for repeated same-address accesses.
 QEMU covers two deterministic protocol slices. The corpus lacks network
-drivers and physical-hardware validation, and the LLM records remain
-single-trial, single-endpoint samples without repeated sampling (model,
-temperature, and endpoint are recorded; Section~\ref{sec:dw-apb-ssi}). RIS quality, synthesis eligibility, and readiness
+drivers and physical-hardware validation. The closed-loop QEMU records and
+the Rust artifact remain single-trial, single-endpoint samples; the DW
+pipeline and its direct-LLM baseline now carry repeated trials and samples,
+but at temperature~0 on one (private) endpoint, so they measure serving
+variance rather than deliberate sampling diversity (model, temperature, and
+endpoint are recorded; Section~\ref{sec:dw-apb-ssi}). RIS quality, synthesis eligibility, and readiness
 are internal metrics, not precision/recall. Required follow-up evidence is
 listed in the experiment-debt ledger versioned with the artifact.
 

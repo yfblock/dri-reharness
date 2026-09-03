@@ -11,7 +11,9 @@ bare-metal, Linux), the same candidate is measured twice:
                loop at its default budget, followed by the bounded
                receipt-repair loop (the normalization pre-passes plus the
                batch-30 missing-operation prompts of repair_lowering,
-               guards included, max 6 rounds), then full re-verification
+               guards included, max 6 rounds) when the candidate compiles
+               — the recorded chain only ever repaired compiled artifacts —
+               then full re-verification
 
 Checks recorded per stage are the gate's own: compile, receipt accounting,
 AST-leaf anchors, strict lowering plan, runtime trace (harness only).
@@ -66,10 +68,11 @@ class _WrappedBackend:
         self.calls = 0
         self.GEN_KWARGS = getattr(real, "GEN_KWARGS", [])
 
-    def generate(self, *a):
+    def generate(self, *a, **kw):
         if self._cache is None:
             self.calls += 1
-            self._cache = self._real.generate(*a, **self._gen_kwargs)
+            self._cache = self._real.generate(
+                *a, **{**kw, **self._gen_kwargs})
         return self._cache
 
 
@@ -177,23 +180,53 @@ def _receipt_repair(formal, contract, files: dict[str, Path],
             stats["complete"] = False
             stats["missing_final"] = 0
             return stats
-        try:
-            raw = call_langchain(prompt, timeout=600)
-        except Exception:
-            stats["llm_calls"] += 1
-            continue
-        stats["llm_calls"] += 1
-        try:
-            cand = rl._extract_block(raw, lang)
-        except RuntimeError:
-            stats["guard_rejects"] += 1
-            continue
-        if rl._brace_delta(cand) != 0 or not rl._comments_closed(cand):
-            stats["guard_rejects"] += 1
-            continue
-        primary.write_text(
-            text.rstrip("\n") + "\n\n/* ---- receipt-repair round "
-            f"{i} ---- */\n" + cand, encoding="utf-8")
+        # append with a compile guard: the model sometimes re-emits a
+        # WHOLE module (colliding with the live definition) or drifts to
+        # a wrong access style (e.g. member syntax for an offset #define,
+        # which cannot compile).  The recorded chain merged duplicate
+        # lowering emissions by hand ("merged from ..." markers in the
+        # installed artifact); the bounded protocol instead rejects any
+        # append that breaks the previously compiling candidate, reverts,
+        # and re-asks once for a uniquely named, style-matching helper.
+        def _try_append(cand_text: str, marker: str) -> bool:
+            primary.write_text(
+                text.rstrip("\n") + f"\n\n/* ---- receipt-repair "
+                f"{marker} ---- */\n" + cand_text, encoding="utf-8")
+            probe = _syntax_probe(backend, primary)
+            if probe is not None and probe.returncode != 0:
+                primary.write_text(text, encoding="utf-8")
+                return False
+            return True
+
+        block_ok = False
+        for attempt in range(2):
+            try:
+                raw = call_langchain(
+                    prompt if attempt == 0 else prompt + (
+                        "\nREMINDER: your previous block was rejected "
+                        "because it did not compile against the scaffold "
+                        "(redefined an existing function, or used a wrong "
+                        "register-access style). Emit a static helper with "
+                        "a NEW, unused function name, in the scaffold's "
+                        "existing register-access style, carrying only the "
+                        "missing receipts and anchor blocks.\n"),
+                    timeout=600)
+                stats["llm_calls"] += 1
+                cand = rl._extract_block(raw, lang)
+                if (rl._brace_delta(cand) != 0
+                        or not rl._comments_closed(cand)):
+                    stats["guard_rejects"] += 1
+                    continue
+                marker = (f"round {i}" if attempt == 0
+                          else f"round {i} (retry)")
+                if _try_append(cand, marker):
+                    block_ok = True
+                    break
+                stats["guard_rejects"] += 1
+            except Exception:
+                stats["llm_calls"] += 1
+        if not block_ok:
+            continue  # next round re-verifies the reverted text
     return stats
 
 
@@ -221,17 +254,123 @@ def _stub_for(text: str) -> SimpleNamespace:
     return SimpleNamespace(generate=lambda *a, **k: text, GEN_KWARGS=[])
 
 
+def _syntax_probe(backend: str, primary: Path):
+    """Cheap compile probe for the redefinition guard; None = unavailable.
+
+    Mirrors backends.pipeline._compile_probe's dialects; returns None
+    when the backend's probe environment (kernel build tree) is absent
+    so the guard degrades to a no-op instead of failing the trial.
+    """
+    import subprocess
+    import backends.pipeline as bp
+    try:
+        (WORK / "probe").mkdir(parents=True, exist_ok=True)
+        if backend == "linux":
+            kdir = ROOT / "platform" / "kernel" / "build"
+            if not kdir.is_dir():
+                return None
+        return bp._compile_probe(
+            backend, str(primary), "rh_trial_probe", ROOT,
+            str(WORK / "probe"))
+    except Exception:
+        return None
+
+
+def _run_backend_trial(res, contract, tdir: Path, backend: str,
+                       max_repair_rounds: int) -> dict:
+    """One trial for one backend: generate once, measure three stages."""
+    import backends.registry as registry
+    real = registry.list_backends()[backend]
+    gen_kwargs = {}
+    for kw in getattr(real, "GEN_KWARGS", []):
+        if kw == "facts":
+            gen_kwargs["facts"] = res.facts
+        elif kw == "pci_identity":
+            gen_kwargs["pci_identity"] = getattr(res, "pci_identity", None)
+        elif kw == "registrar":
+            gen_kwargs["registrar"] = getattr(res, "registrar", None)
+    wrapped = _WrappedBackend(real, gen_kwargs)
+    wmap = {backend: wrapped}
+
+    # the private endpoint intermittently returns empty bodies on long
+    # chunked prompts; a failed part poisons the whole candidate, so the
+    # generation itself gets fresh retries (this retries the ENDPOINT,
+    # not the sample: an empty body carries no model output)
+    for gen_attempt in range(4):
+        try:
+            g0 = time.time()
+            first = _pipeline_pass(res, tdir / f"{backend}-first", wmap, 0)
+            break
+        except RuntimeError:
+            wrapped._cache = None
+            if gen_attempt == 3:
+                raise
+    gen_seconds = round(time.time() - g0, 1)
+    fv = _verdict(first[backend])
+
+    post = _pipeline_pass(res, tdir / f"{backend}-repair", wmap, 3)
+    pv = _verdict(post[backend])
+
+    # -- receipt repair on the repaired candidate, then re-verify ---------
+    gen_dir = tdir / f"{backend}-repair" / "generated"
+    bdir = gen_dir / backend
+    primary = None
+    if bdir.is_dir():
+        srcs = sorted(bdir.rglob("*.c"))
+        primary = srcs[0] if srcs else None
+    if primary is None:
+        cand = gen_dir / f"{backend}.c"
+        primary = cand if cand.is_file() else None
+    rr = {"skipped": True}
+    if primary is None:
+        rr = {"skipped": "no-primary-source"}
+    elif not pv["checks"]["compile"]:
+        # matches the recorded chain: receipt repair only ever ran on
+        # candidates that compiled; on a non-compiling candidate the
+        # post-receipt verdict is predetermined, so the LLM budget is
+        # not spent
+        rr = {"skipped": "compile_failed"}
+    else:
+        rr = _receipt_repair(res.formal, contract,
+                             {"primary": primary}, backend,
+                             max_repair_rounds)
+    combined = _combined_text(gen_dir, backend)
+    final = _pipeline_pass(
+        res, tdir / f"{backend}-verify", {backend: _stub_for(
+            combined)}, 0)
+    fvd = _verdict(final[backend])
+
+    checks = {}
+    for stage, v in (("first_pass", fv), ("post_compile_repair", pv),
+                     ("post_receipt_repair", fvd)):
+        checks[stage] = v["checks"]
+    accepted_checkbacked = all(
+        fvd["checks"][k] or k == "runtime_trace"
+        for k in ("compile", "receipt_accounting", "ast_leaf_anchors"))
+    return {
+        "gen_seconds": gen_seconds,
+        "llm_generate_calls": wrapped.calls,
+        "checks": checks,
+        "receipt_repair": rr,
+        "first_failing_check_final": fvd["first_failing_check"],
+        "accepted_strict": not fvd["rejected"],
+        "accepted_checkbacked": accepted_checkbacked,
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=5)
     ap.add_argument("--backends", default="harness,baremetal,linux")
     ap.add_argument("--max-repair-rounds", type=int, default=6)
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--resume", action="store_true",
+                    help="keep recorded trials in --out and continue")
     args = ap.parse_args()
 
     from verification.backend_lowering_oracle import build_generation_contract
 
-    print("loading extraction (cached)...")
+    print("loading extraction (cached)...", flush=True)
     res = _load_extraction(str(MANIFEST))
     contract = build_generation_contract(res.formal)
 
@@ -240,78 +379,38 @@ def main() -> int:
 
     backend_names = [b.strip() for b in args.backends.split(",") if b.strip()]
     trials = []
-    for t in range(1, args.trials + 1):
+    start = 1
+    if args.resume and Path(args.out).is_file():
+        try:
+            trials = json.loads(
+                Path(args.out).read_text(encoding="utf-8")).get("trials", [])
+            start = len(trials) + 1
+            print(f"resuming after {len(trials)} recorded trial(s)",
+                  flush=True)
+        except Exception:
+            trials = []
+    for t in range(start, args.trials + 1):
         tdir = WORK / f"trial{t}"
         tdir.mkdir(parents=True, exist_ok=True)
         row = {"trial": t, "backends": {}}
         t0 = time.time()
         for backend in backend_names:
-            # -- fresh candidate: wrap the real module, generate once -----
-            import backends.registry as registry
-            real = registry.list_backends()[backend]
-            gen_kwargs = {}
-            for kw in getattr(real, "GEN_KWARGS", []):
-                if kw == "facts":
-                    gen_kwargs["facts"] = res.facts
-                elif kw == "pci_identity":
-                    gen_kwargs["pci_identity"] = getattr(
-                        res, "pci_identity", None)
-                elif kw == "registrar":
-                    gen_kwargs["registrar"] = getattr(
-                        res, "registrar", None)
-            wrapped = _WrappedBackend(real, gen_kwargs)
-            wmap = {backend: wrapped}
-
-            g0 = time.time()
-            first = _pipeline_pass(res, tdir / f"{backend}-first", wmap, 0)
-            gen_seconds = round(time.time() - g0, 1)
-            fv = _verdict(first[backend])
-
-            post = _pipeline_pass(res, tdir / f"{backend}-repair", wmap, 3)
-            pv = _verdict(post[backend])
-
-            # -- receipt repair on the repaired candidate, then re-verify -
-            gen_dir = tdir / f"{backend}-repair" / "generated"
-            bdir = gen_dir / backend
-            primary = None
-            if bdir.is_dir():
-                srcs = sorted(bdir.rglob("*.c"))
-                primary = srcs[0] if srcs else None
-            if primary is None:
-                cand = gen_dir / f"{backend}.c"
-                primary = cand if cand.is_file() else None
-            rr = {"skipped": True}
-            if primary is not None:
-                rr = _receipt_repair(res.formal, contract,
-                                     {"primary": primary}, backend,
-                                     args.max_repair_rounds)
-            combined = _combined_text(gen_dir, backend)
-            final = _pipeline_pass(
-                res, tdir / f"{backend}-verify", {backend: _stub_for(
-                    combined)}, 0)
-            fvd = _verdict(final[backend])
-
-            checks = {}
-            for stage, v in (("first_pass", fv), ("post_compile_repair", pv),
-                             ("post_receipt_repair", fvd)):
-                checks[stage] = v["checks"]
-            accepted_checkbacked = all(
-                fvd["checks"][k] or k == "runtime_trace"
-                for k in ("compile", "receipt_accounting", "ast_leaf_anchors"))
-            row["backends"][backend] = {
-                "gen_seconds": gen_seconds,
-                "llm_generate_calls": wrapped.calls,
-                "checks": checks,
-                "receipt_repair": rr,
-                "first_failing_check_final": fvd["first_failing_check"],
-                "accepted_strict": not fvd["rejected"],
-                "accepted_checkbacked": accepted_checkbacked,
-            }
-            print(f"trial {t} {backend}: first={fv['first_failing_check']} "
-                  f"final={fvd['first_failing_check']} "
-                  f"strict={row['backends'][backend]['accepted_strict']} "
-                  f"checkbacked={accepted_checkbacked} "
-                  f"({rr.get('rounds')}? rr-rounds)")
+            try:
+                row["backends"][backend] = _run_backend_trial(
+                    res, contract, tdir, backend, args.max_repair_rounds)
+            except Exception:  # one backend must not kill the run
+                import traceback
+                traceback.print_exc()
+                row["backends"][backend] = {"error": "exception (see log)"}
+            v = row["backends"][backend]
+            if "error" not in v:
+                print(f"trial {t} {backend}: "
+                      f"first={next((k for k, ok in v['checks']['first_pass'].items() if not ok), None)} "
+                      f"final={v['first_failing_check_final']} "
+                      f"strict={v['accepted_strict']} "
+                      f"checkbacked={v['accepted_checkbacked']} "
+                      f"({v['receipt_repair'].get('rounds')} rr-rounds)",
+                      flush=True)
         row["seconds"] = round(time.time() - t0, 1)
         trials.append(row)
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
@@ -328,7 +427,8 @@ def main() -> int:
             "backends": backend_names,
             "trials": trials,
         }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        print(f"  trial {t} complete ({row['seconds']}s) -> {args.out}")
+        print(f"  trial {t} complete ({row['seconds']}s) -> "
+              f"{args.out}", flush=True)
     return 0
 
 
