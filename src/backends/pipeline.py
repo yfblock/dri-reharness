@@ -65,7 +65,11 @@ def _transaction_source_paths(source: str | os.PathLike[str]) -> list[str]:
 
 # ── compile-repair loop (generic feedback: the compiler is ground truth) ─
 
-_PART_MARKER = re.compile(r"^/\* ---- part (\d+) of \d+ ---- \*/$", re.M)
+# Marker is matched unanchored: a repair splice can eat the blank lines
+# between parts and glue the marker onto the previous part's last line
+# (`...#endif */ /* ---- part 01 of 03 ---- */`), and an anchored pattern
+# would then silently lose the whole part for routing.
+_PART_MARKER = re.compile(r"/\* ---- part (\d+) of \d+ ---- \*/")
 _ERR_LINE = re.compile(r"^[^\s:]+:(\d+):\d+: (?:fatal )?error", re.M)
 _UNDEF_REF = re.compile(r"undefined reference to [`'`](\w+)", re.M)
 _MODPOST_UNDEF = re.compile(r'modpost: "(\w+)".*undefined', re.M)
@@ -293,7 +297,10 @@ def _repair_compile(backend, name, cpath, entries, ver_dir, root, tmp_dir):
                 break
             if new is None:
                 continue
-            text = text[:start] + new + text[end:]
+            # keep the two blank lines before the next part marker — the
+            # old slice being replaced consumed them, and without them
+            # the marker glues onto this part's last line
+            text = text[:start] + new.rstrip("\n") + "\n\n" + text[end:]
             changed = True
             repaired = True
             log.append("part %d: repaired (%d -> %d chars)"
@@ -406,13 +413,36 @@ def _walk_register_ops(ops, module, out):
             _walk_register_ops(loop.get("body", []), module, out)
 
 
+_KIND_ALIAS = {"read": "Read", "r": "Read", "write": "Write", "w": "Write",
+               "readmodifywrite": "ReadModifyWrite",
+               "read_modify_write": "ReadModifyWrite", "rmw": "ReadModifyWrite"}
+
+
 def _receipt_line_ok(part_text, op_id, kind, digest):
-    """The op's receipt must appear exactly once, fully well-formed."""
+    """The op's receipt must appear exactly once, well-formed. Kind is
+    alias-tolerant to mirror the oracle's _RECEIPT_KIND_ALIASES, so a
+    receipt the oracle accepts (e.g. kind=read) is not "broken" here
+    either — stricter matching made the repair add duplicates."""
     pat = re.compile(
-        r"REHARNESS_RIS_OP\s+id=%s\s+kind=%s\s+status=lowered\s+"
-        r"digest=%s\s*\*/" % (re.escape(op_id), re.escape(kind),
-                              re.escape(digest)))
-    return len(pat.findall(part_text)) == 1
+        r"REHARNESS_RIS_OP\s+id=%s\s+kind=(\S+)\s+status=lowered\s+"
+        r"digest=%s\s*\*/" % (re.escape(op_id), re.escape(digest)))
+    hits = pat.findall(part_text)
+    return sum(1 for k in hits
+               if _KIND_ALIAS.get(k.lower(), k) == kind) == 1
+
+
+def _dedup_receipts(text, rows):
+    """Keep the last receipt comment per required op id, delete earlier
+    copies (comment-only deletion — compile-safe). Returns (text, n)."""
+    removed = 0
+    for op_id, _kind, _digest, _module in rows:
+        pat = re.compile(r"[ \t]*/\*\s*REHARNESS_RIS_OP\s+id=%s\s[^*]*"
+                         r"\*/[ \t]*\n?" % re.escape(op_id))
+        matches = list(pat.finditer(text))
+        for m in matches[:-1]:
+            text = text[:m.start()] + text[m.end():]
+            removed += 1
+    return text, removed
 
 
 def _repair_receipts(backend, name, cpath, formal, entries,
@@ -484,6 +514,7 @@ def _repair_receipts(backend, name, cpath, formal, entries,
                      else text[bounds[0][1]:bounds[0][2]])
     log = []
     changed = False
+    changed_parts = []  # (part index, [(op_id, kind, digest, module)])
     for idx in sorted(by_part, reverse=True):
         if idx not in part_of:
             continue
@@ -548,8 +579,9 @@ def _repair_receipts(backend, name, cpath, formal, entries,
             break
         if fixed is None:
             continue
-        text = text[:start] + fixed + text[end:]
+        text = text[:start] + fixed.rstrip("\n") + "\n\n" + text[end:]
         changed = True
+        changed_parts.append((idx, sel))
         log.append("part %d: receipts completed (%d -> %d chars)"
                    % (idx, len(part), len(fixed)))
     if not changed:
@@ -558,9 +590,74 @@ def _repair_receipts(backend, name, cpath, formal, entries,
             encoding="utf-8")
         return False
     Path(cpath).write_text(text, encoding="utf-8")
-    # the edit must not break the build; revert everything if it does
-    r = _compile_probe(backend, cpath, name, root, tmp_dir)
-    if r.returncode != 0:
+    # deterministic duplicate suppression before the compile gate
+    text, removed = _dedup_receipts(text, rows)
+    if removed:
+        log.append("dedup: removed %d duplicate receipt comment(s)" % removed)
+        Path(cpath).write_text(text, encoding="utf-8")
+    # the edit must not break the build; on probe failure retry the same
+    # parts with the compiler diagnostics appended, then revert as a
+    # last resort
+    probe = _compile_probe(backend, cpath, name, root, tmp_dir)
+    for retry in range(2):
+        if probe.returncode == 0:
+            break
+        diags = (probe.stderr if backend != "linux"
+                 else probe.stdout + "\n" + probe.stderr)
+        log.append("probe failed after receipt repair (retry %d): %s"
+                   % (retry, diags.strip()[-1500:]))
+        fixed_any = False
+        retry_bounds = _part_bounds(text)
+        # re-ask the parts that grew in this pass, with diagnostics
+        for prev_idx, sel in changed_parts:
+            span = next(((s, e) for _l, s, e, _i in retry_bounds
+                         if _i == prev_idx), None)
+            if span is None:
+                continue
+            lo2, end2 = span
+            part2 = text[lo2:end2]
+            prompt2 = _RECEIPT_REPAIR_PROMPT.format(
+                dialect=dialect,
+                rows="\n".join("- owner=%s id=%s kind=%s digest=%s"
+                               % (m, o, k, d) for o, k, d, m in sel),
+                module_ris="(see constraints above — receipts already "
+                           "inserted, fix ONLY the compile errors)",
+                scaffold=scaffold_text if prev_idx != 0
+                else "(this IS the scaffold part)",
+                part=part2) + (
+                "\nCOMPILER DIAGNOSTICS (fix these, keep every receipt):\n"
+                + diags[-6000:]
+                + "\nReturn the COMPLETE fixed part in one ```c fenced block.")
+            try:
+                raw2 = call_llm(prompt2, timeout=120)
+            except Exception as exc:
+                log.append("part %d retry: llm failed: %s"
+                           % (prev_idx, exc))
+                continue
+            m2 = _REPAIR_FENCE.search(raw2)
+            new2 = m2.group(1) if m2 else None
+            if new2 is None and _VALID_RCPT.search(raw2):
+                stripped = re.sub(r"^```(?:c|C)?|```$", "", raw2,
+                                  flags=re.M).strip()
+                if stripped.count("{") >= 3:
+                    new2 = stripped
+            if new2 is None or "TODO" in new2 or len(new2) < 0.5 * len(part2):
+                continue
+            if len(_VALID_RCPT.findall(new2)) < len(
+                    _VALID_RCPT.findall(part2)):
+                continue
+            if not all(_receipt_line_ok(new2, o, k, d)
+                       for o, k, d, _m in sel):
+                continue
+            text = text[:lo2] + new2.rstrip("\n") + "\n\n" + text[end2:]
+            Path(cpath).write_text(text, encoding="utf-8")
+            fixed_any = True
+            log.append("part %d: compile retry accepted (%d -> %d chars)"
+                       % (prev_idx, len(part2), len(new2)))
+        if not fixed_any:
+            break
+        probe = _compile_probe(backend, cpath, name, root, tmp_dir)
+    if probe.returncode != 0:
         Path(cpath).write_text(original, encoding="utf-8")
         log.append("reverted: compile probe failed after receipt repair")
         (Path(ver_dir) / f"{backend}.receipt-repair.log").write_text(

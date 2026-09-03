@@ -348,8 +348,11 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
         # prompts, and some responses arrive without any code fence so
         # the extractor falls back to the raw text and chat prose leaks
         # into the source; a bounded re-ask is cheaper than losing the
-        # whole part (or shipping prose that can only fail compilation)
-        for _attempt in range(3):
+        # whole part (or shipping prose that can only fail compilation).
+        # temperature=0 makes an identical re-send reproduce the same
+        # empty body, so each retry appends a distinct nudge line.
+        import time as _time
+        for _attempt in range(5):
             from langchain_bridge import parse_model_response
             parsed = parse_model_response(raw)
             prose_leak = ("```" not in raw and re.search(
@@ -359,11 +362,16 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
                 break
             from langchain_bridge import call_langchain, \
                 LangChainBridgeError
+            _time.sleep(3 * (_attempt + 1))
+            nudge = "" if _attempt == 0 else (
+                "\n\n(ATTEMPT %d — return the complete code block now, "
+                "no preamble, no prose.)" % (_attempt + 1))
             try:
-                raw = call_langchain(prompt, timeout=120,
+                raw = call_langchain(prompt + nudge, timeout=120,
                                      model=kwargs.get("model"))
             except LangChainBridgeError:
-                raw = call_llm(prompt, model=kwargs.get("model"))
+                raw = call_llm(prompt + nudge,
+                               model=kwargs.get("model"))
         try:
             from langchain_bridge import _transcribe
             _transcribe(prompt, str(raw), kind=f"backend-{backend}",
