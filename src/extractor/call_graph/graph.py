@@ -163,42 +163,118 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
     # Compute entry-point identity before direct extraction so wrapper
     # summaries cannot accidentally inline registered callbacks.
     callback_entries = callback_entry_symbols(tu, symbols)
+    # Candidate expansion adds header-defined inline helpers to the
+    # function universe; call rows must cover them or every flattened op
+    # originating from a header helper fails its citation check.
+    call_funcs = _candidate_functions(funcs)
     base = build_inline_cache(
-        _candidate_functions(funcs), macros, tu, source_lines, mmio_globals, mmio_alias_facts,
+        call_funcs, macros, tu, source_lines, mmio_globals, mmio_alias_facts,
         wrapper_summaries,
         indirect_targets,
         callback_entries,
         include_framework, extra_blacklist)
-    inline_cache = {n: e for n, e in base.items() if e.ops or e.return_expr}
+
+    # Iterative bounded expansion to a fixpoint (mirrors the multi-TU
+    # path): each round re-extracts with the previous round's summaries as
+    # the inline cache, so register effects propagate through helper chains
+    # one call level per round.  A single one-shot pass would flatten only
+    # direct callees and silently drop deeper contexts — exactly the class
+    # of gap the call-context proof then reports as an occurrence mismatch.
+    expanded = dict(base)
+    propagation_by_depth = [{
+        "depth": 0,
+        "new_mmio_ops": sum(len(ex.ops) for ex in expanded.values()),
+        "total_mmio_ops": sum(len(ex.ops) for ex in expanded.values()),
+    }]
+    for depth in range(1, max(0, max_depth) + 1):
+        inline_cache = {
+            name: ex for name, ex in expanded.items()
+            if ex.ops or ex.return_expr}
+        next_expanded: dict[str, FuncExtraction] = {}
+        for f in call_funcs:
+            symbol = _func_id(f)
+            cache = {name: ex for name, ex in inline_cache.items()
+                     if name != symbol}
+            next_expanded[symbol] = extract_function(
+                f, macros, tu,
+                source_lines=source_lines,
+                inline_cache=cache,
+                mmio_globals=mmio_globals,
+                mmio_alias_facts=mmio_alias_facts,
+                wrapper_summaries=wrapper_summaries,
+                indirect_targets=indirect_targets,
+                callback_entries=callback_entries,
+                max_depth=1,
+                include_framework=include_framework,
+                extra_blacklist=extra_blacklist,
+            )
+        before = {name: _op_fingerprint(ex) for name, ex in expanded.items()}
+        after = {name: _op_fingerprint(ex)
+                 for name, ex in next_expanded.items()}
+        old_total = sum(len(ex.ops) for ex in expanded.values())
+        new_total = sum(len(ex.ops) for ex in next_expanded.values())
+        propagation_by_depth.append({
+            "depth": depth,
+            "new_mmio_ops": max(0, new_total - old_total),
+            "total_mmio_ops": new_total,
+        })
+        expanded = next_expanded
+        if after == before:
+            break
+    result = expanded
 
     # pure helpers (inlined into a caller, never callback-referenced) are dedup'd
+    inlineable = {name for name, ex in expanded.items()
+                  if ex.ops or ex.return_expr}
     inlined_into_caller: set[str] = set()
-    for f in funcs:
+    for f in call_funcs:
         for cs in function_calls(f.cursor):
             callee = _resolved_callee_id(cs, indirect_targets)
-            if (callee in inline_cache and callee in symbols
+            if (callee in inlineable
                     and callee != _func_id(f)):
                 inlined_into_caller.add(callee)
-    result: dict[str, FuncExtraction] = {}
-    for f in funcs:
-        result[_func_id(f)] = extract_function(
+    (inlined_names, rescue_stats, rescue_frontiers) = (
+        _coverage_aware_inlined_names(
+            base, result, inlined_into_caller - callback_entries))
+    func_by_symbol = {_func_id(f): f for f in call_funcs}
+    formal_calls = _formal_calls(call_funcs, indirect_targets)
+    call_context = _prove_inlined_call_context(
+        base, result, inlined_names, formal_calls)
+    rescue_stats = dict(rescue_stats)
+    rescue_stats["call_semantics_proven"] = bool(call_context["proven"])
+    rescue_stats["call_context_proof"] = call_context
+    rescue_stats["propagation_by_depth"] = propagation_by_depth
+
+    def extract_one(symbol: str, inline_cache=None) -> FuncExtraction:
+        f = func_by_symbol[symbol]
+        cache = inline_cache
+        if cache and symbol in cache:
+            cache = {name: ex for name, ex in cache.items()
+                     if name != symbol}
+        return extract_function(
             f, macros, tu,
             source_lines=source_lines,
-            inline_cache=inline_cache,
+            inline_cache=cache,
             mmio_globals=mmio_globals,
             mmio_alias_facts=mmio_alias_facts,
             wrapper_summaries=wrapper_summaries,
             indirect_targets=indirect_targets,
             callback_entries=callback_entries,
-            max_depth=max_depth,
+            max_depth=1,
             include_framework=include_framework,
             extra_blacklist=extra_blacklist,
         )
-    (inlined_names, rescue_stats, rescue_frontiers) = (
-        _coverage_aware_inlined_names(
-            base, result, inlined_into_caller - callback_entries))
+
+    (result, call_closed, closure_stats,
+     closure_overlays) = _selective_frontier_call_closure(
+        funcs, result, rescue_frontiers, callback_entries, formal_calls,
+        extract_one)
     for symbol, frontier in rescue_frontiers.items():
         result[symbol] = frontier
+    rescue_stats = dict(rescue_stats)
+    rescue_stats["call_closure_accepted_symbols"] = sorted(call_closed)
+    rescue_stats["call_closure_accepted_sites"] = closure_stats[
+        "accepted_sites"]
     unique_summaries = {
         summary["symbol"]: summary for summary in wrapper_summaries.values()}
     return result, inlined_names, callback_entries, {
@@ -209,7 +285,9 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
             resolve_indirect_call(call, indirect_targets) is not None
             for func in funcs for call in function_calls(func.cursor)),
         "callee_rescue": rescue_stats,
-        "formal_calls": _formal_calls(funcs, indirect_targets),
+        "formal_calls": formal_calls,
+        "selective_call_closure": closure_stats,
+        "_call_closure_overlays": closure_overlays,
     }
 
 

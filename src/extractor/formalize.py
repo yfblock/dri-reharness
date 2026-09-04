@@ -13,6 +13,7 @@ from typing import Optional
 
 from .dataflow import FuncExtraction, Op
 from .ast_model import Func
+from .call_graph.call_rows import _call_row_is_proven
 from .intent import annotate
 from . import formal as F
 from .formal import walk_leaf_ops
@@ -993,6 +994,66 @@ def _transaction_map(funcs, extractions, macros) -> list[dict]:
     return [seen[key] for key in sorted(seen)]
 
 
+def _attach_call_nodes(modules: list[dict], funcs: list[Func],
+                       stats: dict, inlined_names: set) -> None:
+    """Attach RIS Call nodes: the module-language view of flattened helpers.
+
+    Every helper in ``inlined_names`` had its operations flattened into its
+    callers.  A Call node records that dependency inside the caller module:
+    the exact AST callsite, the parameter-to-argument binding, and whether
+    the call row independently passes the proof predicate.  This keeps the
+    flattened operations lowering-compatible while making the call edge a
+    first-class, auditable RIS construct instead of metadata-only state.
+    """
+    formal_calls = stats.get("formal_calls")
+    if not isinstance(formal_calls, list) or not formal_calls:
+        return
+    module_by_symbol: dict[str, dict] = {}
+    func_by_module_name = {
+        func.module_name or func.name: func for func in funcs}
+    for module in modules:
+        func = func_by_module_name.get(module.get("name"))
+        if func is None:
+            continue
+        symbol = func.symbol_id or func.name
+        if symbol not in module_by_symbol:
+            module_by_symbol[symbol] = module
+    for row in formal_calls:
+        if not isinstance(row, dict):
+            continue
+        callee_usr = row.get("callee_usr")
+        if not isinstance(callee_usr, str) or callee_usr not in inlined_names:
+            continue
+        module = module_by_symbol.get(row.get("caller_usr"))
+        if module is None:
+            continue
+        callsite = row.get("callsite") or {}
+        source = callsite.get("source")
+        arguments = [
+            {"parameter": item.get("parameter"),
+             "expression": item.get("expression")}
+            for item in row.get("argument_mapping") or []
+            if isinstance(item, dict)]
+        return_binding = row.get("return_binding") or {}
+        module.setdefault("calls", []).append({
+            "schema": 1,
+            "callee": row.get("callee_module"),
+            "callee_usr": callee_usr,
+            "callsite": {
+                "source": (source.rsplit("/", 1)[-1]
+                           if isinstance(source, str) else source),
+                "source_path": source,
+                "line": callsite.get("line", 0),
+                "column": callsite.get("column", 0),
+            },
+            "arguments": arguments,
+            "return_binding": return_binding.get("status"),
+            "resolution_authority": row.get("resolution_authority"),
+            "proven": _call_row_is_proven(
+                row, allow_structured_loops=True),
+        })
+
+
 def build_formal_ris(driver_name: str, source_path: str,
                      funcs: list[Func],
                      extractions: dict[str, FuncExtraction],
@@ -1049,9 +1110,11 @@ def build_formal_ris(driver_name: str, source_path: str,
             func, FuncExtraction(name=func.name), id_counter, macros))
         module_names.add(callback_module)
 
+    _attach_call_nodes(modules, funcs, stats, inlined_names)
+
     return {
         "driver": driver_name,
-        "version": "0.1.0",
+        "version": "0.2.0",
         "modules": modules,
         "register_map": _register_map(funcs, extractions, macros),
         "transaction_map": _transaction_map(funcs, extractions, macros),

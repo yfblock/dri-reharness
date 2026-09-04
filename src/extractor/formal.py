@@ -12,8 +12,9 @@ A mathematically-grounded representation of register interaction sequences:
 Emits both:
   - a structured serde-compatible JSON (FormalRIS schema), and
   - a human-readable formal-language text (the Display grammar):
-        driver gpio v0.1.0 {
+        driver gpio v0.2.0 {
           module probe {
+            Call enable_reg(mask = mask) @ gpio.c:42 [direct_function_declaration] [proven]
             W(B4, dev.GPIO_INT_EN) = 0x0 -- Init
             status := R(B4, dev.GPIO_INT_STAT) -- Status
             IF (val == deb_div) { 2 ops }
@@ -439,6 +440,18 @@ def formal_display(formal: dict) -> str:
     lines = [f"driver {formal['driver']} v{formal['version']} {{"]
     for m in formal["modules"]:
         lines.append(f"  module {m['name']} {{")
+        for call in m.get("calls") or []:
+            arguments = ", ".join(
+                f"{item.get('parameter')} = {item.get('expression')}"
+                for item in call.get("arguments") or [])
+            callsite = call.get("callsite") or {}
+            anchor = ""
+            if callsite.get("source") is not None:
+                anchor = f"@ {callsite.get('source')}:{callsite.get('line', 0)} "
+            proven = " [proven]" if call.get("proven") else ""
+            lines.append(
+                f"    Call {call.get('callee')}({arguments}) "
+                f"{anchor}[{call.get('resolution_authority')}]{proven}")
         for op in m["ops"]:
             lines.append(op_display(op, indent=2))
         lines.append("  }")

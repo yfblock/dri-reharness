@@ -14,6 +14,80 @@ from .call_rows import (
 from .evidence import _definition_site, _evidence_sites, _register_ops
 
 
+def _verify_inline_citations(
+        expanded: dict[str, FuncExtraction],
+        formal_calls: list[dict]) -> dict:
+    """Check that every flattened op cites an exact AST call row per hop.
+
+    ``_instantiate_op`` copies helper ops into callers; each copied op
+    records an ``inlined_at`` hop ``{function, line, callee}`` for every
+    call edge it was flattened through.  This check turns that trail into
+    a proof obligation: each hop must match one call row (same caller,
+    callsite line, resolved callee) and that row must independently pass
+    ``_call_row_is_proven``.  A hop with no matching row means the copy
+    came from an unevidenced callsite; a matching-but-unproven row means
+    the copy is real but its context is not auditable.  Both fail closed.
+    Wrapper-summary sites use ``summarized_at`` and are out of scope here.
+    """
+    row_index: dict[tuple[str, int, str], list[dict]] = defaultdict(list)
+    for row in formal_calls:
+        callsite = row.get("callsite") or {}
+        line = callsite.get("line")
+        if (isinstance(row.get("caller_module"), str)
+                and isinstance(line, int) and line
+                and isinstance(row.get("callee_module"), str)):
+            row_index[(row["caller_module"], line,
+                       row["callee_module"])].append(row)
+
+    violations: list[dict] = []
+    checked_hops = 0
+    for symbol, extraction in sorted(expanded.items()):
+        if extraction is None:
+            continue
+        for op in extraction.ops:
+            evidence = op.evidence or {}
+            chain = evidence.get("inlined_at")
+            if not isinstance(chain, list):
+                continue
+            for hop in chain:
+                if not isinstance(hop, dict):
+                    continue
+                checked_hops += 1
+                caller = hop.get("function")
+                line = hop.get("line")
+                callee = hop.get("callee")
+                if not (isinstance(caller, str) and isinstance(line, int)
+                        and isinstance(callee, str)):
+                    violations.append({
+                        "symbol": symbol, "hop": hop,
+                        "reason": "malformed_hop",
+                    })
+                    continue
+                rows = row_index.get((caller, line, callee))
+                if not rows:
+                    violations.append({
+                        "symbol": symbol,
+                        "hop": {"function": caller, "line": line,
+                                "callee": callee},
+                        "reason": "no_matching_call_row",
+                    })
+                    continue
+                if not any(_call_row_is_proven(row, allow_structured_loops=True)
+                           for row in rows):
+                    violations.append({
+                        "symbol": symbol,
+                        "hop": {"function": caller, "line": line,
+                                "callee": callee},
+                        "reason": "cited_call_row_unproven",
+                    })
+    return {
+        "checked_hops": checked_hops,
+        "violations": violations[:32],
+        "violation_count": len(violations),
+        "complete": not violations,
+    }
+
+
 def _prove_inlined_call_context(
         direct: dict[str, FuncExtraction], expanded: dict[str, FuncExtraction],
         candidates: set[str], formal_calls: list[dict]) -> dict:
@@ -25,10 +99,29 @@ def _prove_inlined_call_context(
     them with occurrences in the emitted (non-inlined) modules. Structured
     loop frames remain attached to those occurrences; their runtime bounds
     are validated by the separate control-flow gate.
+
+    The proof additionally requires every flattened operation to cite, hop
+    by hop, an independently proven AST call row (see
+    ``_verify_inline_citations``); without that, the copy itself has no
+    auditable provenance even when path counts balance.
     """
+    citations = _verify_inline_citations(expanded, formal_calls)
+    if not citations["complete"]:
+        return {
+            "proven": False, "reason": "uncited_inline_chain",
+            "inline_citations": citations,
+        }
     candidates = set(candidates)
+    # Candidates without any definition-owned register site are pure value
+    # helpers (e.g. header accessors handled at the caller's expression
+    # level): nothing was flattened, so there is no register context to
+    # prove and they are vacuous for this proof.
+    candidates = {
+        symbol for symbol in candidates
+        if _evidence_sites(direct.get(symbol), owner_filter=symbol)[0]}
     if not candidates:
-        return {"proven": True, "reason": "no_inlined_candidates"}
+        return {"proven": True, "reason": "no_inlined_candidates",
+                "inline_citations": citations}
 
     grouped: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for row in formal_calls:
@@ -127,11 +220,31 @@ def _prove_inlined_call_context(
         return total
 
     actual: Counter = Counter()
+    # A subsystem-summary op is the caller's audited contract view of a
+    # modeled accessor helper; it reproduces that helper's single modeled
+    # access at the callsite.  Count it as the observed occurrence of a
+    # candidate whose entire body is exactly that one access — multi-site
+    # helpers stay fail-closed because one contract op cannot stand for
+    # several distinct primitive accesses.
+    single_site_by_short: dict[str, tuple] = {}
+    for symbol in candidates:
+        sites = direct_sites.get(symbol) or set()
+        if len(sites) == 1:
+            single_site_by_short.setdefault(
+                symbol.rsplit("::", 1)[-1], next(iter(sites)))
     for root in roots:
         for op in _register_ops(expanded.get(root)):
             site = _definition_site(op)
             if site is not None and site[0] in candidates:
                 actual[site] += 1
+                continue
+            evidence = op.evidence or {}
+            if evidence.get("origin") != "subsystem_summary":
+                continue
+            short = (evidence.get("site_id") or "").rsplit(":", 1)[-1]
+            contract_site = single_site_by_short.get(short)
+            if contract_site is not None:
+                actual[contract_site] += 1
 
     mismatches = []
     for symbol in sorted(candidates):
@@ -156,6 +269,7 @@ def _prove_inlined_call_context(
         "proven": True, "reason": "exact_static_call_contexts",
         "eligible_edges": len(eligible_edges),
         "roots": sorted(roots),
+        "inline_citations": citations,
     }
 
 

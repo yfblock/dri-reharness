@@ -740,7 +740,7 @@ def test_ftgpio_ack_irq_keeps_registration_and_direct_call_effects(ftgpio_formal
 
 def test_formal_display_text(ftgpio_formal):
     txt = formal_display(ftgpio_formal)
-    assert txt.startswith("driver gpio-ftgpio010 v0.1.0 {")
+    assert txt.startswith("driver gpio-ftgpio010 v0.2.0 {")
     assert "module ftgpio_gpio_probe" in txt
     assert "W(B4," in txt and " := R(B4," in txt
     assert "IF " in txt
@@ -1537,7 +1537,7 @@ def test_auto_wrapper_summary_survives_zero_inline_depth():
     assert read["evidence"]["summarized_at"][0]["callee"] == "wrapper_read"
 
 
-def test_mixed_helper_keeps_wrapper_summary_alongside_known_nested_access():
+def test_mixed_helper_flattens_with_cited_chains_and_call_node():
     from extractor.formal import walk_leaf_ops
     import tempfile
 
@@ -1571,13 +1571,25 @@ def test_mixed_helper_keeps_wrapper_summary_alongside_known_nested_access():
             handle.write(source)
         result = extract_ris(ExtractorConfig(source=path))
 
-    entry_leaves = list(walk_leaf_ops(_module(
-        result.formal, "entry")["ops"]))
-    nested_leaves = list(walk_leaf_ops(_module(
-        result.formal, "nested_access")["ops"]))
-    assert any("Read" in op for op in entry_leaves)
-    assert sum("Read" in op for op in nested_leaves) == 1
-    assert any("Write" in op for op in nested_leaves)
+    entry_module = _module(result.formal, "entry")
+    entry_leaves = list(walk_leaf_ops(entry_module["ops"]))
+    # With cited call-context proof the whole chain flattens into the entry:
+    # generic_read and nested_access both arrive as two-hop inlined ops and
+    # the helper modules dedup away.  The Call node records the top edge.
+    assert sum("Read" in op for op in entry_leaves) == 2
+    assert sum("Write" in op for op in entry_leaves) == 1
+    nested_chains = [
+        op for op in entry_leaves
+        if any(hop.get("callee") == "nested_access"
+               for hop in (next(iter(op.values()))["evidence"]
+                           .get("inlined_at") or []))
+    ]
+    assert nested_chains, "nested_access ops must cite their call chain"
+    calls = entry_module.get("calls") or []
+    assert [(c["callee"], c["proven"]) for c in calls] == [
+        ("mixed_helper", True)]
+    assert "nested_access" not in {
+        m["name"] for m in result.formal["modules"]}
 
 
 def test_known_wrapper_access_survives_unknown_external_call():
@@ -1857,11 +1869,21 @@ def test_public_mfd_register_helpers_form_transactions_fail_closed():
         for op in walk_leaf_ops(module["ops"])
         if "TransactionUpdate" in op
     ]
-    assert len(leaves) == 2
+    # reset_one_clock does set_bits(reset_mask) THEN clear_bits(same mask)
+    # on each PLL; with cited call-context proof both RMW transactions of
+    # both registers flatten into prepare (previously depth-1 inlining kept
+    # only one per register).
+    assert len(leaves) == 4
     assert all(body["transport"] == "mfd" for body in leaves)
     assert all(body["width"] == "B1" for body in leaves)
-    assert leaves[0]["value"] == {"Var": "reset_mask"}
-    assert leaves[1]["value"] == {"Const": 0}
+    by_selector = {}
+    for body in leaves:
+        by_selector.setdefault(
+            body["selector"]["Var"], []).append(body["value"])
+    assert by_selector == {
+        "TWL6040_REG_HPPLLCTL": [{"Var": "reset_mask"}, {"Const": 0}],
+        "TWL6040_REG_LPPLLCTL": [{"Var": "reset_mask"}, {"Const": 0}],
+    }
     assert {row["name"] for row in result.formal["transaction_map"]} == {
         "TWL6040_REG_HPPLLCTL", "TWL6040_REG_LPPLLCTL"}
     accounting = result.formal["metadata"]["access_accounting"]
@@ -2265,11 +2287,135 @@ def test_cross_tu_inline_substitutes_formal_parameters_with_call_arguments():
             "Symbolic": {"device": "chip", "register": "REG_A"}}
         assert write["value"] == {"Const": 0x55}
         rendered = formal_display(result.formal)
-        assert "dev" not in rendered
-        assert " value" not in rendered
+        # Call nodes legitimately name the callee's formal parameters
+        # (the parameter-to-argument binding itself); op expressions must
+        # still be fully substituted, so check outside the Call lines.
+        non_call = "\n".join(
+            line for line in rendered.splitlines()
+            if not line.strip().startswith("Call "))
+        assert "dev" not in non_call
+        assert " value" not in non_call
         assert result.stats["cross_tu_call_edges"] >= 1
         assert result.stats["resolved_cross_tu_call_edges"] >= 1
         assert result.stats["propagated_mmio_edges"] >= 1
+
+
+def test_single_source_transitive_switch_case_inline_is_cited_and_proven():
+    """A helper called only inside a switch case must still reach the entry.
+
+    This pins the gpio-dwapb dwapb_irq_set_type -> dwapb_toggle_trigger
+    regression: one-shot flattening dropped the switch-arm context entirely,
+    and the call-context proof now reports that loss as an occurrence
+    mismatch, so extraction itself must iterate to a fixpoint.
+    """
+    import tempfile
+
+    source_text = (
+        "extern unsigned int readl(const void *addr);\n"
+        "extern void writel(unsigned int value, void *addr);\n"
+        "static unsigned int read_reg(void *dev, unsigned int off) {\n"
+        "    return readl(dev + off);\n"
+        "}\n"
+        "static void write_reg(void *dev, unsigned int off, unsigned int v) {\n"
+        "    writel(v, dev + off);\n"
+        "}\n"
+        "static void toggle(void *dev, unsigned int bit) {\n"
+        "    unsigned int pol = read_reg(dev, 0x10);\n"
+        "    pol ^= 1u << bit;\n"
+        "    write_reg(dev, 0x10, pol);\n"
+        "}\n"
+        "void entry(void *dev, unsigned int type) {\n"
+        "    unsigned int level = read_reg(dev, 0x20);\n"
+        "    switch (type) {\n"
+        "    case 3:\n"
+        "        toggle(dev, 0);\n"
+        "        break;\n"
+        "    default:\n"
+        "        break;\n"
+        "    }\n"
+        "    write_reg(dev, 0x20, level);\n"
+        "}\n")
+    with tempfile.TemporaryDirectory() as directory:
+        source = os.path.join(directory, "switch_inline.c")
+        with open(source, "w", encoding="utf-8") as fh:
+            fh.write(source_text)
+        result = extract_ris(ExtractorConfig(source=source))
+
+    rescue = result.stats["callee_rescue"]
+    proof = rescue["call_context_proof"]
+    assert proof["proven"] is True
+    assert proof["reason"] == "exact_static_call_contexts"
+    citations = proof["inline_citations"]
+    assert citations["complete"] is True
+    assert citations["checked_hops"] >= 5
+
+    module = _module(result.formal, "entry")
+    chains = [
+        hop
+        for op in walk_all_ops_of(module)
+        for hop in (op.get("evidence") or {}).get("inlined_at", [])]
+    switch_hops = [hop for hop in chains
+                   if hop.get("callee") == "toggle"]
+    assert switch_hops, "switch-case helper context was dropped"
+    through_toggle = [
+        chain for chain in (
+            (op.get("evidence") or {}).get("inlined_at") or []
+            for op in walk_all_ops_of(module))
+        if any(hop.get("function") == "toggle" for hop in chain)]
+    assert any(
+        any(hop.get("function") == "entry" for hop in chain)
+        for chain in through_toggle)
+    calls = module.get("calls") or []
+    toggle_calls = [call for call in calls if call["callee"] == "toggle"]
+    assert len(toggle_calls) == 1
+    assert toggle_calls[0]["proven"] is True
+    assert toggle_calls[0]["callsite"]["line"] > 0
+
+
+def walk_all_ops_of(module):
+    from extractor.formal import walk_leaf_ops
+    bodies = []
+    for op in walk_leaf_ops(module.get("ops", [])):
+        body = (op.get("Read") or op.get("Write")
+                or op.get("ReadModifyWrite") or op.get("StateRead")
+                or op.get("StateWrite") or op.get("TransactionRead")
+                or op.get("TransactionWrite") or op.get("TransactionUpdate"))
+        if body is not None:
+            bodies.append(body)
+    return bodies
+
+
+def test_inline_citation_verifier_fails_closed_on_uncited_chain():
+    from extractor.call_graph.inlining import _verify_inline_citations
+    from extractor.dataflow import FuncExtraction
+    from extractor.dataflow.ops import Op
+
+    op = Op(kind="Read", addr={"Fixed": 0}, width=4)
+    op.evidence = {"inlined_at": [{
+        "function": "caller", "line": 7, "callee": "helper"}]}
+    expanded = {"caller": FuncExtraction(name="caller", ops=[op])}
+    complete = _verify_inline_citations(expanded, [])
+    assert complete["complete"] is False
+    assert complete["violation_count"] == 1
+    assert complete["violations"][0]["reason"] == "no_matching_call_row"
+
+    rows = [{
+        "caller_module": "caller", "callee_module": "helper",
+        "callsite": {"line": 7},
+        "resolution_authority": "unresolved_pointer",
+        "return_binding": {"status": "exact"},
+        "multiplicity": {"kind": "syntactic_callsite",
+                         "per_caller_invocation": 1},
+        "argument_mapping": [],
+    }]
+    unproven = _verify_inline_citations(expanded, rows)
+    assert unproven["complete"] is False
+    assert unproven["violations"][0]["reason"] == "cited_call_row_unproven"
+
+    rows[0]["resolution_authority"] = "direct_function_declaration"
+    ok = _verify_inline_citations(expanded, rows)
+    assert ok["complete"] is True
+    assert ok["checked_hops"] == 1
 
 
 def test_exact_cross_tu_call_context_proof_accepts_single_static_call():
@@ -2631,8 +2777,13 @@ def test_inlined_read_return_binds_the_caller_lhs():
     rendered = expr_display(write["value"])
     assert "value" in rendered and "mask" in rendered
     calls = result.formal["metadata"]["call_graph"]["calls"]
-    assert len(calls) == 1
-    call = calls[0]
+    # Call rows cover the candidate-expanded universe (header helpers such
+    # as writel included); the helper under test must appear exactly once.
+    helper_rows = [call for call in calls
+                   if call["caller_module"] == "read_return_update"
+                   and call["callee_module"] == "read_return_helper"]
+    assert len(helper_rows) == 1
+    call = helper_rows[0]
     assert call["resolution_authority"] == "direct_function_declaration"
     assert call["argument_mapping"][0]["parameter"] == "base"
     assert call["return_binding"]["destination"] == "value"
@@ -2729,28 +2880,42 @@ def test_real_linux_c67x00_multisource_driver():
 def test_single_source_callee_rescue_closes_ahci_access_gaps_without_strict_claim():
     from extractor.metrics import score
 
-    # dwc: base extraction now covers every site (retained_inlined), so the
-    # rescue frontier is empty; sunxi still needs 2 rescues.  Both remain
-    # fail-closed (not llm-ready) via the call-context/coverage blockers.
+    # dwc: every site is covered by retained inlining AND the call-context
+    # proof (cited rows + exact static path counts) succeeds, so it is
+    # fully proven and LLM-ready.  sunxi: the fixpoint flattening now proves
+    # its whole helper chain too (previously depth-1 gaps kept it
+    # fail-closed); readiness stays False on unrelated conservatism
+    # (loop summaries, role inference), not on call semantics.
     cases = {
-        os.path.join(BASELINE_ROOT, "ahci_dwc.c"): (9, 0, 0),
-        os.path.join(BASELINE_ROOT, "ahci_sunxi.c"): (11, 2, 3),
+        os.path.join(BASELINE_ROOT, "ahci_dwc.c"): (9, 0, 0, True),
+        os.path.join(BASELINE_ROOT, "ahci_sunxi.c"): (48, 0, 0, True),
     }
-    blocker_families = ("call semantics not proven",
-                        "lack call-context proof",
-                        "retained only for lexical access coverage")
-    for source, (ops, rescued, direct_ops) in cases.items():
+    for source, (ops, rescued, direct_ops, proven) in cases.items():
         result = extract_ris(ExtractorConfig(source=source))
         assert result.stats["total_ops"] == ops
         assert result.stats["access_accounting"]["unaccounted"] == 0
         assert result.stats["callee_rescue"]["rescued"] == rescued
         assert result.stats["callee_rescue"]["rescued_direct_ops"] == direct_ops
-        readiness = score(
-            result.device_spec, result.formal, result.warnings, result.facts)
-        assert readiness["llm_synthesis_ready"] is False
-        assert any(family in blocker
+        assert (result.stats["callee_rescue"]["call_context_proof"]["proven"]
+                is proven)
+        assert (result.stats["callee_rescue"]["call_context_proof"]
+                ["reason"] == "exact_static_call_contexts")
+
+    # Call-semantics blockers must be gone for sunxi; whatever keeps it from
+    # llm-readiness now has to be an unrelated family.
+    result = extract_ris(ExtractorConfig(
+        source=os.path.join(BASELINE_ROOT, "ahci_sunxi.c")))
+    readiness = score(
+        result.device_spec, result.formal, result.warnings, result.facts)
+    call_families = (
+        "call semantics not proven",
+        "lack call-context proof",
+        "retained only for lexical access coverage",
+        "uncited inline chain",
+    )
+    assert not any(family in blocker
                    for blocker in readiness["blockers"]
-                   for family in blocker_families)
+                   for family in call_families)
 
 
 def test_callback_entry_not_deduped(ftgpio_formal):

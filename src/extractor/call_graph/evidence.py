@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ..dataflow import FuncExtraction
+from .. import mmio
 
 
 def _definition_site(op) -> tuple[str, str] | None:
@@ -146,14 +147,34 @@ def _coverage_aware_inlined_names(
             unproven.add(symbol)
 
     base_covered: set[tuple[str, str]] = set()
+    subsystem_covered_names: set[str] = set()
     for symbol, extraction in expanded.items():
-        if symbol not in candidates:
-            base_covered |= _evidence_sites(extraction)[0]
+        if symbol in candidates:
+            continue
+        base_covered |= _evidence_sites(extraction)[0]
+        # A caller op whose evidence came from a subsystem accessor contract
+        # reproduces that accessor's whole body (the layout IS the body
+        # contract), so the header helper itself needs no retained module.
+        # Restrict to names the mmio layer actually models — anything else
+        # keeps its definition-frontier module and stays fail-closed.
+        for op in extraction.ops:
+            evidence = op.evidence or {}
+            if evidence.get("origin") != "subsystem_summary":
+                continue
+            short = (evidence.get("site_id") or "").rsplit(":", 1)[-1]
+            if (short in mmio.SUBSYSTEM_MMIO_READ_LAYOUTS
+                    or short in mmio.SUBSYSTEM_MMIO_WRITE_LAYOUTS):
+                subsystem_covered_names.add(short)
     required = set().union(*direct_sites.values()) if direct_sites else set()
+    subsystem_covered = {
+        symbol for symbol in candidates
+        if symbol.rsplit("::", 1)[-1] in subsystem_covered_names}
 
     rescued = {
         symbol for symbol in candidates
-        if symbol in unproven or not direct_sites[symbol] <= base_covered
+        if symbol in unproven or not (
+            direct_sites[symbol] <= base_covered
+            or symbol in subsystem_covered)
     }
 
     # Remove redundant rescues while preserving coverage of every direct site.
@@ -176,7 +197,10 @@ def _coverage_aware_inlined_names(
     for symbol in rescued:
         final_coverage |= direct_sites[symbol]
     # Fail closed if a malformed extraction still leaves a direct site absent.
-    for symbol in sorted(candidates):
+    # Subsystem-covered accessor helpers are exempt: their contract is
+    # reproduced by the caller's subsystem-summary op, which never carries
+    # the helper's definition site.
+    for symbol in sorted(candidates - subsystem_covered):
         if not direct_sites[symbol] <= final_coverage:
             rescued.add(symbol)
             final_coverage |= direct_sites[symbol]
@@ -202,10 +226,12 @@ def _coverage_aware_inlined_names(
         "rescue_mode": "direct-evidence-frontier",
         "rescued_direct_ops": sum(
             len(frontier.ops) for frontier in frontiers.values()),
-        # Bounded helper flattening currently has no independent callsite,
-        # argument, guard, fanout or recursion proof.  Even when no lexical
-        # rescue is needed, candidates > 0 must therefore remain fail-closed
-        # until Formal RIS Call and its verifier exist.
+        # Bounded helper flattening alone has no independent callsite,
+        # argument, guard, fanout or recursion proof, so this statistic is
+        # fail-closed by default.  The caller flips it only after
+        # _prove_inlined_call_context (per-hop cited call rows plus exact
+        # static path counts) succeeds; residual value-substitution
+        # equivalence remains covered by row-level type/argument checks.
         "call_semantics_proven": False,
         "rescued_symbols": sorted(rescued),
         "unproven_symbols": sorted(unproven),
