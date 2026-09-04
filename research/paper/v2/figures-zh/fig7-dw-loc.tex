@@ -9,13 +9,13 @@
 \begin{document}
 \begin{tikzpicture}[x=0.0047cm,y=0.72cm,font=\footnotesize]
   % 轴与刻度（向内）
-  \draw[line width=0.8pt] (0,0.25) -- (0,-4.7) -- (2120,-4.7);  \foreach \x in {0,500,1000,1500,2000} {
-    \draw[line width=0.5pt] (\x,-4.7) -- (\x,-4.56);
-    \node[below, font=\scriptsize] at (\x,-4.72) {\x};
+  \draw[line width=0.8pt] (0,0.25) -- (0,-5.7) -- (2120,-5.7);  \foreach \x in {0,500,1000,1500,2000} {
+    \draw[line width=0.5pt] (\x,-5.7) -- (\x,-5.56);
+    \node[below, font=\scriptsize] at (\x,-5.72) {\x};
   }
-  \node[below=11pt, font=\scriptsize] at (1060,-4.72) {代码行数};
+  \node[below=11pt, font=\scriptsize] at (1060,-5.72) {代码行数};
 
-  % 横条（黑描边；值标签置于柱内右端白色区或柱端外侧，不越轴）
+  % 横条（黑描边；值标签置于柱端外侧，不越轴）
   \path[fill=figblue, draw=black, line width=0.5pt]
     (0,-0.42) rectangle (1844,0.0);
   \node[right, font=\scriptsize] at (1848,-0.21) {1{,}844};
@@ -23,27 +23,34 @@
     {Linux 源码（输入，固定）\\ {\scriptsize 核心 + MMIO 粘合 + 头文件}};
 
   \path[fill=figorange, draw=black, line width=0.5pt]
-    (0,-1.5) rectangle (828,-1.08);
-  \node[right, font=\scriptsize] at (832,-1.29) {828};
+    (0,-1.5) rectangle (2092,-1.08);
+  \node[right, font=\scriptsize] at (2096,-1.29) {2{,}092};
   \node[left, align=right, font=\footnotesize] at (-14,-1.29)
     {生成 Linux C\\ {\scriptsize 源文件 + 头文件}};
 
   \path[fill=figorange, draw=black, line width=0.5pt]
-    (0,-2.44) rectangle (581,-2.02);
-  \node[right, font=\scriptsize] at (585,-2.23) {581};
+    (0,-2.44) rectangle (1977,-2.02);
+  \node[right, font=\scriptsize] at (1981,-2.23) {1{,}977};
   \node[left, align=right, font=\footnotesize] at (-14,-2.23)
+    {生成 harness C\\ {\scriptsize 源文件 + 头文件}};
+
+  \path[fill=figorange, draw=black, line width=0.5pt]
+    (0,-3.38) rectangle (1946,-2.96);
+  \node[right, font=\scriptsize] at (1950,-3.17) {1{,}946};
+  \node[left, align=right, font=\footnotesize] at (-14,-3.17)
     {生成裸机 C\\ {\scriptsize 源文件 + 头文件}};
 
   \path[fill=figorange, draw=black, line width=0.5pt]
-    (0,-3.38) rectangle (276,-2.96);
-  \node[right, font=\scriptsize] at (280,-3.17) {276};
-  \node[left, align=right, font=\footnotesize] at (-14,-3.17)
+    (0,-4.32) rectangle (1909,-3.9);
+  \node[right, font=\scriptsize] at (1913,-4.11) {1{,}909};
+  \node[left, align=right, font=\footnotesize] at (-14,-4.11)
     {生成 Rust \texttt{no\_std}\\ {\scriptsize tock-registers}};
 
   % 注记（白底细框）
   \node[draw=black, line width=0.5pt, fill=white, align=left, font=\scriptsize,
-    anchor=north west, inner sep=0.16cm, text width=10.6cm] at (-60,-5.85)
-  {缩减来自「提取的设备核心 + 该后端所需适配器」，不是删改源码，也不构成正确性论证；
-   它缩小的是 LLM 的语义与文本搜索空间（§1、§6.5）。};
+    anchor=north west, inner sep=0.16cm, text width=10.6cm] at (-60,-6.85)
+  {各目标行数与源码相当：每个目标约 316 行为回执/锚点标记（无功能内容），harness 对约占 316 行。
+   目标只实现提取出的设备核心 + 该后端适配器，缩减的是 LLM 的语义与文本搜索空间，
+   不是删改源码，也不构成正确性论证（§1、§6.6）。};
 \end{tikzpicture}
 \end{document}
