@@ -622,6 +622,13 @@ def _repair_receipts(backend, name, cpath, formal, entries,
             encoding="utf-8")
         return removed > 0
     Path(cpath).write_text(text, encoding="utf-8")
+    # splice outputs can re-introduce duplicates the LLM was told to
+    # preserve — collapse them again before the compile gate
+    text, removed2 = _dedup_receipts(text, rows)
+    if removed2:
+        log.append("dedup: removed %d duplicate receipt comment(s)"
+                   % removed2)
+        Path(cpath).write_text(text, encoding="utf-8")
     # the edit must not break the build; on probe failure retry the same
     # parts with the compiler diagnostics appended, then revert as a
     # last resort
