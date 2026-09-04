@@ -924,7 +924,14 @@ def run_backend_pipeline(res: Any, outdir: str, source: str,
                     if cand.is_file():
                         entry["code"] = cand.read_text(encoding="utf-8")
                         break
-        generated_text = "\n\n".join(entry["code"] for entry in entries)
+        # Verification audits the compiled translation unit only.  For
+        # chunked generation the entries carry the concatenated primary
+        # PLUS every part file; joining them feeds each receipt to the
+        # oracle twice (e1000 harness: 892 = 446 present ids × 2, i2c
+        # 18 = 9 × 2) and every reconciliation reports spurious
+        # duplicates.  The part files are scaffolding for repair, not a
+        # second program.
+        generated_text = Path(cpath).read_text(encoding="utf-8")
         has_todo = "TODO" in generated_text
         unsupported = "REHARNESS_UNSUPPORTED" in generated_text
         lowering = verify_backend_lowering(res.formal, generated_text)
