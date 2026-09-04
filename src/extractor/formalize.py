@@ -1134,8 +1134,9 @@ def _attach_external_call_nodes(modules: list[dict], funcs: list[Func],
                 "callee_usr": row.get("callee_usr"),
                 "callee_decl_path": row.get("callee_decl_path"),
                 "callsite": {
-                    "source": ((row.get("callsite") or {}).get("source")
-                               or ""),
+                    "source": (
+                        (row.get("callsite") or {}).get("source") or ""
+                    ).rsplit("/", 1)[-1],
                     "source_path": (row.get("callsite") or {}).get("source"),
                     "line": (row.get("callsite") or {}).get("line", 0),
                     "column": (row.get("callsite") or {}).get("column", 0),
