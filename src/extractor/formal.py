@@ -12,7 +12,7 @@ A mathematically-grounded representation of register interaction sequences:
 Emits both:
   - a structured serde-compatible JSON (FormalRIS schema), and
   - a human-readable formal-language text (the Display grammar):
-        driver gpio v0.2.0 {
+        driver gpio v0.3.0 {
           module probe {
             Call enable_reg(mask = mask) @ gpio.c:42 [direct_function_declaration] [proven]
             W(B4, dev.GPIO_INT_EN) = 0x0 -- Init
@@ -452,6 +452,23 @@ def formal_display(formal: dict) -> str:
             lines.append(
                 f"    Call {call.get('callee')}({arguments}) "
                 f"{anchor}[{call.get('resolution_authority')}]{proven}")
+        for external in m.get("external_calls") or []:
+            arguments = ", ".join(
+                (f"{item.get('parameter')} = {item.get('expression')}"
+                 if item.get("parameter")
+                 else str(item.get("expression")))
+                for item in external.get("arguments") or [])
+            callsite = external.get("callsite") or {}
+            anchor = ""
+            if callsite.get("source"):
+                anchor = f"@ {callsite.get('source')}:{callsite.get('line', 0)} "
+            hops = external.get("inlined_at") or []
+            via = (f" via {'.'.join(str(hop.get('callee'))
+                                    for hop in hops)} " if hops else "")
+            lines.append(
+                f"    ExternalCall {external.get('callee')}({arguments}) "
+                f"{anchor}{via}[{external.get('category')}]"
+                f"[{external.get('resolution_authority')}]")
         for op in m["ops"]:
             lines.append(op_display(op, indent=2))
         lines.append("  }")
@@ -466,6 +483,15 @@ def formal_display(formal: dict) -> str:
                   f"    ris_ops_without_evidence {accounting['ris_ops_without_evidence']}",
                   f"    strict_complete {str(accounting['strict_complete']).lower()}",
                   "  }"]
+    external = formal.get("metadata", {}).get("external_calls")
+    if external:
+        lines += ["  external_calls {",
+                  f"    nodes {external.get('emitted_nodes', 0)}",
+                  f"    annotation_entries {external.get('annotation_entries', 0)}"]
+        for category, count in sorted(
+                (external.get("by_category") or {}).items()):
+            lines.append(f"    {category} {count}")
+        lines.append("  }")
     validation = formal.get("metadata", {}).get("path_validation")
     if validation:
         lines += ["  path_validation {",
@@ -532,7 +558,9 @@ def emitted_stats(formal: dict) -> dict:
     """Count ops actually emitted in the .ris (only emitted modules' ops),
     excluding inlined-skipped helpers. Cond/Loop counted at all nesting depths."""
     reads = writes = rmw = transactions = conds = 0
+    external_calls = 0
     for m in formal["modules"]:
+        external_calls += len(m.get("external_calls") or [])
         for op in walk_all_ops(m["ops"]):
             if "Cond" in op or "Loop" in op:
                 conds += 1
@@ -549,5 +577,6 @@ def emitted_stats(formal: dict) -> dict:
                 transactions += 1
     return {"mmio_reads": reads, "mmio_writes": writes, "rmw": rmw,
             "transactions": transactions,
+            "external_calls": external_calls,
             "conditions_recorded": conds,
             "total_ops": reads + writes + rmw + transactions}

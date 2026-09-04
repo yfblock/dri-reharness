@@ -71,6 +71,10 @@ class CallSite:
     callee_decl_path: str = ""        # public declaration provenance, if resolved
     callee_result_type: str = ""       # declared result type
     callee_param_types: list[str] = field(default_factory=list)
+    # parameter names from the referenced prototype; empty strings when the
+    # declaration omits them.  External calls keep no Func body, so the
+    # prototype is the only parameter-name provenance.
+    callee_param_names: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -230,17 +234,19 @@ def function_calls(func_cursor) -> list[CallSite]:
             decl_path = ""
             result_type = ""
             param_types: list[str] = []
+            param_names: list[str] = []
             if ref is not None and ref.kind == cx.CursorKind.FUNCTION_DECL:
                 loc = ref.location
                 if loc is not None and loc.file is not None:
                     decl_path = _abs(loc.file.name) or ""
                 result_type = (ref.result_type.spelling
                                if ref.result_type is not None else "")
-                param_types = [
-                    child.type.spelling if child.type is not None else ""
-                    for child in ref.get_children()
-                    if child.kind == cx.CursorKind.PARM_DECL
-                ]
+                for child in ref.get_children():
+                    if child.kind != cx.CursorKind.PARM_DECL:
+                        continue
+                    param_types.append(
+                        child.type.spelling if child.type is not None else "")
+                    param_names.append(child.spelling or "")
             cs = CallSite(
                 name=callee_name(c),
                 symbol_id=call_symbol_id(c),
@@ -252,6 +258,7 @@ def function_calls(func_cursor) -> list[CallSite]:
                 callee_decl_path=decl_path,
                 callee_result_type=result_type,
                 callee_param_types=param_types,
+                callee_param_names=param_names,
             )
             calls.append(cs)
     calls.sort(key=lambda c: c.line)

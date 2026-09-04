@@ -397,3 +397,16 @@ def is_ioremap(name: str) -> bool:
 
 def is_framework(name: str) -> bool:
     return name in FRAMEWORK_FNS
+
+
+def is_semantically_modeled_call(name: str) -> bool:
+    """Whether a call with this callee name is already modeled as an op.
+
+    External-call recording must not double-account a callsite: names the
+    mmio/dataflow layers lower to a concrete op (register access, delay,
+    ioremap) or count as an unsupported register access stay inside the
+    existing access accounting and are excluded from ExternalCall nodes.
+    """
+    return (is_mmio_read(name) or is_mmio_write(name) or is_mmio_rmw(name)
+            or is_delay(name) or is_ioremap(name)
+            or is_unsupported_register_access(name))

@@ -9,11 +9,13 @@
 from __future__ import annotations
 import copy
 import re
+from collections import Counter, defaultdict
 from typing import Optional
 
 from .dataflow import FuncExtraction, Op
 from .ast_model import Func
 from .call_graph.call_rows import _call_row_is_proven
+from .external_semantics import classify, load_annotations
 from .intent import annotate
 from . import formal as F
 from .formal import walk_leaf_ops
@@ -1054,6 +1056,130 @@ def _attach_call_nodes(modules: list[dict], funcs: list[Func],
         })
 
 
+def _attach_external_call_nodes(modules: list[dict], funcs: list[Func],
+                                stats: dict, inlined_names: set) -> dict:
+    """Attach RIS ExternalCall nodes: external dependencies as reviewable data.
+
+    Every AST callsite to a callee without an analyzed definition (and not
+    already modeled as an operation — see ``mmio.is_semantically_modeled_call``)
+    becomes a node in its caller's module carrying the callsite, argument
+    binding and a closed-category classification.  Calls inside helpers that
+    were flattened into callers are attributed to the caller module with an
+    ``inlined_at`` hop chain, mirroring how the helper's operations are
+    attributed.  External nodes are informational for porting and
+    verification; they do not gate readiness accounting.
+    """
+    external_rows = stats.get("formal_external_calls")
+    formal_calls = stats.get("formal_calls")
+    if not isinstance(external_rows, list):
+        external_rows = []
+    if not isinstance(formal_calls, list):
+        formal_calls = []
+    annotations = load_annotations()
+
+    module_by_symbol: dict[str, dict] = {}
+    func_by_module_name = {
+        func.module_name or func.name: func for func in funcs}
+    for module in modules:
+        func = func_by_module_name.get(module.get("name"))
+        if func is None:
+            continue
+        symbol = func.symbol_id or func.name
+        if symbol not in module_by_symbol:
+            module_by_symbol[symbol] = module
+
+    rows_by_caller: dict[str, list[dict]] = defaultdict(list)
+    for row in external_rows:
+        if isinstance(row, dict):
+            rows_by_caller.setdefault(row.get("caller_usr"), []).append(row)
+
+    # Proven internal call rows into inlined helpers carry a helper's
+    # external calls out to the callers that flattened them.
+    inline_edges: dict[str, list[dict]] = defaultdict(list)
+    for row in formal_calls:
+        if (isinstance(row, dict)
+                and row.get("callee_usr") in inlined_names
+                and _call_row_is_proven(row, allow_structured_loops=True)):
+            inline_edges.setdefault(row.get("caller_usr"), []).append(row)
+
+    # Expand external rows through the flattened-helper frontier: a helper's
+    # external calls appear in every caller module that inlined the helper,
+    # with the call edge recorded as one hop (same shape as op evidence).
+    def external_nodes(symbol: str, hops: list[dict]) -> list[dict]:
+        nodes = []
+        for row in rows_by_caller.get(symbol, []):
+            nodes.append((row, hops))
+        for edge in inline_edges.get(symbol, []):
+            callee = edge.get("callee_usr")
+            if callee is None or callee in {hop.get("symbol")
+                                            for hop in hops}:
+                continue
+            hop = {
+                "function": edge.get("caller_module"),
+                "symbol": callee,
+                "callee": edge.get("callee_module"),
+                "line": (edge.get("callsite") or {}).get("line", 0),
+            }
+            nodes.extend(external_nodes(callee, hops + [hop]))
+        return nodes
+
+    emitted = 0
+    by_category: Counter = Counter()
+    for symbol, module in module_by_symbol.items():
+        for row, hops in external_nodes(symbol, []):
+            resolved = classify(row.get("callee") or "", annotations)
+            node = {
+                "schema": 1,
+                "callee": row.get("callee"),
+                "callee_usr": row.get("callee_usr"),
+                "callee_decl_path": row.get("callee_decl_path"),
+                "callsite": {
+                    "source": ((row.get("callsite") or {}).get("source")
+                               or ""),
+                    "source_path": (row.get("callsite") or {}).get("source"),
+                    "line": (row.get("callsite") or {}).get("line", 0),
+                    "column": (row.get("callsite") or {}).get("column", 0),
+                },
+                "arguments": [
+                    {"parameter": item.get("parameter"),
+                     "expression": item.get("expression"),
+                     "parameter_type": item.get("parameter_type"),
+                     "argument_type": item.get("argument_type")}
+                    for item in row.get("argument_mapping") or []
+                    if isinstance(item, dict)],
+                "return_binding": (row.get("return_binding") or {}).get("status"),
+                "return_type": row.get("callee_result_type"),
+                "resolution_authority": row.get("resolution_authority"),
+                "category": resolved["category"],
+                "category_source": resolved["source"],
+            }
+            if hops:
+                node["inlined_at"] = hops
+            annotation = annotations.get(row.get("callee") or "")
+            if annotation:
+                node["annotation"] = {
+                    key: annotation[key] for key in
+                    ("return", "effects", "params", "porting_hint",
+                     "confidence", "source", "basis")
+                    if key in annotation}
+            module.setdefault("external_calls", []).append(node)
+            emitted += 1
+            by_category[resolved["category"]] += 1
+    for module in modules:
+        if module.get("external_calls"):
+            module["external_calls"].sort(key=lambda node: (
+                (node.get("callsite") or {}).get("source_path") or "",
+                (node.get("callsite") or {}).get("line", 0),
+                (node.get("callsite") or {}).get("column", 0),
+                node.get("callee") or ""))
+    return {
+        "schema": 1,
+        "emitted_nodes": emitted,
+        "by_category": dict(sorted(by_category.items())),
+        "annotation_entries": len(annotations),
+    }
+
+
 def build_formal_ris(driver_name: str, source_path: str,
                      funcs: list[Func],
                      extractions: dict[str, FuncExtraction],
@@ -1111,10 +1237,12 @@ def build_formal_ris(driver_name: str, source_path: str,
         module_names.add(callback_module)
 
     _attach_call_nodes(modules, funcs, stats, inlined_names)
+    external_call_stats = _attach_external_call_nodes(
+        modules, funcs, stats, inlined_names)
 
     return {
         "driver": driver_name,
-        "version": "0.2.0",
+        "version": "0.3.0",
         "modules": modules,
         "register_map": _register_map(funcs, extractions, macros),
         "transaction_map": _transaction_map(funcs, extractions, macros),
@@ -1143,6 +1271,13 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "calls": stats.get("formal_calls", []),
                 "lowering_enabled": bool(closure_overlays),
                 "selective_closure": selective_closure,
+            },
+            "external_calls": {
+                "schema": 1,
+                "claim": (
+                    "every AST callsite to a callee without an analyzed "
+                    "definition, classified into a closed category set"),
+                **external_call_stats,
             },
             "subsystem_summary_analysis": {
                 "synthetic_functions": stats.get(

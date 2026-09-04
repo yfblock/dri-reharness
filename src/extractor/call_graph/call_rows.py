@@ -3,15 +3,27 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
+from .. import mmio
 from ..ast_model import Func, function_calls, walk_with_control
 from ..dataflow import FuncExtraction
 from .ids import _callee_id, _cursor_parents, _func_id, _resolved_callee_id, _return_binding
 
 
-def _formal_calls(funcs: list[Func], indirect_targets: dict[str, str]) -> list[dict]:
-    """Build versioned, AST-authoritative source-local call evidence."""
+def _formal_calls(funcs: list[Func],
+                  indirect_targets: dict[str, str]
+                  ) -> tuple[list[dict], list[dict]]:
+    """Build versioned, AST-authoritative source-local call evidence.
+
+    Returns ``(internal_rows, external_rows)``.  Internal rows cover callees
+    with a definition in the analyzed set and feed the call-context proofs.
+    External rows record every other CallExpr whose callee name is not
+    already modeled as an operation (see ``mmio.is_semantically_modeled_call``)
+    so that external dependencies become reviewable RIS data instead of
+    vanishing at the dataflow dispatch fallthrough.
+    """
     by_symbol = {_func_id(func): func for func in funcs}
-    rows = []
+    rows: list[dict] = []
+    external_rows: list[dict] = []
     for caller in funcs:
         parents = _cursor_parents(caller.cursor)
         controls: dict[int, list[dict]] = {}
@@ -22,10 +34,14 @@ def _formal_calls(funcs: list[Func], indirect_targets: dict[str, str]) -> list[d
         for call in function_calls(caller.cursor):
             callee_symbol = _resolved_callee_id(call, indirect_targets)
             callee = by_symbol.get(callee_symbol)
+            location = call.cursor.location
             if callee is None:
+                row = _external_call_row(
+                    caller, call, callee_symbol, location, parents, controls)
+                if row is not None:
+                    external_rows.append(row)
                 continue
             order += 1
-            location = call.cursor.location
             arguments = []
             parameter_cursors = []
             if callee.cursor is not None:
@@ -88,7 +104,86 @@ def _formal_calls(funcs: list[Func], indirect_targets: dict[str, str]) -> list[d
     rows.sort(key=lambda row: (
         row["caller_module"], row["callsite"]["source"] or "",
         row["callsite"]["offset"], row["callee_module"]))
-    return rows
+    external_rows.sort(key=lambda row: (
+        row["caller_module"], row["callsite"]["source"] or "",
+        row["callsite"]["offset"], row["callee"]))
+    return rows, external_rows
+
+
+def _external_call_row(caller: Func, call, callee_symbol: str, location,
+                       parents: dict[int, object],
+                       controls: dict[int, list[dict]]) -> dict | None:
+    """One AST callsite to a callee without an analyzed definition.
+
+    Direct calls carry clang's resolved declaration provenance; unresolved
+    indirect calls keep the callee expression text and are marked
+    ``unresolved_indirect`` so porting consumers know the target is unknown
+    rather than external-but-declared.  Calls whose callee name is modeled
+    as an operation elsewhere (register accessors, delays, ioremap,
+    explicitly unsupported register accesses) are skipped to keep each
+    callsite accounted exactly once.
+    """
+    name = call.name or callee_symbol
+    if not name or mmio.is_semantically_modeled_call(name):
+        return None
+    # Compiler intrinsics fold at codegen and are not porting-relevant
+    # external API surface (__builtin_expect wraps conditions everywhere).
+    if name.startswith("__builtin"):
+        return None
+    arguments = []
+    for index, expression in enumerate(call.arg_text):
+        parameter_type = (
+            call.callee_param_types[index]
+            if index < len(call.callee_param_types) else "")
+        parameter = (
+            call.callee_param_names[index]
+            if index < len(call.callee_param_names) else "")
+        argument_type = (
+            call.args[index].type.get_canonical().spelling
+            if index < len(call.args) and call.args[index].type else "")
+        arguments.append({
+            "index": index,
+            "expression": expression.strip(),
+            "parameter": parameter or None,
+            "parameter_type": parameter_type,
+            "argument_type": argument_type,
+        })
+    # function_symbol_id returns the bare name for global declarations, so
+    # the declaration path is the reliable external provenance and the
+    # direct-vs-indirect discriminator: clang resolves a reference to a
+    # FUNCTION_DECL precisely when the callsite names a declared function.
+    decl_path = call.callee_decl_path or None
+    if decl_path is not None:
+        callee_usr = f"{decl_path}::{name}"
+    else:
+        callee_usr = None
+    return {
+        "schema": 1,
+        "caller_usr": _func_id(caller),
+        "caller_module": caller.module_name or caller.name,
+        "callee": name,
+        "callee_usr": callee_usr,
+        "callee_decl_path": decl_path,
+        "callee_result_type": call.callee_result_type or None,
+        "callsite": {
+            "source": (location.file.name
+                       if location and location.file else None),
+            "line": location.line if location else 0,
+            "column": location.column if location else 0,
+            "offset": location.offset if location else 0,
+        },
+        "argument_mapping": arguments,
+        "return_binding": _return_binding(call.cursor, parents),
+        "control": controls.get(location.offset if location else 0, []),
+        "resolution_authority": (
+            "external_declaration" if decl_path is not None
+            else "unresolved_indirect"),
+        "multiplicity": {
+            "kind": "syntactic_callsite",
+            "per_caller_invocation": 1,
+            "runtime_count_proven": False,
+        },
+    }
 
 
 def _op_site(op) -> tuple[str, str] | None:

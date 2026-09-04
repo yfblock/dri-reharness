@@ -740,11 +740,101 @@ def test_ftgpio_ack_irq_keeps_registration_and_direct_call_effects(ftgpio_formal
 
 def test_formal_display_text(ftgpio_formal):
     txt = formal_display(ftgpio_formal)
-    assert txt.startswith("driver gpio-ftgpio010 v0.2.0 {")
+    assert txt.startswith("driver gpio-ftgpio010 v0.3.0 {")
     assert "module ftgpio_gpio_probe" in txt
     assert "W(B4," in txt and " := R(B4," in txt
     assert "IF " in txt
     assert "-- Interrupt" in txt
+
+
+# ── external call nodes (RIS 0.3.0) ──────────────────────────────────
+
+def test_external_call_semantics_rule_table():
+    from extractor.external_semantics import (
+        EXTERNAL_CATEGORIES, classify, rule_category)
+
+    assert "unknown" in EXTERNAL_CATEGORIES
+    assert rule_category("kmalloc") == "alloc"
+    assert rule_category("kmalloc_array") == "alloc"
+    assert rule_category("devm_kzalloc") == "alloc"
+    assert rule_category("kfree") == "free"
+    assert rule_category("spin_lock_irqsave") == "lock"
+    assert rule_category("spin_unlock_irqrestore") == "unlock"
+    assert rule_category("mutex_lock_interruptible") == "lock"
+    assert rule_category("dev_err") == "print"
+    assert rule_category("pr_info_once") == "print"
+    assert rule_category("dma_map_single") == "dma-map"
+    assert rule_category("dma_sync_single_for_cpu") == "dma-sync"
+    assert rule_category("dma_unmap_single") == "dma-unmap"
+    assert rule_category("pm_runtime_get_sync") == "power-on"
+    assert rule_category("devm_clk_get_enabled") == "power-on"
+    assert rule_category("reset_control_assert") == "reset"
+    assert rule_category("regmap_read") == "register-access"
+    assert rule_category("memset") == "pure"
+    assert rule_category("gpiochip_get_data") == "pure"
+    # dev_* print stems must not swallow devm_* allocators
+    assert rule_category("devm_kcalloc") == "alloc"
+    # unknown names stay unknown instead of a guessed category
+    assert rule_category("gpio_generic_chip_init") is None
+    assert rule_category("") is None
+    # clang renames TU-local static inlines with a "variable" prefix
+    assert rule_category("variable__ffs") == "pure"
+    # classify: annotation outranks the rule table; rule outranks unknown
+    assert classify("kmalloc")["category"] == "alloc"
+    assert classify("kmalloc")["source"] == "rule"
+    overridden = classify("kmalloc", {"kmalloc": {
+        "category": "alloc", "confidence": 0.95, "source": "kernel-tree"}})
+    assert overridden["source"] == "annotation"
+    assert overridden["confidence"] == 0.95
+    assert classify("totally_bogus") == {
+        "category": "unknown", "source": "unknown", "confidence": None}
+    # a malformed annotation never crashes or wins
+    assert classify("kmalloc", {"kmalloc": {"category": "not-a-category"}}
+                    )["source"] == "rule"
+
+
+def test_external_call_nodes_recorded(ftgpio_formal):
+    """Every external dependency is a reviewable, classified RIS node."""
+    formal = ftgpio_formal
+    assert formal["version"] == "0.3.0"
+    stats = formal["metadata"]["external_calls"]
+    total = sum(len(m.get("external_calls") or [])
+                for m in formal["modules"])
+    assert total > 0
+    assert stats["emitted_nodes"] == total
+    assert sum(stats["by_category"].values()) == total
+    assert stats["by_category"].get("unknown", 0) < total  # rules apply
+
+    probe = next(m for m in formal["modules"]
+                 if m["name"] == "ftgpio_gpio_probe")
+    nodes = {(n["callee"], n["callsite"]["line"])
+             for n in probe["external_calls"]}
+    # framework dependencies surface with their deterministic category
+    assert ("devm_clk_get_enabled", 259) in nodes
+    assert ("dev_err_probe", 278) in nodes
+    for node in probe["external_calls"]:
+        if node["callee"] == "devm_kmalloc":
+            assert node["category"] == "alloc"
+            assert node["category_source"] == "rule"
+            # header-helper provenance is explicit, not flattened away
+            assert node["inlined_at"][0]["callee"] == "devm_kzalloc"
+
+    all_nodes = [n for m in formal["modules"]
+                 for n in m.get("external_calls") or []]
+    # modeled accessors never double-account as external calls
+    assert not any(n["callee"] in {
+        "readl", "writel", "readb", "writeb"} for n in all_nodes)
+    # compiler intrinsics are not external API surface
+    assert not any(n["callee"].startswith("__builtin")
+                   for n in all_nodes)
+    for node in all_nodes:
+        assert node["category"] and node["resolution_authority"] in {
+            "external_declaration", "unresolved_indirect"}
+        assert isinstance(node["arguments"], list)
+
+    txt = formal_display(formal)
+    assert "ExternalCall devm_clk_get_enabled(" in txt
+    assert "via devm_kzalloc" in txt
 
 
 def test_access_accounting_and_operation_evidence_are_complete():

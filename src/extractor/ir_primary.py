@@ -445,8 +445,16 @@ def _merge(ir_core: dict, ast_formal: dict | None, driver_name: str,
     for fn, ir_mod in ir_by_fn.items():
         ops = _join_function_ops(fn, ir_mod["ops"], ast_by_fn.get(fn),
                                 macro_idx)
-        out_modules.append({"name": fn, "ops": ops,
-                            "source": ir_mod.get("source")})
+        out = {"name": fn, "ops": ops,
+               "source": ir_mod.get("source")}
+        ast_mod = ast_by_fn.get(fn)
+        if ast_mod is not None:
+            # Call / ExternalCall nodes are AST-level constructs; the IR
+            # join only reconciles operations, so carry them across.
+            for key in ("calls", "external_calls"):
+                if ast_mod.get(key):
+                    out[key] = ast_mod[key]
+        out_modules.append(out)
     for fn, ast_mod in ast_by_fn.items():
         if fn in ir_by_fn:
             continue

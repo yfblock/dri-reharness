@@ -237,7 +237,8 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
         _coverage_aware_inlined_names(
             base, result, inlined_into_caller - callback_entries))
     func_by_symbol = {_func_id(f): f for f in call_funcs}
-    formal_calls = _formal_calls(call_funcs, indirect_targets)
+    formal_calls, formal_external_calls = _formal_calls(
+        call_funcs, indirect_targets)
     call_context = _prove_inlined_call_context(
         base, result, inlined_names, formal_calls)
     rescue_stats = dict(rescue_stats)
@@ -286,6 +287,7 @@ def extract_with_inlining(funcs: list[Func], macros, tu, source_lines,
             for func in funcs for call in function_calls(func.cursor)),
         "callee_rescue": rescue_stats,
         "formal_calls": formal_calls,
+        "formal_external_calls": formal_external_calls,
         "selective_call_closure": closure_stats,
         "_call_closure_overlays": closure_overlays,
     }
@@ -424,7 +426,8 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int | None = None,
     (inlined_names, rescue_stats, rescue_frontiers) = (
         _coverage_aware_inlined_names(
             direct, expanded, inlined_into_caller - callback_entries))
-    formal_calls = _formal_calls(funcs, indirect_targets)
+    formal_calls, formal_external_calls = _formal_calls(
+        funcs, indirect_targets)
     call_context = _prove_inlined_call_context(
         direct, expanded, inlined_names, formal_calls)
     rescue_stats = dict(rescue_stats)
@@ -462,6 +465,7 @@ def extract_multi_with_inlining(units: list[dict], max_depth: int | None = None,
             for func in funcs for call in function_calls(func.cursor)),
         "callee_rescue": rescue_stats,
         "formal_calls": formal_calls,
+        "formal_external_calls": formal_external_calls,
         "selective_call_closure": closure_stats,
         "_call_closure_overlays": closure_overlays,
     }

@@ -1,0 +1,2099 @@
+{
+ "gpio_generic_chip_init": {
+  "category": "register-access",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success; -EINVAL if cfg->sz is not a power of two or if sz*8 exceeds BITS_PER_LONG; otherwise a negative errno propagated from gpio_mmio_setup_io, gpio_mmio_setup_accessors, or gpio_mmio_setup_direction (the value actually returned is the last assigned one, i.e. setup_direction's result). Note that an error from gpiochip_get_ngpios is deliberately swallowed and gc->ngpio falls back to chip->b",
+  "effects": [
+   "Performs MMIO register reads: reg_dat, reg_set (when the set-set callback is used and the set register is readable), and reg_dir_out or reg_dir_in to capture initial hardware state into chip->sdata/ch",
+   "Performs an MMIO register write to reg_dir_in (~chip->sdir) when both direction registers exist, changing device state so no line is input and output simultaneously",
+   "Populates the chip in memory: gpio_chip parent/label/base(-1)/request(/free) callbacks/ngpio, MMIO accessors, direction handlers, big-endian and unreadable-register flags, and shadow state",
+   "Initializes a raw spinlock (chip->lock) for later serialized register access",
+   "May consult device/firmware properties via gpiochip_get_ngpios to derive ngpio"
+  ],
+  "params": {
+   "chip": "Pointer to the gpio_generic_chip to initialize; receives the embedded gpio_chip configuration, accessors, lock, and initial shadow register state",
+   "cfg": "Read-only configuration descriptor: register resources, access width/stride, flags (big-endian bit/byte order, pinctrl backend, unreadable set/dir regs), and parent device"
+  },
+  "porting_hint": "Port this as a chip-initialization routine that validates the register width, wires up runtime callbacks and endianness-aware MMIO accessors, then reads the data/set/direction registers (writing reg_dir_in when both direction registers exist) to seed shadow state, mapping -EINVAL and helper errors to the target runtime's error type.",
+  "basis": "drivers/gpio/gpio-mmio.c:625"
+ },
+ "devm_gpiochip_add_data_with_key": {
+  "category": "alloc",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success (the gpio_chip was registered with the GPIO subsystem and a devm cleanup action was recorded); negative errno on failure — either the error propagated from gpiochip_add_data_with_key (in which case the chip was not added), or the error from devm_add_action_or_reset (rare, e.g. -ENOMEM), in which case the just-added chip has already been released via devm_gpio_chip_release",
+  "effects": [
+   "Registers a new GPIO chip in the kernel GPIO subsystem, making its GPIOs visible/usable by other drivers and userspace",
+   "Adds a device-managed (devres) entry to 'dev' that will automatically remove the gpio chip (devm_gpio_chip_release) when the device is unbound/released",
+   "Internally gpiochip_add_data_with_key allocates gpiolib state (and may set up IRQ domain/chardev), so heap memory and subsystem device state change"
+  ],
+  "params": {
+   "dev": "owning device whose devres list receives the auto-release action for the chip",
+   "gc": "the gpio_chip descriptor to register with the GPIO subsystem",
+   "data": "driver-private data pointer stored as chip data, retrievable via gpiochip_get_data",
+   "lock_key": "lockdep class key for the chip's internal lock",
+   "request_key": "lockdep class key for the chip's request lock"
+  },
+  "porting_hint": "Port this as an allocation/registration call that installs the GPIO controller into the target runtime's GPIO manager and registers it for automatic teardown when the owning device handle is destroyed, propagating negative error codes and rolling back on partial failure.",
+  "basis": "drivers/gpio/gpiolib-devres.c:350"
+ },
+ "platform_get_irq": {
+  "category": "probe-defer",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "Non-negative Linux virtual IRQ number on success; negative errno on failure (e.g., -ENXIO when the indexed interrupt resource does not exist, or -EPROBE_DEFER when the interrupt parent/irqdomain is not yet available). The error is passed through dev_err_probe, which logs a device-scoped error and, for -EPROBE_DEFER, records the deferral reason and reports it at debug level instead of error level.",
+  "effects": [
+   "On failure, emits a device-scoped error message ('IRQ index %u not found') to the kernel log",
+   "On -EPROBE_DEFER, records the deferred-probe reason on the device, influencing later probe re-try scheduling",
+   "Successful lookup may create/resolve an IRQ mapping in the kernel's irq subsystem as a side effect of resolving the resource"
+  ],
+  "params": {
+   "dev": "Pointer to the struct platform_device whose firmware/device-tree or platform resources are searched for the interrupt",
+   "num": "Zero-based index of the interrupt resource to retrieve"
+  },
+  "porting_hint": "Replace with the target runtime's equivalent of acquiring the Nth interrupt resource for the device (an IRQ number/handle from the bus or firmware abstraction), returning a negative error when absent and preserving probe-deferral semantics so the driver can be retried later.",
+  "basis": "drivers/base/platform.c:301"
+ },
+ "iounmap": {
+  "category": "free",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "void return type; it cannot fail and reports no status",
+  "effects": [
+   "Intended to release the MMIO virtual mapping previously established by ioremap (virtual address space, page tables, TLB); note this asm-generic definition is an empty no-op, so in this configuration t"
+  ],
+  "params": {
+   "addr": "kernel virtual address (volatile void __iomem *) previously obtained from ioremap that identifies the mapping to destroy"
+  },
+  "porting_hint": "Port this as the teardown counterpart of ioremap—free or release the MMIO mapping resource in the target runtime, and make it a no-op only if the ported ioremap also performs no allocation.",
+  "basis": "include/asm-generic/io.h:1137"
+ },
+ "ahci_platform_disable_resources": {
+  "category": "power-off",
+  "confidence": 0.88,
+  "source": "kernel-tree",
+  "return": "Returns void; it never fails and reports no error status — all sub-operations are unconditional teardown steps.",
+  "effects": [
+   "Disables the AHCI host's PHY(s) via ahci_platform_disable_phys",
+   "Asserts the host's reset line(s) via ahci_platform_assert_rsts",
+   "Disables all clocks previously enabled for the host via ahci_platform_disable_clks",
+   "Disables the host's regulator supplies via ahci_platform_disable_regulators",
+   "Leaves the AHCI controller hardware unpowered/unusable until resources are re-enabled"
+  ],
+  "params": {
+   "hpriv": "Pointer to struct ahci_host_priv holding the acquired PHY, reset, clock, and regulator handles to be shut down"
+  },
+  "porting_hint": "On the target runtime, implement this as the mirror of the enable path that turns off PHYs, asserts reset, stops clocks, and powers down regulators when tearing down the AHCI host, in that order.",
+  "basis": "drivers/ata/libahci_platform.c:328"
+ },
+ "clk_hw_register": {
+  "category": "alloc",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success; on failure a negative errno from the pointer returned by __clk_register, e.g. -ENOMEM if the internal clk_core/clk allocations fail, -EINVAL/-EOPNOTSUPP style errors for invalid init data or missing parents, -EEXIST for duplicate clock names.",
+  "effects": [
+   "Allocates and initializes an internal clk_core plus per-user clk structures that must later be released with clk_hw_unregister",
+   "Inserts the clock into the global clock framework so it becomes discoverable via clk_get/clk_hw lookups and clock tree dumps",
+   "Takes a reference on the parent clock node, altering parent refcounts",
+   "May emit kernel log warnings/errors on failure paths"
+  ],
+  "params": {
+   "dev": "Optional owning device; used to resolve the device tree node (dev_or_parent_of_node) for OF-based parent matching and runtime PM association",
+   "hw": "Clock hardware descriptor to register; hw->init supplies the clock name, ops, parent names/indices, and flags that define the new clock's behavior"
+  },
+  "porting_hint": "Model this as allocating an internal clock object, validating hw->init (name/ops/parents), linking it into the target runtime's clock registry keyed by name so lookups succeed, taking a parent reference, and returning the matching negative errno on failure with a paired unregister call to free it.",
+  "basis": "drivers/clk/clk.c:4446"
+ },
+ "devm_clk_get": {
+  "category": "alloc",
+  "confidence": 0.75,
+  "source": "kernel-tree",
+  "return": "A struct clk * handle to the named clock for use with the clk API; in the real CONFIG_HAVE_CLK implementation it returns ERR_PTR(-ENOENT) when no clock matches and ERR_PTR(-EPROBE_DEFER) when the clock provider is not yet registered; this stub (clock framework compiled out) always returns NULL, so callers must test with IS_ERR() rather than comparing to NULL.",
+  "effects": [
+   "Registers a device-managed (devres) entry tied to 'dev' that releases the clock automatically on driver detach/unbind",
+   "Takes a reference on the underlying clock device/implementation (consumer refcount)",
+   "Allocates kernel heap memory for the devres node (non-stub builds)"
+  ],
+  "params": {
+   "dev": "Device owning the devres lifetime and used to resolve the clock provider (NULL-safe per devres contract)",
+   "id": "Consumer/connection name of the clock to look up; NULL means the device's default/first clock"
+  },
+  "porting_hint": "Port this as a managed clock acquisition: bind the returned clock handle to the device's cleanup path so it is released at unbind, propagate lookup errors with deferred-probe handling when the provider is not yet available, and permit a NULL/no-clock result when the target runtime has no clock subsystem.",
+  "basis": "include/linux/clk.h:1001"
+ },
+ "ahci_platform_enable_resources": {
+  "category": "power-on",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Returns 0 on success; returns a negative errno propagated from the first failing enable step (regulators, clocks, resets, or PHYs); on failure it rolls back already-enabled resources (asserts resets, disables clocks, disables regulators) so the device is left powered down, then returns the error code.",
+  "effects": [
+   "Enables power regulators supplying the AHCI controller",
+   "Turns on the controller's clocks",
+   "Deasserts reset lines, releasing the device from reset",
+   "Enables the controller's PHY(s)",
+   "On partial failure, performs rollback so no enabled resource leaks (resets re-asserted, clocks and regulators disabled)"
+  ],
+  "params": {
+   "hpriv": "Pointer to struct ahci_host_priv holding the AHCI controller's regulator, clock, reset-control, and PHY handles that describe all resources to be enabled"
+  },
+  "porting_hint": "Port this as the platform-specific power-up sequence (enable supplies, ungates clocks, release resets, bring PHYs up) with ordered rollback on partial failure, calling the native runtime's resource-enable primitives for each subsystem.",
+  "basis": "drivers/ata/libahci_platform.c:282"
+ },
+ "__clk_hw_register_fixed_rate": {
+  "category": "alloc",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "On success, returns a pointer to the newly created and registered struct clk_hw (the allocation is owned by devres when devm=true, otherwise by the caller); on failure returns an ERR_PTR-encoded negative errno, either -ENOMEM when the clk_fixed_rate allocation fails or the error propagated from clk_hw_register/of_clk_hw_register (e.g. -EEXIST on name collision), in which case the allocation is fre",
+  "effects": [
+   "Allocates memory (kzalloc or devres) for a clk_fixed_rate object that becomes externally reachable",
+   "Registers a new fixed-rate clock into the common clock framework clock tree, making it visible to clk_get/clk_hw_get consumers",
+   "When devm=true, adds a devres entry so the clock object is released on device removal",
+   "Associates the clock with the device tree node np when registered via of_clk_hw_register"
+  ],
+  "params": {
+   "dev": "Struct device used for devres-based allocation and registration; may be NULL",
+   "np": "Device tree node; used for of_clk_hw_register when dev is NULL and np is set",
+   "name": "Name of the clock being created (must be unique in the clock tree)",
+   "parent_name": "Optional parent clock name (legacy parent specification)",
+   "parent_hw": "Optional parent clock clk_hw pointer (parent specification by hw pointer)",
+   "parent_data": "Optional struct clk_parent_data specifying the parent by fw_name/name/index",
+   "flags": "Common clock framework flags for the clock (init.flags)",
+   "fixed_rate": "Constant output rate of the clock in Hz",
+   "fixed_accuracy": "Constant accuracy of the clock in ppb",
+   "clk_fixed_flags": "Fixed-rate-specific flags stored in clk_fixed_rate.flags",
+   "devm": "If true, allocate via devres and tie the clock's lifetime to dev; if false, use kzalloc"
+  },
+  "porting_hint": "Port this as a combined allocate-and-register operation: allocate a fixed-rate clock descriptor (device-managed if devm), fill in rate, accuracy, parent (exactly one of name/hw/parent_data or none), and framework flags, insert it into the target clock subsystem, return an owning handle on success or roll back and free the allocation with an error code on failure.",
+  "basis": "drivers/clk/clk-fixed-rate.c:64"
+ },
+ "ahci_platform_get_resources": {
+  "category": "alloc",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "On success returns a pointer to a device-managed struct ahci_host_priv populated with the acquired resources (mmio, clocks, regulators, resets, PHYs, port map); on failure returns ERR_PTR(rc) where rc is a negative errno, e.g. -ENOMEM from devres/kzalloc failure, errors from ioremap/clk/regulator/reset/PHY acquisition, -EINVAL for >AHCI_MAX_PORTS child nodes or a child missing a valid 'reg' proper",
+  "effects": [
+   "Opens a devres group on pdev->dev and registers a devm-allocated ahci_host_priv, so all acquired resources are automatically released when the device is unbound",
+   "Maps the AHCI MMIO register region into kernel virtual address space (ioremap side effect)",
+   "Acquires references to device clocks (bulk or single optional), the 'ahci' and 'phy' regulators, and optional shared reset controls when AHCI_PLATFORM_GET_RESETS is set",
+   "Registers platform devices for each available DT port subnode via of_platform_device_create",
+   "Acquires per-port PHYs and regulators and records them plus a port mask in hpriv",
+   "Allocates a non-devm target_pwrs array (later freed by ahci_platform_put_resources)"
+  ],
+  "params": {
+   "pdev": "Platform device whose dev/of_node is used to look up the MMIO resource, clocks, regulators, resets, and DT port subnodes",
+   "flags": "Bitmask modifying acquisition behavior: AHCI_PLATFORM_GET_RESETS fetches reset controls and AHCI_PLATFORM_RST_TRIGGER records that resets should be triggered via ahci_platform_assert/reset"
+  },
+  "porting_hint": "When porting, replace this single acquisition call with runtime equivalents that map the MMIO window, look up clocks/regulators/resets/PHYs from the firmware description, allocate the host-private state with equivalent cleanup-on-unbind (devres) semantics, and propagate -EPROBE_DEFER-like 'not ready' errors instead of failing hard.",
+  "basis": "drivers/ata/libahci_platform.c:477"
+ },
+ "ahci_platform_init_host": {
+  "category": "reset",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "0 on success when the host is fully initialized and activated; negative errno on failure: the propagated platform_get_irq error, -EINVAL when irq == 0, -ENOMEM when ata_host_alloc_pinfo fails, or the propagated error from dma_coerce_mask_and_coherent, ahci_reset_controller, or ahci_host_activate.",
+  "effects": [
+   "Resets the AHCI controller hardware via MMIO (ahci_reset_controller) and re-initializes all implemented ports (ahci_init_controller)",
+   "Resets enclosure-management state on hardware if ATA_FLAG_EM is set (ahci_reset_em)",
+   "Allocates an ata_host with n_ports ata_port structures and links hpriv into it",
+   "Coerces the device's DMA mask to 64-bit when CAP.HOST_CAP_64 is set",
+   "Activates the host (ahci_host_activate): installs the shared IRQ handler and registers/starts the SCSI host, making ports scannable",
+   "Emits kernel log messages (dev_info for SSS/parallel-scan note, per-port ata_port_desc entries, ahci_print_info dump)"
+  ],
+  "params": {
+   "pdev": "Platform device supplying the IRQ (platform_get_irq index 0) and MMIO resource used for port descriptions",
+   "hpriv": "AHCI host private data whose flags/cap/port_map drive capability detection; populated with the resolved IRQ number",
+   "pi_template": "Template ata_port_info copied and augmented with NCQ/PMP/EM flags and hpriv->flags in private_data before host allocation",
+   "sht": "scsi_host_template passed through to ahci_host_activate for SCSI host registration"
+  },
+  "porting_hint": "This is a composite bring-up routine, not a single primitive: when porting, replace it by re-sequencing the target runtime's equivalents (resolve IRQ, derive port count from CAP.NP and port_map, allocate host/ports, set DMA mask, hard-reset and init controller, then attach the SCSI/ATA host) rather than treating it as a pure register reset.",
+  "basis": "drivers/ata/libahci_platform.c:695"
+ },
+ "clk_hw_register_fixed_factor": {
+  "category": "alloc",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "On success returns a struct clk_hw * handle for the newly registered fixed-factor clock; on failure returns an ERR_PTR-encoded error (typically -ENOMEM from the internal allocation or the error code propagated from clk_hw_register); never returns NULL",
+  "effects": [
+   "allocates memory for a new clock object and registers it into the common clock framework's global clock tree, making the clock discoverable by other consumers via clk_get under 'name'",
+   "takes and releases the clock framework's global lock while linking the new clock node",
+   "leaves the new clock handle owned by the caller, requiring a matching clk_hw_unregister_fixed_factor to free"
+  ],
+  "params": {
+   "dev": "device requesting registration; passed down for dev association and resource accounting (may be NULL)",
+   "name": "name of the new fixed-factor clock being registered",
+   "parent_name": "name of the parent clock whose rate the factor scales; routed to the internal registration via a clk_parent_data with index -1",
+   "flags": "clk framework flags for the new clock (e.g., CLK_SET_RATE_PARENT semantics)",
+   "mult": "multiplication factor applied to the parent clock rate",
+   "div": "division factor applied to the parent clock rate (output rate = parent_rate * mult / div)"
+  },
+  "porting_hint": "Port this as a combination allocation-plus-registration call: create a fixed-factor clock node (rate = parent_rate * mult / div) in the target runtime's clock registry/tree, return a handle or error, and pair it with an unregister/destroy counterpart.",
+  "basis": "drivers/clk/clk-fixed-factor.c:211"
+ },
+ "dma_set_coherent_mask": {
+  "category": "dma-map",
+  "confidence": 0.75,
+  "source": "kernel-tree",
+  "return": "In this definition the function unconditionally returns -EIO, signaling that setting the coherent DMA mask failed (build without DMA support); a full implementation returns 0 on success and -EIO when the requested mask is not supported by the bus/device.",
+  "effects": [],
+  "params": {
+   "dev": "device whose coherent DMA addressing mask is to be set (ignored by this stub)",
+   "mask": "64-bit bitmask of addresses the device must be able to address for coherent (dma_alloc_coherent-style) allocations (ignored by this stub)"
+  },
+  "porting_hint": "This is the no-DMA-support stub that always fails; when porting, either implement coherent DMA mask configuration in the target runtime's DMA layer or substitute a stub returning 0 so the driver's probe path does not abort with -EIO.",
+  "basis": "include/linux/dma-mapping.h:305"
+ },
+ "dma_set_mask": {
+  "category": "dma-map",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "Returns 0 on success, or a negative errno on failure; in this evidence (the !CONFIG_HAS_DMA fallback definition in include/linux/dma-mapping.h) it unconditionally returns -EIO, signaling DMA is unsupported and callers should treat DMA setup as failed",
+  "effects": [
+   "In the full implementation this declaration stubs out, writes the device's DMA addressing mask (dev->dma_mask), which constrains the address width of subsequent dma_map_* allocations and may cause the"
+  ],
+  "params": {
+   "dev": "struct device whose DMA addressing capability is being configured",
+   "mask": "u64 bitmask of addressable DMA bits, e.g. DMA_BIT_MASK(64) or DMA_BIT_MASK(32)"
+  },
+  "porting_hint": "On the target runtime, map this to the platform's DMA address-width configuration API (or fall back to the stub's behavior of failing with -EIO when no DMA support exists), and have callers handle that failure path.",
+  "basis": "include/linux/dma-mapping.h:301"
+ },
+ "fwnode_property_read_u32_array": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "0 on success; otherwise a negative errno — typically -ENODATA/-EINVAL when the named property is absent, has a size that is not a multiple of sizeof(u32), or cannot satisfy nval elements, and -ENXIO when the fwnode backend provides no property-read operation",
+  "effects": [],
+  "params": {
+   "fwnode": "firmware node handle (DT, ACPI, or software node) whose property store is queried, potentially with fallback toward the parent node",
+   "propname": "NUL-terminated name of the property to look up",
+   "val": "caller-supplied output buffer that receives the decoded u32 values; may be NULL when nval is 0 to just test presence/length",
+   "nval": "number of u32 elements to read into val; 0 requests only property existence/size"
+  },
+  "porting_hint": "In the target runtime, implement this as a read-only lookup that resolves named u32-array properties from the platform's firmware-node equivalent (e.g., DT/ACPI/swnode tables or a static config blob), copying nval values into val and returning 0 on success or a negative errno when missing/short — no allocation, locking, or state change is needed.",
+  "basis": "drivers/base/property.c:401"
+ },
+ "ktime_get": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Current CLOCK_MONOTONIC time as a ktime_t (nanoseconds since boot, excluding suspend time); it cannot fail — no error return exists, though the result is unreliable if timekeeping is suspended (triggers WARN_ON and may return a stale value).",
+  "effects": [],
+  "params": {},
+  "porting_hint": "Replace with the target runtime's high-resolution monotonic clock read, e.g. clock_gettime(CLOCK_MONOTONIC) or an equivalent ns-resolution uptime API.",
+  "basis": "kernel/time/timekeeping.c:955"
+ },
+ "pci_alloc_irq_vectors": {
+  "category": "alloc",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Number of interrupt vectors actually allocated on success (at least min_vecs, at most max_vecs), or a negative errno on failure (e.g., -ENOSPC when fewer than min_vecs vectors are available, -EINVAL on bad arguments or unsupported flag combinations)",
+  "effects": [
+   "allocates IRQ vectors/descriptors in the kernel interrupt subsystem",
+   "enables and configures the device's MSI or MSI-X capability, altering PCI configuration space and device interrupt mode",
+   "may set up IRQ affinity masks when requested via flags"
+  ],
+  "params": {
+   "dev": "pointer to the pci_dev whose interrupt vectors are being allocated",
+   "min_vecs": "minimum acceptable vector count; allocation fails if fewer are obtainable",
+   "max_vecs": "maximum number of vectors to request",
+   "flags": "bitmask selecting vector type/behavior (e.g., PCI_IRQ_MSIX, PCI_IRQ_MSI, PCI_IRQ_LEGACY, PCI_IRQ_AFFINITY)"
+  },
+  "porting_hint": "Replace with the target runtime's MSI/MSI-X vector allocation call that requests up to max_vecs vectors, accepts fewer only if >= min_vecs, and returns either the granted count or a negative error code, passing NULL for the affinity mask.",
+  "basis": "drivers/pci/msi/api.c:232"
+ },
+ "__irq_resolve_mapping": {
+  "category": "pure",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "Pointer to the struct irq_desc mapped to hwirq on success, or NULL on failure; failure occurs if no domain was supplied and there is no default irq domain, if hwirq is out of range (nomap/linear revmap cases), if the nomap entry's data does not match hwirq, or if the linear/radix revmap lookup misses.",
+  "effects": [
+   "writes the resolved Linux IRQ number to caller-owned memory at *irq when irq is non-NULL and a mapping is found",
+   "briefly enters and exits an RCU read-side critical section (rcu_read_lock/rcu_read_unlock) for the non-nomap lookup; no lock is held on return"
+  ],
+  "params": {
+   "domain": "irq_domain to resolve hwirq within; NULL selects irq_default_domain, and NULL with no default yields NULL return",
+   "hwirq": "hardware interrupt number to translate to a Linux IRQ descriptor",
+   "irq": "optional output pointer that receives the Linux IRQ number on successful resolution (set to hwirq for nomap domains, data->irq otherwise)"
+  },
+  "porting_hint": "Port this as a read-only lock-protected lookup translating a hardware IRQ to the platform's interrupt descriptor (e.g., vector table or hash map with an RCU or reader-lock equivalent), leaving the optional out-parameter to carry back the logical IRQ number.",
+  "basis": "kernel/irq/irqdomain.c:1052"
+ },
+ "__pm_runtime_set_status": {
+  "category": "pure",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "Always returns 0, which indicates success; in this definition there is no failure mode (it is the CONFIG_PM-disabled stub that unconditionally reports success).",
+  "effects": [],
+  "params": {
+   "dev": "Pointer to the target device whose runtime PM status would be set (unused in this stub).",
+   "status": "Requested runtime PM status value (e.g., RPM_ACTIVE/RPM_SUSPENDED semantics; ignored in this stub)."
+  },
+  "porting_hint": "In a runtime without power-management support, implement this as a no-op that immediately returns 0 (success), matching the stub, since it performs no external work.",
+  "basis": "include/linux/pm_runtime.h:285"
+ },
+ "ahci_init_controller": {
+  "category": "register-access",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes — any hardware errors are reported through the per-port ahci_port_init path or later probing, not by this function itself",
+  "effects": [
+   "Device hardware state changed: per-port AHCI state initialized for every non-dummy port via ahci_port_init",
+   "Device hardware state changed: HOST_IRQ_EN bit set in the AHCI global HOST_CTL register, enabling controller-wide interrupt generation",
+   "MMIO reads/writes issued to the controller's host-control register (values logged via dev_dbg)"
+  ],
+  "params": {
+   "host": "struct ata_host owning the controller; provides host->n_ports and host->ports[] of ports to initialize, and host->private_data (ahci_host_priv) whose ->mmio base is used for global register access"
+  },
+  "porting_hint": "Port this as a sequence of MMIO operations — per-port initialization (skipping dummy ports) followed by a read-modify-write of HOST_CTL to set HOST_IRQ_EN — using the target runtime's device register access primitives, since it has no return-value-based error handling.",
+  "basis": "drivers/ata/libahci.c:1296"
+ },
+ "ahci_platform_resume_host": {
+  "category": "power-on",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "Returns 0 on success; otherwise returns the negative error code propagated from ahci_reset_controller(host) when the controller reset fails (only possible when resuming from PM_EVENT_SUSPEND). Note that the return value of ahci_platform_enable_phys is deliberately ignored, so PHY enable failures do not surface.",
+  "effects": [
+   "Resets and reinitializes the AHCI controller hardware when the device was suspended (PM_EVENT_SUSPEND), restoring controller registers/ports",
+   "Re-enables the platform PHYs if hpriv->flags has AHCI_HFLAG_SUSPEND_PHYS, changing physical link power/state",
+   "Resumes the libata host (ata_host_resume), bringing associated ATA ports/links back online",
+   "Reads and depends on the device runtime power state (dev->power.power_state.event)"
+  ],
+  "params": {
+   "dev": "The platform device being resumed; its driver data is expected to be a struct ata_host whose private_data is a struct ahci_host_priv carrying controller configuration and flags"
+  },
+  "porting_hint": "Port this as the power-management resume hook of the platform driver: check the previous suspend state, reset and reinitialize the AHCI controller, conditionally re-enable PHYs, then call the runtime's ATA host resume, propagating only the controller-reset error code.",
+  "basis": "drivers/ata/libahci_platform.c:877"
+ },
+ "ahci_reset_controller": {
+  "category": "reset",
+  "confidence": 1.0,
+  "source": "kernel-tree",
+  "return": "0 on success (reset completed, AHCI mode re-enabled, initial config restored, or reset skipped entirely when ahci_skip_host_reset is set); -EIO if the HOST_RESET bit in HOST_CTL does not self-clear within the 1-second polling window, indicating the hardware is unresponsive/'fried'.",
+  "effects": [
+   "Writes HOST_RESET bit to the controller's HOST_CTL MMIO register, triggering a global hardware reset of the AHCI controller",
+   "Re-enables AHCI mode in the controller via MMIO (twice, before and after reset)",
+   "Restores initial controller register configuration via ahci_restore_initial_config (unless AHCI_HFLAG_NO_WRITE_TO_RO)",
+   "Busy/polling wait of up to ~1000 ms via ata_wait_register with 10 ms interval, so it may block for up to 1 second",
+   "Emits informational/error log messages via dev_info/dev_err (skip notice or reset-failure error)"
+  ],
+  "params": {
+   "host": "struct ata_host owning the controller; host->private_data supplies the ahci_host_priv with the mmio base, flags, and initial config, and host->dev is used for logging"
+  },
+  "porting_hint": "Port by emulating MMIO writes/reads of the HOST_CTL register (set HOST_RESET, self-clear it within the 1s poll window, then re-enable AHCI mode and re-apply initial config), returning -EIO if the bit fails to clear in time; the underlying reset semantics, not just the register write, must be modeled.",
+  "basis": "drivers/ata/libahci.c:974"
+ },
+ "device_get_match_data": {
+  "category": "pure",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "Const pointer to driver match data previously registered for the device (e.g., the .data field of the matching device_id/compatible table entry); returns NULL when the firmware node has no device_get_match_data operation or when no match data exists for the device",
+  "effects": [],
+  "params": {
+   "dev": "Device whose firmware node is consulted to look up driver match data (const struct device *)"
+  },
+  "porting_hint": "Replace with a runtime-specific lookup that returns driver-specific configuration data keyed by the device's identity (compatible string or ID table), yielding NULL when no match data exists.",
+  "basis": "drivers/base/property.c:1347"
+ },
+ "dmi_get_date": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "true if a DMI/SMBIOS date field was found and parsed into the output pointers; false otherwise. This stub (used when DMI support is absent) always returns false and zeroes the requested outputs, so callers see 'no date available' as the failure mode.",
+  "effects": [
+   "writes 0 through each non-NULL output pointer (yearp, monthp, dayp), mutating caller-visible memory"
+  ],
+  "params": {
+   "field": "selector identifying which DMI/SMBIOS field (e.g. BIOS date entry) to query",
+   "yearp": "optional output pointer that receives the year (set to 0 when no date is available)",
+   "monthp": "optional output pointer that receives the month (set to 0 when no date is available)",
+   "dayp": "optional output pointer that receives the day (set to 0 when no date is available)"
+  },
+  "porting_hint": "Port as a side-effect-free query: check each output pointer for NULL before writing, return false (with outputs zeroed) if the runtime has no firmware/SMBIOS date table, otherwise parse the platform date into year/month/day and return true.",
+  "basis": "include/linux/dmi.h:147"
+ },
+ "mmc_gpio_get_cd": {
+  "category": "register-access",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Logical level of the card-detect GPIO (0 or 1) on success; -ENOSYS if the host has no slot-gpio context or no card-detect GPIO configured; underlying gpiod_get_value(_cansleep) may also propagate a negative errno on GPIO controller I/O failure.",
+  "effects": [
+   "Reads the card-detect GPIO line level from GPIO controller hardware",
+   "May sleep when the GPIO lives on a can-sleep controller (e.g. I2C/SPI expander)"
+  ],
+  "params": {
+   "host": "struct mmc_host whose host->slot.handler_priv holds the mmc_gpio context containing the card-detect descriptor (ctx->cd_gpio)"
+  },
+  "porting_hint": "Port as a read of the card-detect input line using the target runtime's GPIO input API, choosing a sleepable path when the controller requires it, and returning a not-configured error (equivalent to -ENOSYS) when no card-detect GPIO was registered.",
+  "basis": "drivers/mmc/core/slot-gpio.c:90"
+ },
+ "of_find_matching_node_and_match": {
+  "category": "pure",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "Returns a pointer to the device_tree node whose compatible entry matches one of the match entries, or NULL when no match exists (this !CONFIG_OF stub definition always returns NULL, signaling no device tree support so lookups always fail)",
+  "effects": [],
+  "params": {
+   "from": "device_node to start iterating from (NULL to begin at the root of the device tree)",
+   "matches": "array of of_device_id entries (terminated by an empty entry) whose compatible strings are tested against each node",
+   "match": "optional output pointer that receives the specific of_device_id entry that matched (may be left NULL if the caller doesn't need it)"
+  },
+  "porting_hint": "On a runtime without a device tree this function is a pure no-op that always returns NULL, so port it as a constant 'not found' result and handle the resulting absence of device-tree metadata at the call site.",
+  "basis": "include/linux/of.h:521"
+ },
+ "sdhci_pltfm_init": {
+  "category": "alloc",
+  "confidence": 0.92,
+  "source": "kernel-tree",
+  "return": "On success, a pointer to a newly allocated and partially initialized struct sdhci_host (ioaddr, irq, hw_name, ops, quirks, quirks2 populated); on failure returns ERR_PTR(-errno): ERR_CAST of the failed devm_platform_ioremap_resource result, ERR_PTR(irq) when platform_get_irq returns a negative error, or ERR_CAST of the failed sdhci_alloc_host result (also logged with dev_err).",
+  "effects": [
+   "Allocates a device-managed mapping of the platform device's first MMIO resource (claims I/O memory)",
+   "Dynamically allocates an sdhci_host plus sdhci_pltfm_host plus priv_size caller-private bytes",
+   "Stores the host pointer as the platform device's driver data via platform_set_drvdata (per-device state change)",
+   "Emits a dev_err message if host allocation fails"
+  ],
+  "params": {
+   "pdev": "platform device supplying register resources, IRQ 0, the parent device and name (hw_name), and the slot for driver data",
+   "pdata": "optional template carrying ops/quirks/quirks2 to seed the host; NULL ops falls back to sdhci_pltfm_ops, NULL pdata skips quirks copy",
+   "priv_size": "number of extra bytes appended after struct sdhci_pltfm_host for the caller's driver-private data"
+  },
+  "porting_hint": "When porting, replicate by mapping the device's first register bank, fetching its IRQ number, allocating host + pltfm + private storage, applying ops/quirks defaults, recording the host as per-device state, and returning the host or an error sentinel mirroring the three failure paths (map failure, IRQ failure, allocation failure).",
+  "basis": "drivers/mmc/host/sdhci-pltfm.c:101"
+ },
+ "snprintf": {
+  "category": "print",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Number of characters that would have been written excluding the trailing NUL, as per C99 vsnprintf semantics; a value >= size indicates truncation, and 0 is returned when size == 0; no failure modes beyond malformed format arguments",
+  "effects": [
+   "writes formatted output bytes plus a NUL terminator into the caller-provided buffer buf, clobbering up to size bytes of memory outside this function"
+  ],
+  "params": {
+   "buf": "destination character buffer receiving the formatted string",
+   "fmt": "printf-style format string controlling conversion",
+   "size": "capacity of buf in bytes including space for the NUL terminator; 0 means no write",
+   "... (variadic)": "arguments consumed by the format specifiers in fmt"
+  },
+  "porting_hint": "Replace with the host runtime's snprintf/vsnprintf-equivalent, ensuring identical truncation and would-be-length return semantics with no console or kernel-specific side effects.",
+  "basis": "lib/vsprintf.c:3036"
+ },
+ "ERR_PTR": {
+  "category": "pure",
+  "confidence": 0.98,
+  "source": "kernel-tree",
+  "return": "The error value reinterpreted as a void pointer; the result is never a valid dereferenceable address and must be tested with IS_ERR/PTR_ERR by callers, typically encoding a negative errno to signal failure in functions whose success path returns a real pointer",
+  "effects": [],
+  "params": {
+   "error": "The errno (usually a negative long such as -ENOMEM) to encode into the pointer representation"
+  },
+  "porting_hint": "Port as a trivial integer-to-pointer cast (or equivalent error-tagged value) plus matching IS_ERR/PTR_ERR decode helpers, since it performs no allocation, locking, or any other side effect.",
+  "basis": "include/linux/err.h:39"
+ },
+ "__ahci_port_base": {
+  "category": "pure",
+  "confidence": 0.99,
+  "source": "kernel-tree",
+  "return": "A void __iomem pointer to the base of the given AHCI port's register block (host MMIO base + 0x100 + port_no * 0x80); it is pure arithmetic and cannot fail, though the returned pointer is only valid if hpriv->mmio is a mapped AHCI register region and port_no is within range.",
+  "effects": [],
+  "params": {
+   "hpriv": "AHCI host private data; supplies the MMIO base address (hpriv->mmio) of the controller's register space.",
+   "port_no": "Zero-based port index used to compute the per-port register-block offset (port_no * 0x80 bytes past the 0x100-byte host-level area)."
+  },
+  "porting_hint": "Port it as a trivial pure function returning host_base + 0x100 + port_no * 0x80 (or an equivalent typed register-file object) with no runtime services or side effects.",
+  "basis": "drivers/ata/ahci.h:454"
+ },
+ "__devm_add_action": {
+  "category": "alloc",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success; -ENOMEM if the kzalloc_obj of the devres_action struct fails, in which case no action is registered",
+  "effects": [
+   "allocates zeroed heap memory for a struct devres_action",
+   "links the node into the device's devres list via devres_node_add, so the stored action callback will later run with data on device release/detach",
+   "records the human-readable name in the devres node debug info"
+  ],
+  "params": {
+   "dev": "device whose managed-resource (devres) list the action is attached to",
+   "action": "callback invoked with data when the devres node is released (device teardown)",
+   "data": "opaque pointer passed unchanged to the action callback",
+   "name": "debug label stored in the devres node dbginfo"
+  },
+  "porting_hint": "Model this as device-lifetime-scoped cleanup registration: allocate a record, store the teardown callback plus context, attach it to the device's teardown hook (failing with -ENOMEM on allocation failure), so it substitutes for devm_*-style managed cleanup in the new runtime.",
+  "basis": "drivers/base/devres.c:790"
+ },
+ "__devm_reset_control_get": {
+  "category": "pure",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "Returns NULL when RESET_CONTROL_FLAGS_BIT_OPTIONAL is set in flags (the caller declared the reset line optional), otherwise returns ERR_PTR(-ENOTSUPP) because the reset controller framework is compiled out; it never returns a valid struct reset_control in this stub, so callers must test the result with IS_ERR()/PTR_ERR().",
+  "effects": [],
+  "params": {
+   "dev": "Device that would own the devres-managed reset control handle; unused in this stub.",
+   "id": "Consumer name (con_id) of the reset line to look up; unused in this stub.",
+   "index": "Positional index into the device's reset specifiers, used by the real implementation when id is NULL; unused in this stub.",
+   "flags": "Bitwise lookup flags (RESET_CONTROL_FLAGS_BIT_OPTIONAL, shared/exclusive, etc.); only the OPTIONAL bit is inspected here."
+  },
+  "porting_hint": "Port this as the devm_reset_control_get acquisition entry point: on a runtime with a reset provider implement the devres-managed lookup, and when no provider exists replicate this stub exactly (NULL for optional, ERR_PTR(-ENOTSUPP) otherwise) so drivers port unchanged.",
+  "basis": "include/linux/reset.h:220"
+ },
+ "ata_dev_next": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Pointer to the next struct ata_device on the link satisfying the mode's filter (forward or reverse), or NULL when the iteration is exhausted; invalid mode values trigger BUG_ON (kernel panic), which is the only failure path.",
+  "effects": [],
+  "params": {
+   "dev": "Current iteration position; NULL signals start of iteration, otherwise the previously returned device whose successor is sought.",
+   "link": "ATA link whose inline device array (link->device) is traversed, sized by ata_link_max_devices(link).",
+   "mode": "One of ATA_DITER_ENABLED, ATA_DITER_ALL (forward) or their _REVERSE counterparts; selects direction and whether disabled (ata_dev_enabled == false) devices are skipped."
+  },
+  "porting_hint": "Port this as a stateless iterator helper over the link's fixed-size device array performing only pointer arithmetic and enabled-flag checks, with no locks, allocation, or hardware access required.",
+  "basis": "drivers/ata/libata-core.c:237"
+ },
+ "ata_link_next": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Pointer to the next struct ata_link in the iteration order for port ap (starting with &ap->link or ap->pmp_link when link is NULL), or NULL when iteration is exhausted; aborts via BUG_ON if mode is not one of the three ATA_LITER_* values",
+  "effects": [],
+  "params": {
+   "link": "Current link in iteration, or NULL to start a new iteration",
+   "ap": "ATA port whose host link, optional slave link, and PMP links are iterated",
+   "mode": "Iteration order selector: ATA_LITER_EDGE (PMP links only), ATA_LITER_PMP_FIRST, or ATA_LITER_HOST_FIRST"
+  },
+  "porting_hint": "Port as a stateless iterator helper that walks the port's link set (host link, optional slave link, PMP link array) honoring the three ordering modes, since it reads only existing state and performs no I/O, allocation, or locking.",
+  "basis": "drivers/ata/libata-core.c:177"
+ },
+ "ata_port_pbar_desc": {
+  "category": "print",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "void; returns nothing and cannot fail (the description text is unconditionally appended to the port's description buffer).",
+  "effects": [
+   "Appends a formatted human-readable description of the port's PCI BAR to the ATA port's description buffer, which is later surfaced via sysfs/dmesg port messages",
+   "Reads PCI resource metadata (flags, start address, length) for the given BAR"
+  ],
+  "params": {
+   "ap": "ATA port to describe; its host device must be a pci_dev, since PCI resources are queried via ap->host->dev",
+   "bar": "PCI BAR index whose resources are described (mem vs I/O type is derived from the BAR's flags)",
+   "offset": "Offset within the BAR; a negative value selects the 'length@base' form while >= 0 selects the absolute 'base+offset' address form",
+   "name": "Label prefix for the entry, e.g. \"cmd\" or \"ctl\", identifying which register window is described"
+  },
+  "porting_hint": "This is a diagnostic-only helper: on a non-PCI runtime, replace it with a log/sysfs write of the equivalent base-address/length/type information for the port's register windows (or a no-op), since no device state or control flow depends on it.",
+  "basis": "drivers/ata/libata-eh.c:279"
+ },
+ "ata_tf_to_fis": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes - always succeeds",
+  "effects": [
+   "Writes the 20-byte Host-to-Device Register FIS into the caller-provided output buffer @fis"
+  ],
+  "params": {
+   "tf": "Read-only source ATA taskfile whose command, feature, LBA (28/48-bit), device, nsect, ctl, and auxiliary fields are serialized",
+   "pmp": "Port multiplier number; only low 4 bits used, stored in fis[1]",
+   "is_cmd": "If nonzero, sets bit 7 of fis[1] to mark the FIS as a command (rather than control) FIS",
+   "fis": "Output buffer of at least 20 bytes that receives the packed register-to-FIS image (fis[0]=0x27, fis[14]=0 fixed)"
+  },
+  "porting_hint": "Port as a plain data-marshaling helper that byte-packs the taskfile into a 20-byte array per the SATA H2D Register FIS layout, with no hardware access, locking, or allocation.",
+  "basis": "drivers/ata/libata-sata.c:151"
+ },
+ "check_copy_size": {
+  "category": "pure",
+  "confidence": 0.5,
+  "source": "model",
+  "return": "true if the requested copy size appears safe; returns false when the compiler-provable object size (__builtin_object_size) is smaller than the requested byte count, in which case it additionally triggers __bad_copy_from/__bad_copy_to (compile-time error) for constant sizes or copy_overflow (runtime report via __copy_overflow) for non-constant sizes",
+  "effects": [],
+  "params": {
+   "addr": "pointer to the buffer being validated (source or destination of the intended copy)",
+   "bytes": "number of bytes intended to be copied",
+   "is_source": "true if addr is the copy source (selects __bad_copy_from), false if it is the destination (selects __bad_copy_to)"
+  },
+  "porting_hint": "Port it as a pure size-safety check that returns true/false (or a no-op returning true) and drop the kernel-specific compile-time-error and WARN diagnostics, since __builtin_object_size, __compiletime_error, and copy_overflow reporting have no counterpart in the target runtime.",
+  "basis": "/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/ucopysize.h"
+ },
+ "clk_bulk_enable": {
+  "category": "pure",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "Always returns 0 (success); this stub can never fail because it performs no work — it is the fallback used when the kernel clock framework (CONFIG_HAVE_CLK) is not enabled.",
+  "effects": [],
+  "params": {
+   "num_clks": "Number of entries in the clks array; ignored by this stub.",
+   "clks": "Pointer to an array of struct clk_bulk_data clock descriptors to enable; ignored by this stub."
+  },
+  "porting_hint": "This evidence is the no-op stub variant, so in a target runtime without a clock model it can be mapped to a function that simply returns 0; if the runtime does manage clocks, implement a real bulk clock-enable (turning clocks on) that can fail with a negative errno instead.",
+  "basis": "include/linux/clk.h:1094"
+ },
+ "clk_bulk_prepare": {
+  "category": "power-on",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success; on failure, the negative errno returned by clk_prepare for the offending clock, after any already-prepared clocks in the array are unwound via clk_bulk_unprepare",
+  "effects": [
+   "each clk in the clks array is prepared (made to generate its signal, potentially powering on upstream clock sources and possibly sleeping)",
+   "on failure, the clocks prepared before the failing index are unprepared again, restoring prior state",
+   "an error message naming the failing clock is printed to the kernel log on failure"
+  ],
+  "params": {
+   "num_clks": "number of clk_bulk_data entries in the clks array to prepare",
+   "clks": "array of clk_bulk_data whose .clk members are prepared one by one; .id is used only in the error message"
+  },
+  "porting_hint": "Port as a loop calling the target runtime's sleepable per-clock prepare/enable API, rolling back (unpreparing) all clocks prepared before the first failure and propagating its error code.",
+  "basis": "drivers/clk/clk-bulk.c:176"
+ },
+ "clk_bulk_unprepare": {
+  "category": "power-off",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "void; the stub cannot fail and returns nothing, and even the real implementation's unprepare path provides no error reporting",
+  "effects": [
+   "may sleep (might_sleep() asserts it must be called from a sleepable, non-atomic context)",
+   "in the CONFIG_HAVE_CLK implementation it releases shared clock sources (e.g. PLLs) that clk_bulk_prepare had powered up, potentially powering down those sources for the device; in this stub build it i"
+  ],
+  "params": {
+   "num_clks": "number of entries in the clks array to unprepare",
+   "clks": "array of clk_bulk_data descriptors, each holding a clk handle (and optional con_id/id label) identifying one clock to unprepare"
+  },
+  "porting_hint": "Port this as the target runtime's bulk 'unprepare'/release operation that undoes a previous bulk prepare and may power down the underlying clock sources; if the target has no clock framework, implement it as a sleepable no-op matching this stub.",
+  "basis": "include/linux/clk.h:383"
+ },
+ "clk_hw_register_clkdev": {
+  "category": "alloc",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure, typically -ENOMEM when the clk_lookup entry cannot be allocated, or the propagated PTR_ERR (e.g., -EINVAL) if the passed hw is invalid",
+  "effects": [
+   "allocates a struct clk_lookup and links it into the global clockdev lookup list (mutex-protected), making the clock discoverable by later clk_get()/clk_hw lookups using con_id/dev_id",
+   "the allocated lookup persists in kernel memory until explicitly released via clkdev_drop()"
+  ],
+  "params": {
+   "hw": "clock hardware handle (struct clk_hw) to associate with the lookup entry; its underlying clk is what consumers resolve",
+   "con_id": "connection ID string consumers pass to clk_get() to find this clock",
+   "dev_id": "device ID string naming the consuming device; if NULL the clk's device name is used as the key"
+  },
+  "porting_hint": "Replace with a runtime equivalent that records a (con_id, dev_id) -> clock mapping in a persistent registry so lookups succeed, returns 0 or a negative error code, and keeps the entry alive until an explicit unregister/drop frees it.",
+  "basis": "drivers/clk/clkdev.c:377"
+ },
+ "clk_hw_unregister": {
+  "category": "free",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "void; the function returns no value and has no failure modes — it unconditionally forwards hw->clk to clk_unregister()",
+  "effects": [
+   "removes the struct clk associated with hw from the kernel clock framework so it can no longer be found via clk_get/clk_hw lookups",
+   "frees kernel memory allocated for the clock by its original registration",
+   "removes the clock's debugfs/clk_summary entry",
+   "clock consumers of this hardware clock may observe the clock disappearing from the system clock tree"
+  ],
+  "params": {
+   "hw": "pointer to the hardware-specific clock description whose associated struct clk (hw->clk) is to be torn down"
+  },
+  "porting_hint": "On the target runtime, replace with a call to the corresponding clock-framework teardown/release API (or free the clock object created by the matching register call), since it is the inverse of the clk_hw registration path.",
+  "basis": "drivers/clk/clk.c:4607"
+ },
+ "device_get_next_child_node": {
+  "category": "pure",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "Pointer to the next child fwnode_handle after `child` among the children of dev's firmware node; NULL when there are no more children (end-of-iteration sentinel, not an error); per the fwnode iterator contract the caller is expected to release the returned handle with fwnode_handle_put() when done",
+  "effects": [],
+  "params": {
+   "dev": "device whose firmware node's children are iterated; used read-only via dev_fwnode(dev) as the parent node",
+   "child": "handle to the previously returned child node, or NULL to start iteration at the first child"
+  },
+  "porting_hint": "Map this to the target runtime's firmware-node (DT/ACPI-equivalent) child iterator that returns each child of the device's node in turn and NULL at the end, honoring the platform's reference-counting conventions.",
+  "basis": "drivers/base/property.c:862"
+ },
+ "device_property_read_bool": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "true if the named boolean property is present on the device's firmware node, false if it is absent; absence is not an error, just a false result",
+  "effects": [],
+  "params": {
+   "dev": "device whose firmware node (DT/ACPI/swnode via dev_fwnode) is queried for the property",
+   "propname": "name of the boolean property to look up"
+  },
+  "porting_hint": "Replace with a read-only lookup into the target runtime's device configuration store (device tree, ACPI, or static board data) that returns true when the property key is present and truthy.",
+  "basis": "drivers/base/property.c:88"
+ },
+ "devm_clk_get_optional_enabled": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Always returns NULL (the stub definition contains a single 'return NULL;'); in the optional-clock convention NULL means 'no clock present/required' and is treated as success — callers check IS_ERR(NULL) which is false, so this stub has no failure mode and never returns an ERR_PTR.",
+  "effects": [],
+  "params": {
+   "dev": "struct device * owning the managed resource lookup; unused by this stub (clock would be tied to this device's lifetime in the real implementation)",
+   "id": "const char * clock consumer name to look up; unused by this stub"
+  },
+  "porting_hint": "Since this definition is a no-op that unconditionally returns NULL, port it as a no-op returning a null/absent clock handle (treated as success per the optional-clock convention), substituting the target runtime's managed clock acquire-and-enable only if clocks actually exist there.",
+  "basis": "include/linux/clk.h:1030"
+ },
+ "devm_request_threaded_irq": {
+  "category": "alloc",
+  "confidence": 0.78,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure. The rc from the underlying __devm_request_threaded_irq is piped through devm_request_result and returned: -ENOMEM if the devres tracking entry cannot be allocated, -EBUSY if the IRQ line is already claimed and not shareable, -EINVAL for invalid arguments/handler configuration.",
+  "effects": [
+   "Installs handler and/or thread_fn on the given IRQ line so the kernel IRQ subsystem dispatches that interrupt to the driver's callbacks",
+   "Allocates a devres node tying the IRQ to the device lifetime, so the interrupt is automatically freed and the handler removed when the device is unbound/released",
+   "The IRQ line is enabled (unless IRQF_NO_AUTOEN is passed), making the device able to raise interrupts",
+   "thread_fn, if non-NULL, executes in a dedicated kernel thread, adding scheduling activity outside this function"
+  ],
+  "params": {
+   "dev": "device whose lifetime manages the IRQ allocation; devres owner and diagnostics source",
+   "irq": "Linux IRQ number of the interrupt line to request",
+   "handler": "primary hard-IRQ handler run in interrupt context; may be NULL only if thread_fn is set",
+   "thread_fn": "threaded handler run in process context by a dedicated kernel thread",
+   "irqflags": "IRQF_* bit flags (shared, trigger type, IRQF_ONESHOT, IRQF_NO_AUTOEN, etc.) controlling request semantics",
+   "devname": "name recorded for the interrupt (shown in /proc/interrupts and diagnostics)",
+   "dev_id": "opaque cookie passed back to the handlers; must be unique per device for shared IRQs"
+  },
+  "porting_hint": "Replace with the target runtime's managed interrupt registration — request a threaded IRQ/attach an ISR with automatic cleanup bound to device lifetime (or emulate devm with an explicit cleanup list freed on unbind) — preserving handler-vs-threaded-context semantics and the -EBUSY/-EINVAL/-ENOMEM failure modes.",
+  "basis": "kernel/irq/devres.c:100"
+ },
+ "dmi_check_system": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Returns the number of matched entries in the DMI system ID table (success = count of matches); in this stub build (CONFIG_DMI disabled) it always returns 0, meaning no system matched — there is no failure mode, 0 simply indicates zero matches",
+  "effects": [],
+  "params": {
+   "list": "Pointer to a NULL-terminated array of struct dmi_system_id entries describing systems (vendor/board/product strings) to match against the running machine's firmware identity; ignored by the stub"
+  },
+  "porting_hint": "Replace with a host-runtime equivalent of matching platform/board identifiers against a static table (or a constant return of 0 when no firmware identity table exists), since the function performs no I/O or state change by itself.",
+  "basis": "include/linux/dmi.h:142"
+ },
+ "fls": {
+  "category": "pure",
+  "confidence": 0.99,
+  "source": "kernel-tree",
+  "return": "1-based index of the most significant set bit of x (1..32); returns 0 when x is 0",
+  "effects": [],
+  "params": {
+   "x": "unsigned 32-bit input word whose highest set bit is to be located"
+  },
+  "porting_hint": "Reimplement as a pure count-leading-zeros helper (e.g., clz intrinsic or a small loop), mapping x==0 to 0 and otherwise returning 32 - clz(x), since it is inlinable with no side effects.",
+  "basis": "include/asm-generic/bitops/builtin-fls.h:12"
+ },
+ "fls64": {
+  "category": "pure",
+  "confidence": 1.0,
+  "source": "kernel-tree",
+  "return": "1-based index of the most significant set bit in x (1..64); returns 0 if x is zero; never fails",
+  "effects": [],
+  "params": {
+   "x": "the 64-bit unsigned value whose highest set bit is to be located"
+  },
+  "porting_hint": "Replace with a pure bit-scan intrinsic or expression on the target runtime, e.g. (x ? 64 - clz64(x) : 0), since it has no side effects and is always inlined.",
+  "basis": "include/asm-generic/bitops/fls64.h:19"
+ },
+ "irq_get_irq_data": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Pointer to the struct irq_data embedded in the irq_desc for the given IRQ number; NULL if no descriptor exists for that IRQ (invalid or unallocated IRQ number), which callers must handle as a lookup miss, not an errno.",
+  "effects": [],
+  "params": {
+   "irq": "Linux virtual IRQ number whose descriptor's irq_data is requested"
+  },
+  "porting_hint": "On the target runtime, replace with a read-only lookup into the runtime's IRQ descriptor table that returns the per-IRQ metadata object or NULL when the IRQ is unallocated, requiring no locking or resource management.",
+  "basis": "kernel/irq/chip.c:136"
+ },
+ "irqd_get_trigger_type": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "A u32 containing the trigger-type configuration bits (IRQD_TRIGGER_MASK subset, i.e. IRQ_TYPE_EDGE_RISING/FALLING, IRQ_TYPE_LEVEL_LOW/HIGH) stored in the irq_data state; returns 0 if no trigger type is recorded and cannot fail since it is a simple mask of existing state.",
+  "effects": [],
+  "params": {
+   "d": "Pointer to the struct irq_data whose internal state word holds the trigger-type flags to extract."
+  },
+  "porting_hint": "Port as a side-effect-free getter that reads the trigger-type flags from the target runtime's interrupt descriptor state and returns them masked, with no locking or state mutation.",
+  "basis": "include/linux/irq.h:285"
+ },
+ "mmc_of_parse": {
+  "category": "alloc",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "0 on success (also 0 immediately if host->parent or its firmware node is absent, so parsing is a no-op on non-DT devices); -EINVAL for an invalid 'bus-width' value; otherwise a negative errno propagated from mmc_gpiod_request_cd()/mmc_gpiod_request_ro() (any error other than -ENOENT/-ENOSYS, e.g. -EPROBE_DEFER or -ENOMEM from the underlying gpiod_get) or from mmc_pwrseq_alloc().",
+  "effects": [
+   "Mutates persistent state of the passed-in mmc_host: sets/clears caps, caps2, pm_caps bits, f_max, max_sd_hs_hz, dsr_req/dsr, fixed_drv_type, ios.power_delay_ms",
+   "Claims/acquires GPIO resources for card-detect ('cd', with configurable debounce) and write-protect ('wp') via mmc_gpiod_request_cd/ro, leaving the GPIOs requested on the host",
+   "Allocates and attaches a power-sequence provider to the host via mmc_pwrseq_alloc() at the end",
+   "Emits dev_dbg/dev_info/dev_err log messages on missing/invalid properties and successful GPIO acquisition"
+  ],
+  "params": {
+   "host": "MMC host to configure; its ->parent device (with firmware node) supplies all device-tree properties, and the parsed values are written into host fields"
+  },
+  "porting_hint": "Reimplement this as property-driven host initialization on the target runtime: read the standard MMC DT properties (bus-width, max-frequency, non-removable/cd-inverted/broken-cd, cap-*/sd-uhs-*/mmc-hs2x4-*, no-*, dsr, post-power-on-delay-ms) and translate them 1:1 into the host capability flags, claim CD/WP GPIOs and a power-sequence handle through the new runtime's resource-acquisition API, and s",
+  "basis": "drivers/mmc/core/host.c:265"
+ },
+ "pcim_enable_device": {
+  "category": "power-on",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success when the PCI device is successfully enabled with managed resources; a negative errno on failure. This stub definition (built when PCI support is disabled) always returns -EIO, i.e., the device can never be enabled in that configuration.",
+  "effects": [
+   "Puts/enables the target PCI device: asserts its power/enable state (sets PCI command-register bits so memory/IO decode and bus mastering become active)",
+   "Registers managed (devm-style) bookkeeping so the device is automatically disabled/released on driver detach, allocating internal tracking state",
+   "In the stub variant shown, no device state is touched at all and the call simply fails with -EIO"
+  ],
+  "params": {
+   "pdev": "Pointer to the struct pci_dev identifying the PCI device being enabled (managed setup attaches to this device)"
+  },
+  "porting_hint": "Port this as the managed power-on step: enable/power up the underlying device equivalent and register automatic teardown at driver detach so no explicit pcim_disable_device is needed, and surface its error path (fail probe with the negative errno) in the new runtime.",
+  "basis": "include/linux/pci.h:2147"
+ },
+ "pm_runtime_enable": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "void — returns no value; this empty inline stub (the CONFIG_PM=n fallback) always completes immediately and has no failure modes",
+  "effects": [],
+  "params": {
+   "dev": "device whose runtime PM would be enabled; entirely unused by this no-op stub"
+  },
+  "porting_hint": "The shown definition has an empty body, so when porting it can be replaced with a no-op or omitted unless the target runtime provides a real runtime-PM framework.",
+  "basis": "include/linux/pm_runtime.h:290"
+ },
+ "sata_link_hardreset": {
+  "category": "reset",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "On success returns 0 (link reset completed; *online set true if device came back online); on failure returns a negative errno — in this stub build always -EOPNOTSUPP, indicating the operation is not supported",
+  "effects": [
+   "writes *online=false through caller-provided pointer (stub path); real implementation forces a COMRESET/hard reset of the SATA link, changing device/PHY state",
+   "real implementation blocks polling for device readiness up to the deadline (scheduling delay)"
+  ],
+  "params": {
+   "link": "the ATA link (host-to-device connection) being hard reset",
+   "timing": "pointer to reset timing table specifying COMRESET timing values used by the reset sequence",
+   "deadline": "absolute jiffies deadline by which the reset and readiness check must finish",
+   "online": "output flag; set true if the device responded and came online after reset, false otherwise (stub always sets false)",
+   "check_ready": "optional callback invoked to poll whether the link/device is ready after reset; NULL in the stub path"
+  },
+  "porting_hint": "Port as the hard-reset entry point for the SATA link: honor the timing table and deadline, poll readiness via check_ready, set *online accordingly, and return 0 or a negative errno (a stub returning -EOPNOTSUPP is acceptable when link hard reset is unsupported).",
+  "basis": "include/linux/libata.h:1287"
+ },
+ "sdhci_add_host": {
+  "category": "register-access",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure, propagated either from sdhci_setup_host (capability probing/host initialization) or from __sdhci_add_host (interrupt registration / mmc_add_host); if __sdhci_add_host fails, sdhci_cleanup_host unwinds partial state before the error is returned",
+  "effects": [
+   "Host controller hardware state is initialized: the controller is reset and capability/operating registers are read and written (via sdhci_setup_host)",
+   "Controller interrupts are enabled and an IRQ handler is registered with the kernel (via __sdhci_add_host)",
+   "The host is registered with the MMC subsystem, making the card slot visible to the rest of the system",
+   "On failure, partially acquired resources (interrupt, registration state) are released via sdhci_cleanup_host"
+  ],
+  "params": {
+   "host": "driver-private sdhci_host state describing the controller instance to initialize and register"
+  },
+  "porting_hint": "Treat this as a composite bring-up entry point rather than a single primitive: port it as a sequence of controller reset/config register setup, interrupt registration, and MMC-host registration in the target runtime, with full rollback of partial state on the failure path.",
+  "basis": "drivers/mmc/host/sdhci.c:4934"
+ },
+ "sdhci_reset": {
+  "category": "reset",
+  "confidence": 0.97,
+  "source": "kernel-tree",
+  "return": "void; returns nothing on success. On failure (reset bit not cleared within 100 ms) it prints an error, increments the CTRL_TIMEOUT error stat, dumps registers, and returns early - the caller is not otherwise informed, so it must assume the controller may be in an inconsistent state.",
+  "effects": [
+   "Asserts a software reset in the controller by writing mask to the SDHCI_SOFTWARE_RESET register (hardware/device state change)",
+   "On SDHCI_RESET_ALL, clears host->clock to 0 and may power off the SD bus via sdhci_runtime_pm_bus_off() (runtime PM / power state change) when SDHCI_QUIRK2_CARD_ON_NEEDS_BUS_ON is set",
+   "Busy-waits polling the reset register for up to 100 ms (udelay(10) loop, consuming CPU/scheduling time)",
+   "On timeout, emits an error log (pr_err), increments host error statistics, and dumps controller registers (I/O side effects + console output)"
+  ],
+  "params": {
+   "host": "Pointer to the sdhci_host structure describing the controller being reset (provides register accessors, quirks, clock cache, mmc host for error reporting)",
+   "mask": "u8 bitmask selecting what to reset: SDHCI_RESET_ALL, SDHCI_RESET_CMD, and/or SDHCI_RESET_DATA; written to and polled in SDHCI_SOFTWARE_RESET"
+  },
+  "porting_hint": "On porting, write the reset mask to the software-reset register, then busy-poll that register until the hardware clears the masked bits (udelay(10) between reads) with a 100 ms timeout; on RESET_ALL clear the cached clock (and turn off bus power per the CARD_ON_NEEDS_BUS_ON quirk), and on timeout log, bump the CTRL_TIMEOUT stat, dump registers, and bail out silently since the return type is void.",
+  "basis": "drivers/mmc/host/sdhci.c:204"
+ },
+ "virtio_features_test_bit": {
+  "category": "pure",
+  "confidence": 0.97,
+  "source": "kernel-tree",
+  "return": "true if 'bit' is a valid virtio feature bit (virtio_features_chk_bit passes) and that bit is set in the 'features' u64 array; false otherwise, including when the bit index is out of range; there are no error/failure modes",
+  "effects": [],
+  "params": {
+   "features": "read-only pointer to the u64 array holding the virtio feature bitmap; only indexed and read, never written",
+   "bit": "feature bit number to test; validity is checked via virtio_features_chk_bit before the array is accessed"
+  },
+  "porting_hint": "Port as a plain read-only bit test (e.g. bit < 64 && ((features[bit >> 6] >> (bit & 63)) & 1)) with no locking, allocation, or device interaction required.",
+  "basis": "include/linux/virtio_features.h:36"
+ },
+ "virtqueue_get_desc_addr": {
+  "category": "pure",
+  "confidence": 0.92,
+  "source": "kernel-tree",
+  "return": "Returns the DMA/bus address of the virtqueue's descriptor ring (vq->packed.ring_dma_addr for packed rings, vq->split.queue_dma_addr for split rings); it cannot fail, but it panics via BUG_ON if the queue memory is not owned by the virtio-ring implementation (we_own_ring unset)",
+  "effects": [
+   "on precondition violation (ring not owned by virtio-ring), triggers a kernel BUG_ON which halts/panics the system"
+  ],
+  "params": {
+   "_vq": "const pointer to the virtqueue whose descriptor-ring DMA address is queried (read-only input)"
+  },
+  "porting_hint": "Port this as a simple accessor that returns the cached bus address of the descriptor ring stored with the queue object, and replace the BUG_ON assertion with the target runtime's error/assert mechanism rather than a fatal crash.",
+  "basis": "drivers/virtio/virtio_ring.c:3625"
+ },
+ "vring_del_virtqueue": {
+  "category": "free",
+  "confidence": 1.0,
+  "source": "kernel-tree",
+  "return": "Function returns void; there is no status or failure mode — teardown is unconditional and the caller must not use _vq afterwards (it becomes freed memory).",
+  "effects": [
+   "Removes the virtqueue from the parent virtio device's vqs_list, so it is no longer visible to list walkers such as virtio_find_vqs users",
+   "Briefly acquires and releases the device-wide vqs_list_lock spinlock (serialization point observable by other CPUs)",
+   "Releases the underlying vring resources via vring_free (may free ring memory, descriptors, and any associated mappings/IRQ state owned by the queue)",
+   "Deallocates the struct vring_virtqueue with kfree, leaving any external pointers to this queue dangling"
+  ],
+  "params": {
+   "_vq": "The virtqueue to destroy; it is unlinked from vdev->vqs_list, its ring resources are released, and the queue object itself is freed."
+  },
+  "porting_hint": "Port this as a full teardown path: unlink the queue from the device's queue registry under the shared lock, release all ring/DMA/IRQ resources backing it, then free the queue object and treat all prior references to it as invalid.",
+  "basis": "drivers/virtio/virtio_ring.c:3473"
+ },
+ "__clk_hw_register_divider": {
+  "category": "alloc",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "On success returns a heap-allocated struct clk_hw * for the registered divider clock; on failure returns an ERR_PTR: -EINVAL if CLK_DIVIDER_HIWORD_MASK is set and width+shift exceeds 16 bits, -ENOMEM if the kzalloc fails, or the negative errno returned by clk_hw_register (the allocated divider is freed in that last case).",
+  "effects": [
+   "Allocates kernel heap memory for struct clk_divider that must later be released via clk_unregister/clk_hw_unregister",
+   "Registers a new divider clock in the kernel clock framework via clk_hw_register, making it globally visible to clk consumers and clkdev lookups",
+   "May emit a kernel log warning via pr_warn when a HIWORD_MASK divider field exceeds 16 bits"
+  ],
+  "params": {
+   "dev": "Owning struct device for the clock (may be NULL; used for devm/PM linkage in the framework)",
+   "np": "Optional device_node associated with the clock provider (unused except passed-through context)",
+   "name": "Name of the clock being registered",
+   "parent_name": "Optional parent clock name string (alternative parent specifier)",
+   "parent_hw": "Optional parent clk_hw pointer (alternative parent specifier)",
+   "parent_data": "Optional clk_parent_data descriptor (alternative parent specifier, e.g. fw_name)",
+   "flags": "Common framework flags for the clock (e.g. CLK_SET_RATE_PARENT) stored in clk_init_data",
+   "reg": "IOMEM base address of the register holding the divider field (not dereferenced here, only stored)",
+   "shift": "Bit offset of the divider field within *reg",
+   "width": "Bit width of the divider field",
+   "clk_divider_flags": "Divider-specific flags (e.g. CLK_DIVIDER_HIWORD_MASK, CLK_DIVIDER_READ_ONLY) that select ops and validate the field",
+   "table": "Optional clk_div_table mapping register values to dividers"
+  },
+  "porting_hint": "When porting, replace this factory with the target runtime's clock-provider registration API (or allocate an equivalent divider object, bind reg/shift/width/table/flags, register it with the runtime's clock registry) while preserving the ERR_PTR-style error contract and the HIWORD_MASK width validation.",
+  "basis": "drivers/clk/clk-divider.c:476"
+ },
+ "__devm_irq_alloc_descs": {
+  "category": "alloc",
+  "confidence": 0.97,
+  "source": "kernel-tree",
+  "return": "On success, returns the base (first) allocated IRQ descriptor number; on failure returns a negative errno: -ENOMEM if the devres tracking structure cannot be allocated, or the negative error propagated from __irq_alloc_descs if the requested range of IRQ descriptors cannot be allocated.",
+  "effects": [
+   "Allocates cnt IRQ descriptors in the kernel's global interrupt descriptor space, making the returned base..base+cnt-1 range unavailable to other callers",
+   "Registers a device-managed resource (devres) entry on dev so the allocated descriptor range is automatically released when the device is unbound/destroyed",
+   "Performs GFP_KERNEL memory allocation, which may sleep"
+  ],
+  "params": {
+   "dev": "Owning device used for devm lifetime tracking; the allocated IRQ range is auto-freed on this device's release",
+   "irq": "Requested starting IRQ number, or -1 to allocate starting from 'from'",
+   "from": "Starting IRQ number to search from when irq is -1",
+   "cnt": "Number of contiguous IRQ descriptors to allocate",
+   "node": "Preferred NUMA node for allocating the descriptors (-1 for any node)",
+   "owner": "Module that owns the allocated IRQ descriptors, used for reference accounting",
+   "affinity": "Optional array of affinity descriptors applied as default affinity to the allocated IRQs"
+  },
+  "porting_hint": "When porting, allocate the IRQ descriptor range but also replicate the managed-lifetime semantics by tying the range's release to the target device/runtime teardown path so the descriptors do not leak.",
+  "basis": "kernel/irq/devres.c:225"
+ },
+ "__pm_runtime_put_autosuspend": {
+  "category": "power-off",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 if the asynchronous autosuspend request was successfully queued (or no suspend needed); negative errno on failure (e.g. -EINPROGRESS if a runtime PM request is already pending, -EACCES if runtime PM is disabled for the device); the actual suspend result arrives asynchronously and is not reflected in this return value",
+  "effects": [
+   "decrements the device's runtime PM usage_count (power.usage_count)",
+   "queues an asynchronous idle/autosuspend request that may runtime-suspend (power down) the device after its autosuspend delay expires",
+   "schedules PM work on the runtime PM workqueue, affecting kernel scheduling"
+  ],
+  "params": {
+   "dev": "the target device whose usage reference is released and which becomes a candidate for runtime autosuspend"
+  },
+  "porting_hint": "Port this as an async reference-drop that decrements the device's power-usage count and schedules a delayed power-down/autosuspend of the device on the target runtime, returning immediately rather than blocking for the suspend result.",
+  "basis": "include/linux/pm_runtime.h:573"
+ },
+ "__sdhci_add_host": {
+  "category": "alloc",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure: -ENOMEM if the completion workqueue cannot be allocated, or the propagated error from request_threaded_irq (e.g. -EBUSY/-EINVAL), sdhci_led_register, or mmc_add_host; on failure all acquired resources are unwound in reverse order (LED unregistered, controller reset with interrupts masked, IRQ freed, workqueue destroyed)",
+  "effects": [
+   "creates a kernel workqueue named 'sdhci' (unbound, mem-reclaim, highpri) that survives until destroyed",
+   "installs two kernel timeout timers on the host (sdhci_timeout_timer, sdhci_timeout_data_timer)",
+   "registers a shared threaded IRQ handler on host->irq, making the controller interrupt-capable",
+   "registers an LED trigger device for the host",
+   "registers the mmc_host with the MMC core (mmc_add_host), publishing sysfs entries and starting host/rescan infrastructure",
+   "enables card detection, which can immediately trigger card-detect interrupt handling and rescan"
+  ],
+  "params": {
+   "host": "the sdhci_host describing the controller to bring online; supplies the mmc_host, irq, thread_irq_fn/complete_work_fn callbacks, quirks, and hardware name; its workqueue, timers, and waitqueue fields a"
+  },
+  "porting_hint": "Treat this as the host bring-up/teardown scaffold: replicate it by allocating the runtime's worker pool and timers, installing an interrupt handler, registering the host with the target MMC framework, and unwinding in exact reverse order on any failure, since the core logic is generic over the underlying I/O and interrupt services.",
+  "basis": "drivers/mmc/host/sdhci.c:4865"
+ },
+ "_copy_from_user": {
+  "category": "pure",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "unsigned long count of bytes that could NOT be copied; 0 means all n bytes were copied successfully, n means total failure, a partial value means the copy faulted partway through user memory (uncopied bytes, which the inline path typically zeroes in the destination)",
+  "effects": [
+   "writes n bytes of copied user data into the kernel destination buffer at 'to'",
+   "reads user-space memory at 'from', which may take a page fault and sleep while the user page is faulted in"
+  ],
+  "params": {
+   "to": "kernel-space destination buffer receiving the copied bytes",
+   "from": "user-space source address (__user pointer) to copy from",
+   "n": "number of bytes to copy"
+  },
+  "porting_hint": "Replace with the target runtime's safe user-memory read primitive (e.g., copy from an application/user pointer with fault checking), preserving the return-uncopied-count semantics rather than a plain memcpy.",
+  "basis": "lib/usercopy.c:16"
+ },
+ "_copy_to_user": {
+  "category": "pure",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "Number of bytes NOT copied: 0 means all n bytes were successfully written to the user buffer; a nonzero value means the copy faulted partway (bad user address, e.g. access_ok failure or unresolvable page fault), leaving only the first n - ret bytes copied.",
+  "effects": [],
+  "params": {
+   "to": "user-space destination address where the data is written",
+   "from": "kernel-space source buffer to read from",
+   "n": "number of bytes to copy"
+  },
+  "porting_hint": "Replace with the target runtime's user-copy primitive (e.g. copyout) or a plain memcpy when there is no user/kernel address-space separation, while preserving the 'uncopied byte count' return convention so callers can detect partial failure.",
+  "basis": "lib/usercopy.c:24"
+ },
+ "acpi_gpiochip_request_interrupts": {
+  "category": "alloc",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "void; there is no return value and no error reporting — every failure mode (chip->parent or chip->to_irq missing, no ACPI handle on the parent device, ACPI driver data not found via acpi_get_data, or the quirk acpi_quirk_skip_gpio_event_handlers() active) results in a silent early return with nothing requested",
+  "effects": [
+   "Installs ACPI GPIO event interrupt handlers: walks the _AEI resource list and requests IRQs, so GPIO-sourced events become live (system IRQ/device state changes)",
+   "Allocates memory for ACPI GPIO event descriptors via the acpi_gpiochip_alloc_event callback during the resource walk",
+   "Adds the chip's deferred_req_irqs_list_entry to the global deferred IRQ-request list, so future events can be requested later",
+   "Downstream interrupt handlers may now fire on external GPIO activity"
+  ],
+  "params": {
+   "chip": "the gpio_chip to arm ACPI event interrupts on; must have ->parent and ->to_irq set, an ACPI handle resolvable from ->parent, and previously attached ACPI driver data (acpi_gpio_chip) or the call does "
+  },
+  "porting_hint": "On a non-ACPI runtime treat this as an acquire-style helper: keep it side-effect-free when the platform has no event-interrupt source (mirroring the silent early returns), and otherwise replace the _AEI walk with the target runtime's event-interrupt descriptor parsing plus handler registration, pairing it with the matching free/free_interrupts call.",
+  "basis": "drivers/gpio/gpiolib-acpi-core.c:460"
+ },
+ "ahci_dev_classify": {
+  "category": "register-access",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Returns the ata device class from ata_port_classify (e.g. ATA_DEV_ATA, ATA_DEV_ATAPI, ATA_DEV_PMP, ATA_DEV_SEMB/SEMB_NOP, ATA_DEV_ZPODD); if the signature read from PORT_SIG matches no known device it yields ATA_DEV_UNKNOWN rather than an error code.",
+  "effects": [
+   "Performs an MMIO read of the AHCI port's PORT_SIG hardware register (device register read via readl); otherwise no memory writes, locks, or scheduling effects"
+  ],
+  "params": {
+   "ap": "Pointer to the ata_port being classified; used to locate the port's MMIO base (ahci_port_base) and passed to ata_port_classify for logging/context"
+  },
+  "porting_hint": "When porting, replace the readl of PORT_SIG with the target runtime's MMIO read of that register, then decode its 4 bytes (lbah/lbam/lbal/nsect) through an equivalent signature-based device-type classifier.",
+  "basis": "drivers/ata/libahci.c:1337"
+ },
+ "ahci_host_activate": {
+  "category": "power-on",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "Returns 0 on success; negative errno on failure: -EIO if AHCI_HFLAG_MULTI_MSI is set but hpriv->get_irq_vector is missing, or whatever error ahci_host_activate_multi_irqs / ata_host_activate propagates (e.g., -ENOMEM, -EBUSY from IRQ request, SCSI host registration errors).",
+  "effects": [
+   "Registers the controller's interrupt handler(s) with the OS: single shared IRQ via ata_host_activate or multiple per-port MSI/X vectors via ahci_host_activate_multi_irqs, so the device can now deliver",
+   "Brings the AHCI/ATA host into active operational state and registers it with the SCSI layer using sht (controller becomes visible to the block/SCSI subsystem)",
+   "Emits dev_warn if both AHCI_HFLAG_MULTI_MSI and a custom (non-default) irq_handler are configured, and dev_err (before failing with -EIO) if MULTI_MSI lacks get_irq_vector"
+  ],
+  "params": {
+   "host": "The ATA host being activated; its private_data must be an ahci_host_priv supplying irq, flags, irq_handler, and optionally get_irq_vector; used as the device for logging",
+   "sht": "scsi_host_template passed down to host activation and used to allocate/register the SCSI host exposing the controller to the OS"
+  },
+  "porting_hint": "This is the final host bring-up call, so in a ported runtime replace it with the equivalent sequence of registering the controller's interrupt path (single shared IRQ vs per-port MSI with a get_irq_vector callback) and starting/registering the host with the storage stack, preserving the -EIO validation failure and error propagation; it must not be stubbed as a no-op.",
+  "basis": "drivers/ata/libahci.c:2747"
+ },
+ "ahci_kick_engine": {
+  "category": "register-access",
+  "confidence": 0.88,
+  "source": "kernel-tree",
+  "return": "0 on success (engine stopped, CLO performed if needed, engine restarted); a negative errno from hpriv->stop_engine if the engine failed to stop; -EOPNOTSUPP if a CLO is required (port busy/DRQ or PMP attached) but the host lacks HOST_CAP_CLO; -EIO if the PORT_CMD_CLO bit does not self-clear within the 500ms timeout. In all failure paths the engine is still restarted before returning.",
+  "effects": [
+   "Stops the AHCI port's DMA engine (MMIO writes to the port register block via hpriv->stop_engine)",
+   "Sets the CLO (Command List Override) bit in PORT_CMD to force-clear the device's BSY/DRQ condition, changing device/port state",
+   "Restarts the AHCI port's DMA engine via hpriv->start_engine",
+   "Busy-waits/polls PORT_CMD with ata_wait_register for up to ~500ms, consuming CPU/scheduling time"
+  ],
+  "params": {
+   "ap": "struct ata_port * identifying the port; used to derive the port's MMIO register base (ahci_port_base) and the host-private data (hpriv) containing cap flags and stop/start engine callbacks"
+  },
+  "porting_hint": "Port this as raw MMIO register sequencing on the port register block (read PORT_TFDATA/PxCMD, stop engine, set-and-poll PORT_CMD_CLO with a timeout, restart engine), modeling the stop_engine/start_engine callbacks and capability checks rather than treating it as logic-only code.",
+  "basis": "drivers/ata/libahci.c:1367"
+ },
+ "ahci_platform_find_clk": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Pointer to the struct clk whose consumer ID string equals con_id among hpriv->clks[0..n_clks), or NULL if no entry has a non-NULL id matching con_id (e.g., the clock was never acquired or the name is wrong); it does not report probe-defer separately, so callers must treat NULL as 'not found' without distinguishing the cause.",
+  "effects": [],
+  "params": {
+   "hpriv": "AHCI host private data holding the previously acquired clock array (hpriv->clks) and its count (hpriv->n_clks); only read, never modified.",
+   "con_id": "Clock consumer/connection ID string to match via strcmp against each hpriv->clks[i].id."
+  },
+  "porting_hint": "Reimplement as a plain string-keyed search over the ported clock table returning a borrowed clock handle or NULL — it is pure lookup with no clock framework interaction, so map it to your runtime's equivalent clock-handle registry.",
+  "basis": "drivers/ata/libahci_platform.c:117"
+ },
+ "ahci_print_info": {
+  "category": "print",
+  "confidence": 0.99,
+  "source": "kernel-tree",
+  "return": "void; no return value, cannot fail",
+  "effects": [
+   "writes formatted AHCI capability/host information lines to the kernel log via dev_info (visible in dmesg/syslog)"
+  ],
+  "params": {
+   "host": "struct ata_host whose private_data (struct ahci_host_priv) supplies version, cap, cap2, and port_map values to report; also provides the device for dev_info",
+   "scc_s": "caller-supplied string naming the interface mode (e.g. AHCI vs SATA emulation) printed as part of the info line"
+  },
+  "porting_hint": "Replace the three dev_info calls with the target runtime's logging API and reproduce the same string formatting of AHCI version, command-slot count, link speed, implemented-port mask/hweight, and the cap/cap2 flag word.",
+  "basis": "drivers/ata/libahci.c:2599"
+ },
+ "ahci_reset_em": {
+  "category": "reset",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success, meaning the EM reset message was issued via a MMIO write; -EINVAL if the enclosure-management control register already has EM_CTL_TM (message transmission in progress) or EM_CTL_RST (reset already in progress) set, in which case the register is left untouched.",
+  "effects": [
+   "Performs an MMIO read of the AHCI HOST_EM_CTL register",
+   "Performs an MMIO write to HOST_EM_CTL with the EM_CTL_RST bit set, issuing an enclosure-management reset message and altering device (EM subsystem) state"
+  ],
+  "params": {
+   "host": "struct ata_host pointer whose ->private_data (ahci_host_priv) supplies the MMIO base (hpriv->mmio) used to reach the enclosure-management control register"
+  },
+  "porting_hint": "Port this as a read-modify-write of the enclosure-management control register: read HOST_EM_CTL, fail with an -EINVAL-equivalent if the TM or RST busy bits are set, otherwise write back the value with the reset bit (EM_CTL_RST) set to trigger the EM reset.",
+  "basis": "drivers/ata/libahci.c:1096"
+ },
+ "ahci_save_initial_config": {
+  "category": "register-access",
+  "confidence": 0.92,
+  "source": "kernel-tree",
+  "return": "void; the function never fails and returns no value — errors are not possible, though it logs warnings when capability or port-map fixups are applied",
+  "effects": [
+   "reads HBA MMIO registers (HOST_CAP, HOST_VERSION, HOST_CAP2, HOST_PORTS_IMPL, and per-port PORT_CMD) from device memory",
+   "may write the AHCI-enable bit to the HBA control register via ahci_enable_ahci(mmio) before reading CAP",
+   "emits dev_info/dev_warn log messages describing capability overrides and port-map fixups",
+   "mutates caller-visible state in the passed ahci_host_priv (saved_cap, saved_cap2, saved_port_map, saved_port_cap[], cap, cap2, version, port_map, and default start_engine/stop_engine callbacks)"
+  ],
+  "params": {
+   "dev": "struct device pointer used only for diagnostic logging (dev_info/dev_warn)",
+   "hpriv": "ahci_host_priv carrying the mmio base, saved_* values and AHCI_HFLAG_* quirk flags; receives the sanitized cap/cap2/version/port_map used for driver operation and stores per-port saved capabilities"
+  },
+  "porting_hint": "Port this as a routine that reads the CAP/VERSION/CAP2/PORTS_IMPL/PORT_CMD MMIO registers, first ensuring AHCI mode is enabled, then applies the platform hflag quirk masks and port-map fixups and writes the results into the host-private state, emitting the same info/warn logs.",
+  "basis": "drivers/ata/libahci.c:447"
+ },
+ "ahci_set_em_messages": {
+  "category": "register-access",
+  "confidence": 0.92,
+  "source": "kernel-tree",
+  "return": "void; returns nothing and cannot fail - the function silently does nothing if the global em_messages option is off or the host lacks HOST_CAP_EMS",
+  "effects": [
+   "reads AHCI host MMIO registers HOST_EM_LOC and HOST_EM_CTL via readl()",
+   "conditionally mutates caller-visible hpriv fields: em_loc, em_buf_sz, em_msg_type",
+   "conditionally sets ATA_FLAG_EM and possibly ATA_FLAG_SW_ACTIVITY in caller-visible pi->flags"
+  ],
+  "params": {
+   "hpriv": "AHCI host private data whose mmio base is read and whose em_loc/em_buf_sz/em_msg_type fields are populated",
+   "pi": "ata_port_info whose flags are conditionally updated to advertise enclosure-management support"
+  },
+  "porting_hint": "Replace the readl() MMIO accesses with the target runtime's device-register read primitive for the AHCI host BAR and keep the same conditional population of hpriv/pi fields so enclosure-message support is advertised identically.",
+  "basis": "drivers/ata/libahci.c:2677"
+ },
+ "ata_host_alloc_pinfo": {
+  "category": "alloc",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Pointer to a newly allocated and initialized struct ata_host with n_ports ports populated from ppi, or NULL if the underlying allocation (ata_host_alloc) fails; success does not mean hardware is started, only that the host object exists and is configured.",
+  "effects": [
+   "Allocates kernel memory for the ata_host, its ports array, and per-port ata_port structures, tied to dev via devm resource management so they are freed on device release",
+   "Host is not registered with the ATA subsystem (no ata_host_activate) so no hardware or bus state changes occur here"
+  ],
+  "params": {
+   "dev": "Device handle used for devres-managed allocation of the host and ports",
+   "ppi": "NULL-terminated array of ata_port_info pointers supplying per-port PIO/MWDMA/UDMA masks, flags, link flags, and port_ops; a NULL entry keeps the previous (initially dummy) info for remaining ports",
+   "n_ports": "Number of ATA ports to allocate in the host"
+  },
+  "porting_hint": "Port as an allocation + configuration helper that creates the host object plus n_ports port objects and copies masks, flags, link flags, and ops from each ppi entry (with NULL meaning reuse the prior entry, defaulting to a dummy info), returning NULL on allocation failure.",
+  "basis": "drivers/ata/libata-core.c:5832"
+ },
+ "ata_host_resume": {
+  "category": "power-on",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes — it unconditionally marks the host's device power state as on",
+  "effects": [
+   "sets host->dev->power.power_state to PMSG_ON, changing the device's power-management state visible to the PM core and other code inspecting it"
+  ],
+  "params": {
+   "host": "the ATA host whose underlying device's power state is to be marked as fully on (PMSG_ON)"
+  },
+  "porting_hint": "On the target runtime, replace this with whatever call or field write marks the host's device as resumed/fully powered (e.g., the PM core's equivalent of PMSG_ON), or make it a no-op if no power-management state tracking exists.",
+  "basis": "drivers/ata/libata-core.c:5515"
+ },
+ "ata_host_suspend": {
+  "category": "power-off",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "void; it never fails and returns no value — it is a state bookkeeping helper that cannot fail",
+  "effects": [
+   "writes host->dev->power.power_state = mesg, changing the owning device's recorded power-management state (externally visible via the driver core's power-state field); no hardware registers are touched"
+  ],
+  "params": {
+   "host": "ATA host whose owning device's power_state field is updated",
+   "mesg": "power management message (e.g. PM_EVENT_SUSPEND/PM_EVENT_FREEZE) to record as the device's new power state"
+  },
+  "porting_hint": "Port as a one-line store of the target runtime's suspend-state value into the device's power-state slot (or drop it entirely if the ported runtime tracks power state elsewhere), since the function only records state and performs no hardware or I/O operations.",
+  "basis": "drivers/ata/libata-core.c:5503"
+ },
+ "ata_msleep": {
+  "category": "delay",
+  "confidence": 0.98,
+  "source": "kernel-tree",
+  "return": "void; the function never fails and returns no value, though the actual sleep duration may exceed the requested msecs due to scheduler granularity",
+  "effects": [
+   "blocks the calling task for at least msecs milliseconds (yields the CPU via msleep or usleep_range)",
+   "temporarily releases the ATA port's error-handling (EH) ownership so other threads/EH can proceed while sleeping, when the caller is the EH owner",
+   "reacquires the ATA port EH ownership after the sleep completes"
+  ],
+  "params": {
+   "ap": "struct ata_port whose eh_owner is checked against current; if the caller owns EH it is released and reacquired around the sleep; may be NULL",
+   "msecs": "minimum number of milliseconds to sleep; values under 20 use usleep_range(usecs, usecs+50) instead of msleep"
+  },
+  "porting_hint": "Port as a plain sleep of msecs milliseconds (fine-grained sleep for short durations), and if the target runtime has an analogous exclusive port/error-handler ownership concept, release it before sleeping and reacquire after.",
+  "basis": "drivers/ata/libata-core.c:6822"
+ },
+ "ata_wait_after_reset": {
+  "category": "delay",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Pass-through of ata_wait_ready(): 0 if the link became ready before the deadline; otherwise a negative errno, typically -ENODEV if the link/device appears absent (offline) and a timeout-style error (e.g., -EBUSY) if it never became ready by the deadline",
+  "effects": [
+   "Calling task sleeps for a fixed post-reset interval (ata_msleep of ATA_WAIT_AFTER_RESET) before polling",
+   "Task further sleeps in a poll loop until ready or deadline, yielding CPU (scheduling effect)",
+   "Device/link state is read repeatedly via the check_ready callback (device/controller state observation)",
+   "Advances wall-clock progress of the reset sequence"
+  ],
+  "params": {
+   "link": "ATA link whose readiness is awaited after reset; also supplies the ata_port (link->ap) used for port-aware sleeping",
+   "deadline": "Absolute jiffies deadline by which the link must report ready",
+   "check_ready": "Callback invoked to poll link readiness; returns 0 when ready, -ENODEV if the device is absent, other negative errno while not yet ready"
+  },
+  "porting_hint": "Port this as a fixed sleep of the post-reset duration followed by deadline-bounded polling of the readiness callback that yields the CPU between polls and maps absence/timeout to distinct error codes.",
+  "basis": "drivers/ata/libata-core.c:3755"
+ },
+ "ata_wait_register": {
+  "category": "register-access",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "The last raw 32-bit value read from reg. On success it is the value whose masked bits (tmp & mask) no longer equal val; on timeout it is the last polled value which may still satisfy (tmp & mask) == val, i.e. no error code is returned — the caller must compare (ret & mask) against val to detect timeout.",
+  "effects": [
+   "Repeatedly reads a device MMIO register, which can have read side effects on some hardware",
+   "Puts the calling thread to sleep via ata_msleep(ap, interval) between polls, blocking the current task for up to roughly timeout milliseconds",
+   "Consumes wall-clock/jiffies time, so it only computes the deadline after the first read to ensure preceding writes flush before the timeout starts"
+  ],
+  "params": {
+   "ap": "ATA port context, used for the port-aware sleep helper (ata_msleep)",
+   "reg": "MMIO address of the 32-bit device register to poll",
+   "mask": "Bitmask selecting which bits of the register are examined against val",
+   "val": "The bit pattern the masked register bits must leave behind; polling continues while (reg & mask) == val",
+   "interval": "Milliseconds to sleep between consecutive register reads",
+   "timeout": "Maximum total time in milliseconds to keep polling before giving up"
+  },
+  "porting_hint": "Port this as a polling loop: read the register with the target platform's MMIO-read primitive, compute the deadline after that first read, then while ((value & mask) == val && now < deadline) sleep interval ms and re-read, returning the last value read for caller-side timeout detection.",
+  "basis": "drivers/ata/libata-core.c:6865"
+ },
+ "device_get_dma_attr": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "enum dev_dma_attr value: DEV_DMA_NOT_SUPPORTED when the device's firmware node has no device_get_dma_attr operation; otherwise the attribute reported by firmware (e.g., DEV_DMA_COHERENT or DEV_DMA_NON_COHERENT). No error return other than the NOT_SUPPORTED sentinel; cannot fail otherwise.",
+  "effects": [],
+  "params": {
+   "dev": "const pointer to the device whose firmware node (dev_fwnode) is queried for its DMA attribute"
+  },
+  "porting_hint": "This is a read-only firmware-node property getter with no side effects, so port it as a pure lookup that maps the target runtime's device/platform DMA-coherency description (e.g., coherent, non-coherent, unknown) to the dev_dma_attr-equivalent enum, defaulting to NOT_SUPPORTED when no such description exists.",
+  "basis": "drivers/base/property.c:990"
+ },
+ "device_property_read_u32_array": {
+  "category": "pure",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success; a negative errno on failure (typically -ENODATA if the property does not exist on the firmware node, -EOVERFLOW/-EINVAL if the property exists but holds fewer than nval u32 elements or has a bad size); the return value is propagated from fwnode_property_read_u32_array",
+  "effects": [
+   "writes up to nval u32 values into the caller-provided val buffer; no device state, locks, or scheduling effects are visible at this wrapper level"
+  ],
+  "params": {
+   "dev": "device whose firmware node (device tree, ACPI, or software node) is queried via dev_fwnode(dev) for the property",
+   "propname": "name of the property to read from the firmware node",
+   "val": "output buffer that receives the nval u32 property values on success",
+   "nval": "number of u32 elements expected to be read into val"
+  },
+  "porting_hint": "Port as a read-only lookup against the target runtime's device-description source (DT/ACPI/config table) that copies nval u32 entries into val and returns 0 or a negative error code, without side effects.",
+  "basis": "drivers/base/property.c:196"
+ },
+ "devm_clk_bulk_get_optional": {
+  "category": "pure",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "Always returns 0 (success) in this configuration; this stub never fails and cannot defer or error out, unlike the full CONFIG_HAVE_CLK implementation which may return a negative errno.",
+  "effects": [],
+  "params": {
+   "dev": "struct device pointer the clocks would be managed for (unused in this stub)",
+   "num_clks": "number of clock entries in the clks array (unused in this stub)",
+   "clks": "array of struct clk_bulk_data entries that a real implementation would populate with optional clocks and register for devres cleanup (unused in this stub)"
+  },
+  "porting_hint": "Since this stub is a no-op that returns 0, replace calls to it with a constant success return on the target runtime, or map it to managed optional clock acquisition if the target runtime actually provides clocks.",
+  "basis": "include/linux/clk.h:1049"
+ },
+ "devm_irq_alloc_generic_chip": {
+  "category": "alloc",
+  "confidence": 0.5,
+  "source": "model",
+  "return": "On success, returns a pointer to a newly allocated and initialized struct irq_chip_generic; on failure returns NULL (underlying allocation or devres registration failed); the allocation is device-managed (devm) and freed automatically when dev is removed/unbound.",
+  "effects": [
+   "Allocates kernel memory for an irq_chip_generic plus its num_ct irq_chip_type array",
+   "Registers the allocation on dev's devres list so it is auto-released on device removal"
+  ],
+  "params": {
+   "dev": "Owning device whose devres lifecycle controls the allocation",
+   "name": "Name assigned to the irq chip (shown in /proc/interrupts)",
+   "num_ct": "Number of irq_chip_type sub-chip structures to allocate",
+   "irq_base": "First IRQ number handled by this chip",
+   "reg_base": "iomem base address of the interrupt controller registers",
+   "handler": "irq_flow_handler_t flow handler dispatched for this chip's interrupts"
+  },
+  "porting_hint": "Replace with a runtime-managed heap allocation of the irq-chip bookkeeping bound to the device lifetime, with automatic teardown on device removal to reproduce devm semantics, and have callers call the setup/unregister counterpart explicitly.",
+  "basis": "/home/yfblock/Code/dri-trans-paper/reharness/vendor/linux/include/linux/irq.h"
+ },
+ "free_irq": {
+  "category": "free",
+  "confidence": 0.97,
+  "source": "kernel-tree",
+  "return": "Returns the devname string (action->name) of the removed handler's action on success; returns NULL if the irq descriptor does not exist, if the irq is per-CPU dev_id managed (warns and refuses), or if no matching action for dev_id was found in __free_irq.",
+  "effects": [
+   "Releases the interrupt line so the kernel stops delivering the irq to the handler (via __free_irq, which disables the irq and removes the action)",
+   "Synchronizes with any in-flight handler execution before removal",
+   "Frees the irqaction allocation (kfree)",
+   "Emits kernel warnings (WARN_ON) for invalid per-CPU devid or pending affinity_notify usage",
+   "May change device/kernel scheduling state by no longer invoking the callback on interrupt"
+  ],
+  "params": {
+   "irq": "Linux irq number whose handler is being released",
+   "dev_id": "Cookie identifying which registered handler to remove (the value passed to request_irq)"
+  },
+  "porting_hint": "On the target runtime, unregister/unhook the platform's interrupt handler associated with dev_id and treat a NULL return as 'no matching handler was registered', mirroring request_irq's pairing semantics.",
+  "basis": "kernel/irq/manage.c:2004"
+ },
+ "fwnode_get_child_node_count": {
+  "category": "pure",
+  "confidence": 0.92,
+  "source": "kernel-tree",
+  "return": "The number of direct child nodes of the given firmware node handle, as an unsigned int; returns 0 if the node exists but has no children or if the underlying firmware backend reports none — there is no error or failure case.",
+  "effects": [],
+  "params": {
+   "fwnode": "Pointer to the firmware node handle (struct fwnode_handle) whose first-level child nodes are to be counted; treated as read-only."
+  },
+  "porting_hint": "Port this as a read-only traversal that iterates first-level children of the runtime's device-tree/firmware node representation and returns the count (e.g., loop over child nodes or call an equivalent child-count API), with no allocation, locking, or cleanup required.",
+  "basis": "drivers/base/property.c:945"
+ },
+ "gpiochip_add_data_with_key": {
+  "category": "alloc",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure (e.g., -ENOMEM when kzalloc/kcalloc/kstrdup_const or the IDA allocation fails, or an error propagated from gpiochip_get_ngpios, base-number allocation, list insertion, OF/pinctrl/range setup, or hogging), in which case all allocated resources are unwound and the chip is not registered",
+  "effects": [
+   "allocates kernel memory for a struct gpio_device, its descriptor array, and a label copy, and reserves an ID from the global gpio IDA",
+   "reserves a contiguous range in the global GPIO integer numberspace and may write the dynamically assigned base back into gc->base",
+   "registers the new gpio_device in the global gpio_devices list under gpio_devices_lock and initializes a device node (name, type, bus, parent) that is later released by gpiodev_release",
+   "mutates the caller's gpio_chip (sets gc->gpiodev, associates data) and initializes per-line descriptor flags, potentially invoking the chip's get_direction callback to read hardware state",
+   "integrates the chip with OF/pinctrl pin ranges, ACPI, valid masks, and hog lines, and may emit a dev_warn about deprecated static base allocation"
+  ],
+  "params": {
+   "gc": "caller-supplied struct gpio_chip describing the chip (ngpio, label, base, names, direction_input/get_direction callbacks, parent); it is populated with the new gpio_device pointer and possibly an assi",
+   "data": "driver-private data pointer stored in the chip for retrieval via gpiochip_get_data()",
+   "lock_key": "lockdep class key used to initialize the chip's lock with lock validation",
+   "request_key": "lockdep class key used to initialize the per-line request lock with lock validation"
+  },
+  "porting_hint": "Port this as the runtime's equivalent 'allocate and register a GPIO controller' operation: create a chip context with a unique ID and line-descriptor range, wire up the driver's callbacks and private data, mirror assigned-base and callback-driven direction probing, and treat any negative errno as full rollback without registration.",
+  "basis": "drivers/gpio/gpiolib.c:1137"
+ },
+ "gpiochip_generic_config": {
+  "category": "register-access",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure: -ENOTSUPP when CONFIG_PINCTRL is enabled but the chip has no pin ranges registered with pinctrl, otherwise whatever error pinctrl_gpio_set_config propagates (e.g., -ENOTSUPP if the pin controller has no pinconf ops, or errors from applying the config). With CONFIG_PINCTRL disabled it is a no-op returning 0.",
+  "effects": [
+   "applies a pin configuration (e.g., debounce, bias, drive strength) to the hardware pin via the pinctrl subsystem, changing external device/pin state"
+  ],
+  "params": {
+   "gc": "the gpio_chip whose line is being configured",
+   "offset": "offset of the GPIO line within the chip",
+   "config": "packed pin configuration request (config param and argument) to apply to the pin"
+  },
+  "porting_hint": "Delegate the config request to the target platform's pin-configuration backend (returning an ENOTSUPP-style error when no backend/pin-range is attached) rather than expecting this wrapper to do the work itself.",
+  "basis": "drivers/gpio/gpiolib.c:2396"
+ },
+ "irq_domain_create_legacy": {
+  "category": "alloc",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "Pointer to a newly instantiated struct irq_domain on success; NULL on failure (an error pointer from __irq_domain_instantiate is converted to NULL, so callers must check for NULL rather than ERR_PTR).",
+  "effects": [
+   "allocates a new struct irq_domain object",
+   "registers the new domain in the kernel's global IRQ domain list, making it visible to irq_find_domain/IRQ mapping lookups",
+   "pre-maps 'size' hardware IRQs starting at first_hwirq onto virtual IRQs starting at first_irq, creating irq_desc mappings visible system-wide"
+  ],
+  "params": {
+   "fwnode": "Firmware node handle that identifies this domain for lookup/association (stored as domain->fwnode)",
+   "size": "Number of IRQ descriptors to allocate/map for the legacy domain (combined with first_hwirq to size the domain)",
+   "first_irq": "First Linux virtual IRQ number to use as the domain's virq_base",
+   "first_hwirq": "First hardware IRQ number to use as the domain's hwirq_base",
+   "ops": "Pointer to the caller's irq_domain_ops callback table (activate, map, xlate, etc.) invoked on IRQ operations",
+   "host_data": "Opaque caller-private data stored in the domain and passed back through the ops callbacks"
+  },
+  "porting_hint": "When porting, replace this with the target runtime's equivalent of creating and registering an interrupt domain (a mapping table of size virq_base..first_irq+size to hwirq first_hwirq+), return a domain handle or NULL on failure, and wire the ops callbacks and host_data through to that mapping layer.",
+  "basis": "kernel/irq/irqdomain.c:496"
+ },
+ "irq_set_irq_wake": {
+  "category": "register-access",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure: -EINVAL if the IRQ number has no descriptor or is an NMI, or the error propagated from the irqchip's set_wake callback (in which case the wake_depth refcount is rolled back); an unbalanced disable (wake_depth already 0) only emits a WARN and still returns 0.",
+  "effects": [
+   "Invokes the irqchip's irq_set_wake callback via set_irq_wake_real, which typically reconfigures wake-mask registers in the interrupt-controller hardware (device state change, only when the wake_depth ",
+   "Sets or clears IRQD_WAKEUP_STATE on the irq descriptor, which affects whether the IRQ is armed as a wakeup source during system suspend (only on refcount transitions)",
+   "Maintains desc->wake_depth refcount across calls, so nested enable/disable from shared drivers balance out",
+   "Emits a kernel WARN to dmesg on an unbalanced wake disable",
+   "Briefly takes the irq descriptor bus lock for the duration of the call"
+  ],
+  "params": {
+   "irq": "Linux (virtual) IRQ number identifying the interrupt line to configure as a wakeup source",
+   "on": "1 to enable the IRQ as a wakeup source, 0 to disable; reference-counted, hardware is only touched when the count crosses zero"
+  },
+  "porting_hint": "Port this to the target runtime's enable/disable-wakeup-source API (enable_irq_wake/disable_irq_wake equivalent), preserving the nesting refcount semantics and propagating its failure codes, since only the outermost enable/innermost disable should touch hardware.",
+  "basis": "kernel/irq/manage.c:868"
+ },
+ "irq_setup_generic_chip": {
+  "category": "register-access",
+  "confidence": 0.65,
+  "source": "kernel-tree",
+  "return": "Void; the function cannot fail and returns no status - callers must not check a return value; an invalid irq_base or missing irq_desc simply results in that IRQ not being wired (irq_get_irq_data/irq_modify_status no-op on missing descriptors).",
+  "effects": [
+   "Adds the generic chip to the global gc_list while holding the gc_lock raw spinlock (acquired and released inside)",
+   "Initializes/rewrites the chip's in-memory mask cache (gc->mask_cache / per-type mask_cache)",
+   "For each IRQ selected in msk: installs the chip and handler, attaches gc as chip_data, and sets the per-IRQ mask bit in the irq_desc's irq_data (persistent global IRQ-core state)",
+   "Clears/sets status bits on each affected IRQ line via irq_modify_status (e.g., enabling IRQ_NOREQUEST/IRQ_NOPROBE changes, which alters how the line can be requested later)",
+   "May assign lockdep classes to the nested lock of each IRQ when IRQ_GC_INIT_NESTED_LOCK is passed",
+   "Records gc->irq_cnt = number of IRQs set up"
+  ],
+  "params": {
+   "gc": "Pointer to the struct irq_chip_generic to register; must already have irq_base, chip_types, num_ct, and reg-related fields initialized",
+   "msk": "Bitmask selecting which interrupts to wire up, where bit 0 corresponds to gc->irq_base and each successive bit to the next IRQ number",
+   "flags": "IRQ_GC_* flags controlling setup: IRQ_GC_INIT_NESTED_LOCK installs lockdep classes, IRQ_GC_NO_MASK skips per-IRQ mask initialization, mask-cache mode flags select per-type vs shared cache",
+   "clr": "Status bits to clear on each selected IRQ (e.g., IRQ_NOPROBE, IRQ_NOREQUEST) via irq_modify_status",
+   "set": "Status bits to set on each selected IRQ via irq_modify_status"
+  },
+  "porting_hint": "When porting, provide an equivalent 'register a bank of IRQs with the runtime's IRQ core' operation that takes the runtime's global IRQ lock, adds the chip to a registry, and for each bit set in msk installs the chip callbacks/handler and applies the clr/set status bits to the corresponding virtual IRQ, returning no error.",
+  "basis": "kernel/irq/generic-chip.c:530"
+ },
+ "is_acpi_device_node": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "true if the given firmware node is an ACPI device node, false otherwise; in this stub (non-ACPI build) it always returns false, and there are no failure modes",
+  "effects": [],
+  "params": {
+   "fwnode": "firmware node handle whose backing type is being tested (unused in the stub, which always returns false)"
+  },
+  "porting_hint": "Port as a pure type-check on the firmware-node abstraction (e.g., comparing the node's ops/type tag against the ACPI device-node type) or as a constant false if ACPI nodes are absent in the target runtime.",
+  "basis": "include/linux/acpi.h:863"
+ },
+ "is_software_node": {
+  "category": "pure",
+  "confidence": 0.98,
+  "source": "kernel-tree",
+  "return": "true if fwnode is a valid non-NULL, non-ERR_PTR handle whose ops pointer equals software_node_ops; false otherwise, including when fwnode is NULL or an ERR_PTR-encoded error",
+  "effects": [],
+  "params": {
+   "fwnode": "firmware node handle to test; may be NULL or an error pointer without crashing the check"
+  },
+  "porting_hint": "Reimplement as a read-only predicate: null/error-pointer guard followed by comparing the handle's vtable/ops tag against the software-node ops identity; no locking, allocation, or device state involved.",
+  "basis": "drivers/base/swnode.c:50"
+ },
+ "misc_register": {
+  "category": "alloc",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure: -EINVAL if minor > MISC_DYNAMIC_MINOR (invalid fixed minor), -EBUSY if the dynamic minor range is exhausted or a fixed minor is already registered, or the PTR_ERR errno from device_create_with_groups (e.g. -ENOMEM) if device creation fails, in which case the allocated minor is freed and minor is restored to MISC_DYNAMIC_MINOR",
+  "effects": [
+   "Reserves a minor number in the global misc minor bitmap (misc_minor_alloc) for the caller",
+   "Creates a device under the misc class (device_create_with_groups), making the device visible in sysfs/devtmpfs and usable from userspace",
+   "Inserts the miscdevice at the front of the global misc_list, affecting later duplicate-minor checks and device lookups by other code",
+   "Holds and releases the global mutex misc_mtx for the duration of registration",
+   "On failure, releases the previously allocated minor (misc_minor_free)"
+  ],
+  "params": {
+   "misc": "Pointer to caller-owned struct miscdevice; input fields minor (MISC_DYNAMIC_MINOR for dynamic allocation), name, parent, groups are read; on success minor is updated to the allocated value and this_de"
+  },
+  "porting_hint": "Map this to the target runtime's device/resource registration API that atomically reserves an identifier, publishes the device handle, and rolls back the reservation on failure, preserving 0/-errno return semantics.",
+  "basis": "drivers/char/misc.c:209"
+ },
+ "pci_disable_device": {
+  "category": "power-off",
+  "confidence": 0.75,
+  "source": "kernel-tree",
+  "return": "void; no failure modes — this evidence is an empty no-op stub (the include/linux/pci.h fallback used when CONFIG_PCI is off), so it always succeeds and reports nothing; the real kernel implementation also returns void and cannot fail",
+  "effects": [
+   "in this definition: none — the function body is empty, so no memory, lock, device-state, or scheduling changes occur",
+   "in a full CONFIG_PCI build the same-named function disables the device: clears bus-master/memory/IO decode bits in the PCI command register and drops the enable count"
+  ],
+  "params": {
+   "dev": "pointer to the struct pci_dev identifying the PCI device to disable; accepted but ignored by this stub"
+  },
+  "porting_hint": "Map this to the target runtime's device-deactivate path (disable bus mastering and BAR decoding, release the enable reference, allow low-power state), or simply drop it as an empty no-op if the ported runtime has no PCI subsystem.",
+  "basis": "include/linux/pci.h:2146"
+ },
+ "pci_enable_device_mem": {
+  "category": "power-on",
+  "confidence": 0.75,
+  "source": "kernel-tree",
+  "return": "0 on success (device memory access enabled; enable refcount incremented); negative errno on failure — e.g., error from transitioning the device to D0 or from arch/BAR enablement — in which case the enable count is rolled back and the device remains disabled",
+  "effects": [
+   "transitions the PCI function out of low-power state to D0, powering/waking the device",
+   "sets PCI_COMMAND memory-decode so the device's memory BARs become active on the bus (device register/memory space becomes accessible)",
+   "increments the device's enable_cnt refcount, which can gate suspend/runtime-PM of the device",
+   "may recursively enable the upstream bridge"
+  ],
+  "params": {
+   "dev": "struct pci_dev to enable memory access for"
+  },
+  "porting_hint": "Port this as a device-enable operation that brings the PCI function into D0 and turns on memory address decoding via the target runtime's device/PCI enable API (also handling the enable refcount), rather than any local computation.",
+  "basis": "drivers/pci/pci.c:2105"
+ },
+ "pci_free_irq_vectors": {
+  "category": "free",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "void; returns nothing and has no failure modes — the kernel header variant shown is an empty no-op (used when MSI support is disabled), while the real implementation silently releases resources",
+  "effects": [
+   "Releases the MSI/MSI-X/legacy-IRQ vectors previously allocated for the device so they must no longer be used and can be re-allocated later (the header stub variant itself performs no external action)"
+  ],
+  "params": {
+   "dev": "struct pci_dev pointer identifying the device whose previously allocated interrupt vectors are released"
+  },
+  "porting_hint": "Map this to the target runtime's interrupt-vector de-allocation (free the MSI/MSI-X/interrupt resources previously obtained by the matching alloc call), or make it a no-op if the port never allocates vectors.",
+  "basis": "include/linux/pci.h:1829"
+ },
+ "pci_irq_vector": {
+  "category": "pure",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "The Linux IRQ number for interrupt vector index nr: returns dev->irq (the device's single legacy interrupt line) when nr == 0; returns -EINVAL for nr > 0 after a one-time WARN_ON_ONCE diagnostic, which the caller must treat as an invalid-argument failure; never blocks or changes device state.",
+  "effects": [],
+  "params": {
+   "dev": "PCI device whose interrupt vector is resolved (reads its dev->irq member)",
+   "nr": "Interrupt vector index; only 0 (the legacy/shared IRQ) is valid in this non-MSI stub"
+  },
+  "porting_hint": "Port it as a pure lookup that returns the device's single/legacy IRQ number for nr == 0 and an invalid-argument error for nr > 0, performing no allocation, locking, or hardware access.",
+  "basis": "include/linux/pci.h:1833"
+ },
+ "pci_release_regions": {
+  "category": "free",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes (in the shown evidence it is an empty no-op stub, and even in PCI-enabled builds it cannot fail)",
+  "effects": [
+   "In PCI-enabled builds: releases the previously claimed I/O and memory address-space resources (BAR regions) for the device back to the kernel resource manager, making them available to other drivers; "
+  ],
+  "params": {
+   "dev": "Pointer to the pci_dev whose previously pci_request_regions-claimed BAR I/O and memory regions are to be released"
+  },
+  "porting_hint": "Implement this as the teardown counterpart to the region-claim call that releases any previously reserved/mapped BAR address ranges, and make it a harmless no-op if the target runtime has no PCI region-claiming mechanism (as the stubbed evidence does).",
+  "basis": "include/linux/pci.h:2188"
+ },
+ "pci_request_regions": {
+  "category": "alloc",
+  "confidence": 0.75,
+  "source": "kernel-tree",
+  "return": "0 on success, negative errno on failure; the evidence shows the inline stub variant (used when PCI support is unavailable) which unconditionally returns -EIO, i.e., the request always fails in this configuration, whereas the full implementation returns 0 when all regions are reserved or a negative errno (e.g., -EBUSY if any region is already claimed) otherwise",
+  "effects": [
+   "exclusively reserves (claims as busy) the device's I/O port and memory-mapped BAR address ranges in the kernel resource registry so other drivers cannot claim them",
+   "records res_name as the owner of the claimed regions (visible in /proc/iomem and /proc/ioports)",
+   "the stub form shown in the evidence performs no allocation and only reports failure"
+  ],
+  "params": {
+   "dev": "pointer to the pci_dev whose BAR regions are to be reserved",
+   "res_name": "name string recorded in the resource registry as the claimant of the regions"
+  },
+  "porting_hint": "Replace with the target runtime's exclusive-reservation mechanism for the device's memory-mapped and port-I/O address ranges (allocating/claiming BAR resources), and route any failure into the driver's probe-error cleanup path (releasing any partially claimed regions).",
+  "basis": "include/linux/pci.h:2186"
+ },
+ "pci_set_master": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "void; the function returns nothing and, as defined here, cannot fail",
+  "effects": [],
+  "params": {
+   "dev": "pointer to the struct pci_dev the call nominally targets; this stub ignores it entirely"
+  },
+  "porting_hint": "The evidence shows an empty inline body (a no-op stub), so no action is needed when porting, but verify the target runtime does not require real bus-master enablement behind this call.",
+  "basis": "include/linux/pci.h:2143"
+ },
+ "pcim_iomap_regions": {
+  "category": "alloc",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success after all BARs selected by mask are mapped and registered; on failure returns the negative errno from pcim_iomap_region (via PTR_ERR) or pcim_add_mapping_to_legacy_table, after unmapping and unregistering every previously processed BAR",
+  "effects": [
+   "claims/reserves the selected PCI BAR memory or I/O regions so no other driver can request them",
+   "creates new ioremap-style virtual mappings of each selected BAR",
+   "records the mappings in the devres-managed legacy iomap table associated with pdev",
+   "on failure, releases and unmaps all BARs already processed in this call"
+  ],
+  "params": {
+   "pdev": "PCI device whose BARs are requested and mapped",
+   "mask": "bitmask of BAR indices; bit N set means BAR N is processed",
+   "name": "name recorded for the requested regions (e.g., visible in /proc/iomem)"
+  },
+  "porting_hint": "Port by looping over the mask bits, reserving and mapping each BAR with the target runtime's request_mem_region/ioremap equivalents, and unwinding (unmap + release) any already-mapped BARs if any step fails.",
+  "basis": "drivers/pci/devres.c:676"
+ },
+ "pcim_iomap_table": {
+  "category": "alloc",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "Pointer to the device's array (indexed by BAR number) of 'void __iomem *' mapping slots managed by devres; entries are zero-initialized and filled in by pcim_iomap(). Returns NULL only if the internal devres allocation fails (e.g., out of memory), which callers must treat as an error; a successful call never returns NULL.",
+  "effects": [
+   "allocates a zeroed struct pcim_iomap_devres with GFP_KERNEL (may sleep) on first invocation for a device",
+   "registers a devres entry keyed by pcim_iomap_release on pdev->dev so iomappings stored in the table are automatically unmapped/released on device teardown (persistent device-state change)"
+  ],
+  "params": {
+   "pdev": "PCI device whose managed iomap table is looked up (and lazily created) via the device's devres list"
+  },
+  "porting_hint": "Emulate with a lazily-created, zero-initialized per-device BAR-mapping table owned by the device's lifetime manager (auto-released on teardown) so pcim_iomap/pcim_iounmap can use it, returning NULL on allocation failure.",
+  "basis": "drivers/pci/devres.c:439"
+ },
+ "pcim_request_all_regions": {
+  "category": "alloc",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "0 on success after all PCI_STD_NUM_BARS (6) standard BARs were requested; otherwise the negative errno returned by pcim_request_region() for the first BAR that failed, at which point all previously requested regions have already been released via pcim_release_all_regions().",
+  "effects": [
+   "Reserves the I/O and memory resource regions of all standard BARs of the PCI device in the kernel resource tree (visible in /proc/iomem) under the given name",
+   "Registers devres-managed cleanup so the regions are automatically released on driver detach if the call succeeds",
+   "On partial failure, releases any regions already requested, leaving the device with no reserved BARs"
+  ],
+  "params": {
+   "pdev": "The PCI device whose six standard BAR regions are to be requested",
+   "name": "String recorded as the owner name of each requested region in the resource tree (e.g. shown in /proc/iomem)"
+  },
+  "porting_hint": "In the target runtime, reserve all BAR memory/I/O ranges for the device as an atomic group with rollback on partial failure, and tie automatic release of the reservations to the device/driver lifetime as devres does.",
+  "basis": "drivers/pci/devres.c:796"
+ },
+ "pm_runtime_force_suspend": {
+  "category": "power-off",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Returns 0 for success; in the full CONFIG_PM implementation it can return a negative errno (e.g., -EAGAIN/-EIO propagated from the device's runtime_suspend callback if the device cannot be suspended), but in this inline stub (CONFIG_PM=n) it unconditionally returns 0 indicating a successful no-op.",
+  "effects": [
+   "transitions the device into runtime-suspended (low-power) state by invoking its runtime_suspend callback",
+   "disables runtime PM for the device so it stays suspended across the system suspend cycle",
+   "in the stub variant shown, no external effects occur at all"
+  ],
+  "params": {
+   "dev": "pointer to the struct device to be forced into runtime suspend"
+  },
+  "porting_hint": "On the target runtime, invoke the device's low-power/suspend path (or a no-op returning 0 if no runtime-PM equivalent exists) so the device quiesces before the system suspends.",
+  "basis": "include/linux/pm_runtime.h:259"
+ },
+ "pm_runtime_mark_last_busy": {
+  "category": "register-access",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes",
+  "effects": [
+   "writes a monotonic-fast-clock timestamp into shared device state (dev->power.last_busy) readable by runtime PM code, which resets the baseline used to decide autosuspend eligibility"
+  ],
+  "params": {
+   "dev": "pointer to the struct device whose runtime-PM 'last busy' timestamp is updated"
+  },
+  "porting_hint": "Port as a single store of the current monotonic timestamp (ideally from a fast/lockless clock, written atomically or via a monotonic-compatible primitive) into the device model's power-state field that autosuspend logic reads.",
+  "basis": "include/linux/pm_runtime.h:233"
+ },
+ "pm_runtime_set_autosuspend_delay": {
+  "category": "pure",
+  "confidence": 0.75,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes — this CONFIG_PM-disabled inline stub has an empty body",
+  "effects": [],
+  "params": {
+   "dev": "struct device * whose runtime-PM autosuspend delay would be configured; ignored by this stub",
+   "delay": "autosuspend delay in milliseconds to record for the device; ignored by this stub"
+  },
+  "porting_hint": "Port this as a no-op unless the target runtime implements runtime power management with autosuspend, in which case store the millisecond delay as the device's autosuspend timeout (device-state write) instead.",
+  "basis": "include/linux/pm_runtime.h:316"
+ },
+ "pm_suspend_default_s2idle": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "true if suspend-to-idle (S2Idle/'freeze') is the system's default sleep mode, false otherwise; in this build the stub always returns false; no failure modes — it cannot fail",
+  "effects": [],
+  "params": {},
+  "porting_hint": "Replace with a constant or runtime config query indicating whether the target platform's default low-power sleep state is suspend-to-idle rather than mem/standby, defaulting to false.",
+  "basis": "include/linux/suspend.h:290"
+ },
+ "put_device": {
+  "category": "free",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes — the call cannot fail, and a NULL dev argument is explicitly tolerated as a no-op",
+  "effects": [
+   "decrements the kobject reference count of the device, visible to any get_device/put_device user",
+   "when the last reference is dropped, synchronously invokes the device's release path (kobject release callbacks, class/type release, kfree of the containing object)",
+   "may free device memory and run destructors, so the device pointer must not be used afterwards",
+   "may sleep while running release callbacks (the commented-out might_sleep() hints at this)"
+  ],
+  "params": {
+   "dev": "device whose reference count is dropped; NULL makes the call a safe no-op"
+  },
+  "porting_hint": "Port this as a reference-count decrement on the target runtime's device object that triggers its destructor when the count reaches zero, preserving the NULL-tolerance and last-ref-frees semantics.",
+  "basis": "drivers/base/core.c:3810"
+ },
+ "register_virtio_device": {
+  "category": "reset",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "0 on success; on failure returns a negative errno (from ida_alloc, dev_set_name, virtio_device_of_init, or device_add), in which case the allocated index is released, the of_node reference dropped if device_add failed, and VIRTIO_CONFIG_S_FAILED is set in the device status register.",
+  "effects": [
+   "Consumes a globally unique index from the shared virtio_index_ida pool and names the device virtio<index> in the driver core",
+   "Resets the virtio device hardware (status cleared) as part of registration",
+   "Writes VIRTIO_CONFIG_S_ACKNOWLEDGE into the device config status register",
+   "Initializes spinlocks (config_lock, vqs_list_lock) and the vqs list head inside the caller-visible struct virtio_device",
+   "device_add() publishes the device on the virtio bus, so matching drivers' probe callbacks may be invoked asynchronously",
+   "virtio_device_of_init() takes a reference on the device's OF node and virtio_debug_device_init() registers debug state"
+  ],
+  "params": {
+   "dev": "Pointer to a caller-allocated, transport-populated struct virtio_device to register on the virtio bus; its dev member is initialized and named by this function"
+  },
+  "porting_hint": "Port this as a device-registration routine that allocates a unique index/name, resets the device, sets the ACKNOWLEDGE status bit, then hands the device to the bus/driver-matching layer (propagating failures as negative errno with a FAILED status write), rather than as any single hardware primitive.",
+  "basis": "drivers/virtio/virtio.c:517"
+ },
+ "request_threaded_irq": {
+  "category": "alloc",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "0 on success (handler registered with the IRQ subsystem); negative errno on failure: -ENOTCONN if irq == IRQ_NOTCONNECTED, -EINVAL for invalid flag combinations (IRQF_SHARED without dev_id, IRQF_SHARED with IRQF_NO_AUTOEN, IRQF_COND_SUSPEND without IRQF_SHARED, IRQF_NO_SUSPEND with IRQF_COND_SUSPEND, no irq_desc, non-requestable or per-CPU-devid IRQ, or both handler and thread_fn NULL), -ENOMEM if",
+  "effects": [
+   "Allocates a persistent heap struct irqaction on success that is only reclaimed by a later free_irq",
+   "Registers the primary/threaded handlers with the IRQ subsystem so they may be invoked asynchronously when the interrupt fires (line is typically auto-enabled unless IRQF_NO_AUTOEN)",
+   "Acquires a power-management reference on the IRQ chip via irq_chip_pm_get, and releases it again if setup fails",
+   "Publishes devname/dev_id into kernel IRQ bookkeeping (visible in /proc/interrupts) via __setup_irq"
+  ],
+  "params": {
+   "irq": "Interrupt line number to register the handler on; IRQ_NOTCONNECTED is rejected with -ENOTCONN",
+   "handler": "Primary hard-irq (atomic context) handler called on interrupt; may be NULL if thread_fn is set, in which case irq_default_primary_handler (wake-the-thread) is used",
+   "thread_fn": "Handler run in a dedicated kernel thread context after the primary handler; may be NULL for hard-irq-only handling, but both handlers NULL is -EINVAL",
+   "irqflags": "IRQF_* bit flags (e.g. IRQF_SHARED, IRQF_TRIGGER_*, IRQF_ONESHOT, IRQF_NO_AUTOEN, IRQF_NO_SUSPEND, IRQF_COND_SUSPEND) governing sharing, triggering, and suspend behavior",
+   "devname": "Human-readable name recorded for this IRQ (shown in /proc/interrupts and diagnostics)",
+   "dev_id": "Caller cookie passed back to the handlers and used to disambiguate/free shared interrupt handlers; mandatory when IRQF_SHARED is set"
+  },
+  "porting_hint": "Map this to the target runtime's interrupt-registration API, preserving the primary-handler/threaded-handler split, the dev_id cookie used for matching on free, and the shared-IRQ validity checks, rather than literally allocating an irqaction struct.",
+  "basis": "kernel/irq/manage.c:2115"
+ },
+ "sata_scr_read": {
+  "category": "register-access",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "0 on success with *val set to the SCR register contents; negative errno on failure — in this stub (built when the host lacks SCR support) it always returns -EOPNOTSUPP, so callers must treat SCR reads as unsupported rather than trust *val",
+  "effects": [
+   "performs a read of a SATA SCR (status/control/error/active) register of the host controller for the given link, observable as a bus/MMIO read in the real implementation; the stub variant performs no a"
+  ],
+  "params": {
+   "link": "struct ata_link whose SATA SCR register set is being read (the link to the target device)",
+   "reg": "SCR register index/offset to read (e.g. SCR_STATUS, SCR_CONTROL, SCR_ERROR, SCR_ACTIVE)",
+   "val": "output pointer that receives the 32-bit register value on success (untouched on failure in the stub)"
+  },
+  "porting_hint": "Implement this as a platform-specific SCR register read (e.g. an AHCI/bar read of the SCR register) or port the stub as-is returning -EOPNOTSUPP when the target host provides no SCR access, and make sure callers handle the unsupported case.",
+  "basis": "include/linux/libata.h:1269"
+ },
+ "sdhci_calc_clk": {
+  "category": "register-access",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "u16 value intended to be programmed into SDHCI_CLOCK_CONTROL: optionally the SDHCI_PROG_CLOCK_MODE bit, plus the 10-bit divider split into the low (bits 8-15 via SDHCI_DIVIDER_SHIFT) and high (bits 6-7 via SDHCI_DIVIDER_HI_SHIFT) fields; the function cannot fail and returns no error codes; base-clock enable bits are not set here (caller adds them)",
+  "effects": [
+   "conditionally performs an MMIO read of the host controller's SDHCI_CLOCK_CONTROL register (only when host->version >= SDHCI_SPEC_300 and host->preset_enabled)",
+   "writes the achieved frequency (host->max_clk * clk_mul / real_div) into the caller-provided *actual_clock when real_div != 0; otherwise leaves *actual_clock untouched (stale)",
+   "does not write any hardware registers; the returned value must be programmed by the caller"
+  ],
+  "params": {
+   "host": "sdhci_host whose max_clk, clk_mul, version, preset_enabled, quirks2 are consulted and whose CLOCK_CONTROL/preset registers are read on the preset path",
+   "clock": "requested target SD clock frequency in Hz to approximate",
+   "actual_clock": "output pointer receiving the frequency the computed divider will actually produce (may remain unset if real_div == 0)"
+  },
+  "porting_hint": "Port as a mostly-pure divider calculator over an emulated sdhci_host struct, substituting a virtual read of SDHCI_CLOCK_CONTROL/preset values for the single sdhci_readw, and faithfully reproducing spec-3.00 programmable-clock/multiple-of-2, spec-2.00 power-of-2, preset, and SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN divisor rules so the returned bits and *actual_clock match Linux behavior.",
+  "basis": "drivers/mmc/host/sdhci.c:1916"
+ },
+ "sdhci_cleanup_host": {
+  "category": "free",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes - it is unconditional best-effort cleanup",
+  "effects": [
+   "Disables the vqmmc regulator (mmc->supply.vqmmc) if sdhci_core_to_disable_vqmmc is set",
+   "Releases DMA-coherent memory (adma_table_sz + align_buffer_sz) allocated for the host's ADMA table and alignment buffer via dma_free_coherent",
+   "Releases external DMA resources via sdhci_external_dma_release when use_external_dma is set",
+   "Mutates caller-visible host state: host->adma_table and host->align_buffer become NULL"
+  ],
+  "params": {
+   "host": "The sdhci_host being torn down; supplies the mmc pointer, ownership flag, buffer pointers/sizes, and the external-DMA flag used to undo probe-time allocations"
+  },
+  "porting_hint": "Port this as teardown/cleanup logic that frees the ADMA/alignment buffers, conditionally disables the vqmmc regulator, releases external DMA resources, and nulls the buffer pointers; it must be safe to call after a partially completed probe.",
+  "basis": "drivers/mmc/host/sdhci.c:4845"
+ },
+ "sdhci_get_property": {
+  "category": "pure",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "void; returns no value and cannot fail; failed or absent device_property reads are silently ignored, leaving quirk bits and pltfm_host->clock at their prior (zero/unset) values",
+  "effects": [
+   "sets SDHCI_QUIRK_MULTIBLOCK_READ_ACMD12, SDHCI_QUIRK_FORCE_1_BIT_DATA, SDHCI_QUIRK_INVERTED_WRITE_PROTECT, SDHCI_QUIRK_BROKEN_CARD_DETECTION in host->quirks and SDHCI_QUIRK2_NO_1_8_V in host->quirks2 ",
+   "stores the clock-frequency property into pltfm_host->clock (0 if absent), influencing later clock setup",
+   "delegates to sdhci_get_compatibility(pdev), which may further mutate host quirk state"
+  ],
+  "params": {
+   "pdev": "platform device whose dev node supplies the device-tree/ACPI properties and whose drvdata holds the sdhci_host being configured"
+  },
+  "porting_hint": "Replace with target-runtime property lookup (DT/ACPI or static config) that sets the same quirk flags and clock value on the host object before controller initialization, treating all reads as optional with silent defaults.",
+  "basis": "drivers/mmc/host/sdhci-pltfm.c:71"
+ },
+ "sdhci_runtime_resume_host": {
+  "category": "pure",
+  "confidence": 0.85,
+  "source": "kernel-tree",
+  "return": "void; returns nothing and cannot fail since the body is an empty no-op stub",
+  "effects": [],
+  "params": {
+   "host": "SDHCI host controller handle; nominally the device being runtime-resumed, but ignored by this stub",
+   "soft_reset": "flag requesting a soft reset as part of resume; ignored by this stub"
+  },
+  "porting_hint": "Port this as a no-op stub (it is the empty non-CONFIG_PM definition), only substituting the real runtime-resume implementation if the target runtime actually enables SDHCI power management.",
+  "basis": "drivers/mmc/host/sdhci.h:889"
+ },
+ "sdhci_runtime_suspend_host": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "void; the function has an empty body and returns nothing, so there are no success or failure modes",
+  "effects": [],
+  "params": {
+   "host": "pointer to the struct sdhci_host being (nominally) runtime-suspended; completely unused in this stub"
+  },
+  "porting_hint": "This is a compile-time no-op stub (used when kernel power management is compiled out), so it can simply be omitted when porting, or replaced with the real runtime-PM suspend sequence if the target runtime enables power management.",
+  "basis": "drivers/mmc/host/sdhci.h:888"
+ },
+ "sdhci_set_uhs_signaling": {
+  "category": "register-access",
+  "confidence": 0.98,
+  "source": "kernel-tree",
+  "return": "void; no return value and no failure modes — it unconditionally programs the register and cannot fail",
+  "effects": [
+   "modifies the host controller's SDHCI_HOST_CONTROL2 register (device state): clears the UHS mode select field (SDHCI_CTRL_UHS_MASK) and sets SDR12/SDR25/SDR50/SDR104/DDR50 or non-standard HS400 bus spe"
+  ],
+  "params": {
+   "host": "sdhci_host whose HOST_CONTROL2 register is read and rewritten; abstracts the controller instance and its MMIO accessor ops",
+   "timing": "requested MMC timing mode (e.g. MMC_TIMING_UHS_SDR12/SDR25/SDR50/DDR50/SDR104, MMC_TIMING_MMC_HS200/DDR52/HS400) that selects which bus speed mode bits to set; unrecognized timings leave the mode fiel"
+  },
+  "porting_hint": "Port as a 16-bit read-modify-write of the host controller's HOST_CONTROL2 register: mask off the UHS mode select bits and set the mode corresponding to the timing argument via the ported sdhci_readw/sdhci_writew equivalents, leaving untouched bits intact.",
+  "basis": "drivers/mmc/host/sdhci.c:2297"
+ },
+ "sdhci_setup_host": {
+  "category": "register-access",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "Returns 0 on success with host->caps, host->flags (SDMA/ADMA/64-bit), max_clk, timeout_clk and ADMA table state fully populated; returns -EINVAL if host is NULL; propagates -EPROBE_DEFER when regulators (mmc_regulator_get_supply) or the external DMA channel are not yet available; other negative errnos from regulator/DMA init, and the goto-unreg failure path tears down partial setup. DMA-allocation",
+  "effects": [
+   "Performs MMIO reads of device registers: SDHCI_HOST_VERSION, SDHCI_PRESENT_STATE, SDHCI_CAPABILITIES, SDHCI_CAPABILITIES_1 and the wider capability set via sdhci_read_caps()",
+   "May acquire external regulators (vqmmc and others) through mmc_regulator_get_supply, which can sleep and can defer the probe",
+   "May request an external DMA channel via sdhci_external_dma_init(), or fall back to internal DMA/PIO by reprogramming host state",
+   "Allocates coherent DMA memory (ADMA descriptor table plus align buffer, size adma_table_cnt * desc_sz + SDHCI_MAX_SEGS * SDHCI_ADMA2_ALIGN) via dma_alloc_coherent; frees it and disables ADMA if the re",
+   "Overwrites the mmc device's dma_mask pointer with host->dma_mask (DMA_BIT_MASK(64)) when no internal DMA mode remains",
+   "Mutates shared host/mmc state visible to the caller: host->flags, caps, version, timeout_clk, adma_table/adma_addr, align_buffer/align_addr"
+  ],
+  "params": {
+   "host": "Controller description struct (sdhci_host) holding the mmc_host, iomem base, quirks, and ops callbacks; it is both input configuration and the output object populated with detected capabilities, negot"
+  },
+  "porting_hint": "Treat this as one-time hardware bring-up, not pure logic: the port must emulate MMIO capability/version register reads, support deferred resource acquisition (regulators, external DMA), and provide a coherent-DMA allocator (or an ADMA fallback path) to reproduce its capability-negotiation and allocation behavior.",
+  "basis": "drivers/mmc/host/sdhci.c:4274"
+ },
+ "seq_printf": {
+  "category": "print",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "void; returns nothing and signals no failure — if the seq_file buffer fills, output is truncated by seq_vprintf without error propagation",
+  "effects": [
+   "Appends formatted text into the seq_file's internal output buffer, advancing its write position (shared mutable memory state outside this function)"
+  ],
+  "params": {
+   "m": "target seq_file whose accumulated buffer receives the formatted bytes",
+   "f": "printf-style format string interpreted by seq_vprintf",
+   "...": "variadic arguments substituted into the format specifiers of f"
+  },
+  "porting_hint": "Port as a variadic formatter that appends into the destination buffer using the host runtime's vsnprintf-equivalent against the remaining capacity, preserving truncation-not-error semantics.",
+  "basis": "fs/seq_file.c:402"
+ },
+ "sysfs_add_file_to_group": {
+  "category": "pure",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Always returns 0 (success) in this configuration; this is the inline stub used when sysfs support is disabled, so it never fails and never returns -ENOENT or other errors the real implementation can.",
+  "effects": [],
+  "params": {
+   "kobj": "kobject owning the group; unused in this stub (real version locates the group directory under this kobject)",
+   "attr": "attribute descriptor whose file would be created; unused in this stub",
+   "group": "name of the attribute group to add the file to; unused in this stub"
+  },
+  "porting_hint": "Port as a no-op returning 0 (or map onto the target runtime's sysfs-equivalent attribute-file/group creation if exposing attributes is required).",
+  "basis": "include/linux/sysfs.h:659"
+ },
+ "sysfs_remove_file_from_group": {
+  "category": "pure",
+  "confidence": 0.7,
+  "source": "kernel-tree",
+  "return": "void; no return value, no failure modes — this inline stub unconditionally does nothing and cannot fail",
+  "effects": [],
+  "params": {
+   "kobj": "kobject whose sysfs directory would own the group (ignored by this stub)",
+   "attr": "attribute whose file would be removed from the group (ignored by this stub)",
+   "group": "name of the attribute group (subdirectory) the file belongs to, NULL meaning the kobject's root directory (ignored by this stub)"
+  },
+  "porting_hint": "The shown definition is the CONFIG_SYSFS=n no-op stub, so on the target runtime either drop the call entirely or, if the sysfs-enabled build is in scope, map it to the host's equivalent 'remove attribute file from an attribute group directory' API.",
+  "basis": "include/linux/sysfs.h:665"
+ },
+ "virtio_config_changed": {
+  "category": "lock",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "void — no return value; cannot fail, though the internal __virtio_config_changed may silently do nothing if no driver is bound",
+  "effects": [
+   "Acquires dev->config_lock spinlock with local interrupts disabled and restores both before returning",
+   "Invokes the bound virtio driver's config_changed callback for dev (or sets config_change_pending if config notifications are disabled on the device), changing driver/device state"
+  ],
+  "params": {
+   "dev": "The virtio_device whose configuration changed; supplies the config_lock to serialize against config enable/disable and identifies the driver to notify"
+  },
+  "porting_hint": "Port this as a synchronized notification: enter an equivalent critical section (spinlock with IRQs disabled, or interrupt-disable on bare metal), deliver the config-change callback to the bound driver, then release, since no lock is left held on return.",
+  "basis": "drivers/virtio/virtio.c:138"
+ },
+ "virtio_device_restore": {
+  "category": "power-on",
+  "confidence": 0.8,
+  "source": "kernel-tree",
+  "return": "0 on success; negative errno on failure (e.g., feature negotiation failure or the driver's restore callback failing during re-initialization of the device)",
+  "effects": [
+   "restores the virtio device to its pre-suspend working state (re-negotiates features, re-sets virtio status bits such as FEATURES_OK/DRIVER_OK)",
+   "re-invokes the bound driver's restore/resume path so virtqueues and device config are live again",
+   "makes the device eligible to resume I/O after hibernation or suspend"
+  ],
+  "params": {
+   "dev": "struct virtio_device to bring back up after a suspend/hibernation cycle (caller guarantees the device was previously initialized)"
+  },
+  "porting_hint": "Port this as the power-management resume/restore hook that re-runs device bring-up (status flags, feature negotiation, driver restore callback) rather than as a single register write.",
+  "basis": "drivers/virtio/virtio.c:669"
+ },
+ "virtqueue_get_avail_addr": {
+  "category": "pure",
+  "confidence": 0.92,
+  "source": "kernel-tree",
+  "return": "Returns the dma_addr_t (bus address) of the avail ring: for packed virtqueues the driver_event_dma_addr, for split virtqueues queue_dma_addr plus the byte offset of avail from desc; no failure return, but BUG_ON panics the kernel if the virtqueue does not own its ring (we_own_ring == 0)",
+  "effects": [],
+  "params": {
+   "_vq": "const virtqueue to query; read-only, must be a virtio ring virtqueue that owns its ring memory"
+  },
+  "porting_hint": "Port as a side-effect-free getter that returns the cached bus address of the avail ring (split: queue_dma_addr + avail-desc offset; packed: driver_event_dma_addr), asserting ring ownership before returning.",
+  "basis": "drivers/virtio/virtio_ring.c:3638"
+ },
+ "virtqueue_get_used_addr": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "The dma_addr_t bus address of the virtqueue's used ring: for packed virtqueues it is vq->packed.device_event_dma_addr (the device event notification area), and for split virtqueues it is the queue's base DMA address plus the byte offset of the used ring from the descriptor ring within the allocation. The function cannot fail and returns no error sentinel; the only failure mode is a kernel panic vi",
+  "effects": [],
+  "params": {
+   "_vq": "Const pointer to the virtqueue being queried; cast internally to vring_virtqueue to read ring layout state and cached DMA addresses."
+  },
+  "porting_hint": "Port this as a read-only accessor that returns the cached bus address of the used ring (device-event area for packed rings, base DMA address plus used-ring offset for split rings) from your runtime's queue bookkeeping, preserving the ownership sanity check as an assert, since it performs no mapping, synchronization, or other side effects.",
+  "basis": "drivers/virtio/virtio_ring.c:3652"
+ },
+ "vring_create_virtqueue": {
+  "category": "alloc",
+  "confidence": 0.9,
+  "source": "kernel-tree",
+  "return": "Pointer to the newly created virtqueue on success; on failure returns an ERR_PTR-encoded negative errno (typically -ENOMEM if the vring/descriptor memory cannot be allocated, or -EIO/-EINVAL if the device reports an invalid queue size), following the kernel ERR_PTR convention rather than returning NULL.",
+  "effects": [
+   "Allocates kernel memory (and coherent DMA memory for descriptor/avail/used rings) that persists beyond the call and must later be freed with vring_del_virtqueue",
+   "Creates DMA mappings of the ring memory on the device's parent DMA device",
+   "Registers the new virtqueue with the owning virtio_device (it becomes visible in the device's queue list and to subsequent virtqueue operations)",
+   "Selects and initializes the packed-ring layout if the device negotiated VIRTIO_F_RING_PACKED, otherwise the split-ring layout, changing device-visible ring state"
+  ],
+  "params": {
+   "index": "Virtqueue index within the device, matching the queue order declared by the virtio device",
+   "num": "Requested number of descriptors in the ring; may be shrunk to a smaller power of two when may_reduce_num is true",
+   "vring_align": "Required alignment for the descriptor, avail, and used ring allocations",
+   "vdev": "Owning virtio_device; also supplies the parent DMA device used for ring allocation and feature queries",
+   "weak_barriers": "If true, use weak/compiler-level memory barriers for ring access instead of full barriers, valid when the vring is in cache-coherent memory",
+   "may_reduce_num": "Permit reducing num to a lower power of two if the requested size cannot be allocated",
+   "context": "Whether to track per-queue callback-enable state (extrinsic notification suppression) so notifications can be selectively disabled",
+   "notify": "Driver callback invoked by virtqueue_kick to notify (kick) the device that buffers were added",
+   "callback": "Completion callback invoked when the device returns used buffers; NULL means the driver will poll",
+   "name": "Human-readable virtqueue name used for sysfs/debug telemetry"
+  },
+  "porting_hint": "Port this as the target runtime's virtqueue-ring constructor: re-implement or reuse split/packed vring allocation and DMA setup (honoring VIRTIO_F_RING_PACKED negotiation and the may_reduce_num power-of-two sizing), pass notify/callback/name through unchanged, and translate the ERR_PTR failure result into the host environment's error convention.",
+  "basis": "drivers/virtio/virtio_ring.c:3260"
+ },
+ "vring_notification_data": {
+  "category": "pure",
+  "confidence": 0.95,
+  "source": "kernel-tree",
+  "return": "A u32 notification word composed as (next_avail_index << 16) | queue_index, where for packed virtqueues next_avail_index has the avail wrap counter in bit 15 (VRING_PACKED_EVENT_F_WRAP_CTR), and for split virtqueues it is the shadowed avail index; the low 16 bits are the virtqueue's index — it never fails and always returns a valid value",
+  "effects": [],
+  "params": {
+   "_vq": "the virtqueue whose event-notification data (available index/wrap counter plus queue index) is being composed"
+  },
+  "porting_hint": "Port this as a stateless computation over your virtqueue bookkeeping (packed next_avail_idx/avail_wrap_counter or split avail_idx_shadow, plus queue index) with no runtime dependencies or side effects.",
+  "basis": "drivers/virtio/virtio_ring.c:3487"
+ },
+ "vring_transport_features": {
+  "category": "pure",
+  "confidence": 0.6,
+  "source": "kernel-tree",
+  "return": "void; it never fails and has no failure modes",
+  "effects": [
+   "Clears unsupported transport-range feature bits in the caller-visible in-memory vdev->features mask (via __virtio_clear_bit for bits outside the known whitelist)"
+  ],
+  "params": {
+   "vdev": "virtio device whose feature mask is filtered in place; only the transport feature range VIRTIO_TRANSPORT_F_START..VIRTIO_TRANSPORT_F_END is examined"
+  },
+  "porting_hint": "Reimplement as a whitelist loop over the transport feature range that clears any unrecognized bit from the device's in-memory feature mask; it requires no runtime services, no I/O, and no allocation in the target environment.",
+  "basis": "drivers/virtio/virtio_ring.c:3505"
+ }
+}

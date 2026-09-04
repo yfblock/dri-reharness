@@ -64,3 +64,26 @@ Single-TU call-context proof + RIS Call nodes (v0.2.0) landed on top of
   register-site helper was flattened — vacuous-candidate filter).
 - Zero-shot clk-fixed-mmio / clk-moxart / clk-nspire: unacc=0, strict,
   proven, all Call nodes proven.
+
+## External-call semantics verification (2026-09-05, RIS 0.3.0)
+
+ExternalCall nodes + closed-category classification + LLM annotation
+store landed on top of e9ef80c.  Re-verification against this baseline:
+
+- test_extractor full run: 9 failed / 156 passed (+3 = the new
+  external-call rule-table/node tests).  The FAILED set is a strict
+  subset of the 10 pre-existing failures: identical except
+  test_write_from_read_recipe_prevents_duplicate_hardware_reads now
+  passes (its harness anchor regex matches once _merge carries the
+  module's Call/ExternalCall keys through the IR-primary merge).
+  Zero regressions.
+- 19-driver sweep (see artifacts/cache/external-call-census.json for
+  the 24-driver census): unaccounted=0 everywhere, strict complete
+  except pre-existing ahci.c, call_semantics_proven=True everywhere,
+  all drivers v0.3.0 with external nodes emitted and classified.
+- Rule table coverage over the 24-driver census: 56% of external
+  callsites classified deterministically; the reviewed annotation
+  store (data/external-call-annotations.json, 130 entries from the
+  grounded LLM draft, low-confidence/indirect-target drafts dropped)
+  covers most of the remainder; residual unknowns are indirect
+  dispatch targets whose callee is genuinely unresolved.
