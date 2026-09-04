@@ -787,13 +787,27 @@ full strict gate---including \CadenceHarnTrialsFirstStrict{} trial whose
 raw first pass needed no repair round at all---against 0/\DwHarnTrialsN{}
 for DesignWare at either level; the remaining four fail only the runtime
 trace (uncovered guard paths leave the expected op sequence a strict
-subsequence mismatch). The bare-metal and Linux trials were rerun with the
-same normalizations after the first round showed a measurement gap of the
-harness itself (the gate's runtime-trace field was only ever populated
-for the harness backend; it is now derived from the bare-metal callback
-and W1C-drain oracles and recorded as not-applicable for the module
-backend once it builds), so their verdicts are read from the rerun
-record. Automated bounded acceptance is thus not a fixed property of the
+subsequence mismatch). The first run also exposed a measurement gap in
+the harness itself, fixed before the rerun: the gate's runtime-trace
+verdict was only ever populated for the harness backend, so the
+bare-metal and Linux rows are read from the rerun, where the bare-metal
+verdict derives from its callback and W1C-drain oracles and the Linux
+module backend's runtime trace is not applicable once the module builds.
+The bare-metal backend shows the same small-end
+effect one level down: \CadenceBareTrialsFinalCheckbacked{}/%
+\CadenceBareTrialsN{} trials reach check-backed acceptance (one on its
+raw first pass), but none passes the strict gate because its runtime
+evidence is the host subsystem-callback oracle, which requires the
+candidate to \emph{emulate} the framework's callback-runner scaffold
+(call exactly the planned callbacks, per-resource base spacing, shadow
+state lines) on top of the register receipts---the rerun candidates
+emit the marker protocol but diverge on plan size and base layout.
+The Linux backend stays at zero: of \CadenceLinuxTrialsN{} measured
+trial, the candidate fails compilation (a leaked markdown fence), with
+the remaining four trials lost to endpoint empty-body failures and
+recorded as such; the deterministic \texttt{MODULE\_LICENSE()} append
+fired and is recorded per trial. Automated bounded acceptance is thus
+not a fixed property of the
 framework but a function of contract size and driver shape, which the
 per-driver readiness columns of Table~\ref{tab:readiness} reflect.
 

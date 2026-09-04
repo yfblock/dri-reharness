@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.5.28)  3 SEP 2026 18:55
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2026.5.28)  4 SEP 2026 09:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2670,108 +2670,120 @@ e case
  []
 
 [13.13]
-Overfull \hbox (2.56917pt too wide) in paragraph at lines 687--701
+Overfull \hbox (2.56917pt too wide) in paragraph at lines 688--702
 []\TU/LinLibertine(0)/b/n/10 Closed-loop LLM record. \TU/LinLibertine(0)/m/n/10
  Beyond the deterministic base-
  []
 
 
-Overfull \hbox (3.1259pt too wide) in paragraph at lines 687--701
+Overfull \hbox (3.1259pt too wide) in paragraph at lines 688--702
 \TU/LinLibertine(0)/m/n/10 line, the repository versions a closed-loop record f
 or 2 source-
  []
 
 
-Overfull \hbox (7.30672pt too wide) in paragraph at lines 687--701
+Overfull \hbox (7.30672pt too wide) in paragraph at lines 688--702
 \TU/LinLibertine(0)/m/n/10 single-endpoint records without repeated sampling; t
 hey com-
  []
 
 
-Overfull \hbox (7.06339pt too wide) in paragraph at lines 687--701
+Overfull \hbox (7.06339pt too wide) in paragraph at lines 688--702
 \TU/LinLibertine(0)/m/n/10 plement, and do not replace, the deterministic-basel
 ine QEMU
  []
 
 
-Overfull \hbox (5.56342pt too wide) in paragraph at lines 702--736
+Overfull \hbox (5.56342pt too wide) in paragraph at lines 703--737
 \TU/LinLibertine(0)/m/n/10 ture 0 with the model then in service (glm-5.2; the 
 constrained
  []
 
 
-Overfull \hbox (1.56174pt too wide) in paragraph at lines 702--736
+Overfull \hbox (1.56174pt too wide) in paragraph at lines 703--737
 \TU/LinLibertine(0)/m/n/10 pipeline’s recorded chain uses glm-5.3-highspeed) an
 d a min-
  []
 
 
-Overfull \hbox (16.53256pt too wide) in paragraph at lines 702--736
+Overfull \hbox (16.53256pt too wide) in paragraph at lines 703--737
 \TU/LinLibertine(0)/m/n/10 region-bounded echo of the failing definitions, boun
 ded rounds);
  []
 
 
-Overfull \hbox (4.7884pt too wide) in paragraph at lines 702--736
+Overfull \hbox (4.7884pt too wide) in paragraph at lines 703--737
 \TU/LinLibertine(0)/m/n/10 fenced body and repair calls stalling unanswered (al
 l attempts
  []
 
 
-Overfull \hbox (2.61504pt too wide) in paragraph at lines 702--736
+Overfull \hbox (2.61504pt too wide) in paragraph at lines 703--737
 \TU/LinLibertine(0)/m/n/10 are versioned in $[][][][][][][][] [] [][][][][][][]
 [][][][] [] [][][][][][][] [] [][][][][][] [][]
  []
 
 
-Overfull \hbox (1.45837pt too wide) in paragraph at lines 737--767
+Overfull \hbox (1.45837pt too wide) in paragraph at lines 738--768
 \TU/LinLibertine(0)/m/n/10 the constrained DesignWare pipeline itself was rerun
  5 times
  []
 
 
-Overfull \hbox (18.68257pt too wide) in paragraph at lines 737--767
+Overfull \hbox (18.68257pt too wide) in paragraph at lines 738--768
 \TU/LinLibertine(0)/m/n/10 pass (compile repair disabled), post compile-repair 
 (the pipeline’s
  []
 
 
-Overfull \hbox (7.13257pt too wide) in paragraph at lines 737--767
+Overfull \hbox (7.13257pt too wide) in paragraph at lines 738--768
 \TU/LinLibertine(0)/m/n/10 default bounded budget), and post receipt-repair (th
 e bounded
  []
 
 [14.14]
-Overfull \hbox (25.33505pt too wide) in paragraph at lines 768--788
+Overfull \hbox (13.05501pt too wide) in paragraph at lines 769--813
+[][][][][][][][] [] [][][][][][][][][][][] [] [][][][][][][] [] [][][][] [][] [
+][][][][][][] [][] [][][][][][][][] [][]
+ []
+
+
+Overfull \hbox (5.68173pt too wide) in paragraph at lines 769--813
+\TU/LinLibertine(0)/m/n/10 leaf) and 1/5 passes the full strict gate—including 
+1 trial whose
+ []
+
+
+Overfull \hbox (25.33505pt too wide) in paragraph at lines 814--834
 \TU/LinLibertine(0)/m/n/10 puts and measurements are versioned in $[][][][][][]
 [][] [] [][][][][][][][][][][] []
  []
 
 
-Overfull \hbox (47.80606pt too wide) in paragraph at lines 797--811
+Overfull \hbox (47.80606pt too wide) in paragraph at lines 843--857
  [][] 
  []
 
-
-Overfull \hbox (3.04333pt too wide) in paragraph at lines 838--844
+[15.15]
+Overfull \hbox (3.04333pt too wide) in paragraph at lines 884--890
 []\TU/LinLibertine(0)/b/n/10 Functional-state preservation. \TU/LinLibertine(0)
 /m/n/10 The writer preserves the
  []
 
 
-Overfull \hbox (15.79088pt too wide) in paragraph at lines 845--907
+Overfull \hbox (15.79088pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 specification by the same LLM bridge (model glm-5.3-
 highspeed,
  []
 
 
-Overfull \hbox (6.12837pt too wide) in paragraph at lines 845--907
+Overfull \hbox (6.12837pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 passes—anchor-name canonicalization to the generator
 ’s dou-
  []
 
 
-Overfull \hbox (18.35167pt too wide) in paragraph at lines 845--907
+Overfull \hbox (18.35167pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 bled \TU/inconsolata(0)/m/n/10 __rh_op_op_$\OML/nxlm
 i/m/it/10 <$\TU/inconsolata(0)/m/n/10 n$\OML/nxlmi/m/it/10 >$ \TU/LinLibertine(
 0)/m/n/10 labels and \TU/inconsolata(0)/m/n/10 __rh_txn_$\OML/nxlmi/m/it/10 <$\
@@ -2780,114 +2792,114 @@ saction
  []
 
 
-Overfull \hbox (1.43672pt too wide) in paragraph at lines 845--907
+Overfull \hbox (1.43672pt too wide) in paragraph at lines 891--953
 \TU/inconsolata(0)/m/n/10 anchors\TU/LinLibertine(0)/m/n/10 , digest rewriting 
 from the contract, register-receipt-
  []
 
 
-Overfull \hbox (4.57587pt too wide) in paragraph at lines 845--907
+Overfull \hbox (4.57587pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 to-transaction-marker conversion, duplicate-receipt 
 removal,
  []
 
 
-Overfull \hbox (12.31755pt too wide) in paragraph at lines 845--907
+Overfull \hbox (12.31755pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 definitions—which repair metadata and structure only
 : register-
  []
 
 
-Overfull \hbox (16.48004pt too wide) in paragraph at lines 845--907
+Overfull \hbox (16.48004pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 pilation, and the ordered data-flow items below. A t
 hird bounded
  []
 
 
-Overfull \hbox (6.77591pt too wide) in paragraph at lines 845--907
+Overfull \hbox (6.77591pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 an upstream-shaped reference fragment, completes the
  buffer-
  []
 
 
-Overfull \hbox (9.63255pt too wide) in paragraph at lines 845--907
+Overfull \hbox (9.63255pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 side transfer-loop dataflow (tx/rx cursor advance, l
 ength decre-
  []
 
 
-Overfull \hbox (3.57668pt too wide) in paragraph at lines 845--907
+Overfull \hbox (3.57668pt too wide) in paragraph at lines 891--953
 [][][][][][] [][] [][][] [] [][][][]$\TU/LinLibertine(0)/m/n/10 . The artifacts
  are audited by the versioned,
  []
 
 
-Overfull \hbox (1.58255pt too wide) in paragraph at lines 845--907
+Overfull \hbox (1.58255pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 per-item, per-backend evidence in $[][][][][][][][] 
 [] [][][][][][][][][][][] []
  []
 
 
-Overfull \hbox (8.17676pt too wide) in paragraph at lines 845--907
+Overfull \hbox (8.17676pt too wide) in paragraph at lines 891--953
 \TU/LinLibertine(0)/m/n/10 level case study rather than a held-out evaluation; 
 the pipeline-
  []
 
-[15.15]
-Overfull \hbox (6.59256pt too wide) in paragraph at lines 908--954
+
+Overfull \hbox (6.59256pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 sumed), we inject five single-fault mutants—an inven
 ted write
  []
 
 
-Overfull \hbox (6.20755pt too wide) in paragraph at lines 908--954
+Overfull \hbox (6.20755pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 recorded per mutant): the invented write and the wid
 th shrink
  []
 
 
-Overfull \hbox (4.2659pt too wide) in paragraph at lines 908--954
+Overfull \hbox (4.2659pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 by receipt accounting, and the forged receipt by the
  primitive-
  []
 
 
-Overfull \hbox (8.01508pt too wide) in paragraph at lines 908--954
+Overfull \hbox (8.01508pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 plan refuses to authorize receipts inside such loops
  (an exactly-
  []
 
 
-Overfull \hbox (3.84921pt too wide) in paragraph at lines 908--954
+Overfull \hbox (3.84921pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 ordered-dataflow items (store-before-advance), which
  sit out-
  []
 
 
-Overfull \hbox (12.9867pt too wide) in paragraph at lines 908--954
+Overfull \hbox (12.9867pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 side the gate. Results are versioned in $[][][][][][
 ][][] [] [][][][][][][][][][][] []
  []
 
 
-Overfull \hbox (2.5284pt too wide) in paragraph at lines 908--954
+Overfull \hbox (2.5284pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 the loop-aware receipt discharge sketched in Section
  [][]7.3[][] then
  []
 
 
-Overfull \hbox (3.58508pt too wide) in paragraph at lines 908--954
+Overfull \hbox (3.58508pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 measures these 17 entries on the pristine artifact w
 ith anchor-
  []
 
 
-Overfull \hbox (12.96922pt too wide) in paragraph at lines 908--954
+Overfull \hbox (12.96922pt too wide) in paragraph at lines 954--1000
 \TU/LinLibertine(0)/m/n/10 ter offset, and the 5 FIFO-loop receipts of \TU/inco
 nsolata(0)/m/n/10 dw_spi_exec_mem_op
  []
 
-) (./sections_9_11.tex
+[16.16]) (./sections_9_11.tex
 Overfull \hbox (6.83257pt too wide) in paragraph at lines 13--19
 \TU/LinLibertine(0)/m/sc/10 reharness \TU/LinLibertine(0)/m/n/10 models common 
 GPIO, IRQ, platform, PCI, AMBA,
@@ -2908,7 +2920,7 @@ Libertine(0)/m/n/10 s, unbounded loops, and general abstract-
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [16.16]
+
 Overfull \hbox (10.05504pt too wide) in paragraph at lines 31--37
 \TU/LinLibertine(0)/m/n/10 and samples. Compilation, receipt accounting, primit
 ive-shape
@@ -2957,6 +2969,9 @@ provenance
  []
 
 
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [17.17]
 Overfull \hbox (15.68257pt too wide) in paragraph at lines 87--98
 \TU/LinLibertine(0)/m/n/10 records and the Rust artifact remain single-trial, s
 ingle-endpoint
@@ -2969,13 +2984,13 @@ call-context
  []
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [17.17]
 Overfull \hbox (1.19505pt too wide) in paragraph at lines 131--136
 \TU/LinLibertine(0)/m/n/10 that extracts recognized device-core evidence from c
 omplete
  []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
 LaTeX Font Info:    Font shape `TU/LinLibertine(0)/m/n' will be
 (Font)              scaled to size 6.0pt on input line 147.
@@ -2993,7 +3008,12 @@ Underfull \hbox (badness 4205) in paragraph at lines 246--249
 Automating driver updates.
  []
 
-) (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
+)
+
+Package balance Warning: You have called \balance in second column
+(balance)                Columns might not be balanced.
+
+(/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-utf32be.def
@@ -3012,12 +3032,12 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7E58E64AA9A42CBFCB69F549B2855800;7800.
  ) 
 Here is how much of TeX's memory you used:
- 47215 strings out of 474878
- 966913 string characters out of 5762516
+ 47256 strings out of 474878
+ 968046 string characters out of 5762516
  2030627 words of memory out of 5000000
- 68395 multiletter control sequences out of 15000+600000
+ 68436 multiletter control sequences out of 15000+600000
  617023 words of font info for 217 fonts, out of 8000000 for 9000
  1509 hyphenation exceptions out of 8191
- 109i,17n,142p,26959b,32968s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 109i,17n,142p,26959b,32960s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (18 pages, 1308960 bytes).
+Output written on main.xdv (18 pages, 1336712 bytes).
