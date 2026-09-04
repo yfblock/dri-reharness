@@ -12,6 +12,11 @@ human can inspect and hand-edit them:
     05-merged-ris.json  final hybrid RIS (join evidence in every op)
     06-stats.json       extraction stats (method, counts, quality inputs)
 
+Dumping is OPT-IN: the chain is pure review material with no machine
+readers, so ordinary extraction runs no longer pay for it.  Set
+``REHARNESS_DUMP_INTERMEDIATES=1`` (or run ``./run.sh intermediates``,
+which sets it) to produce the files.
+
 Regenerate with:  ./run.sh intermediates <driver.c>
 Root override:    REHARNESS_INTERMEDIATES=/path
 """
@@ -24,11 +29,18 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_ROOT = _REPO_ROOT / "artifacts" / "intermediates"
 
 
+def dump_enabled() -> bool:
+    """True when intermediate dumping was requested for this run."""
+    return os.environ.get("REHARNESS_DUMP_INTERMEDIATES", "").lower() in {
+        "1", "true", "yes", "on"}
+
+
 def intermediates_root() -> Path:
     """Root directory for intermediate artifacts (env-overridable)."""
     env = os.environ.get("REHARNESS_INTERMEDIATES")
     root = Path(env) if env else _DEFAULT_ROOT
-    root.mkdir(parents=True, exist_ok=True)
+    if dump_enabled():
+        root.mkdir(parents=True, exist_ok=True)
     return root
 
 
@@ -46,4 +58,5 @@ def write_json(path: Path, payload) -> Path:
     return path
 
 
-__all__ = ["intermediates_root", "intermediate_dir", "write_json"]
+__all__ = ["intermediates_root", "intermediate_dir", "write_json",
+           "dump_enabled"]

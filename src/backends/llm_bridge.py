@@ -130,6 +130,111 @@ def build_evidence_json(formal, device_spec, bind, facts=None,
     return json.dumps(evidence, indent=2, sort_keys=True)
 
 
+# ── RIS-only evidence mode ─────────────────────────────────────────────
+# The default evidence package carries the extraction pipeline's device
+# spec and framework facts.  The ris-only mode answers a research
+# question: is the RIS itself enough to translate a driver?  Evidence is
+# rebuilt from the formal dict alone (modules + their Call/ExternalCall
+# nodes + register_map); the bind stays because it is target-dialect
+# plumbing (which primitive spells a 32-bit read), not driver knowledge.
+
+_DEVICE_CLASS_BY_PREFIX = (
+    ("gpio", "gpio"), ("clk", "clock"), ("sdhci", "sdhci"),
+    ("ahci", "ahci"), ("virtio", "virtio"), ("i2c", "i2c"),
+    ("spi", "spi"), ("serial", "serial"), ("8250", "serial"),
+)
+
+
+def _device_class_from_name(driver: str) -> str | None:
+    stem = (driver or "").replace("_", "-").split("-")[0]
+    for prefix, cls in _DEVICE_CLASS_BY_PREFIX:
+        if stem.startswith(prefix):
+            return cls
+    return None
+
+
+def _ris_evidence_json(formal, bind, module_names=None):
+    """Evidence package built from the RIS alone — no spec, no facts."""
+    regs = {}
+    for r in formal.get("register_map", []):
+        regs[r["name"]] = {"offset": r["offset"], "width": r.get("width", "B4")}
+    modules = []
+    for mod in formal.get("modules", []):
+        if module_names is not None and mod.get("name") not in module_names:
+            continue
+        entry = {"name": mod.get("name")}
+        calls = [
+            {"callee": c.get("callee"), "category": c.get("category"),
+             "arguments": [a.get("expression")
+                           for a in c.get("arguments") or []]}
+            for c in mod.get("calls") or []]
+        externals = [
+            {"callee": e.get("callee"), "category": e.get("category"),
+             "arguments": [a.get("expression")
+                           for a in e.get("arguments") or []]}
+            for e in mod.get("external_calls") or []]
+        if calls:
+            entry["calls"] = calls
+        if externals:
+            entry["external_calls"] = externals
+        modules.append(entry)
+    primitives = {}
+    for p in bind.primitives:
+        primitives[p.op + "(" + p.width + ")"] = p.concrete
+    types_map = {t.abstract: t.concrete for t in bind.types}
+    return json.dumps({
+        "driver": formal.get("driver"),
+        "device_class": _device_class_from_name(formal.get("driver", "")),
+        "registers": regs,
+        "modules": modules,
+        "bind": {"types": types_map, "primitives": primitives,
+                 "includes": getattr(bind, "includes", [])},
+        "functions": [{"name": m["name"], "role": "module"}
+                      for m in modules],
+    }, indent=2, sort_keys=True)
+
+
+_RIS_ONLY_NOTE = """
+
+RIS-ONLY MODE. The evidence package above contains ONLY what the RIS
+carries: modules with their operations, Call and ExternalCall nodes, and
+the register table; plus the mechanical bind mapping (which primitive
+spells a read/write of each width in this dialect — that is target
+plumbing, not driver knowledge). There is NO device spec, NO framework
+facts, NO struct layout, NO function signatures. Infer them from the
+RIS: module names name functions, RIS variables name locals and struct
+fields, Call/ExternalCall nodes name the dependencies and their closed
+category. Choose function signatures so every RIS variable the module
+reads has a parameter or a local holding it.
+"""
+
+_SEMANTICS_NOTE = """
+
+RIS SEMANTICS LEGEND (authoritative):
+- var := R(W, addr) reads a W-byte register at addr into var;
+  W(W, addr) = e writes e; RMW(W, addr) = transform rewrites using the
+  register's current value (transform may reference the read value).
+- TXREAD/TXWRITE/TXUPDATE[transport] are bus transactions (I2C/SPI/...);
+  STATE(field) reads/writes driver-private state, not MMIO;
+  OUT(target) writes an observable output; DELAY(cycles) waits;
+  VALUE(...) binds a computed value to a name; RETURN sets a result.
+- IF/ELSE, LOOP (init/step/count/relation, bounded) preserve source
+  control flow; ops inside run under that guard.
+- The trailing tag on each op line is `@op_id [reliability]` — the op_id
+  keys the receipt you must emit; reliability Exact means the value and
+  address came from resolved source dataflow.
+- Call nodes are source calls to helpers whose bodies hold no register
+  semantics; their [category] says what the call does (alloc, print,
+  lock, pure, ...). ExternalCall nodes are dependencies outside the
+  analyzed program with the same closed category set; [unknown] means
+  unclassified — model it as an opaque function call with a plausible
+  signature, do not invent register effects for it.
+- The `-- Intent` suffix names why the access happens (Status, Config,
+  Interrupt, Data, ...); use it to name locals and comments, not to add
+  behavior.
+"""
+
+
 # ── RIS text evidence ──────────────────────────────────────────────────
 # The module op dump is fed to the LLM as text RIS (op_display form), not
 # JSON: the same ops cost ~1/4 of the JSON envelope (no per-op key
@@ -176,24 +281,49 @@ def _annotate_receipt_digests(ops):
     return out
 
 
-def _module_ris(mod) -> str:
-    """Render one module's ops as text RIS with receipt digests."""
+def _module_ris(mod, include_calls: bool = False) -> str:
+    """Render one module as text RIS with receipt digests.
+
+    ``include_calls`` adds the module's Call/ExternalCall lines (the
+    semantic-dependency view) for the ris-only evidence modes; the full
+    mode keeps the ops-only dump it was trained on.
+    """
     from extractor.formal import op_display
     lines = ["module %s {" % mod.get("name", "?")]
+    if include_calls:
+        for call in mod.get("calls") or []:
+            arguments = ", ".join(
+                f"{item.get('parameter')} = {item.get('expression')}"
+                for item in call.get("arguments") or [])
+            category = call.get("category")
+            cat = f"[{category}]" if category else ""
+            lines.append("  Call %s(%s) %s" % (
+                call.get("callee"), arguments, cat))
+        for external in mod.get("external_calls") or []:
+            arguments = ", ".join(
+                (f"{item.get('parameter')} = {item.get('expression')}"
+                 if item.get("parameter")
+                 else str(item.get("expression")))
+                for item in external.get("arguments") or [])
+            lines.append("  ExternalCall %s(%s) [%s]" % (
+                external.get("callee"), arguments,
+                external.get("category")))
     for op in _annotate_receipt_digests(mod.get("ops", [])):
         lines.append(op_display(op, indent=1))
     lines.append("}")
     return "\n".join(lines)
 
 
-def _modules_ris_text(formal, module_names=None) -> str:
+def _modules_ris_text(formal, module_names=None,
+                      include_calls: bool = False) -> str:
     """Text RIS for the selected modules; empty-note when a chunk has none."""
     selected = [mod for mod in formal.get("modules", [])
                 if module_names is None or mod.get("name") in module_names]
     if not selected:
         return ("(none for this part — module function bodies are generated "
                 "in separate parts)")
-    return "\n".join(_module_ris(mod) for mod in selected)
+    return "\n".join(_module_ris(mod, include_calls=include_calls)
+                     for mod in selected)
 
 
 def extract_code_block(text, lang=None):
@@ -304,11 +434,12 @@ EXISTING SCAFFOLD (context only, never re-emit):
 """
 
 
-def _chunk_module_names(formal):
+def _chunk_module_names(formal, include_calls: bool = False):
     """Group module names into chunks of roughly _CHUNK_RIS_BUDGET rendered
     RIS characters; None when the whole dump fits a single call."""
     mods = formal.get("modules", [])
-    sizes = [len(_module_ris(mod)) for mod in mods]
+    sizes = [len(_module_ris(mod, include_calls=include_calls))
+             for mod in mods]
     if sum(sizes) <= _CHUNK_MIN_RIS_CHARS:
         return None
     groups, cur, size = [], [], 0
@@ -323,14 +454,32 @@ def _chunk_module_names(formal):
     return groups
 
 
-def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type=None, pci_identity=None, **kwargs):
+def generate_via_llm(formal, device_spec, bind, *, backend, facts=None,
+                     bus_type=None, pci_identity=None,
+                     evidence_mode: str = "full", **kwargs):
+    """Generate backend code from the RIS.
+
+    ``evidence_mode`` selects what the prompt is allowed to know:
+      - ``full``: device spec + framework facts + bind (pipeline default);
+      - ``ris_only``: the RIS alone plus the mechanical bind mapping;
+      - ``ris_semantics``: ris_only plus a semantics legend for every RIS
+        construct and the reviewed external-call annotations.
+    """
     template = load_prompt_template(backend)
     driver = formal.get("driver", device_spec.name)
+    ris_only = evidence_mode in {"ris_only", "ris_semantics"}
+    mode_note = _RIS_ONLY_NOTE if ris_only else ""
+    if evidence_mode == "ris_semantics":
+        mode_note += _SEMANTICS_NOTE
 
-    def call(mode_note, module_names=None, function_names=None):
-        ev = json.loads(build_evidence_json(
-            formal, device_spec, bind, facts,
-            module_names=module_names, function_names=function_names))
+    def call(mode_extra, module_names=None, function_names=None):
+        if ris_only:
+            ev = json.loads(_ris_evidence_json(
+                formal, bind, module_names))
+        else:
+            ev = json.loads(build_evidence_json(
+                formal, device_spec, bind, facts,
+                module_names=module_names, function_names=function_names))
         # Inject bus type info into evidence JSON
         if bus_type or pci_identity:
             if bus_type:
@@ -342,10 +491,32 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
                     ev["pci_identity"] = pci_identity
                 else:
                     ev["pci_identity"] = {"vendor": str(pci_identity)}
-        prompt = (template + mode_note)
+        if evidence_mode == "ris_semantics":
+            annotations = {}
+            for mod in formal.get("modules", []):
+                if module_names is not None and mod.get("name") not in \
+                        module_names:
+                    continue
+                entries = {
+                    e.get("callee"): {
+                        key: e["annotation"][key]
+                        for key in ("category", "return", "effects",
+                                    "porting_hint")
+                        if e.get("annotation") and key in e["annotation"]
+                    }
+                    for e in mod.get("external_calls") or []
+                    if e.get("annotation")}
+                if entries:
+                    annotations[mod.get("name")] = entries
+            if annotations:
+                ev["external_annotations"] = annotations
+        prompt = (template + mode_note + mode_extra)
         prompt = prompt.replace("__EVIDENCE__",
                                 json.dumps(ev, indent=2, sort_keys=True))
-        prompt = prompt.replace("__RIS__", _modules_ris_text(formal, module_names))
+        prompt = prompt.replace(
+            "__RIS__",
+            _modules_ris_text(formal, module_names,
+                              include_calls=ris_only))
         prompt = prompt.replace("__DRIVER_NAME__", driver)
         raw = call_llm(prompt, model=kwargs.get("model"))
         # 200-with-empty-body is an intermittent endpoint mode on long
@@ -390,7 +561,7 @@ def generate_via_llm(formal, device_spec, bind, *, backend, facts=None, bus_type
             raise RuntimeError("LLM returned empty code")
         return code, parsed.get("files")
 
-    groups = _chunk_module_names(formal)
+    groups = _chunk_module_names(formal, include_calls=ris_only)
     if groups is None:
         code, files = call("")
         return GeneratedCode(

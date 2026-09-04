@@ -155,7 +155,14 @@ def _repair_receipts(backend, name, cpath, formal, entries,
     except Exception:
         return False
     original = Path(cpath).read_text(encoding="utf-8")
-    text = original
+    # anchor-label normalization (mechanical, no LLM): op ids are always
+    # `op_<n>`, so the canonical label is `__rh_op_op_<n>`.  Generation and
+    # repair echoes frequently drop the inner `op_` (`__rh_op_2`); rewrite
+    # digit-only labels before any contract check so a pure spelling drift
+    # never burns an LLM round.  Idempotent — `__rh_op_op_2` does not match.
+    text, norm_labels = re.subn(r"__rh_op_(?=\d)", "__rh_op_op_", original)
+    if norm_labels:
+        Path(cpath).write_text(text, encoding="utf-8")
     bounds = _part_bounds(text)
     rows = []
     for mod in formal.get("modules", []):
@@ -218,6 +225,9 @@ def _repair_receipts(backend, name, cpath, formal, entries,
     scaffold_text = ("(single-file program)" if len(bounds) < 2
                      else text[bounds[0][1]:bounds[0][2]])
     log = []
+    if norm_labels:
+        log.append("normalized %d anchor label(s) __rh_op_<n> -> "
+                   "__rh_op_op_<n>" % norm_labels)
     changed = False
     changed_parts = []  # (part index, [(op_id, kind, digest, module)])
     for idx in sorted(by_part, reverse=True):
@@ -266,6 +276,7 @@ def _repair_receipts(backend, name, cpath, formal, entries,
             if new is None:
                 log.append("part %d: no fenced block" % idx)
                 continue
+            new = re.sub(r"__rh_op_(?=\d)", "__rh_op_op_", new)
             if "TODO" in new or len(new) < 0.5 * len(part):
                 log.append("part %d: rejected (len %d<%d)"
                            % (idx, len(new), len(part)))

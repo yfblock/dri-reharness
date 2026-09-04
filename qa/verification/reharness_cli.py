@@ -158,6 +158,9 @@ def cmd_intermediates(args: list[str]) -> int:
     if not args:
         print("usage: reharness intermediates <driver.c> [more.c ...]")
         return 1
+    import os
+    # dumping is opt-in for ordinary runs; this command exists to enable it
+    os.environ["REHARNESS_DUMP_INTERMEDIATES"] = "1"
     from extractor import ExtractorConfig, extract_ris
     from extractor.formal import formal_display
     from extractor.intermediates import intermediates_root

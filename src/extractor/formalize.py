@@ -20,6 +20,7 @@ from .intent import annotate
 from . import formal as F
 from .formal import walk_leaf_ops
 from .macros import _eval_int_expr
+from .source_map import build_source_map
 
 
 def _expr_has_top(expr) -> bool:
@@ -996,20 +997,52 @@ def _transaction_map(funcs, extractions, macros) -> list[dict]:
     return [seen[key] for key in sorted(seen)]
 
 
-def _attach_call_nodes(modules: list[dict], funcs: list[Func],
-                       stats: dict, inlined_names: set) -> None:
-    """Attach RIS Call nodes: the module-language view of flattened helpers.
+def _expanded_call_sites(module: dict) -> set[tuple[str, int, str]]:
+    """Call edges whose callee body is expanded into this module's ops.
 
-    Every helper in ``inlined_names`` had its operations flattened into its
-    callers.  A Call node records that dependency inside the caller module:
-    the exact AST callsite, the parameter-to-argument binding, and whether
-    the call row independently passes the proof predicate.  This keeps the
-    flattened operations lowering-compatible while making the call edge a
-    first-class, auditable RIS construct instead of metadata-only state.
+    An op whose evidence carries ``inlined_at`` hop
+    ``{function: <caller>, line: L, callee: <name>}`` proves the helper
+    call at (caller, L) was flattened: the callee's operations are already
+    in this module.  Call rows matching such a hop are redundant with the
+    expansion and must not render as opaque ``Call`` nodes.
+    """
+    sites: set[tuple[str, int, str]] = set()
+    names = {module.get("name")}
+    for op in walk_leaf_ops(module.get("ops") or []):
+        evidence = None
+        for value in op.values():
+            if isinstance(value, dict):
+                evidence = value.get("evidence")
+                if isinstance(evidence, dict):
+                    break
+        for hop in (evidence or {}).get("inlined_at") or []:
+            if not isinstance(hop, dict):
+                continue
+            if hop.get("function") in names and hop.get("callee"):
+                sites.add((hop.get("function"), hop.get("line", 0),
+                           hop.get("callee")))
+    return sites
+
+
+def _attach_call_nodes(modules: list[dict], funcs: list[Func],
+                       stats: dict, inlined_names: set) -> dict:
+    """Attach RIS Call nodes for call edges NOT already expanded as ops.
+
+    Helpers in ``inlined_names`` had their operations flattened into
+    callers.  When a module's ops prove that expansion (the op evidence
+    ``inlined_at`` hop names the very same callsite), emitting a Call node
+    would duplicate the expansion as an opaque call, so the row is dropped
+    and counted.  A Call node survives only when the callee produced no
+    operations in this module — e.g. allocators or printers whose bodies
+    hold no hardware semantics — carrying the exact AST callsite, the
+    parameter-to-argument binding, proof status, and the same closed-
+    category classification as ExternalCall nodes so consumers can
+    dispatch on it.
     """
     formal_calls = stats.get("formal_calls")
     if not isinstance(formal_calls, list) or not formal_calls:
-        return
+        return {"emitted_nodes": 0, "suppressed_expanded": 0}
+    annotations = load_annotations()
     module_by_symbol: dict[str, dict] = {}
     func_by_module_name = {
         func.module_name or func.name: func for func in funcs}
@@ -1020,6 +1053,11 @@ def _attach_call_nodes(modules: list[dict], funcs: list[Func],
         symbol = func.symbol_id or func.name
         if symbol not in module_by_symbol:
             module_by_symbol[symbol] = module
+    expanded = {id(module): _expanded_call_sites(module)
+                for module in modules}
+    func_name_by_symbol = {
+        func.symbol_id or func.name: func.name for func in funcs}
+    emitted = suppressed = 0
     for row in formal_calls:
         if not isinstance(row, dict):
             continue
@@ -1030,6 +1068,14 @@ def _attach_call_nodes(modules: list[dict], funcs: list[Func],
         if module is None:
             continue
         callsite = row.get("callsite") or {}
+        site = (func_name_by_symbol.get(row.get("caller_usr")),
+                callsite.get("line", 0),
+                row.get("callee_module"))
+        if site in expanded.get(id(module), set()):
+            # The callee's ops are already in this module — the Call row
+            # would state the expansion twice.
+            suppressed += 1
+            continue
         source = callsite.get("source")
         arguments = [
             {"parameter": item.get("parameter"),
@@ -1037,8 +1083,9 @@ def _attach_call_nodes(modules: list[dict], funcs: list[Func],
             for item in row.get("argument_mapping") or []
             if isinstance(item, dict)]
         return_binding = row.get("return_binding") or {}
+        resolved = classify(row.get("callee_module") or "", annotations)
         module.setdefault("calls", []).append({
-            "schema": 1,
+            "schema": 2,
             "callee": row.get("callee_module"),
             "callee_usr": callee_usr,
             "callsite": {
@@ -1051,9 +1098,52 @@ def _attach_call_nodes(modules: list[dict], funcs: list[Func],
             "arguments": arguments,
             "return_binding": return_binding.get("status"),
             "resolution_authority": row.get("resolution_authority"),
+            "category": resolved["category"],
+            "category_source": resolved["source"],
             "proven": _call_row_is_proven(
                 row, allow_structured_loops=True),
         })
+        emitted += 1
+    return {"emitted_nodes": emitted,
+            "suppressed_expanded": suppressed}
+
+
+def _modeled_call_sites(module: dict) -> dict[tuple, set[tuple]]:
+    """Call expressions this module's ops already account for.
+
+    Key: ``(owner function, line, callee)`` of the modeled call site; value:
+    the set of ``inlined_at`` chains (as ``(function, callee, line)``
+    tuples) under which that site was flattened into this module.  An
+    external row whose hop chain ends at one of these sites describes a
+    call the dataflow layer rewrote into an operation — emitting both the
+    op and an ``ExternalCall`` would account the site twice.
+    """
+    sites: dict[tuple, set[tuple]] = defaultdict(set)
+    for op in walk_leaf_ops(module.get("ops") or []):
+        evidence = None
+        for value in op.values():
+            if isinstance(value, dict):
+                evidence = value.get("evidence")
+                if isinstance(evidence, dict):
+                    break
+        if not isinstance(evidence, dict):
+            continue
+        modeled = (evidence.get("ast_kind") == "CALL_EXPR"
+                   or evidence.get("origin") == "subsystem_summary")
+        if not modeled:
+            continue
+        callee = (evidence.get("effective_callee")
+                  or evidence.get("callee"))
+        if not isinstance(callee, str) or not callee:
+            continue
+        chain = tuple(
+            (hop.get("function"), hop.get("callee"), hop.get("line"))
+            for hop in evidence.get("inlined_at") or []
+            if isinstance(hop, dict))
+        sites.setdefault(
+            (evidence.get("function"), evidence.get("line"), callee),
+            set()).add(chain)
+    return sites
 
 
 def _attach_external_call_nodes(modules: list[dict], funcs: list[Func],
@@ -1124,9 +1214,38 @@ def _attach_external_call_nodes(modules: list[dict], funcs: list[Func],
         return nodes
 
     emitted = 0
+    suppressed = 0
     by_category: Counter = Counter()
+    modeled = {id(module): _modeled_call_sites(module)
+               for module in modules}
+    func_name_by_symbol = {
+        func.symbol_id or func.name: func.name for func in funcs}
+
+    def accounted_by_op(module, row, hops) -> bool:
+        """True when an op in this module models the row's terminal call."""
+        if row.get("resolution_authority") != "unresolved_indirect":
+            return False
+        if hops:
+            terminal = (hops[-1].get("function"), hops[-1].get("line"),
+                        hops[-1].get("callee"))
+            # row hops run caller-to-callee; op evidence inlined_at runs
+            # callee-to-caller, so the row chain compares reversed
+            chain = tuple((hop.get("function"), hop.get("callee"),
+                           hop.get("line")) for hop in reversed(hops[:-1]))
+        else:
+            callsite = row.get("callsite") or {}
+            terminal = (func_name_by_symbol.get(row.get("caller_usr")),
+                        callsite.get("line", 0), row.get("callee"))
+            chain = ()
+        return chain in modeled.get(id(module), {}).get(terminal, set())
+
     for symbol, module in module_by_symbol.items():
         for row, hops in external_nodes(symbol, []):
+            if accounted_by_op(module, row, hops):
+                # The wrapper call was rewritten into an R/W op; the
+                # unresolved leaf under it is not a separate dependency.
+                suppressed += 1
+                continue
             resolved = classify(row.get("callee") or "", annotations)
             node = {
                 "schema": 1,
@@ -1176,6 +1295,7 @@ def _attach_external_call_nodes(modules: list[dict], funcs: list[Func],
     return {
         "schema": 1,
         "emitted_nodes": emitted,
+        "suppressed_modeled": suppressed,
         "by_category": dict(sorted(by_category.items())),
         "annotation_entries": len(annotations),
     }
@@ -1237,13 +1357,13 @@ def build_formal_ris(driver_name: str, source_path: str,
             func, FuncExtraction(name=func.name), id_counter, macros))
         module_names.add(callback_module)
 
-    _attach_call_nodes(modules, funcs, stats, inlined_names)
+    call_node_stats = _attach_call_nodes(modules, funcs, stats, inlined_names)
     external_call_stats = _attach_external_call_nodes(
         modules, funcs, stats, inlined_names)
 
-    return {
+    formal = {
         "driver": driver_name,
-        "version": "0.3.0",
+        "version": "0.4.0",
         "modules": modules,
         "register_map": _register_map(funcs, extractions, macros),
         "transaction_map": _transaction_map(funcs, extractions, macros),
@@ -1270,6 +1390,13 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "oracle": "source-ast-call-v1",
                 "claim": "source-local call identity and callsite dataflow",
                 "calls": stats.get("formal_calls", []),
+                "call_nodes": {
+                    "schema": 2,
+                    "claim": (
+                        "call edges NOT expanded as ops in the caller "
+                        "module, classified into the closed category set"),
+                    **call_node_stats,
+                },
                 "lowering_enabled": bool(closure_overlays),
                 "selective_closure": selective_closure,
             },
@@ -1277,7 +1404,8 @@ def build_formal_ris(driver_name: str, source_path: str,
                 "schema": 1,
                 "claim": (
                     "every AST callsite to a callee without an analyzed "
-                    "definition, classified into a closed category set"),
+                    "definition and not already modeled as an operation, "
+                    "classified into a closed category set"),
                 **external_call_stats,
             },
             "subsystem_summary_analysis": {
@@ -1311,9 +1439,15 @@ def build_formal_ris(driver_name: str, source_path: str,
             },
         },
     }
+    # Location side table: the slim text carries anchors (op ids), this
+    # table carries the file:line they point at, resolved on demand.
+    formal["source_map"] = build_source_map(formal)
+    return formal
 
 
-def save_formal_text(formal: dict, path: str):
+def save_formal_text(formal: dict, path: str, *,
+                     include_locations: bool = False):
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(F.formal_display(formal))
+        fh.write(F.formal_display(formal,
+                                  include_locations=include_locations))
         fh.write("\n")

@@ -129,7 +129,10 @@ _RULES: list[tuple[tuple[str, ...], str]] = [
       # descriptor unwrappers and probe-time config queries: they only
       # write caller-visible output, never device or global state
       "irq_data_to_desc", "dmi_first_match", "of_property_read",
-      "of_device_is_available", "of_get_property"),
+      "of_device_is_available", "of_get_property",
+      # irq descriptor accessors (irqdesc.h): pure container unwraps
+      "irqd_to_hwirq", "irq_data_get_irq_chip_data",
+      "irq_desc_get_chip", "irq_desc_get_handler_data"),
      "pure"),
 ]
 

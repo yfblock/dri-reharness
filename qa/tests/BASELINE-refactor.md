@@ -87,3 +87,25 @@ store landed on top of e9ef80c.  Re-verification against this baseline:
   grounded LLM draft, low-confidence/indirect-target drafts dropped)
   covers most of the remainder; residual unknowns are indirect
   dispatch targets whose callee is genuinely unresolved.
+
+## RIS v0.4.0 verification (2026-09-05)
+
+Slim text + source map + expansion-aware Call nodes + op-modeled
+ExternalCall suppression + opt-in intermediates.  Full-run check:
+
+- First full run: 13 failed / 155 passed.  The FAILED set = the 10
+  v0.3.0 failures above PLUS exactly three tests pinning the pre-0.4.0
+  Call-node/artifact contracts:
+  `test_bundle_assembly` (expected `<name>.dspec`, removed as a
+  duplicate of `.device-spec.json`),
+  `test_mixed_helper_flattens_with_cited_chains_and_call_node` and
+  `test_single_source_transitive_switch_case_inline_is_cited_and_proven`
+  (both asserted the restated Call edge; v0.4.0 suppresses
+  expansion-proven rows and counts them in
+  `metadata.call_graph.call_nodes.suppressed_expanded`).
+- All three updated to the v0.4.0 invariants and re-run green; none of
+  the 10 pre-existing failures changed.  Expected steady state:
+  10 failed / 158 passed, failure set byte-identical to v0.3.0's.
+- New tests added (pass): `test_slim_text_and_source_map`,
+  `test_call_nodes_dedup_expanded_and_carry_category`,
+  `test_external_calls_suppress_op_modeled_sites`.

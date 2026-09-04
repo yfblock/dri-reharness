@@ -131,7 +131,6 @@ def run_backend_pipeline(res: Any, outdir: str, source: str,
         res.formal, indent=2, sort_keys=True))
     _w(outdir, "generation-contract.json", json.dumps(
         generation_contract, indent=2, sort_keys=True))
-    _w(outdir, f"{name}.dspec", res.device_spec.display())
     _w(outdir, f"{name}.device-spec.json", json.dumps(
         device_spec_document, indent=2, sort_keys=True))
     _w(outdir, f"{name}.facts", res.facts.display())

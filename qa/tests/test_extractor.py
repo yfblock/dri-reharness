@@ -740,7 +740,7 @@ def test_ftgpio_ack_irq_keeps_registration_and_direct_call_effects(ftgpio_formal
 
 def test_formal_display_text(ftgpio_formal):
     txt = formal_display(ftgpio_formal)
-    assert txt.startswith("driver gpio-ftgpio010 v0.3.0 {")
+    assert txt.startswith("driver gpio-ftgpio010 v0.4.0 {")
     assert "module ftgpio_gpio_probe" in txt
     assert "W(B4," in txt and " := R(B4," in txt
     assert "IF " in txt
@@ -796,7 +796,7 @@ def test_external_call_semantics_rule_table():
 def test_external_call_nodes_recorded(ftgpio_formal):
     """Every external dependency is a reviewable, classified RIS node."""
     formal = ftgpio_formal
-    assert formal["version"] == "0.3.0"
+    assert formal["version"] == "0.4.0"
     stats = formal["metadata"]["external_calls"]
     total = sum(len(m.get("external_calls") or [])
                 for m in formal["modules"])
@@ -835,6 +835,77 @@ def test_external_call_nodes_recorded(ftgpio_formal):
     txt = formal_display(formal)
     assert "ExternalCall devm_clk_get_enabled(" in txt
     assert "via devm_kzalloc" in txt
+
+
+# ── slim text + source map + expanded-call dedup (RIS 0.4.0) ─────────
+
+def test_slim_text_and_source_map(ftgpio_formal):
+    """The .ris text carries no inline locations; the side table does."""
+    from extractor.source_map import build_source_map, lookup_source
+
+    txt = formal_display(ftgpio_formal)
+    assert "vendor/linux" not in txt          # no absolute paths inline
+    assert ".c:" not in txt and ".h:" not in txt
+    # op anchors stay (receipt lowering keys on them)
+    assert " @op_" in txt
+
+    source_map = ftgpio_formal.get("source_map")
+    assert isinstance(source_map, dict) and source_map.get("anchors")
+    # op anchors resolve back to file:line on demand
+    op_anchor = next(a for a, entry in source_map["anchors"].items()
+                     if a.startswith("op_"))
+    resolved = lookup_source(source_map, [op_anchor, "not-an-anchor"])
+    assert op_anchor in resolved and ".c:" in resolved[op_anchor]
+    assert "not-an-anchor" not in resolved
+    # a rebuilt map over the same formal is stable
+    assert build_source_map(ftgpio_formal)["anchors"].keys() == \
+        source_map["anchors"].keys()
+
+
+def test_call_nodes_dedup_expanded_and_carry_category(ftgpio_formal):
+    """Call rows whose callee ops are in the module are not re-emitted.
+
+    A helper flattened into a caller leaves op-evidence hops naming the
+    very same callsite; emitting a Call node for that row would state the
+    expansion twice.  Rows without ops in the caller (allocators,
+    printers) stay, classified into the closed category set.
+    """
+    formal = ftgpio_formal
+    stats = formal["metadata"]["call_graph"]["call_nodes"]
+    total = sum(len(m.get("calls") or []) for m in formal["modules"])
+    assert stats["emitted_nodes"] == total
+    assert stats["suppressed_expanded"] >= 0
+    # every surviving Call node is classified
+    for module in formal["modules"]:
+        for call in module.get("calls") or []:
+            assert call["schema"] == 2
+            assert call["category"]
+            assert call["category_source"] in {
+                "annotation", "rule", "unknown"}
+
+
+def test_external_calls_suppress_op_modeled_sites(ftgpio_formal):
+    """Wrapper calls rewritten into ops do not double-account as externals."""
+    stats = ftgpio_formal["metadata"]["external_calls"]
+    assert stats["suppressed_modeled"] >= 0
+    # every emitted external node has no matching modeled-call op
+    from extractor.formal import walk_leaf_ops
+    for module in ftgpio_formal["modules"]:
+        modeled = set()
+        for op in walk_leaf_ops(module.get("ops") or []):
+            body = next((v for v in op.values() if isinstance(v, dict)),
+                        None)
+            ev = (body or {}).get("evidence") or {}
+            if ev.get("ast_kind") == "CALL_EXPR" and ev.get("callee"):
+                modeled.add((ev.get("function"), ev.get("line")))
+        for node in module.get("external_calls") or []:
+            if node["resolution_authority"] != "unresolved_indirect":
+                continue
+            hops = node.get("inlined_at") or []
+            owner = hops[-1]["function"] if hops else module["name"]
+            line = ((hops[-1].get("line") if hops else None)
+                    or node["callsite"]["line"])
+            assert (owner, line) not in modeled, (module["name"], node)
 
 
 def test_access_accounting_and_operation_evidence_are_complete():
@@ -1675,9 +1746,14 @@ def test_mixed_helper_flattens_with_cited_chains_and_call_node():
                            .get("inlined_at") or []))
     ]
     assert nested_chains, "nested_access ops must cite their call chain"
-    calls = entry_module.get("calls") or []
-    assert [(c["callee"], c["proven"]) for c in calls] == [
-        ("mixed_helper", True)]
+    # v0.4.0: the top Call edge is no longer restated as a Call node —
+    # the flattened ops' inlined_at hops already prove the expansion, so
+    # the row is suppressed (metadata.call_graph.call_nodes) instead.
+    assert (entry_module.get("calls") or []) == []
+    cn = result.formal["metadata"]["call_graph"]["call_nodes"]
+    assert cn["suppressed_expanded"] >= 1
+    assert all(c.get("schema") == 2
+               for c in (entry_module.get("calls") or []))
     assert "nested_access" not in {
         m["name"] for m in result.formal["modules"]}
 
@@ -2455,11 +2531,13 @@ def test_single_source_transitive_switch_case_inline_is_cited_and_proven():
     assert any(
         any(hop.get("function") == "entry" for hop in chain)
         for chain in through_toggle)
-    calls = module.get("calls") or []
-    toggle_calls = [call for call in calls if call["callee"] == "toggle"]
-    assert len(toggle_calls) == 1
-    assert toggle_calls[0]["proven"] is True
-    assert toggle_calls[0]["callsite"]["line"] > 0
+    # v0.4.0: toggle's ops are inlined with an entry->toggle hop, so the
+    # Call row is suppressed as expansion-proven rather than restated.
+    toggle_calls = [call for call in (module.get("calls") or [])
+                    if call["callee"] == "toggle"]
+    assert toggle_calls == []
+    cn = result.formal["metadata"]["call_graph"]["call_nodes"]
+    assert cn["suppressed_expanded"] >= 1
 
 
 def walk_all_ops_of(module):
@@ -3357,7 +3435,7 @@ def test_bundle_assembly():
     bdir = synthesis.build_bundle(res, "harness", tempfile.mkdtemp())
     files = set(os.listdir(bdir))
     name = res.formal["driver"]
-    for need in (f"{name}.ris", f"{name}.dspec", f"{name}.facts",
+    for need in (f"{name}.ris", f"{name}.facts",
                  f"{name}.harness.bind", f"{name}.formal.json",
                  f"{name}.device-spec.json", "generation-contract.json",
                  "score.txt"):

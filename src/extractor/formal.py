@@ -12,7 +12,7 @@ A mathematically-grounded representation of register interaction sequences:
 Emits both:
   - a structured serde-compatible JSON (FormalRIS schema), and
   - a human-readable formal-language text (the Display grammar):
-        driver gpio v0.3.0 {
+        driver gpio v0.4.0 {
           module probe {
             Call enable_reg(mask = mask) @ gpio.c:42 [direct_function_declaration] [proven]
             W(B4, dev.GPIO_INT_EN) = 0x0 -- Init
@@ -315,7 +315,8 @@ def _scalar_display(value) -> str:
     return str(value)
 
 
-def op_display(op: dict, indent: int = 0) -> str:
+def op_display(op: dict, indent: int = 0, *,
+               include_locations: bool = False) -> str:
     pad = "  " * indent
 
     def suffix(body):
@@ -332,7 +333,7 @@ def op_display(op: dict, indent: int = 0) -> str:
         digest = body.get("_receipt_digest")
         if digest:
             audit += f" digest={digest}"
-        if source and line:
+        if include_locations and source and line:
             audit += f" {source}:{line}"
         return audit
 
@@ -436,7 +437,7 @@ def op_display(op: dict, indent: int = 0) -> str:
     return f"{pad}?"
 
 
-def formal_display(formal: dict) -> str:
+def formal_display(formal: dict, *, include_locations: bool = False) -> str:
     lines = [f"driver {formal['driver']} v{formal['version']} {{"]
     for m in formal["modules"]:
         lines.append(f"  module {m['name']} {{")
@@ -446,12 +447,14 @@ def formal_display(formal: dict) -> str:
                 for item in call.get("arguments") or [])
             callsite = call.get("callsite") or {}
             anchor = ""
-            if callsite.get("source") is not None:
+            if include_locations and callsite.get("source") is not None:
                 anchor = f"@ {callsite.get('source')}:{callsite.get('line', 0)} "
+            category = call.get("category")
+            cat = f"[{category}]" if category else ""
             proven = " [proven]" if call.get("proven") else ""
             lines.append(
                 f"    Call {call.get('callee')}({arguments}) "
-                f"{anchor}[{call.get('resolution_authority')}]{proven}")
+                f"{anchor}{cat}[{call.get('resolution_authority')}]{proven}")
         for external in m.get("external_calls") or []:
             arguments = ", ".join(
                 (f"{item.get('parameter')} = {item.get('expression')}"
@@ -460,7 +463,7 @@ def formal_display(formal: dict) -> str:
                 for item in external.get("arguments") or [])
             callsite = external.get("callsite") or {}
             anchor = ""
-            if callsite.get("source"):
+            if include_locations and callsite.get("source"):
                 anchor = f"@ {callsite.get('source')}:{callsite.get('line', 0)} "
             hops = external.get("inlined_at") or []
             via = (f" via {'.'.join(str(hop.get('callee'))
@@ -470,7 +473,8 @@ def formal_display(formal: dict) -> str:
                 f"{anchor}{via}[{external.get('category')}]"
                 f"[{external.get('resolution_authority')}]")
         for op in m["ops"]:
-            lines.append(op_display(op, indent=2))
+            lines.append(op_display(op, indent=2,
+                                    include_locations=include_locations))
         lines.append("  }")
     accounting = formal.get("metadata", {}).get("access_accounting")
     if accounting:
@@ -483,10 +487,20 @@ def formal_display(formal: dict) -> str:
                   f"    ris_ops_without_evidence {accounting['ris_ops_without_evidence']}",
                   f"    strict_complete {str(accounting['strict_complete']).lower()}",
                   "  }"]
+    call_nodes = formal.get("metadata", {}).get("call_graph", {}).get(
+        "call_nodes")
+    if call_nodes:
+        lines += ["  call_nodes {",
+                  f"    emitted {call_nodes.get('emitted_nodes', 0)}",
+                  f"    suppressed_expanded "
+                  f"{call_nodes.get('suppressed_expanded', 0)}",
+                  "  }"]
     external = formal.get("metadata", {}).get("external_calls")
     if external:
         lines += ["  external_calls {",
                   f"    nodes {external.get('emitted_nodes', 0)}",
+                  f"    suppressed_modeled "
+                  f"{external.get('suppressed_modeled', 0)}",
                   f"    annotation_entries {external.get('annotation_entries', 0)}"]
         for category, count in sorted(
                 (external.get("by_category") or {}).items()):

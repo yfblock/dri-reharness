@@ -113,13 +113,9 @@ def run_driver_pipeline(res, args) -> int:
         res.formal, indent=2, sort_keys=True))
     _w(outdir, "generation-contract.json", json.dumps(
         generation_contract, indent=2, sort_keys=True))
-    _w(outdir, f"{name}.dspec", res.device_spec.display())
     _w(outdir, f"{name}.device-spec.json", json.dumps(
         device_spec_document, indent=2, sort_keys=True))
     _w(outdir, f"{name}.facts", res.facts.display())
-    _w(ver_dir, "analysis.json", json.dumps({
-        "stats": res.stats, "warnings": res.warnings,
-    }, indent=2, sort_keys=True))
 
     # ── generated C + verification (derived) ──
     from backends.registry import list_backends
@@ -426,7 +422,7 @@ def run_driver_pipeline(res, args) -> int:
     print()
     print("── core reconstruction inputs ──")
     for f in (f"{name}.ris", f"{name}.formal.json",
-              "generation-contract.json", f"{name}.dspec",
+              "generation-contract.json",
               f"{name}.device-spec.json",
               f"{name}.bind", f"{name}.facts"):
         print(f"   {outdir}/{f}")

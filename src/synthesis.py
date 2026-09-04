@@ -21,7 +21,6 @@ def build_bundle(res, backend, outdir):
     save_formal_text(res.formal, os.path.join(outdir, name + '.ris'))
     _w(outdir, name + '.formal.json', json.dumps(res.formal, indent=2, sort_keys=True))
     _w(outdir, 'generation-contract.json', json.dumps(gc, indent=2, sort_keys=True))
-    _w(outdir, name + '.dspec', res.device_spec.display())
     _w(outdir, name + '.device-spec.json', json.dumps(device_spec_to_dict(res.device_spec), indent=2, sort_keys=True))
     _w(outdir, name + '.' + backend + '.bind', bind.display())
     _w(outdir, name + '.facts', res.facts.display())

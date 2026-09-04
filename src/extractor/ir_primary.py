@@ -77,17 +77,28 @@ def _vendor_twin(source: Path) -> Path | None:
 def _compile_ir(source: Path, kernel_args: list[str]) -> str:
     """Compile C to LLVM IR with kernel build flags.
 
-    The .ll lands in the driver's intermediate directory (reviewable,
-    regenerable) instead of polluting the benchmark corpus.
+    With intermediate dumping enabled the .ll lands in the driver's
+    intermediate directory (reviewable, regenerable); otherwise it is a
+    scratch file so ordinary runs leave nothing behind.
     """
-    from .intermediates import intermediate_dir
-    ll_path = intermediate_dir(source) / "01-ir.ll"
-    cmd = ["clang-18", "-S", "-emit-llvm", "-g", "-O1", "-c", "-w",
-           *kernel_args, str(source), "-o", str(ll_path)]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-    if proc.returncode != 0 or not ll_path.is_file():
-        raise RuntimeError(f"IR compilation failed: {proc.stderr[:300]}")
-    return ll_path.read_text()
+    import tempfile
+    from .intermediates import dump_enabled, intermediate_dir
+    if dump_enabled():
+        ll_path = intermediate_dir(source) / "01-ir.ll"
+        cmd = ["clang-18", "-S", "-emit-llvm", "-g", "-O1", "-c", "-w",
+               *kernel_args, str(source), "-o", str(ll_path)]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if proc.returncode != 0 or not ll_path.is_file():
+            raise RuntimeError(f"IR compilation failed: {proc.stderr[:300]}")
+        return ll_path.read_text()
+    with tempfile.TemporaryDirectory(prefix="reharness-ir-") as tmp:
+        ll_path = Path(tmp) / "01-ir.ll"
+        cmd = ["clang-18", "-S", "-emit-llvm", "-g", "-O1", "-c", "-w",
+               *kernel_args, str(source), "-o", str(ll_path)]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if proc.returncode != 0 or not ll_path.is_file():
+            raise RuntimeError(f"IR compilation failed: {proc.stderr[:300]}")
+        return ll_path.read_text()
 
 
 # ── macro reverse-lookup ───────────────────────────────────────────────
@@ -512,11 +523,12 @@ def extract_ris_ir_primary(config: ExtractorConfig) -> IRPrimaryResult:
     # Step 4: IR core (register_map + per-function MMIO ops)
     ir_core = _build_ris_core(ir_facts, macro_idx, driver_name, source)
     try:
-        from .intermediates import intermediate_dir, write_json
-        out = intermediate_dir(source)
-        write_json(out / "02-macros.json",
-                   {"reverse_index": {str(k): v for k, v in macro_idx.items()}})
-        write_json(out / "03-ir-facts.json", ir_facts)
+        from .intermediates import dump_enabled, write_json
+        if dump_enabled():
+            out = intermediate_dir(source)
+            write_json(out / "02-macros.json",
+                       {"reverse_index": {str(k): v for k, v in macro_idx.items()}})
+            write_json(out / "03-ir-facts.json", ir_facts)
     except Exception:
         pass
 
@@ -585,9 +597,13 @@ def _dump_intermediates(source: Path, driver_name: str,
                         result: "IRPrimaryResult") -> None:
     """Persist every stage of the extraction chain for review/editing.
 
-    Best-effort: a dump failure never breaks extraction.
+    Opt-in (``REHARNESS_DUMP_INTERMEDIATES=1``): the chain has no machine
+    readers.  Best-effort — a dump failure never breaks extraction.
     """
     try:
+        from .intermediates import dump_enabled
+        if not dump_enabled():
+            return
         from .intermediates import intermediate_dir, write_json
         out = intermediate_dir(source)
         ast_formal = getattr(result.ast_result, "formal", None)
