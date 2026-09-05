@@ -862,6 +862,35 @@ def test_slim_text_and_source_map(ftgpio_formal):
         source_map["anchors"].keys()
 
 
+def test_llm_render_drops_reliability_keeps_contract_anchors(ftgpio_formal):
+    """include_reliability=False strips audit tags but never the contract.
+
+    The LLM evidence render must keep `@op_N` and the receipt digest (the
+    backend lowering keys on them) while dropping the human-audit
+    [Exact]/[Conservative] tags, including LOOP headers.
+    """
+    from extractor.formal import op_display
+    from backends.llm_bridge import _module_ris
+
+    full = formal_display(ftgpio_formal)
+    assert "[Exact]" in full or "[Conservative]" in full
+    slim = _module_ris(ftgpio_formal["modules"][0])
+    assert "[Exact]" not in slim and "[Conservative]" not in slim
+    assert " @op_" in slim                      # op ids stay
+    assert "digest=" in slim                    # receipt digests stay
+    # direct flag check on a single op
+    leaf = next(op for op in ftgpio_formal["modules"][0]["ops"]
+                if op.get("Read") or op.get("Write"))
+    body = leaf.get("Read") or leaf.get("Write")
+    body["op_id"] = body.get("op_id") or "op_test"
+    body["reliability"] = body.get("reliability") or "Exact"
+    rid = body["op_id"]
+    assert "[Exact]" in op_display(leaf)
+    slim_one = op_display(leaf, include_reliability=False)
+    assert "[Exact]" not in slim_one
+    assert f"@{rid}" in slim_one
+
+
 def test_call_nodes_dedup_expanded_and_carry_category(ftgpio_formal):
     """Call rows whose callee ops are in the module are not re-emitted.
 

@@ -316,7 +316,8 @@ def _scalar_display(value) -> str:
 
 
 def op_display(op: dict, indent: int = 0, *,
-               include_locations: bool = False) -> str:
+               include_locations: bool = False,
+               include_reliability: bool = True) -> str:
     pad = "  " * indent
 
     def suffix(body):
@@ -326,8 +327,13 @@ def op_display(op: dict, indent: int = 0, *,
         source = evidence.get("source")
         line = evidence.get("line")
         audit = ""
-        if op_id or reliability:
-            audit += f" @{op_id or '?'} [{reliability or 'Unknown'}]"
+        # the op_id (and receipt digest) anchor the backend contract and
+        # must always render; the reliability tag is human-audit metadata
+        # and can be dropped for the LLM evidence path
+        if op_id:
+            audit += f" @{op_id}"
+        if include_reliability and (op_id or reliability):
+            audit += f" [{reliability or 'Unknown'}]"
         # receipt digest injected by the LLM evidence builder; never part of
         # the digest itself (ris_op_digest never sees this key on real ops)
         digest = body.get("_receipt_digest")
@@ -389,17 +395,20 @@ def op_display(op: dict, indent: int = 0, *,
         o = op["Cond"]
         lines = [f"{pad}IF {expr_display(o['guard'])} {{"]
         for sub in o["then_ops"]:
-            lines.append(op_display(sub, indent + 1))
+            lines.append(op_display(sub, indent + 1,
+                                    include_reliability=include_reliability))
         if o.get("else_ops"):
             lines.append(f"{pad}}} ELSE {{")
             for sub in o["else_ops"]:
-                lines.append(op_display(sub, indent + 1))
+                lines.append(op_display(sub, indent + 1,
+                                    include_reliability=include_reliability))
         lines.append(f"{pad}}}")
         return "\n".join(lines)
     if "Seq" in op:
         lines = [f"{pad}SEQ {{"]
         for sub in op["Seq"]["ops"]:
-            lines.append(op_display(sub, indent + 1))
+            lines.append(op_display(sub, indent + 1,
+                                    include_reliability=include_reliability))
         lines.append(f"{pad}}}")
         return "\n".join(lines)
     if "Loop" in op:
@@ -420,24 +429,29 @@ def op_display(op: dict, indent: int = 0, *,
         if o.get("bounded"):
             annotations.append("bounded")
         meta = (" (" + "; ".join(annotations) + ")") if annotations else ""
-        lines = [f"{pad}LOOP {o.get('loop_kind', 'loop')} {detail}{meta} "
-                 f"[{o.get('reliability', 'Unknown')}] {{"]
+        header = (f"{pad}LOOP {o.get('loop_kind', 'loop')} {detail}{meta} "
+                  + (f"[{o.get('reliability', 'Unknown')}] " if include_reliability
+                     else "") + "{")
+        lines = [header]
         if o.get("guard_ops"):
             lines.append(f"{pad}  GUARD {{")
             for sub in o["guard_ops"]:
-                lines.append(op_display(sub, indent + 2))
+                lines.append(op_display(sub, indent + 2,
+                                    include_reliability=include_reliability))
             lines.append(
                 f"{pad}    {o.get('guard_var', 'guard')} := "
                 f"{expr_display(o.get('guard_value'))}")
             lines.append(f"{pad}  }}")
         for sub in o["body"]:
-            lines.append(op_display(sub, indent + 1))
+            lines.append(op_display(sub, indent + 1,
+                                    include_reliability=include_reliability))
         lines.append(f"{pad}}}")
         return "\n".join(lines)
     return f"{pad}?"
 
 
-def formal_display(formal: dict, *, include_locations: bool = False) -> str:
+def formal_display(formal: dict, *, include_locations: bool = False,
+                   include_reliability: bool = True) -> str:
     lines = [f"driver {formal['driver']} v{formal['version']} {{"]
     for m in formal["modules"]:
         lines.append(f"  module {m['name']} {{")
@@ -474,7 +488,8 @@ def formal_display(formal: dict, *, include_locations: bool = False) -> str:
                 f"[{external.get('resolution_authority')}]")
         for op in m["ops"]:
             lines.append(op_display(op, indent=2,
-                                    include_locations=include_locations))
+                                    include_locations=include_locations,
+                                    include_reliability=include_reliability))
         lines.append("  }")
     accounting = formal.get("metadata", {}).get("access_accounting")
     if accounting:

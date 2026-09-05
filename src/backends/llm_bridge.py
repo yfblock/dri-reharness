@@ -309,7 +309,10 @@ def _module_ris(mod, include_calls: bool = False) -> str:
                 external.get("callee"), arguments,
                 external.get("category")))
     for op in _annotate_receipt_digests(mod.get("ops", [])):
-        lines.append(op_display(op, indent=1))
+        # audit-only reliability tags are dropped for the LLM: the op_id
+        # and digest (the contract anchors) stay, [Exact]/[Conservative]
+        # is human-review metadata the model does not act on
+        lines.append(op_display(op, indent=1, include_reliability=False))
     lines.append("}")
     return "\n".join(lines)
 
