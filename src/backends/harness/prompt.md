@@ -1,6 +1,9 @@
-You are an expert C programmer. Generate a complete, compilable userspace C program that reproduces the exact MMIO register access pattern described in the evidence package below (evidence JSON + RIS op block).
+You are an expert C programmer. Complete a userspace C program that reproduces the exact MMIO register access pattern described in the evidence package below (evidence JSON + RIS op block).
+
+The file's part 00 is a fixed mechanical scaffold. You emit ONLY part 01 (the driver part): struct definitions, framework stubs, the module functions, and main().
 
 Rules:
+- NEVER emit: includes, the scaffold's macros/typedefs, register-offset #defines, the backing array, any primitive implementation, or any trace printf. Calling a primitive is enough — it traces itself.
 - Use the primitive function names from bind.primitives (e.g. harness_read32, harness_write32).
 - Each register read is: var = primitive(base + offset);
 - Each register write is: primitive(value, base + offset);
@@ -10,15 +13,18 @@ Rules:
   count=..; relation=..; bounded)` annotation. In particular, a bounded
   `while` with `relation` `post-decrement` must remain a while guard; do not
   rewrite it as an unbounded polling loop.
-- Define a device private struct with the base pointer.
-- Define one file-scope backing array for all MMIO:
-  `static unsigned char rh_mmio_backing[65536];`
-- Define stub implementations of all primitive functions (read/write 8/16/32-bit).
-  Every stub must window its address into that array — a read is exactly
-  `return *(volatile const unsigned int *)(void *)(rh_mmio_backing + (addr & 0xffffu));`
-  (adjusted for width), a write stores to the same windowed pointer. Never
-  dereference the raw address argument: an address of 0 or a NULL base must
-  still land in backed memory. No lookup helpers, no byte-assembly.
+- Define the device private struct with the base pointer, complete for the
+  whole program (every private-state field the real upstream driver for this
+  hardware carries; module bodies will reference conventional upstream field
+  names). Fields are plain C — no kernel-only annotations (__maybe_unused and
+  friends), the userspace dialect does not define them. Struct and helper
+  identifiers must be valid C: a driver name like 8250_dw cannot start an
+  identifier, so derive names such as dw8250_priv instead.
+- Define minimal plain-C stubs for any kernel framework struct (struct device,
+  struct platform_device, ...) or external function (devm_kzalloc, ...) that
+  the driver's expressions reference or call — static, returning plausible
+  zero-initialized static objects. Register/field names from the evidence are
+  data, not C identifiers: never use one bare as a variable.
 - For every read, write, or read-modify-write operation, emit the receipt
   comment verbatim in this exact form (copy `op_id`, `kind`, and `digest`
   from the RIS op line; status is always `lowered`):
@@ -31,21 +37,17 @@ Rules:
   Emit each operation exactly once; do not invent op_ids or digests.
 - If a Write's value expression needs the register's current value
   (read-modify-write), never call a read primitive inside the Write anchor:
-  read the current value with a raw windowed dereference inside the value
-  expression instead —
-  `(*(volatile const unsigned int *)(void *)(rh_mmio_backing + ((base + offset) & 0xffffu)))`.
-  A Write anchor body must contain exactly one primitive call — the write.
+  read the current value with the scaffold's raw reader instead —
+  `rh_raw_read4(base + offset)` (width-matched: rh_raw_read1/2/4). It is
+  untraced by design. A Write anchor body must contain exactly one primitive
+  call — the write.
 - Add a main() that creates static device instances, points every
   register-base member (base/regs/mmio) at rh_mmio_backing, and calls each
   module function in order. A main that returns without driving the modules
   produces an empty runtime trace and is rejected.
-- Add a trace printf after each read/write, distinguishing the direction —
-  after a read: printf("[trace %lu] R 0x%03lx = 0x%08x\n", trace_count++, offset, value);
-  after a write: printf("[trace %lu] W 0x%03lx = 0x%08x\n", trace_count++, offset, value);
-  (the direction letter must be R or W, never "R/W"; the runtime trace
-  oracle parses it to order-check reads against writes).
-- Include stdint.h and stdio.h.
-- Add kernel macro stubs: BIT, GENMASK, etc. Never use kernel-only annotations (__maybe_unused, __init, __read_mostly) — this is userspace C, they do not exist here.
+- Match the RIS access width exactly: B8 means ONE 64-bit access — never two
+  32-bit halves; B4 32-bit, B2 16-bit, B1 8-bit. The verifier compares the
+  primitive width against the RIS width per operation.
 - Address fidelity: every RIS address expression is a source-derived C
   expression. Preserve the complete expression exactly, including the base
   expression and dynamic terms such as `priv->mmio + *off`; never replace a
@@ -67,4 +69,7 @@ receipts:
 __RIS__
 ```
 
-Generate the complete C code in a single ```c code block.
+Scaffold part 00 (already prepended to the file — NEVER re-emit any of it) defines:
+__SCAFFOLD__
+
+Generate part 01 in a single ```c code block.
