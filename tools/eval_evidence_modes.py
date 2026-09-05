@@ -255,20 +255,22 @@ def main() -> int:
                 print(json.dumps(row, sort_keys=True), flush=True)
                 continue
             for mode in [m for m in args.modes.split(",") if m]:
-                # endpoint intermittently returns 200-with-empty-body; a
-                # cell that died on generation (not on verification) gets
-                # one fresh retry so flake never masquerades as a mode gap
+                # endpoint intermittently returns 200-with-empty-body
+                # (glm saturation windows lasting minutes); a generation
+                # cell that died on it gets fresh retries WITH backoff so
+                # flake never masquerades as a mode gap
                 row = None
-                for attempt in range(2):
+                for attempt in range(3):
                     try:
                         row = run_one(res, mode, outdir)
                     except Exception as exc:  # noqa: BLE001
                         row = {"driver": res.formal.get("driver", stem),
                                "mode": mode,
                                "error": f"{type(exc).__name__}: {exc}"[-500:]}
-                    if attempt == 0 and "error" in row and (
+                    if attempt < 2 and "error" in row and (
                             "empty code" in row["error"]
                             or "empty body" in row["error"]):
+                        time.sleep(120 * (attempt + 1))
                         continue
                     break
                 results.append(row)
