@@ -5,5 +5,5 @@ code generation to the LLM bridge.  The bind (make_bind) and registry
 infrastructure remain rule-based.
 """
 from .registry import (  # noqa: F401
-    register, unregister, get_backend, list_backends, backend_names,
+    register, get_backend, list_backends, backend_names,
 )

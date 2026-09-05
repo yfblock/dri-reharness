@@ -336,64 +336,6 @@ def _is_export_symbol_reference(cursor) -> bool:
     return bool(_EXPORT_SYMBOL_RE.search(lines[index]))
 
 
-def callback_entry_functions(tu, target_names: set[str]) -> set[str]:
-    """Target functions referenced as function-pointer values (not just called).
-
-    AST-based: a DeclRefExpr referencing a target function that is NOT part of
-    any CallExpr's callee subtree is a function-pointer reference (e.g.
-    `.irq_ack = foo`, `&foo`, `register_callback(foo)`, or a bare reference in
-    a struct initializer). Such functions are entry points and must keep their
-    own module (and not be inlined).
-
-    Determines callee-ness by subtree containment (not start-offset equality),
-    so parenthesized calls like `(helper)()` are correctly classified as calls
-    (the CallExpr starts at `(` but the DeclRefExpr is in its callee subtree).
-    Robust against string/char literals — the AST has no DeclRefExpr inside
-    strings, so `pr_info("helper failed")` won't misclassify `helper`.
-    """
-    import clang.cindex as cx
-
-    # collect extents of all DeclRefExpr that serve as a call callee: for each
-    # CallExpr, walk its callee subtree (the first child) and record DeclRefExpr.
-    call_callee_extents: set[tuple] = set()
-    for c in tu.cursor.walk_preorder():
-        if c.kind != cx.CursorKind.CALL_EXPR:
-            continue
-        children = list(c.get_children())
-        if not children:
-            continue
-        callee = children[0]
-        for sub in callee.walk_preorder():
-            if sub.kind == cx.CursorKind.DECL_REF_EXPR:
-                s, e = sub.extent.start, sub.extent.end
-                if s.offset is not None and e.offset is not None:
-                    call_callee_extents.add((s.offset, e.offset))
-        # the callee itself may be a bare DeclRefExpr (not visited by walk if
-        # it's the root of the subtree — walk_preorder does yield the root)
-        if callee.kind == cx.CursorKind.DECL_REF_EXPR:
-            s, e = callee.extent.start, callee.extent.end
-            if s.offset is not None and e.offset is not None:
-                call_callee_extents.add((s.offset, e.offset))
-
-    entries: set[str] = set()
-    for c in tu.cursor.walk_preorder():
-        if c.kind != cx.CursorKind.DECL_REF_EXPR:
-            continue
-        ref = c.referenced
-        if (ref is None or ref.kind != cx.CursorKind.FUNCTION_DECL
-                or ref.spelling not in target_names):
-            continue
-        if _is_export_symbol_reference(c):
-            continue
-        s, e = c.extent.start, c.extent.end
-        key = (s.offset, e.offset) if (s.offset is not None and e.offset is not None) else None
-        # if this DeclRefExpr is a call callee → it's a call, not a callback
-        if key is not None and key in call_callee_extents:
-            continue
-        entries.add(ref.spelling)
-    return entries
-
-
 def callback_entry_symbols(tu, target_symbols: set[str]) -> set[str]:
     """Source-qualified counterpart of callback_entry_functions."""
     call_callee_extents: set[tuple] = set()

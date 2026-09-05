@@ -176,34 +176,6 @@ def transaction_lowering(op: dict, pad: str, out: list[str], seen: set[str], bin
     out.append(f"{pad}}}")
 
 
-def transaction_runtime_prelude(backend: str) -> list[str]:
-    """C ABI shared by generated regmap transaction leaves.
-
-    Deprecated wrapper that emits nothing. Use
-    transaction_runtime_prelude_filtered with transport flags instead.
-    """
-    return transaction_runtime_prelude_filtered(
-        backend, has_regmap=False, has_i2c=False, has_mfd=False)
-
-
-def detect_transaction_transports(formal: dict) -> dict:
-    """Detect which non-MMIO transaction transports exist in the Formal RIS."""
-    has_regmap = has_i2c = has_mfd = False
-    for module in formal.get("modules", []):
-        for op in walk_leaf_ops(module.get("ops", [])):
-            for name in ("TransactionRead", "TransactionWrite",
-                         "TransactionUpdate"):
-                if name in op:
-                    transport = op[name].get("transport", "")
-                    if transport == "regmap":
-                        has_regmap = True
-                    elif transport in ("i2c", "i2c_smbus"):
-                        has_i2c = True
-                    elif transport == "mfd":
-                        has_mfd = True
-    return {"has_regmap": has_regmap, "has_i2c": has_i2c,
-            "has_mfd": has_mfd}
-
 def transaction_runtime_prelude_filtered(
         backend: str, *, has_regmap: bool, has_i2c: bool,
         has_mfd: bool) -> list[str]:

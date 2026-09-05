@@ -273,22 +273,6 @@ def _build_ris_core(ir_facts: list[dict], macro_idx: dict,
 # ── AST supplement merge ──────────────────────────────────────────────
 
 
-def _ast_mmio_ops(ast_module: dict) -> list[dict]:
-    """AST leaf MMIO ops (Read/Write/RMW) with their body dicts."""
-    out = []
-    for op in ast_module.get("ops", []):
-        for kind in ("Read", "Write", "ReadModifyWrite"):
-            if kind in op:
-                out.append({"kind": kind, "body": op[kind], "op": op})
-                break
-    return out
-
-
-def _ast_line(body: dict) -> int | None:
-    line = (body.get("evidence") or {}).get("line")
-    return line if isinstance(line, int) else None
-
-
 def _join_function_ops(fn: str, ir_ops: list[dict],
                        ast_mod: dict | None,
                        macro_idx: dict | None = None) -> list[dict]:

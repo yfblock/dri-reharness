@@ -355,27 +355,6 @@ def w1c_drain_plan(formal: dict, device_spec) -> list[dict]:
     return plan
 
 
-def emit_w1c_drain_runner(formal: dict, device_spec, priv: str,
-                          *, static: bool) -> list[str]:
-    plan = w1c_drain_plan(formal, device_spec)
-    if not plan:
-        return []
-    storage = "static " if static else ""
-    lines = [
-        f"{storage}void reharness_run_w1c_drains({priv} *dev) {{",
-        f"    REHARNESS_W1C_BEGIN({len(plan)});",
-    ]
-    for entry in plan:
-        arguments = ["0" for param in entry["function"].signature.params
-                     if param.type != "DeviceState"]
-        arguments.append("dev")
-        lines.append(f'    REHARNESS_W1C_MARKER("{entry["module"]}");')
-        lines.append(
-            f"    {entry['function'].name}({', '.join(arguments)});")
-    lines += ["    REHARNESS_W1C_END();", "}", ""]
-    return lines
-
-
 def call_arguments(entry: dict, device_expr: str) -> str:
     function = entry["function"]
     values = []
@@ -389,50 +368,3 @@ def call_arguments(entry: dict, device_expr: str) -> str:
     return ", ".join(values)
 
 
-def emit_gpio_callback_runner(formal: dict, device_spec, priv: str,
-                              *, static: bool) -> list[str]:
-    plan = subsystem_callback_plan(formal, device_spec)
-    if not plan:
-        return []
-    storage = "static " if static else ""
-    lines = [
-        f"{storage}void reharness_run_subsystem_callbacks({priv} *dev) {{",
-        f"    REHARNESS_CALLBACK_BEGIN({len(plan)});",
-    ]
-    for entry in plan:
-        lines.append(f'    REHARNESS_CALLBACK_MARKER("{entry["module"]}");')
-        lines.append("    {")
-        pointer_params = [
-            param for param in entry["function"].signature.params
-            if param.type == "UIntPtr"]
-        for param in pointer_params:
-            lines.append(
-                f"        uint32_t {param.name} = "
-                f"{entry['args'].get(param.name, 1)}u;")
-        returns = entry.get(
-            "returns", entry["function"].signature.return_type != "Void")
-        if returns:
-            lines.append(
-                f"        uint32_t result = {entry['function'].name}("
-                f"{call_arguments(entry, 'dev')});")
-            lines.append("        REHARNESS_CALLBACK_RESULT(result);")
-        else:
-            lines.append(
-                f"        {entry['function'].name}("
-                f"{call_arguments(entry, 'dev')});")
-        for param in pointer_params:
-            lines.append(
-                f'        REHARNESS_CALLBACK_OUTPUT("{param.name}", '
-                f"{param.name});")
-        if entry["kind"] == "gpio":
-            lines.append(
-                "        REHARNESS_CALLBACK_STATE(dev->gpio_sdata, dev->gpio_sdir);")
-        elif entry["kind"] == "virtio":
-            lines.append(
-                "        REHARNESS_VIRTIO_STATE(dev->virtio_evt_available, "
-                "dev->virtio_evt_completed, dev->virtio_sts_outstanding, "
-                "dev->virtio_sts_completed, dev->virtio_evt_notified, "
-                "dev->virtio_sts_notified, dev->ready);")
-        lines.append("    }")
-    lines += ["    REHARNESS_CALLBACK_END();", "}", ""]
-    return lines

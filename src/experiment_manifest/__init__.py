@@ -36,5 +36,5 @@ from .parsers import (  # noqa: F401
 from .validate import validate_manifest  # noqa: F401
 from .serialize import (  # noqa: F401
     _json_value, canonical_json, canonical_manifest_json, manifest_digest,
-    canonical_digest, load_manifest, validate_trace_fields,
+    canonical_digest, load_manifest,
 )

@@ -35,16 +35,6 @@ def addr_indirect(base_reg: str, offset: int, expr: str | None = None) -> dict:
     return {"Indirect": out}
 
 
-def addr_offset_of(a: dict) -> Optional[int]:
-    if "Offset" in a:
-        return a["Offset"]["offset"]
-    if "Indirect" in a:
-        return a["Indirect"]["offset"]
-    if "Fixed" in a:
-        return a["Fixed"]
-    return None
-
-
 def addr_base_of(a: dict) -> Optional[str]:
     if "Offset" in a:
         return a["Offset"]["base"]
@@ -93,17 +83,6 @@ class Top:
 
 
 AbsVal = Union[BasePtr, Offset, ReadTaint, Const, SymExpr, Top]
-
-
-def val_to_regaddr(v: AbsVal) -> Optional[dict]:
-    """If v denotes an MMIO address, return its RegAddr."""
-    if isinstance(v, BasePtr):
-        return addr_offset(v.base, 0)
-    if isinstance(v, Offset):
-        return addr_offset(v.base, v.off)
-    if isinstance(v, Const):
-        return addr_fixed(v.n)
-    return None
 
 
 def val_to_value_str(v: AbsVal) -> Optional[str]:

@@ -230,18 +230,6 @@ def _has_unmodeled_access(func, variants: list[tuple[object, dict]],
     return False
 
 
-def has_unmodeled_access(func: Func, summaries: dict[str, dict],
-                         inline_cache: dict[str, object] | None = None) -> bool:
-    """Whether direct extraction would silently omit an access-bearing call."""
-    variants = []
-    for call in function_calls(func.cursor):
-        variant = _access_variant(call, summaries)
-        if variant is not None:
-            variants.append((call, variant))
-    return _has_unmodeled_access(
-        func, variants, summaries, inline_cache=inline_cache)
-
-
 def _branch_summary(func: Func, variants: list[tuple[object, dict]]) -> dict | None:
     """Infer a summary for mutually exclusive primitive-access branches.
 

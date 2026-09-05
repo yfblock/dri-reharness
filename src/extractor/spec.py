@@ -92,10 +92,6 @@ def event_effect(text: str) -> Effect:
     return Effect("event", text, {})
 
 
-def state_effect(text: str) -> Effect:
-    return Effect("state", text, {})
-
-
 # ── FunctionSpec ─────────────────────────────────────────────────────
 
 @dataclass

@@ -33,7 +33,7 @@ from .substitution import (  # noqa: F401
     _substitute_addr, _instantiate_op,
 )
 from .rmw import (  # noqa: F401
-    _assign_target, _LHS_RE, _LHS_CONT_RE, _DECL_LHS_RE, _bind_lhs,
+    _LHS_RE, _LHS_CONT_RE, _DECL_LHS_RE, _bind_lhs,
     _norm_key, _MUTATION_OP, _apply_mutation, _switch_rmw_transform,
     _rmw_transform, _read_initial_transform, _has_classified_read_provenance,
     _proven_return_read_var,

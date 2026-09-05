@@ -255,5 +255,3 @@ def contract_for_call(call, lhs: str | None = None) -> dict | None:
             or _public_mfd_contract(call, lhs))
 
 
-def is_transaction_call(call) -> bool:
-    return contract_for_call(call) is not None

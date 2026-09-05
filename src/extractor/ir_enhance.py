@@ -290,6 +290,3 @@ def enhance_multi_from_ir(sources, linux_root=None, clang='clang-18',
     return results
 
 
-def ir_mmio_summary(source, linux_root=None, **kwargs):
-    """Backward-compatible wrapper. Returns IRSummary."""
-    return enhance_from_ir(source, linux_root=linux_root, **kwargs)

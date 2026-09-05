@@ -9,14 +9,6 @@ from .expr_eval import _IDENT_RE, _MEMBER_RE, _strip_casts
 from .ops import Op
 
 
-def _assign_target(lhs_text: str) -> Optional[str]:
-    """From an assignment LHS, the store key to bind."""
-    lhs = lhs_text.strip()
-    if _MEMBER_RE.match(lhs) or _IDENT_RE.match(lhs):
-        return lhs
-    return None
-
-
 _LHS_RE = re.compile(r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*\w+)*)\s*=\s*(?!=)")
 _LHS_CONT_RE = re.compile(r"^\s*([A-Za-z_]\w*(?:\s*(?:->|\.)\s*\w+)*)\s*=\s*$")
 _DECL_LHS_RE = re.compile(

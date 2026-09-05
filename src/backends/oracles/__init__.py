@@ -38,14 +38,6 @@ def load(dotted: str) -> Any:
     return importlib.import_module(dotted)
 
 
-def family_kinds() -> list[str]:
-    return sorted(FAMILY_ORACLES)
-
-
-def backend_modules(backend: str) -> list[Any]:
-    return [load(name) for name in BACKEND_ORACLES.get(backend, ())]
-
-
 def verify(kind: str, function: str, *args: Any, **kwargs: Any) -> Any:
     """Resolve and call a family plugin entry point by kind + function."""
     module = load(FAMILY_ORACLES[kind])

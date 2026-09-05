@@ -40,9 +40,3 @@ def split_header_source(code: str, driver_name: str, backend: str) -> tuple[str,
 
     return header, source
 
-def generate_pair(backend_module, formal: dict, device_spec, bind,
-                  **kwargs) -> tuple[str, str]:
-    """Call a backend generate() and split into (.h, .c) strings."""
-    code = backend_module.generate(formal, device_spec, bind, **kwargs)
-    backend_name = backend_module.__name__.split(".")[-1]
-    return split_header_source(code, device_spec.name, backend_name)

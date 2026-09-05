@@ -159,26 +159,6 @@ def parse_local_variable_names(
     return meta_names, bindings
 
 
-def disambiguate_name(bindings: list[tuple[str, int | None]],
-                      target_subprogram: int | None,
-                      ) -> tuple[str | None, list[str]]:
-    """Pick the variable of the frame the statement belongs to.
-
-    Preference order: bindings whose variable lives in ``target_subprogram``
-    → any globally-unambiguous name → none.  Returns (name, candidates) so
-    callers can record what was ambiguous instead of hiding it.
-    """
-    if not bindings:
-        return None, []
-    if target_subprogram is not None:
-        in_frame = [name for name, sp in bindings if sp == target_subprogram]
-        if len(set(in_frame)) == 1:
-            return in_frame[0], sorted({n for n, _ in bindings})
-    distinct = {name for name, _ in bindings}
-    if len(distinct) == 1:
-        return bindings[0][0], []
-    return None, sorted(distinct)
-
 # ── GEP offset extraction ──────────────────────────────────────────────
 
 

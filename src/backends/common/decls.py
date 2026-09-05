@@ -91,56 +91,6 @@ def transaction_local_decls(ops, already_declared: set[str], indent: int = 1) ->
         declared.add(name)
     return "\n".join(lines)
 
-def local_decls(ops, already_declared: set[str], regs: dict, indent: int = 1,
-                ctype: str = "uint32_t") -> str:
-    """Emit declarations for read vars + value-referenced locals not already
-    declared (params / read vars) and not register macros. Member-access read
-    targets (e.g. `edu->revision`) are NOT declared as locals — they are
-    discarded at the read site (see ops_to_c)."""
-    pad = "    " * indent
-    lines: list[str] = []
-    declared = set(already_declared)
-    read_vars = sorted({o["Read"]["var"] for o in walk_leaf_ops(ops)
-                        if "Read" in o and is_simple_id(o["Read"]["var"])
-                        and o["Read"]["var"] not in declared})
-    read_vars += sorted({o["StateRead"]["var"] for o in walk_leaf_ops(ops)
-                         if "StateRead" in o
-                         and is_simple_id(o["StateRead"]["var"])
-                         and o["StateRead"]["var"] not in declared
-                         and o["StateRead"]["var"] not in read_vars})
-    read_vars += sorted({
-        o["TransactionRead"].get("payload", {}).get("Scalar", {}).get("var")
-        for o in walk_leaf_ops(ops) if "TransactionRead" in o
-        and is_simple_id(
-            o["TransactionRead"].get("payload", {}).get(
-                "Scalar", {}).get("var", ""))
-        and o["TransactionRead"]["payload"]["Scalar"]["var"] not in declared
-        and o["TransactionRead"]["payload"]["Scalar"]["var"] not in read_vars
-    })
-    declared |= set(read_vars)
-    for v in read_vars:
-        lines.append(f"{pad}{ctype} {v} = 0;")
-    rmw_read_vars = {
-        o["ReadModifyWrite"].get("read_var")
-        for o in walk_leaf_ops(ops) if "ReadModifyWrite" in o
-    }
-    extra = sorted(value_var_names(ops) - declared - set(regs.keys())
-                   - {name for name in rmw_read_vars if name})
-    for v in extra:
-        # Upper-case identifiers are C/kernel constants, not locals.  Declaring
-        # them would collide with macros such as PCI_VENDOR_ID_INTEL.
-        if v in _C_KEYWORDS or re.fullmatch(r"[A-Z][A-Za-z0-9_]*", v):
-            continue
-        lines.append(f"{pad}{ctype} {v} = 0;")
-    tx = transaction_local_decls(ops, declared, indent)
-    if tx:
-        lines.append(tx)
-    return "\n".join(lines)
-
-def width_suffix(width: str) -> str:
-    return {"B1": "8", "B2": "16", "B4": "32", "B8": "64"}.get(width, "32")
-
-
 def mmio_primitive(bind, operation: str, body: dict) -> str:
     byte_order = body.get("evidence", {}).get("byte_order", "native")
     write_semantics = body.get("evidence", {}).get("write_semantics")

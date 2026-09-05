@@ -45,14 +45,6 @@ def load_prompt_template(backend: str) -> str:
     return p.read_text(encoding="utf-8")
 
 
-def llm_available() -> bool:
-    try:
-        import langchain_openai  # noqa: F401
-    except ImportError:
-        return False
-    return True
-
-
 def build_evidence_json(formal, device_spec, bind, facts=None,
                         module_names=None, function_names=None):
     """JSON half of the evidence package: device, registers, bind, functions,
@@ -327,18 +319,6 @@ def _modules_ris_text(formal, module_names=None,
                 "in separate parts)")
     return "\n".join(_module_ris(mod, include_calls=include_calls)
                      for mod in selected)
-
-
-def extract_code_block(text, lang=None):
-    import re as _re
-    if lang:
-        pat = rf"```{_re.escape(lang)}\n([\s\S]*?)\n```"
-    else:
-        pat = r"```(?:\w*\n)?([\s\S]*?)\n```"
-    m = _re.search(pat, text)
-    if m: return m.group(1)
-    return text.strip()
-
 
 
 def call_llm(prompt, timeout=120, *, model=None, retries=3):

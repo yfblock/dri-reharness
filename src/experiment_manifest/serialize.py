@@ -56,8 +56,3 @@ def load_manifest(path: str | os.PathLike[str] | Path, *, repo_root: str | os.Pa
     )
 
 
-def validate_trace_fields(fields: Any) -> tuple[str, ...]:
-    """Validate a trace field declaration independently of a full manifest."""
-    if not isinstance(fields, list) or any(field not in _TRACE_EVENT_FIELDS for field in fields):
-        raise ManifestError("trace.fields contains invalid trace field")
-    return tuple(fields)

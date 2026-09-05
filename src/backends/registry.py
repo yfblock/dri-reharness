@@ -38,10 +38,6 @@ def register(module) -> None:
     _REGISTRY[name] = module
 
 
-def unregister(name: str) -> None:
-    _REGISTRY.pop(name, None)
-
-
 def get_backend(name: str):
     """Return the registered module for *name*, auto-discovering if needed."""
     _ensure_discovery()
@@ -90,8 +86,3 @@ def _ensure_discovery() -> None:
             pass  # skip modules that fail to import
 
 
-def reset_discovery() -> None:
-    """Force re-discovery on next access (testing convenience)."""
-    global _DISCOVERY_DONE
-    _DISCOVERY_DONE = False
-    _REGISTRY.clear()

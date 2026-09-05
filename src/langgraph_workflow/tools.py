@@ -379,20 +379,3 @@ def _pipeline_failure(exc: Exception, *, stage: str) -> dict[str, Any]:
     }
 
 
-def _source_alignment_failure(output_dir: Path, message: str,
-                              details: Mapping[str, Any]) -> dict[str, Any]:
-    """Reject an experiment before adapters can consume mismatched evidence."""
-    return {
-        "accepted": False,
-        "status": "failed",
-        "output_dir": str(output_dir),
-        "failure": {
-            "failure_class": "infrastructure",
-            "message": message,
-            "details": dict(details),
-            "retryable": False,
-            "stage": "source_alignment",
-        },
-    }
-
-
