@@ -146,30 +146,18 @@ def _device_class_from_name(driver: str) -> str | None:
 
 
 def _ris_evidence_json(formal, bind, module_names=None):
-    """Evidence package built from the RIS alone — no spec, no facts."""
+    """Evidence package built from the RIS alone — no spec, no facts.
+
+    Module calls/external calls are NOT repeated here: the RIS text
+    block (always rendered with include_calls=True in the ris_only
+    dialects) already carries every Call/ExternalCall row with its
+    arguments and category, so the JSON only names the modules."""
     regs = {}
     for r in formal.get("register_map", []):
         regs[r["name"]] = {"offset": r["offset"], "width": r.get("width", "B4")}
-    modules = []
-    for mod in formal.get("modules", []):
-        if module_names is not None and mod.get("name") not in module_names:
-            continue
-        entry = {"name": mod.get("name")}
-        calls = [
-            {"callee": c.get("callee"), "category": c.get("category"),
-             "arguments": [a.get("expression")
-                           for a in c.get("arguments") or []]}
-            for c in mod.get("calls") or []]
-        externals = [
-            {"callee": e.get("callee"), "category": e.get("category"),
-             "arguments": [a.get("expression")
-                           for a in e.get("arguments") or []]}
-            for e in mod.get("external_calls") or []]
-        if calls:
-            entry["calls"] = calls
-        if externals:
-            entry["external_calls"] = externals
-        modules.append(entry)
+    modules = [{"name": mod.get("name")}
+               for mod in formal.get("modules", [])
+               if module_names is None or mod.get("name") in module_names]
     primitives = {}
     for p in bind.primitives:
         primitives[p.op + "(" + p.width + ")"] = p.concrete
