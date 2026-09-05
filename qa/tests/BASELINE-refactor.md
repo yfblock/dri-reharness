@@ -109,3 +109,11 @@ ExternalCall suppression + opt-in intermediates.  Full-run check:
 - New tests added (pass): `test_slim_text_and_source_map`,
   `test_call_nodes_dedup_expanded_and_carry_category`,
   `test_external_calls_suppress_op_modeled_sites`.
+
+## Whole-directory suite baseline (2026-09-05)
+
+`PYTHONPATH=src python3 -m pytest qa/tests` (after removing the never-collecting
+test_llm_protocol.py): 42 failed / 480 passed. All 42 pre-existing drift in
+files outside the test_extractor baseline (stash-verified identical failure
+sets; zero references to the purged dead names). test_extractor.py itself
+remains the maintained baseline (steady 10F/158P).
