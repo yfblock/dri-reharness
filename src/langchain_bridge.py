@@ -319,15 +319,13 @@ class LangChainBridge:
                   # cutting long reasoning-model generations with 504s;
                   # langchain accumulates the chunks transparently.
                   "streaming": True}
-        # glm 推理模型: 代码转写是模式跟随任务, 思考链只吞输出额度
-        # (实测 219s→26s, 且思考链打满默认输出上限时 content 为空)。
-        # REHARNESS_LLM_THINKING=enabled 可保留; auto = glm 家族默认关。
-        thinking = os.environ.get("REHARNESS_LLM_THINKING", "auto")
-        if thinking == "auto":
-            thinking = "disabled" if "glm" in self.settings.model.lower() \
-                else "enabled"
-        if thinking == "disabled" and "glm" in self.settings.model.lower():
-            kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+        # glm 推理模型走网关 (ai.yfblock.cn): 2026-09-05 起网关不再响应
+        # thinking.type=disabled —— 带该标志时模型把全部输出灌进
+        # reasoning_content, content 恒为 None, 桥接层读 .content 全空。
+        # 因此不再发送 thinking 标志, 只保留加大输出预算 (32768), 让
+        # 回答落在思考链之后。REHARNESS_LLM_THINKING 环境变量随之失效
+        # 保留兼容。代价: 每次调用多付思考链 token/时延。
+        if "glm" in self.settings.model.lower():
             kwargs["max_tokens"] = _env_int("REHARNESS_LLM_MAX_TOKENS", 32768)
         if self.settings.base_url:
             kwargs["base_url"] = self.settings.base_url
