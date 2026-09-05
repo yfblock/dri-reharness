@@ -273,22 +273,36 @@ def _annotate_receipt_digests(ops):
     return out
 
 
-def _module_ris(mod, include_calls: bool = False) -> str:
+def _module_ris(mod, include_calls: bool = False,
+                aliases: "dict | None" = None) -> str:
     """Render one module as text RIS with receipt digests.
 
     ``include_calls`` adds the module's Call/ExternalCall lines (the
     semantic-dependency view) for the ris-only evidence modes; the full
     mode keeps the ops-only dump it was trained on.
+
+    ``aliases`` (from :func:`_ris_alias_tables`) rewrites long source-level
+    register paths to REG<i> short names and repeated call rows to C/E
+    table references — LLM-render only; the human ``.ris`` dump and the
+    source_map keep full spellings.
     """
     from extractor.formal import op_display
+    aliases = aliases or {}
+    reg_sub = aliases.get("reg_sub") or []
     lines = ["module %s {" % mod.get("name", "?")]
     if include_calls:
+        call_refs, ext_refs = [], []
         for call in mod.get("calls") or []:
             arguments = ", ".join(
                 f"{item.get('parameter')} = {item.get('expression')}"
                 for item in call.get("arguments") or [])
             category = call.get("category")
             cat = f"[{category}]" if category else ""
+            key = "Call %s(%s) %s" % (call.get("callee"), arguments, cat)
+            ref = (aliases.get("call_ids") or {}).get(key)
+            if ref:
+                call_refs.append(ref)
+                continue
             lines.append("  Call %s(%s) %s" % (
                 call.get("callee"), arguments, cat))
         for external in mod.get("external_calls") or []:
@@ -297,16 +311,133 @@ def _module_ris(mod, include_calls: bool = False) -> str:
                  if item.get("parameter")
                  else str(item.get("expression")))
                 for item in external.get("arguments") or [])
-            lines.append("  ExternalCall %s(%s) [%s]" % (
+            key = "ExternalCall %s(%s) [%s]" % (
                 external.get("callee"), arguments,
-                external.get("category")))
+                external.get("category"))
+            ref = (aliases.get("ext_ids") or {}).get(key)
+            if ref:
+                ext_refs.append(ref)
+                continue
+            lines.append("  ExternalCall %s" % key[len("ExternalCall "):])
+        if call_refs or ext_refs:
+            lines.insert(1, "  uses %s" % ", ".join(call_refs + ext_refs))
     for op in _annotate_receipt_digests(mod.get("ops", [])):
         # audit-only reliability tags are dropped for the LLM: the op_id
         # and digest (the contract anchors) stay, [Exact]/[Conservative]
         # is human-review metadata the model does not act on
         lines.append(op_display(op, indent=1, include_reliability=False))
     lines.append("}")
-    return "\n".join(lines)
+    text = "\n".join(lines)
+    # longest-first so a bare base never eats a longer dotted/arithmetic
+    # spelling; the lookahead keeps a substitution from splitting an
+    # identifier mid-token
+    for pattern, alias in reg_sub:
+        text = pattern.sub(alias, text)
+    return text
+
+
+def _ris_alias_tables(modules, raw_text="", include_calls: bool = True):
+    """Build REG/C/E short-name tables over the modules being rendered.
+
+    Only REPEATED spellings are aliased: register paths that occur 2+
+    times in the rendered text and call/external rows that appear in 2+
+    modules. Singletons stay inline — a table entry for a one-shot string
+    costs more than it saves.
+    """
+    reg_alias = {}     # exact display string -> REG<i>
+    reg_rows = []      # (alias, full spelling)
+    reg_sub = []
+    candidates = {}    # display string -> optional arithmetic twin
+
+    def _collect_reg(dotted, arithmetic=None):
+        # identical spellings fold together (same base register reached
+        # from many ops); the arithmetic twin rides along for free
+        if dotted not in candidates:
+            candidates[dotted] = arithmetic
+        elif arithmetic:
+            candidates[dotted] = arithmetic
+
+    for mod in modules:
+        for o in mod.get("ops") or []:
+            for kind in ("Read", "Write", "Rmw"):
+                a = (o.get(kind) or {}).get("addr") or {}
+                if "Symbolic" in a:
+                    s = a["Symbolic"]
+                    dev, name = s.get("device") or "", s.get("register")
+                    dotted = f"{dev}.{name}" if dev else name
+                    _collect_reg(dotted, f"{dev} + {name}" if dev else None)
+                elif "Fixed" in a:
+                    f = a["Fixed"]
+                    if f.get("base"):
+                        off = f.get("offset") or 0
+                        _collect_reg(f"{f['base']} + 0x{off:x}" if off
+                                     else f["base"])
+
+    next_reg = 0
+    for dotted, arithmetic in sorted(candidates.items(),
+                                     key=lambda kv: -len(kv[0])):
+        hits = (len(re.findall(re.escape(dotted) + r"(?![\w.])", raw_text))
+                + (len(re.findall(re.escape(arithmetic) + r"(?![\w.])",
+                                  raw_text)) if arithmetic else 0))
+        # savings = hits*(len - alias_len); cost = table row. Short names
+        # that barely repeat lose money — skip them.
+        if hits < 2 or hits * (len(dotted) - 4) <= len(dotted) + 8:
+            continue
+        next_reg += 1
+        alias = "REG%d" % next_reg
+        reg_alias[dotted] = alias
+        if arithmetic:
+            reg_alias[arithmetic] = alias
+        reg_rows.append((alias, dotted))
+    # substitution patterns: longest first, identifier-safe lookahead
+    for dotted in sorted(reg_alias, key=len, reverse=True):
+        reg_sub.append((re.compile(re.escape(dotted) + r"(?![\w.])"),
+                        reg_alias[dotted]))
+
+    call_ids, ext_ids = {}, {}
+    call_rows, ext_rows = [], []
+    call_hits = {}
+    if include_calls:  # ops-only renders never print the rows, so a table
+        for mod in modules:   # for them is pure overhead
+            for call in mod.get("calls") or []:
+                arguments = ", ".join(
+                    f"{item.get('parameter')} = {item.get('expression')}"
+                    for item in call.get("arguments") or [])
+                category = call.get("category")
+                cat = f"[{category}]" if category else ""
+                key = "Call %s(%s) %s" % (call.get("callee"), arguments, cat)
+                call_hits[key] = call_hits.get(key, 0) + 1
+            for external in mod.get("external_calls") or []:
+                arguments = ", ".join(
+                    (f"{item.get('parameter')} = {item.get('expression')}"
+                     if item.get("parameter")
+                     else str(item.get("expression")))
+                    for item in external.get("arguments") or [])
+                key = "ExternalCall %s(%s) [%s]" % (
+                    external.get("callee"), arguments,
+                    external.get("category"))
+                call_hits[key] = call_hits.get(key, 0) + 1
+    for key, n in call_hits.items():
+        if n < 2:
+            continue
+        if key.startswith("Call "):
+            call_ids[key] = "C%d" % (len(call_ids) + 1)
+            call_rows.append((call_ids[key], key))
+        else:
+            ext_ids[key] = "E%d" % (len(ext_ids) + 1)
+            ext_rows.append((ext_ids[key], key))
+
+    def _table(name, rows):
+        if not rows:
+            return ""
+        body = "\n".join("  %s %s" % (alias, spelling)
+                         for alias, spelling in rows)
+        return "%s {\n%s\n}\n" % (name, body)
+
+    header = (_table("regs", reg_rows) + _table("calls", call_rows)
+              + _table("externals", ext_rows))
+    return {"reg_sub": reg_sub, "call_ids": call_ids, "ext_ids": ext_ids,
+            "header": header.rstrip("\n")}
 
 
 def _modules_ris_text(formal, module_names=None,
@@ -317,8 +448,16 @@ def _modules_ris_text(formal, module_names=None,
     if not selected:
         return ("(none for this part — module function bodies are generated "
                 "in separate parts)")
-    return "\n".join(_module_ris(mod, include_calls=include_calls)
-                     for mod in selected)
+    raw = "\n".join(
+        _module_ris(mod, include_calls=include_calls) for mod in selected)
+    aliases = _ris_alias_tables(selected, raw_text=raw,
+                                include_calls=include_calls)
+    if not aliases["header"]:
+        return raw
+    body = "\n".join(
+        _module_ris(mod, include_calls=include_calls, aliases=aliases)
+        for mod in selected)
+    return aliases["header"] + "\n" + body
 
 
 def call_llm(prompt, timeout=120, *, model=None, retries=3):
