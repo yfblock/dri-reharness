@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 
 from .. import mmio
-from ..ast_model import Func, function_calls, walk_with_control
+from ast_analyzer import Func, function_calls, walk_with_control
 from ..dataflow import FuncExtraction
 from .ids import _callee_id, _cursor_parents, _func_id, _resolved_callee_id, _return_binding
 

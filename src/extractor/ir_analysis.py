@@ -28,7 +28,7 @@ def export_macro_table(source: Path, *,
     args = [clang, "-dM", "-E"]
     if use_kernel_flags:
         try:
-            from .tu import effective_compile_args
+            from ast_analyzer import effective_compile_args
             base, _ = effective_compile_args(str(source))
             args += base
         except Exception:

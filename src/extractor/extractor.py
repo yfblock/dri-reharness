@@ -10,11 +10,11 @@ import json
 import re
 from dataclasses import dataclass, field, replace
 
-from . import tu as tu_mod
+from ast_analyzer import tu as tu_mod
 from . import macros as macros_mod
-from .ast_model import target_functions, target_mmio_globals
+from ast_analyzer import target_functions, target_mmio_globals
 from .call_graph import extract_with_inlining
-from .compile_context import compile_context_identity
+from ast_analyzer import compile_context_identity
 from .formalize import build_formal_ris
 from .dataflow import Op
 from .wrappers import _candidate_functions

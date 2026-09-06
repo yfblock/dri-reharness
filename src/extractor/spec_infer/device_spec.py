@@ -4,7 +4,7 @@ import re
 
 from ..spec import (DeviceSpec, FunctionSpec, RegisterDesc, StateField,
                     Resource)
-from ..ast_model import Func
+from ast_analyzer import Func
 from ..formal import walk_leaf_ops, walk_all_ops
 from .func_specs import _bound_mmio_resources
 

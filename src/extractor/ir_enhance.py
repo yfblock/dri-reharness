@@ -59,8 +59,8 @@ def generate_ir(source, linux_root=None, *, workdir, clang='clang-18',
                 compile_commands=None, compile_context_mode='auto',
                 opt_level='1'):
     """Compile C source to LLVM IR (.ll) text. Returns path or None."""
-    from .compile_context import resolve_compile_context
-    from .tu import default_include_args
+    from ast_analyzer import resolve_compile_context
+    from ast_analyzer import default_include_args
 
     repo = Path(__file__).resolve().parents[2]
     linux = linux_root or os.path.join(str(repo), 'vendor/linux')

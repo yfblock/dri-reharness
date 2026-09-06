@@ -7,7 +7,7 @@ from .. import mmio
 from ..taint import (
     BasePtr, Offset, Const, ReadTaint, SymExpr, Top, AbsVal,
 )
-from ..ast_model import walk_with_conditions, walk_with_control, source_text
+from ast_analyzer import walk_with_conditions, walk_with_control, source_text
 from .expr_eval import _IDENT_RE, _address_base_offset, eval_expr
 from .substitution import _substitute_text
 

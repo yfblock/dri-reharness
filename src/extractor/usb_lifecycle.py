@@ -12,7 +12,8 @@ from __future__ import annotations
 from collections import defaultdict, deque
 import re
 
-from .ast_model import Func, function_calls, source_text, walk_with_control
+from ast_analyzer import (Func, function_calls, source_text,
+                          walk_with_control)
 from .call_graph import _cursor_parents, _func_id, _return_binding
 
 

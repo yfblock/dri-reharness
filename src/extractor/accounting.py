@@ -14,7 +14,7 @@ import clang.cindex as cx
 
 from . import mmio
 from . import transactions
-from .ast_model import function_calls
+from ast_analyzer import function_calls
 from .formal import walk_leaf_ops
 
 
@@ -107,7 +107,7 @@ _ASSIGNMENT = re.compile(r"^\s*(.+?)\s*(=|\+=|-=|\|=|&=|\^=|<<=|>>=)\s*(?!=)", r
 
 def _volatile_access_kind(cursor, ancestors, tu) -> str:
     """Classify a volatile dereference as a read or write conservatively."""
-    from .ast_model import source_text
+    from ast_analyzer import source_text
 
     expression = source_text(tu, cursor).strip()
     for parent in reversed(ancestors):
@@ -133,7 +133,7 @@ def _discover_opaque_accesses(func) -> list[dict]:
     receive a false strict-complete result while silently losing hardware
     effects.
     """
-    from .ast_model import source_text
+    from ast_analyzer import source_text
 
     sites: list[dict] = []
     tu = func.cursor.translation_unit

@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
 from extractor.formal import walk_leaf_ops  # noqa: E402
-from extractor.tu import parse_translation_unit  # noqa: E402
+from ast_analyzer import parse_translation_unit  # noqa: E402
 from extractor.spec import default_bind  # noqa: E402
 
 BASELINE = ROOT / "benchmarks" / "drivers" / "baseline"

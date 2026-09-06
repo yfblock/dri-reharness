@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import clang.cindex as _cx
 
-from ..ast_model import Func, function_symbol_id
+from ast_analyzer import Func, function_symbol_id
 from .callback_tables import (
     _CALLBACK_TYPE_ROLES, _ROLE_BEARING_CALLBACK_TYPES,
     _callback_field_role, _function_pointer_signature,

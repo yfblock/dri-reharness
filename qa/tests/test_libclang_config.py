@@ -9,7 +9,7 @@ else:
 
 def test_configure_does_not_replace_an_already_loaded_libclang(monkeypatch):
     import clang.cindex as cx
-    from extractor import tu
+    from ast_analyzer import tu
 
     calls = []
     monkeypatch.setattr(cx.Config, "loaded", True)

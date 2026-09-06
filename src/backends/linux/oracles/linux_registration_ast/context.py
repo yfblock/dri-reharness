@@ -6,7 +6,7 @@ import shlex
 from pathlib import Path
 from typing import Any, Mapping
 
-from extractor.compile_context import (
+from ast_analyzer.compile_context import (
     _sanitize_arguments,
     read_kbuild_command,
 )

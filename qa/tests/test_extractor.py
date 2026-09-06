@@ -24,7 +24,7 @@ else:
 
 from extractor import macros as M  # noqa: E402
 from extractor import taint as T  # noqa: E402
-from extractor.compile_context import read_kbuild_command, resolve_compile_context  # noqa: E402
+from ast_analyzer import read_kbuild_command, resolve_compile_context  # noqa: E402
 from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
 from extractor.formal import expr_to_c, formal_display, parse_expr  # noqa: E402
@@ -59,8 +59,8 @@ _PYTHON_ENV["PYTHONPATH"] = os.pathsep.join(
 def _ast_callback_bindings(source: str) -> dict[str, dict]:
     import tempfile
     import clang.cindex as cx
-    from extractor import tu as tu_mod
-    from extractor.ast_model import target_functions
+    from ast_analyzer import tu as tu_mod
+    from ast_analyzer import target_functions
     from extractor.spec_infer import infer_callback_bindings
 
     tu_mod._configure()
@@ -1499,8 +1499,8 @@ def test_callback_binding_scope_keeps_target_file_initializers():
     import tempfile
 
     import clang.cindex as cx
-    from extractor import tu as tu_mod
-    from extractor.ast_model import target_functions
+    from ast_analyzer import tu as tu_mod
+    from ast_analyzer import target_functions
     from extractor.spec_infer import infer_callback_bindings
 
     tu_mod._configure()
@@ -2237,8 +2237,8 @@ def test_source_text_reuses_bytes_for_repeated_cursor_slices():
     from unittest.mock import patch
 
     import clang.cindex as cx
-    from extractor import tu as tu_mod
-    from extractor.ast_model import source_text
+    from ast_analyzer import tu as tu_mod
+    from ast_analyzer import source_text
 
     tu_mod._configure()
     with tempfile.NamedTemporaryFile(
@@ -4071,7 +4071,7 @@ def test_direct_call_to_registered_callback_preserves_caller_effects():
 
 def test_usb_lifecycle_oracle_ignores_synthetic_functions_without_ast():
     from types import SimpleNamespace
-    from extractor.ast_model import Func
+    from ast_analyzer import Func
     from extractor.usb_lifecycle import infer_usb_hcd_lifecycle
 
     synthetic = Func(

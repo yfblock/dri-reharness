@@ -4,7 +4,7 @@ import re
 from typing import Optional
 
 from .. import mmio
-from ..ast_model import source_text
+from ast_analyzer import source_text
 from .expr_eval import _IDENT_RE, _MEMBER_RE, _strip_casts
 from .ops import Op
 

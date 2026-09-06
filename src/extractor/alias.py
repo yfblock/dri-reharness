@@ -163,8 +163,8 @@ def _generate_stubbed_bc(source: str, linux_root: str | None = None,
 
     # 1. clang → .ll.  Use the same imported Kbuild context as libclang so
     # alias analysis does not silently analyze another preprocessor program.
-    from .compile_context import resolve_compile_context
-    from .tu import default_include_args
+    from ast_analyzer import resolve_compile_context
+    from ast_analyzer import default_include_args
     context = resolve_compile_context(
         source, linux_root=linux, compile_commands=compile_commands,
         build_root=build, mode=compile_context_mode)
@@ -307,7 +307,7 @@ def _map_var_to_c_name(symbol_table: dict, vid: int, source: str, tu
 def _find_lhs_var_at_line(tu, target_file: str, line: int) -> dict | None:
     """Use libclang to find the typed LHS assigned at a source line."""
     import clang.cindex as cx
-    from .ast_model import source_text
+    from ast_analyzer import source_text
     tgt = os.path.abspath(target_file)
     for cursor in tu.cursor.walk_preorder():
         f = cursor.location.file

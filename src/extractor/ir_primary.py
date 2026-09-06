@@ -35,7 +35,7 @@ def _get_kernel_flags(source: Path) -> list[str]:
     context (same bytes → same compilation, debug lines stay valid).
     No libclang involved.
     """
-    from .tu import effective_compile_args
+    from ast_analyzer import effective_compile_args
     args, context = effective_compile_args(str(source))
     if context is None or not getattr(context, "arguments", None):
         twin = _vendor_twin(source)

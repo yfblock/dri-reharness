@@ -4,7 +4,7 @@ import copy
 from collections import Counter, defaultdict
 from collections.abc import Callable
 
-from ..ast_model import Func
+from ast_analyzer import Func
 from ..dataflow import FuncExtraction
 from .ids import _func_id
 from .call_rows import (

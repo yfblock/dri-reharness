@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 import clang.cindex as cx
 
-from ..ast_model import Func, walk_with_control, source_text
+from ast_analyzer import Func, walk_with_control, source_text
 from .ops import Op
 
 

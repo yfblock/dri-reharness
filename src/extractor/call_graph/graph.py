@@ -1,7 +1,7 @@
 """Inline cache construction and single/multi-TU inlined extraction."""
 from __future__ import annotations
 
-from ..ast_model import Func, callback_entry_symbols, function_calls
+from ast_analyzer import Func, callback_entry_symbols, function_calls
 from ..dataflow import extract_function, FuncExtraction
 from ..wrappers import infer_wrapper_summaries, _candidate_functions
 from ..indirect import infer_indirect_targets, resolve_indirect_call

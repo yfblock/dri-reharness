@@ -9,7 +9,7 @@ import clang.cindex as cx
 
 from .. import mmio
 from ..accounting import callsite_evidence
-from ..ast_model import Func, function_calls, source_text, walk_with_control
+from ast_analyzer import Func, function_calls, source_text, walk_with_control
 from ..dataflow import (FuncExtraction, Op, _abs_expr, _expand_numeric_macros,
                        _substitute_text, eval_expr, resolve_addr)
 from ..taint import (BasePtr, Const, SymExpr, Top, addr_base_of, addr_fixed,

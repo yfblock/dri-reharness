@@ -8,8 +8,8 @@ import clang.cindex as cx
 
 from . import mmio
 from .accounting import callsite_evidence
-from .ast_model import (Func, function_calls, function_symbol_id,
-                        source_text, walk_with_control)
+from ast_analyzer import (Func, function_calls, function_symbol_id,
+                          source_text, walk_with_control)
 
 
 _MMIO_PARAM_NAMES = {

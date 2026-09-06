@@ -6,7 +6,7 @@ from typing import Optional
 
 from ..spec import (FunctionSpec, Signature, Param, Binding,
                     Effect, reg_effect, event_effect)
-from ..ast_model import Func
+from ast_analyzer import Func
 from ..formal import walk_leaf_ops
 
 

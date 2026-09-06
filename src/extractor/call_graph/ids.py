@@ -1,7 +1,7 @@
 """Function-identity helpers and cursor-parent/return-binding queries."""
 from __future__ import annotations
 
-from ..ast_model import Func, source_text
+from ast_analyzer import Func, source_text
 from ..indirect import resolve_indirect_call
 
 

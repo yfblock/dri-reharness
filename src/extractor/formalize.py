@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from typing import Optional
 
 from .dataflow import FuncExtraction, Op
-from .ast_model import Func
+from ast_analyzer import Func
 from .call_graph.call_rows import _call_row_is_proven
 from .external_semantics import classify, load_annotations
 from .intent import annotate

@@ -13,8 +13,8 @@ import tempfile
 from repo_paths import ROOT_STR as ROOT
 sys.path.insert(0, ROOT)
 
-from extractor.ast_model import source_text, target_functions  # noqa: E402
-from extractor.tu import parse_translation_unit  # noqa: E402
+from ast_analyzer import source_text, target_functions  # noqa: E402
+from ast_analyzer import parse_translation_unit  # noqa: E402
 from verification.ris_trace_oracle import _ris_trace  # noqa: E402
 
 

@@ -21,7 +21,7 @@ from repo_paths import (
 )
 sys.path.insert(0, str(ROOT))
 
-from extractor.compile_context import (  # noqa: E402
+from ast_analyzer.compile_context import (  # noqa: E402
     kbuild_cmd_path,
     read_kbuild_command,
     resolve_compile_context,

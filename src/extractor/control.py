@@ -7,7 +7,8 @@ import re
 import clang.cindex as cx
 
 from . import mmio
-from .ast_model import continuation_guards, function_calls, source_text
+from ast_analyzer import (continuation_guards, function_calls,
+                          source_text)
 
 
 _LOOPS = {cx.CursorKind.FOR_STMT, cx.CursorKind.WHILE_STMT,

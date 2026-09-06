@@ -10,7 +10,7 @@ from ..taint import (
     BasePtr, ReadTaint, SymExpr, Top, AbsVal,
     addr_fixed, addr_base_of, addr_equal, val_to_value_str,
 )
-from ..ast_model import (
+from ast_analyzer import (
     Func, function_calls, walk_with_control, continuation_guards, source_text,
 )
 from .ops import Op, _CONTROL_KW

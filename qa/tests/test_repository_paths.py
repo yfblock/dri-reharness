@@ -296,7 +296,7 @@ def test_holdout_manifest_uses_canonical_linux_relative_path():
 
 
 def test_compile_context_defaults_accept_canonical_linux_source_path():
-    from extractor.compile_context import resolve_compile_context
+    from ast_analyzer import resolve_compile_context
 
     source = REPO_ROOT / "vendor/linux/drivers/gpio/gpio-altera.c"
     context = resolve_compile_context(str(source), mode="required")
