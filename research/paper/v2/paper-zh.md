@@ -9,6 +9,7 @@
 > - 术语约定：RIS（寄存器交互序列）、MMIO、regmap、I2C/SMBus、MFD、LLM、QEMU、Kbuild、`no_std`、tock-registers 等保留英文；证据契约 = evidence contract；回执 = receipt；严格就绪 = strict readiness；tree-preserving join = 保树连接；check-backed = 检查背书（编译 + 回执 + AST 叶子）。
 > - 翻译中发现的原文问题汇总在文末「译者审核注记」，未改动正文。
 > - 本轮英文新增内容：§6.3 层消融与 CodeQL 交叉验证、§6.6 LLM 侧六项研究索引（含重复试验、直接基线、现有工具对比、突变研究）、§7.2 loop-aware 回执原型、zero-shot 留出集并入主评估、§4.2 IR 主证据与保树连接、模型/温度/端点披露。
+> - 2026-09-06 同步：§3.2 语义依赖节点（Call/ExternalCall、闭集类别）与双渲染（slim 文本 + source_map 旁表、别名表）；§3.4 与 §5.1 证据模式（full / ris-only / ris-semantics）；§5.2 机械脚手架 part 00；§6.6 新增「证据模式 + 脚手架」研究行与段落（21+4 格，记录 evidence-modes-mimo-2026-09-05.md 与 token-compression-2026-09-06.md）。
 
 ---
 
@@ -125,7 +126,11 @@ transport 字段（`regmap`、`i2c_smbus`、`i2c` 或 `mfd`）区分 API 家族�
 - `STATE(<field>) := <expr>` —— StateWrite：更新持久驱动状态（游标、计数器、标志）。
 - `OUT(<target>) := <expr>` —— OutputWrite：把值存入软件输出缓冲区。
 
-三层操作在提取器的源序投影中按模块交错排列。`DELAY(<cycles>)` 与 `RETURN <expr>` 操作补全集合。每个操作携带 `op_id`（顺序标识符）、可靠性标签（`Exact` 或 `Conservative`）、意图标注（如 `Init`、`Status`、`Config`、`DataTransfer`）和源码位置 provenance（文件与行号）。这些标注刻画的是已识别语句，不是对原程序的完整审计。
+三层操作在提取器的源序投影中按模块交错排列。`DELAY(<cycles>)` 与 `RETURN <expr>` 操作补全集合。
+
+**语义依赖节点。** 每个模块还按源序记录两种命名非寄存器依赖的节点。`Call` 节点是对某个已分析助手函数的调用，其函数体不含寄存器语义；它把每个形参绑定到实参表达式，且当被调用方的操作已经内联进模块时不再重复记录，因此同一依赖不会被计数两次。`ExternalCall` 节点是分析程序之外的依赖——如 `devm_kzalloc`、`clk_prepare_enable` 这类框架 API——携带一个取自 16 符号闭集枚举的**类别**（`pure`、`alloc`、`lock`、`dma-map`、`power-on`、`register-access`、……、`unknown`）。类别先由有序前缀规则 pass 在已知内核符号族上赋值；规则未命中的符号获得一份经人工复核的标注，记录返回值、副作用与移植提示；`unknown` 按闭式失败处理，指示生成器以合理签名发射一个不透明调用、不得为其虚构寄存器效果。两种节点都保留参数绑定，同时不假装被调用方是寄存器透明的。
+
+每个操作携带 `op_id`（顺序标识符）、可靠性标签（`Exact` 或 `Conservative`）、意图标注（如 `Init`、`Status`、`Config`、`DataTransfer`）和源码位置 provenance（文件、行、列）。这些标注刻画的是已识别语句，不是对原程序的完整审计。产物把审计渲染与生成渲染分开：文本形态省去内联的文件-行标注，provenance 经一张以 op id 与调用锚点为键的 `source_map` 旁表解析；供 LLM 消费的渲染再省去仅用于审计的可靠性标签（`op_id` 与回执摘要保留——后端 lowering 以它们为键），并把渲染中重复出现的寄存器符号路径与调用行别名为前置表中声明的短名（`REG<i>`、`C<i>`、`E<i>`）。信息没有丢失——旁表与原始拼写仍是产物中的一等数据；只是生成侧文本不再填充其消费者不会用到的内容。
 
 **补充图 A：RIS 三层操作模型与地址域**（译稿新增）
 
@@ -174,7 +179,7 @@ RIS 规定已识别的有序面向硬件证据；语义推断补充把这些证�
 
 ### 3.4 后端绑定与证据 JSON
 
-`BindSpec` 把抽象概念映射到某个后端：类型、MMIO 原语、状态表达式、回调槽位和导出入口。源码事实保留对重建有用但不属于可移植契约的支持信息，包括结构体字段、常量、回调初始化式和资源获取证据。生成时，reharness 把 RIS 操作、设备身份/类别、`BindSpec` 和选定源码事实序列化为一份证据 JSON。跨越边界的 `FunctionSpec` 角色被物化为回调和状态绑定，而不是作为独立对象序列化。该 JSON 是 LLM 的唯一语义输入；不包含原始 C 源码。
+`BindSpec` 把抽象概念映射到某个后端：类型、MMIO 原语、状态表达式、回调槽位和导出入口。源码事实保留对重建有用但不属于可移植契约的支持信息，包括结构体字段、常量、回调初始化式和资源获取证据。生成时，reharness 把设备身份与类别、`BindSpec`，以及——在 **full** 证据模式下——语义规约和选定源码事实序列化为一份证据 JSON，并把 RIS 模块操作作为独立的文本块附加：同样的操作在文本形态下字符开销约为四分之一，其中每个叶子携带 `op_id` 与回执摘要。跨越边界的 `FunctionSpec` 角色被物化为回调和状态绑定，而不是作为独立对象序列化。**ris-only** 模式把边界收窄到底：JSON 缩减为设备身份、寄存器表、机械化 bind 映射（每种宽度的读写由哪个原语拼写）和模块名列表，于是每个语义主张——操作、控制流、Call/ExternalCall 依赖行——只随 RIS 文本过界。**ris-semantics** 变体附加构造图例与经复核的外部调用标注。§6 报告模式对比；任何模式下都不包含原始 C 源码。
 
 ---
 
@@ -272,13 +277,15 @@ reharness 识别公共 regmap 与 I2C/SMBus 的读、写、更新和批量辅助
 
 *图注：确定性分析（AST + LLVM IR）产出 evidence JSON —— LLM 的唯一语义输入。六个节：driver（身份/类别）、registers（名/偏移/宽）、modules（有序操作 + 控制流）、bind（类型/原语/回调），constants*/structs*（可选，来自选定源码事实）；FunctionSpec 角色物化为回调/状态绑定而非独立对象。原始 C 源码任何情况下都不序列化给 LLM。LLM 发射的不可信候选经四个后端插件（harness C、裸机 C、Linux 内核模块、Rust `no_std`）进入验证门（编译、恰好一次回执、原语形状、已执行 trace），通过则在已建模范围内接受；失败则以结构化反馈回送修复（迭代预算默认 3 轮）或记录就绪阻塞项。*
 
-所有后端共用一个桥，序列化六个 JSON 节：**driver**（身份与类别）、**registers**（名称、偏移、宽度）、**modules**（有序操作与嵌套控制流）、**bind**（类型、原语、状态表达式、回调和 include），以及可选的来自选定源码事实的 **constants** 和 **structs**。模块条目保留 `op_id`、地址、值/变换、事务 transport 和功能状态操作。函数角色以回调和状态绑定表示；完整的 `FunctionSpec` 对象不被序列化。
+所有后端共用一个桥，序列化一份证据 JSON——**driver**（身份与类别）、**registers**（名称、偏移、宽度）、**modules**（full 模式下：有序操作与嵌套控制流）、**bind**（类型、原语、状态表达式、回调和 include），以及可选的来自选定源码事实的 **constants** 和 **structs**——并把 RIS 模块操作作为文本块附加，其中每个叶子保留 `op_id`、地址、值/变换、事务 transport 和功能状态操作，回执摘要内联。函数角色以回调和状态绑定表示；完整的 `FunctionSpec` 对象不被序列化。证据模式控制过界内容的多少：**full**（设备规约、框架事实、bind）与 **ris-only**——后者 JSON 只携带设备身份、寄存器表、机械化 bind 映射和模块名，所有语义主张都随 §3.2 所述的精简、带别名的 RIS 渲染过界（**ris-semantics** 变体附加构造图例与经复核的外部调用标注）。
 
 LLM 永远看不到原始 C 源码。该 JSON 是面向生成的投影，并非每个分析事实都跨越边界。prompt 授权用目标语言表达所要求的证据，但禁止发明或遗漏设备操作。后续检查检测缺失或被篡改的可追踪寄存器操作，并比较已执行的 MMIO 顺序；它们不证明不存在任意额外访问。
 
 ### 5.2 后端插件与受 prompt 驱动的翻译
 
 每个后端是一个自包含目录，含构造其 `BindSpec` 的 Python 模块和带目标规则的 `prompt.md`。注册表发现暴露 `NAME` 和 `generate()` 的模块，因此新增目标无需修改提取或验证。**Harness C** 使用假 MMIO 和访问日志；**裸机 C** 使用 volatile 原语；**Linux C** 发出 platform 或 PCI 生命周期与内核 MMIO；**Rust `no_std`** 使用 tock-registers，把 `unsafe` 限制在基址构造。
+
+对 harness 后端，程序中对每个驱动都完全相同的部分不再交给生成：一个机械脚手架——include、由提取的寄存器表派生的寄存器偏移 `#define`、假 MMIO backing 窗口、访问原语（自行打印 trace 行，因此生成代码不再携带 trace printf），以及供读-改-写取当前值用的非追踪 raw reader——被确定为 part 00 发射并前接到候选上；LLM 只被 prompt 生成 part 01：驱动结构体、框架 stub、带回执与锚点的模块函数，以及 `main()`。同样的分部标记路由有界修复：修复轮只重发射失败的部分，编译修复因此从不为回显脚手架付费。§6 报告 token 效果。
 
 桥用证据 JSON 实例化所选 prompt，调用配置的端点，并抽取候选代码。例如 Linux prompt 选择 PCI 或 platform 资源 API 并要求 MMIO 插桩，Rust prompt 要求对应的 tock-registers 布局和位域宏。这些规则约束目标适配，但不取代证据作为设备操作的来源。
 
@@ -447,6 +454,7 @@ IR 主架构（§4.2）分离两个关注点：编译产物提供地址真相，
 | 直接翻译基线 | 1 候选 | gate 在编译处拒绝；预算匹配运行被 endpoint 阻塞 | direct-llm-baseline.json |
 | 管线重复试验（DW） | 5+5+3 | 任一阶段 0 接受 | dw-repeated-trials.json |
 | 跨驱动试验（gpio-cadence） | 5+5+1 | 1 严格，5 检查背书（harness） | gpio-cadence-repeated-trials.json |
+| 证据模式 + 脚手架 | 21 + 4 格 | ris-only ≥ full；输出 −7–58% | evidence-modes-mimo-2026-09-05.md, token-compression-2026-09-06.md |
 | 现有工具对比 | 1 设备 | 显式、带回执的协议仅 reharness 有 | existing-tool-comparison.json |
 | DW 产物案例研究 | 4 后端 | 18/18 清单；链条部分人监督 | dw-apb-ssi-checklist.json |
 | Gate 突变研究 | 6 候选 | 6/6 拒绝（含 pristine 在严格 plan） | dw-gate-mutation-study.json |
@@ -464,6 +472,8 @@ IR 主架构（§4.2）分离两个关注点：编译产物提供地址真相，
 **受约束管线的重复试验。** 为测量样本间方差而非单次抽样，受约束 DesignWare 管线本身在固定提取上重跑了 5 次（同模型、温度 0、同端点；温度 0 下试验测的是端点级 serving 方差，非刻意采样多样性）。每个试验在三个阶段测量**同一**候选：raw 首过（禁用编译修复）、编译修复后（管线默认 bounded 预算）、回执修复后（bounded `repair_lowering` 协议，至多六轮，由花括号、注释与重编译检查守护）。在这些进程内 bounded 预算下，没有任何试验在任何阶段达到接受：harness 候选即使经编译修复也在 5/5 试验中编译失败；裸机候选修复后在 3/5 试验中编译，但回执核对在六轮修复后仍不完整（仍缺 32–76 个操作；编译 guard 每试验拒绝 8–10 个违反风格或重定义的发射）；Linux 候选在全部 3 个已测量试验中编译失败（另有 2 个试验因长 prompt 返回空 body 的端点故障丢失并如实记录）。§6.6 末尾被接受的旗舰产物因此**不**在管线自身 bounded 预算下复现：其记录链条额外使用了交互式编译修复、lowering 修复轮、数据flow 修复、确定性归一化，和一次对重复 lowering 发射的手工合并——全部记录在版本化 repair log 中。bounded gate 在实践中因此是一个拒绝工具——诚实的解读是：bounded 自动修复对该驱动族不够，被接受的产物依赖已记录的人监督链条，其工作量被披露而非摊销。逐试验完整检查状态版本化于 `research/experiments/results/dw-repeated-trials.json`。
 
 **跨驱动重复试验（操作数假设）。** DesignWare 结果混淆了两种解释：bounded 预算不够，或者 285 操作的驱动本就超出 raw 发射可靠交付的范围。复评要求补一个分级尺寸数据点，因此同一协议在 gpio-cadence（32 个操作，无循环；记录 `gpio-cadence-repeated-trials.json`）上运行，并在首次运行暴露问题后向协议追加三个确定性归一化：原语 stub 被改写为窗口化 backing 数组（退化零基址不再能触发 fault）、stub `main()` 从正式模块清单补全（记录链条以同样方式追加了 DW main）、Linux 模块构建缺 `MODULE_LICENSE()` 行时追加。操作数假设在小端被证实：仅靠 bounded 预算，5/5 harness 试验达到检查背书接受（编译、回执、AST 叶子），1/5 通过完整严格门——其中 1 个试验的 raw 首过完全不需要修复轮——而 DesignWare 在两个层级上均为 0/5；其余四个只失败在运行时 trace（未覆盖的守卫路径使预期操作序列成为严格子序列失配）。首次运行还暴露了 harness 本身的一个测量缺口，已在重跑前修复：gate 的运行时 trace verdict 此前只为 harness 后端填充，因此裸机与 Linux 行读取自重跑——裸机 verdict 由其回调与 W1C-drain oracle 派生，Linux 模块后端的运行时 trace 在模块构建后不适用。裸机后端低一层显示同样的小端效应：2/5 试验达到检查背书接受（一个在 raw 首过），但无一通过严格门，因为其运行时证据是宿主子系统回调 oracle，要求候选在寄存器回执之上**模拟**框架的回调 runner 脚手架（恰好调用计划回调、按资源基址间距、影子状态行）——重跑候选发出 marker 协议但在 plan 尺寸与基址布局上偏离。Linux 后端保持为零：1 个已测量试验中候选编译失败（泄漏的 markdown fence），其余 4 个试验因端点空 body 故障丢失并如实记录；确定性 `MODULE_LICENSE()` 追加已触发并逐试验记录。自动 bounded 接受因此不是框架的固定属性，而是契约尺寸与驱动形状的函数——表 3 的逐驱动就绪列反映了这一点。
+
+**证据模式与脚手架压缩。** 另有两项研究探查证据边界本身。第一项改变 prompt 被允许知道什么：在单一服务模型上跑 10 驱动 × 3 模式（full、ris-only、ris-semantics）矩阵，计划 30 格、完成 21 格后中止（丢失格为超时与宿主侧进程杀，如实记录而非重试）。编译与回执 lowering 在 ris-only 下从不回退（8/8 与 8/8，对比 full 的 9/9 与 8/9），更严格的 AST 叶子指标偏向 ris-only（4/8 对 2/9）；语义注入变体在其完成的 n=4 上相对 ris-only 无可测提升，说明闭集依赖行已携带图例复述的载荷。唯一一次正面落败具有诊断性而非否定性：edu 的 ris-only 候选编译、lowering、AST 叶子全过，却在写入的寄存器**值**上偏离——寄存器级的值协议存在于 facts 块，因此该失败把值语义定位为 full 模式真正新增的内容。第二项测量边界的 token 代价：机械脚手架吸收 part 00、精简带别名的 RIS 渲染就位后，同驱动的在役配对使生成输出每格缩减 7–58%（固定脚手架文本此前占输出的 29–64%），离线 prompt 组装使 ris-only prompt 缩减 20–21%；全部四个 smoke 格以 1 次 LLM 调用、零修复轮通过完整 gate。记录：`research/experiments/results/evidence-modes-mimo-2026-09-05.md` 与 `research/experiments/results/token-compression-2026-09-06.md`。
 
 **现有工具对比。** 表 6 在 QEMU edu 设备上并列同一设备的三种实现，其手写 QEMU 模型是上游真值。三个家族以不同方式暴露寄存器协议。QEMU 模型服务 **11** 个 MMIO 偏移——**设备**视图，包括驱动从不触碰的寄存器——而固定驱动访问其中 **3** 个，reharness RIS 恰以逐操作回执覆盖这 3/3。C2Rust 0.22.1 完全无法 transpile 真实驱动：内核头文件在三个阶段使 transpiler 崩溃（地址空间转换、tag 类型恢复、然后错误雪崩），因此对比使用手工携带相同寄存器协议的去内核化 stub；其 39 行 transpiled Rust 把协议隐含在指针算术中，100% unsafe 函数签名，且没有可对账的契约。reharness 产物是唯一寄存器协议显式、逐操作且机器可检（对提取契约的回执核对）的实现。全部输入与测量版本化于 `research/experiments/existing-tools/` 和 `research/experiments/results/existing-tool-comparison.json`。
 

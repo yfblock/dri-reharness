@@ -17,16 +17,24 @@ plugins, acceptance checks, and bounded repair.
 \subsection{Evidence Boundary}
 \label{sec:llm-bridge}
 
-All backends use one bridge that serializes six JSON sections: \emph{driver}
+All backends use one bridge that serializes an evidence JSON---\emph{driver}
 (identity and class), \emph{registers} (name, offset, width), \emph{modules}
-(ordered operations and nested control flow), \emph{bind} (types, primitives,
-state expressions, callbacks, and includes), and optional \emph{constants}
-and \emph{structs} from selected source facts. Module entries retain
-\texttt{op\_id}, address, value/transform, transaction transport, and
-functional-state operations. Function roles are represented by callback and
-state bindings; the full \texttt{FunctionSpec} object is not serialized.
+(in the full mode: ordered operations and nested control flow), \emph{bind}
+(types, primitives, state expressions, callbacks, and includes), and optional
+\emph{constants} and \emph{structs} from selected source facts---and appends
+the \rislang{} module operations as a text block in which each leaf retains
+its \texttt{op\_id}, address, value/transform, transaction transport, and
+functional-state operations, with the receipt digest inline. Function roles
+are represented by callback and state bindings; the full
+\texttt{FunctionSpec} object is not serialized. Evidence modes control how
+much crosses the boundary: \emph{full} (device spec, framework facts, bind)
+and \emph{ris-only}, in which the JSON carries only device identity, the
+register table, the mechanical bind mapping, and module names, so every
+semantic claim rides in the slim, aliased \rislang{} render of
+Section~\ref{sec:rislang} (a \emph{ris-semantics} variant adds a construct
+legend and the reviewed external-call annotations).
 
-The LLM never sees the original C source. The JSON is a generation-oriented
+The LLM never sees the original C source in any mode. The JSON is a generation-oriented
 projection; not every analysis fact crosses the boundary. The
 prompt authorizes target-language expression of required evidence but forbids
 inventing or omitting device operations. Subsequent checks detect missing or
@@ -45,6 +53,19 @@ uses fake MMIO and access logs; \textbf{bare-metal C} uses volatile primitives;
 \textbf{Linux C} emits platform or PCI lifecycles and kernel MMIO; and
 \textbf{Rust \texttt{no\_std}} uses \texttt{tock-registers}, confining
 \texttt{unsafe} to base-address construction.
+
+For the harness backend, the part of the program that is identical for every
+driver is no longer generated at all. A mechanical scaffold---includes,
+register-offset \texttt{\#define}s derived from the extracted register map,
+the fake-MMIO backing window, the access primitives (which print their own
+trace lines, so generated code never carries trace printfs), and untraced
+raw readers for read-modify-write value fetches---is emitted
+deterministically as part~00 and prepended to the candidate; the LLM is
+prompted for part~01 only: the driver struct, framework stubs, module
+functions with their receipts and anchors, and \texttt{main()}. The same
+part markers route bounded repair: a repair round re-emits only the failing
+part, so compile repair never pays to echo the scaffold.
+Section~\ref{sec:evaluation} reports the token effect.
 
 The bridge instantiates the selected prompt with the evidence JSON, calls the
 configured endpoint, and extracts candidate code. For example, the Linux
@@ -656,6 +677,7 @@ Closed-loop QEMU record & \ClosedLoopCases{} & \ClosedLoopAccepted{} accepted (e
 Direct-translation baseline & 1 cand. & gate reject at compile; budget-matched runs endpoint-blocked & direct-llm-baseline.json \\
 Repeated pipeline trials & \DwHarnTrialsN{}+\DwBareTrialsN{}+\DwLinuxTrialsN{} & 0 accepted at any stage & dw-repeated-trials.json \\
 Cross-driver trials (gpio-cadence) & \CadenceHarnTrialsN{}+\CadenceBareTrialsN{}+\CadenceLinuxTrialsN{} & \CadenceHarnTrialsFinalStrict{} strict, \CadenceHarnTrialsFinalCheckbacked{} check-backed (harness) & gpio-cadence-repeated-trials.json \\
+Evidence modes + scaffold & 21 + 4 cells & ris-only $\ge$ full; output $-$7--58\% & evidence-modes-mimo-2026-09-05.md, token-compression-2026-09-06.md \\
 Existing-tool comparison & 1 device & explicit, receipted protocol only in \reharness{} & existing-tool-comparison.json \\
 DW artifact case study & 4 backends & 18/18 checklist; chain partially supervised & dw-apb-ssi-checklist.json \\
 Gate mutation study & 6 cands. & 6/6 rejected (incl.\ pristine at strict plan) & dw-gate-mutation-study.json \\
@@ -810,6 +832,30 @@ fired and is recorded per trial. Automated bounded acceptance is thus
 not a fixed property of the
 framework but a function of contract size and driver shape, which the
 per-driver readiness columns of Table~\ref{tab:readiness} reflect.
+
+\textbf{Evidence modes and scaffold compression.} Two further studies probe
+the evidence boundary itself. The first varies what the prompt is allowed to
+know: a 10-driver, three-mode matrix (full, ris-only, ris-semantics) on one
+served model, 21 of 30 planned cells completed when the run was halted (the
+lost cells are timeouts and host-side process kills, recorded as such rather
+than retried). Compilation and receipt lowering never regress under ris-only
+(8/8 and 8/8, against 9/9 and 8/9 for full), and the stricter AST-leaf
+metric favors ris-only (4/8 versus 2/9); the semantics-injection variant
+shows no detectable lift over ris-only at its completed $n{=}4$, suggesting
+the closed-category dependency rows already carry the payload the legend
+restates. The one head-to-head loss is diagnostic rather than discrediting:
+the edu ris-only candidate compiles, lowers, and passes the AST leaf yet
+diverges on written register \emph{values}---the register-level value
+protocol lives in the facts block, so this failure localizes value
+semantics as the real content the full mode adds. The second study measures
+the token cost of the boundary: with the mechanical scaffold absorbing
+part~00 and the slim aliased \rislang{} render in place, same-driver live
+pairs shrink the generated output by 7--58\% per cell (the fixed scaffold
+text was 29--64\% of pre-change output), and offline prompt assembly
+shrinks ris-only prompts by 20--21\%; all four smoke cells pass the full
+gate at one LLM call and zero repair rounds. Records:
+\path{research/experiments/results/evidence-modes-mimo-2026-09-05.md} and
+\path{research/experiments/results/token-compression-2026-09-06.md}.
 
 \textbf{Existing-tool comparison.} Table~\ref{tab:existing-tools} places
 the same device's realizations side by side on the QEMU \texttt{edu}

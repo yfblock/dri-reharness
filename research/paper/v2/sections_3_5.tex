@@ -121,7 +121,43 @@ The transport field (\texttt{regmap}, \texttt{i2c\_smbus}, \texttt{i2c}, or \tex
 \item \texttt{OUT(<target>) := <expr>} --- OutputWrite: stores a value into a software output buffer.
 \end{itemize}
 
-These three tiers are interleaved in the extractor's source-order projection within each module. The \texttt{DELAY(<cycles>)} and \texttt{RETURN <expr>} operations round out the set. Each operation carries an \texttt{op\_id} (sequential identifier), a \emph{reliability} tag (\texttt{Exact} or \texttt{Conservative}), an \emph{intent} annotation (e.g., \texttt{Init}, \texttt{Status}, \texttt{Config}, \texttt{DataTransfer}), and source-location provenance (file and line). These annotations characterize recognized statements; they are not a complete audit of the original program.
+These three tiers are interleaved in the extractor's source-order projection within each module. The \texttt{DELAY(<cycles>)} and \texttt{RETURN <expr>} operations round out the set.
+
+\paragraph{Semantic-dependency nodes.}
+Each module additionally records, in source order, two node kinds that name
+non-register dependencies. A \texttt{Call} node is an invocation of an
+analyzed helper whose body carries no register semantics; it binds each
+formal parameter to the actual argument expression, and it is omitted when
+the callee's operations are already inlined into the module, so the same
+dependency is never recorded twice. An \texttt{ExternalCall} node is a
+dependency outside the analyzed program---framework APIs such as
+\texttt{devm\_kzalloc} or \texttt{clk\_prepare\_enable}---carrying a
+\emph{closed} category drawn from a 16-symbol enum (\texttt{pure},
+\texttt{alloc}, \texttt{lock}, \texttt{dma-map}, \texttt{power-on},
+\texttt{register-access}, \ldots, \texttt{unknown}). Categories are assigned
+first by an ordered prefix-rule pass over known kernel symbol families;
+symbols the rules miss receive a reviewed annotation recording return,
+effects, and a porting hint; \texttt{unknown} fails closed, instructing a
+generator to emit an opaque call with a plausible signature and to invent no
+register effects for it. Both node kinds preserve argument bindings without
+pretending the callee is register-transparent.
+
+Each operation carries an \texttt{op\_id} (sequential identifier), a
+\emph{reliability} tag (\texttt{Exact} or \texttt{Conservative}), an
+\emph{intent} annotation (e.g., \texttt{Init}, \texttt{Status},
+\texttt{Config}, \texttt{DataTransfer}), and source-location provenance
+(file, line, column). These annotations characterize recognized statements;
+they are not a complete audit of the original program. The artifact
+separates the audit render from the generation render: the text form omits
+inline file-line annotations and resolves provenance through a
+\texttt{source\_map} side table keyed by op ids and call anchors, the
+render consumed by the LLM additionally drops the audit-only reliability
+tags (the \texttt{op\_id} and receipt digest stay---backend lowering keys
+on them) and aliases register symbol paths and call rows that repeat across
+the render to short names (\texttt{REG<i>}, \texttt{C<i>}, \texttt{E<i>})
+declared in a leading table. Nothing is lost---the side table and original
+spellings remain first-class data in the artifact; the generation-facing
+text is just no longer padded with material its consumer does not act on.
 
 \paragraph{Register address model.}
 
@@ -181,7 +217,7 @@ A \texttt{DeviceSpec} composes these function contracts with the device class, s
 
 \subsection{Backend Bindings and Evidence JSON}
 
-A \texttt{BindSpec} maps abstract concepts to one backend: types, MMIO primitives, state expressions, callback slots, and exported entry points. Source facts retain supporting information that is useful for reconstruction but is not part of the portable contract, including structure fields, constants, callback initializers, and resource-acquisition evidence. At generation time, \reharness{} serializes the \rislang{} operations, device identity/class, \texttt{BindSpec}, and selected source facts into one evidence JSON. \texttt{FunctionSpec} roles that cross the boundary are materialized as callback and state bindings rather than serialized as a separate object. This JSON is the only semantic input to the LLM; the original C source is not included.
+A \texttt{BindSpec} maps abstract concepts to one backend: types, MMIO primitives, state expressions, callback slots, and exported entry points. Source facts retain supporting information that is useful for reconstruction but is not part of the portable contract, including structure fields, constants, callback initializers, and resource-acquisition evidence. At generation time, \reharness{} serializes device identity and class, the \texttt{BindSpec}, and---in the \emph{full} evidence mode---the semantic specs and selected source facts into one evidence JSON, and appends the \rislang{} module operations as a separate text block: the same operations cost roughly a quarter of the characters in textual form, which carries each leaf with its \texttt{op\_id} and receipt digest inline. \texttt{FunctionSpec} roles that cross the boundary are materialized as callback and state bindings rather than serialized as a separate object. A \emph{ris-only} mode narrows the boundary to its floor: the JSON shrinks to device identity, the register table, the mechanical bind mapping (which primitive spells a read or write of each width), and a module name list, so every semantic claim---operations, control flow, and the Call/ExternalCall dependency rows---crosses only inside the \rislang{} text. A \emph{ris-semantics} variant adds a construct legend and the reviewed external-call annotations. Section~\ref{sec:evaluation} reports the mode comparison; the original C source is never included in any mode.
 
 % =====================================================================
 %  DEVICE-CORE CONTRACT EXTRACTION

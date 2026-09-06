@@ -9,7 +9,7 @@ system runs before they can be strengthened.
 | RIS extraction is complete/accurate | Stratified manual labels or source-vs-target differential traces for operation kind, address, width, value, order, guard, callback, and state flow | Not run |
 | The gate blocks unsafe extra accesses | Mutation tests adding DMA/IRQ/MMIO operations, duplicate accesses, wrong base, and wrong write values; static and QEMU gates must reject them | Not run |
 | Guard/control-flow preservation | Branch-directed inputs covering both paths and guard mutations, with path predicates checked against runtime observations | Not run |
-| LLM synthesis 成功率/可复现性 | Fixed model/version/prompt/temperature/seed, repeated trials on held-out eligible drivers, first-pass and repair pass rates, cost and latency | Not run; one DesignWare artifact case only |
+| LLM synthesis 成功率/可复现性 | Fixed model/version/prompt/temperature/seed, repeated trials on held-out eligible drivers, first-pass and repair pass rates, cost and latency | Partially run: repeated-trial studies (DW + gpio-cadence) and a 21/30-cell evidence-mode matrix are reported in RQ6; repeated sampling and multi-model coverage still pending |
 | Benefit over alternatives | Direct raw-source LLM, C2Rust/translation baseline, deterministic emitter, and ablations for IR, functional state, receipts, and repair | Not run |
 | Rust backend equivalence | Fixed target/toolchain/dependency versions, Rust AST/HIR receipt checks, no-std linking, and emulator or hardware execution | Not run |
 | Typed transaction correctness | Real regmap, I2C/SMBus, and MFD drivers with selector, width, error, cache/update, and ordering checks | Not run |
