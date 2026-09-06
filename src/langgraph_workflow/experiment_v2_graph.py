@@ -367,8 +367,6 @@ def build_experiment_v2(
         result = extract_ris(cfg)
         formal = result.formal
         contract = build_generation_contract(formal)
-        (evd / f"{driver_name}.formal.json").write_text(
-            json.dumps(formal, indent=2, default=str))
         return {
             "formal_model": formal,
             "generation_contract": contract,

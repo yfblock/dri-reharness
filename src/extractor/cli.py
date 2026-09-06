@@ -1,7 +1,6 @@
 """CLI entry: `python3 -m extractor extract --source ... --output out.ris`"""
 from __future__ import annotations
 import argparse
-import json
 import os
 from pathlib import Path
 
@@ -83,8 +82,6 @@ def main(argv: list[str] | None = None) -> int:
                    help="C source file or multi-source JSON manifest")
     e.add_argument("-o", "--output", default="artifacts/output/ris.ris",
                    help="formal-language text output (.ris; default: artifacts/output/ris.ris)")
-    e.add_argument("--json-output", default=None,
-                   help="optional structured Formal RIS JSON output")
     _add_analysis_options(e, extended=True)
 
     m = sub.add_parser("metrics", help="Print per-module extraction quality metrics")
@@ -151,12 +148,6 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = os.path.dirname(os.path.abspath(out)) or "."
         os.makedirs(out_dir, exist_ok=True)
         save_formal_text(res.formal, out)
-        if args.json_output:
-            json_dir = os.path.dirname(os.path.abspath(args.json_output)) or "."
-            os.makedirs(json_dir, exist_ok=True)
-            with open(args.json_output, "w", encoding="utf-8") as fh:
-                json.dump(res.formal, fh, indent=2, sort_keys=True)
-                fh.write("\n")
 
         st = res.stats
         print("📊 Stats:")
@@ -178,8 +169,6 @@ def main(argv: list[str] | None = None) -> int:
                 if w not in res.warnings[:5]:
                     print(f"   {w}")
         print(f"✅ RIS spec saved to {out}")
-        if args.json_output:
-            print(f"✅ structured RIS saved to {args.json_output}")
         return 0
 
     if args.command == "metrics":

@@ -18,7 +18,7 @@ Usage:
       [--out DIR] [--timeout SEC] [--ir-mode auto|off|required]
       [--drivers name ...] [--source FILE ...]
 
-Outputs: <out>/<driver>/<driver>.ris (+ .formal.json, extract.log) and
+Outputs: <out>/<driver>/<driver>.ris (+ extract.log) and
 <out>/summary.json.  Exit 0 only if every driver exported.
 """
 from __future__ import annotations
@@ -50,13 +50,11 @@ def export_one(source: Path, out_root: Path, timeout: float,
     outdir = out_root / name
     outdir.mkdir(parents=True, exist_ok=True)
     ris = outdir / f"{name}.ris"
-    formal_json = outdir / f"{name}.formal.json"
     log_path = outdir / "extract.log"
 
     cmd = [sys.executable, "-m", "extractor", "extract",
            "--source", str(source), "--driver-name", name,
-           "--output", str(ris), "--json-output", str(formal_json),
-           *extra]
+           "--output", str(ris), *extra]
     env = dict(os.environ)
     env["PYTHONPATH"] = str(ROOT / "src") + (
         os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
