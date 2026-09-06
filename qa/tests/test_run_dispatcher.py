@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_COMMANDS = (
     "extract", "spec", "gen", "facts", "bundle", "metrics",
     "score", "reliability", "compare", "test",
-    "qemu", "langgraph", "auto-driver",
+    "qemu",
     "v2", "log-event",
 )
 HELP_COMMAND_LINE = re.compile(

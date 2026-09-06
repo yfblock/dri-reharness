@@ -4,7 +4,7 @@ Profile matching is declarative (``driver_profiles``) and pinned regression
 drivers are mapped to their experiment manifests through
 ``benchmarks/profile-catalog.json`` — no driver name is special-cased in
 code.  This module builds source-derived evidence and materializes runtime
-manifests for ``langgraph_workflow.tools`` and the ``auto-driver`` CLI.
+manifests for the profile-matrix tooling and the subsystem QA tests.
 """
 from __future__ import annotations
 

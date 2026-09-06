@@ -38,8 +38,6 @@ Commands:
   test                      run the test suite
   v2 <manifest...>          V2 closed-loop experiments with function coverage
   qemu --manifest PATH      boot a module in the QEMU guest runner
-  langgraph <src> [options] run the LangGraph orchestration workflow
-  auto-driver <path> [options] normalize, generate, and validate one driver
   log-event <message ...>   append an engineering timeline event
 
 The .ris spec language remains the sole RIS artifact format; reliability
@@ -149,10 +147,6 @@ def cmd_qemu(args: list[str]) -> int:
     return _run(args, script=VERIFICATION / "qemu_run.py")
 
 
-def cmd_langgraph(args: list[str]) -> int:
-    return _run(args, module="langgraph_workflow")
-
-
 def cmd_intermediates(args: list[str]) -> int:
     """(Re)generate the reviewable intermediate chain for driver sources."""
     if not args:
@@ -182,10 +176,6 @@ def cmd_intermediates(args: list[str]) -> int:
 
 def cmd_v2(args: list[str]) -> int:
     return _run(args, script=VERIFICATION / "run_v2_experiment.py")
-
-
-def cmd_auto_driver(args: list[str]) -> int:
-    return _run(args, script=VERIFICATION / "run_auto_driver.py")
 
 
 def cmd_log_event(args: list[str]) -> int:
@@ -246,18 +236,8 @@ def cmd_test(args: list[str]) -> int:
         if code != 0:
             return code
     pytest_argv = ["-q", *[str(QA / "tests" / n) for n in _SUITE_PYTEST]]
-    code = subprocess.run([PY, "-m", "pytest", *pytest_argv],
+    return subprocess.run([PY, "-m", "pytest", *pytest_argv],
                           cwd=ROOT).returncode
-    if code != 0:
-        return code
-    try:
-        import langgraph  # noqa: F401
-    except ImportError:
-        return 0
-    return subprocess.run(
-        [PY, "-m", "pytest", "-q",
-         str(QA / "tests" / "test_langgraph_workflow.py")],
-        cwd=ROOT).returncode
 
 
 _COMMANDS = {
@@ -274,10 +254,8 @@ _COMMANDS = {
     "compare": cmd_compare,
     "test": cmd_test,
     "qemu": cmd_qemu,
-    "langgraph": cmd_langgraph,
     "v2": cmd_v2,
     "intermediates": cmd_intermediates,
-    "auto-driver": cmd_auto_driver,
     "log-event": cmd_log_event,
 }
 

@@ -98,8 +98,7 @@ git submodule update --init
 ./run.sh extract benchmarks/drivers/baseline/gpio-ftgpio010.c artifacts/output/ftgpio.ris
 ./run.sh spec benchmarks/drivers/baseline/gpio-ftgpio010.c artifacts/output/ftgpio.dspec
 ./run.sh gen benchmarks/drivers/baseline/edu.c linux artifacts/output/edu_drv.c
-./run.sh langgraph benchmarks/drivers/baseline/edu.c --mode generation \
-  --output-dir artifacts/output/edu
+./run.sh v2 benchmarks/experiments/edu.json
 ./run.sh reliability benchmarks/drivers/baseline/gpio-ftgpio010.c
 ~~~
 
@@ -118,25 +117,20 @@ evidence、候选代码、阶段记录和原驱动/候选驱动 trace：
 contract、运行结果和 trace 比较全部通过后才接受候选。旧的 `e2e` 命令仅
 作为兼容入口，将源码路径解析到唯一 manifest 后委托给同一 runner。
 
-### LangGraph orchestration
+### LangGraph orchestration (experiment v2)
 
-LangGraph 是现有 Python Pipeline 的编排层。它先校验输入并解析单源或多源
-驱动文件，再调用 extractor 生成 RIS/DeviceSpec/Facts evidence；随后把缓存
-的 evidence 交给现有 `ExperimentRunner`，不会绕过 contract、compile、runtime
-或 trace gate。依赖是可选的：
+实验 v2 闭环是唯一的 LangGraph 工作流（v1 通用编排图已移除）。每个
+manifest 由 `langgraph_workflow.experiment_v2_graph` 执行：
+`build_driver -> ris_extract -> llm_gen_tests -> baseline_qemu ->
+llm_synthesize -> candidate_compile -> candidate_qemu -> diff_compare`，
+compile/QEMU/diff 失败进入有界 repair 回环（默认 3 轮）回到
+llm_synthesize。依赖是可选的：
 
 ~~~bash
 python3 -m pip install -r requirements-langgraph.txt
-./run.sh langgraph benchmarks/drivers/baseline/edu.c --mode analysis
-./run.sh langgraph benchmarks/drivers/baseline/edu.c \
-  --experiment-manifest benchmarks/experiments/edu.json \
-  --mode experiment
+./run.sh v2 benchmarks/experiments/edu.json \
+  --output-root artifacts/output/v2-edu
 ~~~
-
-Graph 状态只保存输入、文件 digest、artifact 路径、阶段事件和结构化结果，
-可通过 `langgraph_workflow.graph.run_workflow(..., checkpointer=...)` 接入
-LangGraph checkpoint。分析输出默认写入 `artifacts/langgraph/<driver>/`；显式
-`--output-dir` 可指定外部临时目录。
 
 ### LangChain LLM backend
 
@@ -159,158 +153,83 @@ compile、runtime 和 trace gate。
 
 直接调用 python3 -m extractor 时，分析类子命令支持 --alias-mode off|auto|required。
 
-### Automatic driver workflow
+### Profile 与注册契约
 
-`auto-driver` 接受单个 C 文件、多源 descriptor 或 schema-2 manifest。它从
-Linux framework registration evidence 选择总线 profile，生成带 source digest 的
-manifest，再委托 LangGraph、现有 generation contract、Kbuild 和 runtime
-adapter。profile-owned fixture 只提供可复现的验证环境，不包含具体驱动名分支：
-
-~~~bash
-python3 qa/verification/run_auto_driver.py \
-  benchmarks/drivers/fixtures/reharness-i2c-sensor.c --dry-run
-python3 qa/verification/run_auto_driver.py \
-  qa/tests/fixtures/spi-client.json --dry-run
-~~~
-
-需要扩展新总线时，可以通过 `--profile-plugin` 注入一个 Python profile 模块，
-模块只需提供 `register_profiles(registry)` 并注册实现
-`evidence_from_source()`、`match()` 和 `plan()` 的 profile。该 registry 会同时
-传给 normalizer 和 LangGraph；profile 仍必须声明有效的 manifest template、runtime
-adapter 和 fixture，缺少其中任一项会返回 `inconclusive`，不会绕过验证：
-
-~~~bash
-python3 qa/verification/run_auto_driver.py \
-  path/to/driver.c --profile-plugin path/to/usb_profile.py --dry-run
-~~~
-
-`--dry-run` 只负责生成可执行的 runtime manifest，因此缺少 fixture 的输入会
-返回 `inconclusive`。正式运行时，如果输入只有静态翻译能力，CLI 会进入
-LangGraph `generation` 模式执行 extractor、生成 contract 和 Kbuild；没有
-runtime profile 的最终状态仍是 `inconclusive`，不会被报告为完整验证通过。
-插件注册的 profile 默认不会加入无参数 `profile-matrix` 的 acceptance 集合；
-验证插件时必须提供显式 manifest，或使用重复的 `--required-profile PROFILE`
-声明验收集合。插件 manifest、fixture、测试 provider 和 executable 仍须通过
-仓库路径与 schema 校验，不能注入任意 shell 命令。
-
-带有 `manifest_template` 的外部 profile 可以继续交给同一个通用矩阵：
-
-~~~bash
-python3 qa/verification/run_auto_driver.py \
-  path/to/driver.c --profile-plugin path/to/usb_profile.py \
-  --dry-run --output-dir /tmp/reharness-driver
-python3 qa/verification/run_profile_matrix.py \
-  --profile-plugin path/to/usb_profile.py \
-  --manifest /tmp/reharness-driver/manifest.json \
-  --output /tmp/reharness-profile-matrix
-~~~
-
-没有显式 `--manifest` 时，矩阵要求 registry 中的全部 runtime-ready 内置 profile（当前为八个）；显式 manifest 没有
-`--required-profile` 时，只要求该 manifest 集合中发现的 profile。需要固定验收
-集合时可重复传入 `--required-profile PROFILE`。profile 若依赖 `KBUILD_MODNAME`
-生成设备节点，必须通过 `ProfilePlan.runtime_overrides.qemu.module` 声明其模块
-身份；模块文件名和设备节点名不能由源码文件名隐式替代。
+自动入口 CLI（`auto-driver`）与 profile 矩阵工具已随 v1 LangGraph 编排移除；
+profile 声明、manifest 契约和注册校验仍是 v2 实验与 QA 测试的活跃机制。
 
 内置 profile template 使用统一的 `qemu-profile` runtime adapter；QEMU 设备、
-总线、fixture module 和用户态测试全部来自已校验的 manifest 数据。旧的
-`qemu-platform`、`qemu-i2c` 等 adapter id 仍作为兼容入口保留，因此新增 profile
-不需要在 runtime dispatcher 中增加总线分支。
-profile 还可以在 `runtime.registration` 中声明 `root_table`、身份字段和
-device-id table；registration AST gate 优先使用该契约，旧 manifest 才回退到
-catalog 中声明的 `legacy_runtime_contracts`。Linux registration 的 API、struct table、callback table
-和 typed object link 位于 `benchmarks/linux-registration-catalog.json`，由
+总线、fixture module 和用户态测试全部来自已校验的 manifest 数据。profile
+可以在 `runtime.registration` 中声明 `root_table`、身份字段和 device-id
+table；registration AST gate 优先使用该契约，旧 manifest 才回退到 catalog 中
+声明的 `legacy_runtime_contracts`。Linux registration 的 API、struct table、
+callback table 和 typed object link 位于
+`benchmarks/linux-registration-catalog.json`，由
 `src/linux_registration_contracts.py` 统一校验并提供给 AST oracle；因此新增
-普通 framework 时不需要修改 oracle 的总线分支。外部 profile/plugin 可以在
-`runtime.registration` 中增加同一 schema 的 `tables`、`registration_apis` 和
-`links`，也可以声明 `irq_attach_apis` 和 `direct_irq_apis` 的参数契约；未知
-或类型不匹配的声明会保持 fail-closed。传统驱动表使用 `driver_root`，直接从
-模块初始化注册 framework object 使用 `object_root`；没有稳定驱动名的对象可用
-`identity_field: "none"` 明确关闭名称对账，不能隐式跳过注册证明。
-
-输出状态只有 `accepted`、`failed` 和 `inconclusive`。识别出 bus 但缺少公开
-registration identity、runtime fixture 或可模拟设备时，自动入口为
-`inconclusive`；LangGraph 在 `mode=generation` 下仍会执行静态提取、生成和
-Kbuild pipeline，但最终 runtime 状态仍为 `inconclusive`，不能伪装成翻译成功。
-八类 runtime-ready profile 的 baseline 可用统一矩阵验证：
-
-~~~bash
-./run.sh profile-matrix
-~~~
-
-矩阵输出的 `profile_inventory` 会列出 registry 中的全部类型，而不只列出
-required acceptance 集合。`runtime-ready` 表示进入默认矩阵，
-`runtime-inconclusive` 表示类型已识别但没有可信 runtime fixture，
-`plugin-explicit-only` 表示只能通过显式 plugin manifest 验收；inventory 的披露
-不会改变 `accepted` 的 required profile 集合。
+普通 framework 时不需要修改 oracle 的总线分支。manifest 可以在同一 schema 下
+增加 `tables`、`registration_apis` 和 `links`，也可以声明 `irq_attach_apis`
+和 `direct_irq_apis` 的参数契约；未知或类型不匹配的声明保持 fail-closed。
+传统驱动表使用 `driver_root`，直接从模块初始化注册 framework object 使用
+`object_root`；没有稳定驱动名的对象可用 `identity_field: "none"` 明确关闭
+名称对账，不能隐式跳过注册证明。
 
 manifest 的 `test.subsystem.tests[]` 通过 `kind` 声明执行形态：省略或使用
 `native` 表示仓库用户态测试，`tool` 表示可复用的 Linux 用户态工具/API 测试，
 `kselftest` 表示 Linux selftest 用户态程序，`kunit` 表示已经列入
 `runtime.qemu.kernel_modules` 或 profile fixture 的 KUnit 测试模块。可选的
 `provider` 是 `benchmarks/subsystem-providers.json` 中的受信任来源标识（例如
-`linux-spidev`、`linux-i2c-dev`、`linux-clock-kunit`、`linux-usbtest`）。provider 可以自动 materialize 测试类型和
-repository-owned executable；manifest 只需要引用 provider 并给出设备参数，且
-provider 声明的子系统、源码路径和 kernel module prerequisite 都会被校验，
-不能通过 provider 注入任意命令或路径。
-`required=false` 的工具缺失或失败不会伪装成 required capability 通过；required
-测试仍会阻断 acceptance。KUnit 测试不需要 `executable`，QEMU 会加载模块并从
-内核日志读取 KTAP 成功标记，并将任意 `not ok` 结果判为失败；缺少模块声明会在
-manifest 校验阶段拒绝。当前实验内核已启用 `CONFIG_CLK_KUNIT_TEST=m`，并可生成
-`clk-test.ko`，但尚未有 profile 将 Clock KUnit 作为 required runtime test。
-catalog 也声明了 Linux `usbtest`/`testusb` provider；USB profile 现在同时声明
-`dummy_hcd`、`g_zero` 和 `usbtest`，并在 QEMU guest 内运行一个真实的 Gadget Zero
-bulk case。`CONFIG_USB_TEST=m`、`CONFIG_USB_DUMMY_HCD=m` 和 `CONFIG_USB_ZERO=m`
-均由 pinned config 构建验证。
-当前八类
-baseline 已实际运行两个 Linux GPIO kselftest、Linux I2C `I2C_RDWR` 测试和
-Linux `spidev_test`，以及 Linux USB `usbtest` Gadget Zero bulk case。USB 当前仍是
-QEMU `usb-serial` 加一个 `dummy_hcd`/`g_zero` 代表性 fixture，尚未接入 USB
-kselftest；`i2c-stub` 与外部 `i2c-tools`
-也尚未作为 profile provider 集成。I2C/SPI/USB 的完整 KUnit、loopback、热插拔和
-错误注入套件仍需由对应 profile 显式声明，不能从这些测试推断出来。Network
-profile 当前只证明 generic `net_device` API 生命周期；`netdevice.sh` 为 optional，
-不代表真实 e1000/virtio-net 数据路径、DMA、IRQ 或 offload 已验证。
+`linux-spidev`、`linux-i2c-dev`、`linux-clock-kunit`、`linux-usbtest`）。
+provider 可以自动 materialize 测试类型和 repository-owned executable；
+manifest 只需要引用 provider 并给出设备参数，且 provider 声明的子系统、
+源码路径和 kernel module prerequisite 都会被校验，不能通过 provider 注入
+任意命令或路径。`required=false` 的工具缺失或失败不会伪装成 required
+capability 通过；required 测试仍会阻断 acceptance。KUnit 测试不需要
+`executable`，QEMU 会加载模块并从内核日志读取 KTAP 成功标记，并将任意
+`not ok` 结果判为失败；缺少模块声明会在 manifest 校验阶段拒绝。当前实验
+内核已启用 `CONFIG_CLK_KUNIT_TEST=m`，并可生成 `clk-test.ko`，但尚未有
+profile 将 Clock KUnit 作为 required runtime test。catalog 也声明了 Linux
+`usbtest`/`testusb` provider；USB profile 同时声明 `dummy_hcd`、`g_zero` 和
+`usbtest`，并在 QEMU guest 内运行一个真实的 Gadget Zero bulk case。
+`CONFIG_USB_TEST=m`、`CONFIG_USB_DUMMY_HCD=m` 和 `CONFIG_USB_ZERO=m` 均由
+pinned config 构建验证。八类 baseline 已实际运行两个 Linux GPIO kselftest、
+Linux I2C `I2C_RDWR` 测试和 Linux `spidev_test`，以及 Linux USB `usbtest`
+Gadget Zero bulk case。USB 当前仍是 QEMU `usb-serial` 加一个
+`dummy_hcd`/`g_zero` 代表性 fixture，尚未接入 USB kselftest；`i2c-stub` 与
+外部 `i2c-tools` 也尚未作为 profile provider 集成。I2C/SPI/USB 的完整
+KUnit、loopback、热插拔和错误注入套件仍需由对应 profile 显式声明，不能从
+这些测试推断出来。Network profile 当前只证明 generic `net_device` API
+生命周期；`netdevice.sh` 为 optional，不代表真实 e1000/virtio-net 数据路径、
+DMA、IRQ 或 offload 已验证。
 
 profile 识别目录同时声明了 `amba-generic` 和 `serdev-generic`。这些类型可以
-进入统一的源码证据、Linux Kbuild 和生成流程，但当前没有对应的 QEMU fixture，
-因此会保留 `runtime_manifest` gap 并返回 `inconclusive`；它们不会被默认 runtime
-matrix 当作已验证 profile。`mdio-generic` 已有 synthetic `mii_bus` QEMU fixture，
-并进入默认矩阵，但仍只是 MDIO framework 的一个代表性闭环。
+进入统一的源码证据和 Linux Kbuild 流程，但当前没有对应的 QEMU fixture，
+因此会保留 `runtime_manifest` gap 并返回 `inconclusive`。`mdio-generic` 已有
+synthetic `mii_bus` QEMU fixture，但仍只是 MDIO framework 的一个代表性闭环。
 
 通用 profile 的匹配规则和能力要求位于
 `benchmarks/driver-profile-definitions.json`。它声明 callback/resource 证据、
 源码 token、identity 提取规则、manifest template 和 required capabilities；
-profile registry 只实现统一的匹配、计划校验和能力边界。新增普通总线或内核
-设备类型时，优先增加一条经过 schema 校验的定义，不应在 runner 中加入驱动名
-或源文件名分支。`benchmarks/profile-catalog.json` 仍只保存具体回归输入与其
-manifest，不是核心类型注册表；需要复杂源码语义时才使用受限 profile plugin。
+profile registry（`src/driver_profiles.py`、`src/auto_driver.py`）只实现统一
+的匹配、计划校验和能力边界。新增普通总线或内核设备类型时，优先增加一条
+经过 schema 校验的定义，不应在 runner 中加入驱动名或源文件名分支。
+`benchmarks/profile-catalog.json` 仍只保存具体回归输入与其 manifest，不是
+核心类型注册表。
 
 传输 profile 与子系统 contract 是两个独立层。
-`benchmarks/subsystem-contract-definitions.json` 声明 GPIO、SDHCI、Clock 等可叠加的 API/source evidence 和
-静态能力要求；一个 `platform`、PCI 或 I2C 驱动可以同时匹配一个或多个
-contract。匹配结果会进入 `ProfilePlan`、LangGraph synthesis evidence 和
-manifest 的 `runtime.subsystem_contracts`，但没有对应 runtime provider 时仍只
-能得到 `inconclusive`。LangGraph analysis 还会输出
-`subsystem_contract_verification`，依据声明的 summary group、summary contract、
-callback evidence 和 `unmodeled_callbacks` 做 `extractor-metadata` 级别的
-fail-closed 检查：源码 token 命中不等于 `pass`，缺少 summary 为
-`inconclusive`，未建模 callback 为 `fail`。该报告不替代 QEMU、KUnit 或
-kselftest，也不声称完整子系统语义等价。对 generation/experiment workflow，
-存在 contract 时只有静态报告为 `pass` 才能完成；`fail` 或
-`inconclusive` 会阻止最终接受。需要额外检查 candidate framework 结构时，
-contract 可声明 `candidate_validator`；实现位于
+`benchmarks/subsystem-contract-definitions.json` 声明 GPIO、SDHCI、Clock 等
+可叠加的 API/source evidence 和静态能力要求；一个 `platform`、PCI 或 I2C
+驱动可以同时匹配一个或多个 contract。匹配结果会进入 `ProfilePlan`、
+synthesis evidence 和 manifest 的 `runtime.subsystem_contracts`，但没有对应
+runtime provider 时仍只能得到 `inconclusive`。静态报告做
+`extractor-metadata` 级别的 fail-closed 检查：源码 token 命中不等于 `pass`，
+缺少 summary 为 `inconclusive`，未建模 callback 为 `fail`。该报告不替代
+QEMU、KUnit 或 kselftest，也不声称完整子系统语义等价。存在 contract 时
+只有静态报告为 `pass` 才能完成；`fail` 或 `inconclusive` 会阻止最终接受。
+需要额外检查 candidate framework 结构时，contract 可声明
+`candidate_validator`；实现位于
 `qa/verification/subsystem_candidate_validators.py` 的 registry，未知
-validator 会 fail-closed。`runtime_adapters.py` 只调用通用 registry，外部
-编排可通过 `build_adapters(..., candidate_validator_registry=...)` 注入新的
-validator，不需要修改翻译循环；GPIO generic IRQ/helper 规则就是该机制的
-一个内置实现。
-
-生成候选时还要对候选源码单独启用正式 trace gate：
-
-~~~bash
-PYTHONPATH=src:qa:qa/verification \
-python3 qa/verification/run_profile_matrix.py --require-trace
-~~~
+validator 会 fail-closed；GPIO generic IRQ/helper 规则就是该机制的一个内置
+实现。
 
 ## 复现实验和论文
 
