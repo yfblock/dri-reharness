@@ -10,12 +10,13 @@ import subprocess
 import sys
 import tempfile
 
-from repo_paths import ROOT_STR as ROOT
+from repo_paths import ROOT_STR as ROOT, SOURCE_ROOT
 sys.path.insert(0, ROOT)
+sys.path.insert(0, SOURCE_ROOT)
 
 from ast_analyzer import source_text, target_functions  # noqa: E402
 from ast_analyzer import parse_translation_unit  # noqa: E402
-from verification.ris_trace_oracle import _ris_trace  # noqa: E402
+from gate.ris_trace_oracle import _ris_trace  # noqa: E402
 
 
 def _original_function_source(source: str) -> str:

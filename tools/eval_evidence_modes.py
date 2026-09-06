@@ -106,7 +106,7 @@ def trace_expected_from_formal(formal: dict):
     depends on the device spec.
     """
     from extractor.metrics import _computed_is_lowerable
-    from verification.subsystem_callback_oracle import _eval
+    from gate.subsystem_callback_oracle import _eval
 
     regs = {r["name"]: r["offset"] for r in formal["register_map"]}
     mod = next((m for m in formal["modules"] if m.get("ops")), None)
@@ -135,10 +135,10 @@ def run_one(res, mode: str, outdir: Path) -> dict:
     from backends.pipeline.compile_repair import _repair_compile
     from backends.pipeline.receipt_repair import _repair_receipts
     from backends.pipeline.paths import _is_subsequence, _repository_root
-    from verification.backend_lowering_oracle import (
+    from gate.backend_lowering_oracle import (
         build_generation_contract, verify_backend_lowering)
-    from verification.generated_c_ast_oracle import verify_generated_c_ast
-    from verification.subsystem_callback_oracle import (
+    from gate.generated_c_ast_oracle import verify_generated_c_ast
+    from gate.subsystem_callback_oracle import (
         verify_subsystem_callbacks)
     from extractor.spec import BindSpec, default_bind
     from backends.common import make_freestanding_bind

@@ -21,16 +21,7 @@ def run_driver_pipeline(res, args) -> int:
                        device_spec_to_dict)
     from backends.subsystem_runner import (subsystem_callback_plan,
                                             w1c_drain_plan)
-    import sys as _sys, os as _os
-    _vroot = _os.path.normpath(_os.path.join(
-        _os.path.dirname(_os.path.abspath(__file__)), '..',
-        'qa'))
-    if _vroot not in _sys.path:
-        _sys.path.insert(0, _vroot)
-    _vq = _os.path.join(_vroot, 'verification')
-    if _vq not in _sys.path:
-        _sys.path.insert(0, _vq)
-    from verification.subsystem_callback_oracle import (
+    from gate.subsystem_callback_oracle import (
         verify_subsystem_callbacks)
     from backends.linux.oracles.gpio_mmio_source_oracle import (
         verify_gpio_mmio_source_differential)
@@ -42,11 +33,11 @@ def run_driver_pipeline(res, args) -> int:
         verify_w1c_drain_contract, verify_w1c_drain_runtime)
     from backends.oracles.transaction_ir_oracle import (
         verify_transaction_source)
-    from verification.backend_lowering_oracle import (
+    from gate.backend_lowering_oracle import (
         build_generation_contract, verify_backend_lowering)
-    from verification.backend_lowering_plan import (
+    from gate.backend_lowering_plan import (
         verify_backend_lowering_plan)
-    from verification.generated_c_ast_oracle import verify_generated_c_ast
+    from gate.generated_c_ast_oracle import verify_generated_c_ast
     from backends.linux.oracles.linux_registration_ast_oracle import (
         linux_kbuild_compile_context,
         verify_linux_registration_ast)
@@ -227,7 +218,7 @@ def run_driver_pipeline(res, args) -> int:
                 expected = []
                 untraceable = False
                 from extractor.metrics import _computed_is_lowerable
-                from verification.subsystem_callback_oracle import _eval
+                from gate.subsystem_callback_oracle import _eval
 
                 def trace_offset(addr):
                     if "Symbolic" in addr:

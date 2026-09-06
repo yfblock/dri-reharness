@@ -381,7 +381,7 @@ python3 qa/verification/c67x00_hpi_trace_oracle.py --output research/experiments
 ./run.sh qemu-experiments
 python3 qa/verification/reliability_report.py --output research/experiments/results/reliability.json
 python3 qa/verification/ris_mutation_oracle.py
-python3 qa/verification/ris_trace_oracle.py
+python3 src/gate/ris_trace_oracle.py
 python3 qa/verification/ftgpio_trace_oracle.py
 python3 tools/reporting/generate_paper_results.py
 (cd research/paper && latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex)

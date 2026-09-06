@@ -13,7 +13,7 @@ sys.path.insert(0, ROOT)
 from extractor.formal import walk_leaf_ops
 from backends.subsystem_runner import gpio_callback_plan
 from extractor.formal import parse_expr
-from verification.subsystem_callback_oracle import _eval, _execute
+from gate.subsystem_callback_oracle import _eval, _execute
 
 
 def _seed() -> bytearray:

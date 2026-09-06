@@ -157,9 +157,9 @@ def main() -> int:
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args()
 
-    from verification.backend_lowering_oracle import \
+    from gate.backend_lowering_oracle import \
         build_generation_contract
-    from verification.backend_lowering_plan import build_backend_lowering_plan
+    from gate.backend_lowering_plan import build_backend_lowering_plan
 
     formal = json.load(open(args.formal, encoding="utf-8"))
     contract = build_generation_contract(formal)

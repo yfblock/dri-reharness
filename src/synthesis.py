@@ -10,7 +10,7 @@ import os
 from extractor.formalize import save_formal_text
 from extractor.spec import default_bind, device_spec_to_dict
 from extractor.metrics import score as score_fn
-from verification.backend_lowering_oracle import build_generation_contract
+from gate.backend_lowering_oracle import build_generation_contract
 
 def build_bundle(res, backend, outdir):
     os.makedirs(outdir, exist_ok=True)

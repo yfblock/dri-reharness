@@ -361,7 +361,7 @@ def build_experiment_v2(
             if p not in sys.path:
                 sys.path.insert(0, p)
         from extractor import ExtractorConfig, extract_ris
-        from backend_lowering_oracle import build_generation_contract
+        from gate.backend_lowering_oracle import build_generation_contract
 
         cfg = ExtractorConfig(source=str(src), driver_name=driver_name)
         result = extract_ris(cfg)

@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Mapping
 
-from generated_c_ast_oracle import (  # noqa: E402  (qa/verification on path)
+from gate.generated_c_ast_oracle import (  # noqa: E402
     ANCHOR_PREFIX,
     _load_clang,
 )

@@ -13,7 +13,7 @@ if __package__:
 else:
     from _bootstrap import QA_ROOT, REPO_ROOT as REHARNESS, SOURCE_ROOT
 
-from verification.generated_c_ast_oracle import verify_generated_c_ast
+from gate.generated_c_ast_oracle import verify_generated_c_ast
 
 
 _PYTHON_ENV = os.environ.copy()
@@ -201,7 +201,7 @@ def test_ast_oracle_cli_emits_json_and_nonzero_on_semantic_mismatch(tmp_path):
     output = tmp_path / "nested" / "report.json"
     result = subprocess.run([
         sys.executable,
-        str(QA_ROOT / "verification" / "generated_c_ast_oracle.py"),
+        str(SOURCE_ROOT / "gate" / "generated_c_ast_oracle.py"),
         "--contract", str(contract_path),
         "--generated", str(source),
         "--output", str(output),
@@ -225,8 +225,8 @@ import sys
 from verification import repo_paths as canonical_repo_paths
 sys.modules.setdefault("repo_paths", canonical_repo_paths)
 from extractor.extractor import ExtractorConfig, extract_ris
-from verification.backend_lowering_oracle import build_generation_contract
-from verification.generated_c_ast_oracle import verify_generated_c_ast
+from gate.backend_lowering_oracle import build_generation_contract
+from gate.generated_c_ast_oracle import verify_generated_c_ast
 
 root, output = Path(sys.argv[1]), Path(sys.argv[2])
 result = extract_ris(ExtractorConfig(

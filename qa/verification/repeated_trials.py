@@ -241,7 +241,7 @@ def _receipt_repair(formal, contract, files: dict[str, Path],
     chain; only the official artifact-repair-log append is skipped.
     """
     import repair_lowering as rl
-    from verification.backend_lowering_oracle import verify_backend_lowering
+    from gate.backend_lowering_oracle import verify_backend_lowering
     from backends.llm_bridge import _module_ris
     from langchain_bridge import call_langchain
 
@@ -560,7 +560,7 @@ def main() -> int:
         args.out = str(ROOT / "research" / "experiments" / "results"
                        / f"{DRIVER_TAG}-repeated-trials.json")
 
-    from verification.backend_lowering_oracle import build_generation_contract
+    from gate.backend_lowering_oracle import build_generation_contract
 
     print("loading extraction (cached)...", flush=True)
     res = _load_extraction(str(MANIFEST))

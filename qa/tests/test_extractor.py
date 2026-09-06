@@ -29,7 +29,7 @@ from extractor.dataflow import eval_expr, resolve_addr  # noqa: E402
 from extractor.extractor import ExtractorConfig, extract_ris  # noqa: E402
 from extractor.formal import expr_to_c, formal_display, parse_expr  # noqa: E402
 from verification.check_generalization_guard import check_guard  # noqa: E402
-from verification.callback_binding_oracle import (  # noqa: E402
+from gate.callback_binding_oracle import (  # noqa: E402
     compare_reports as compare_callback_binding_reports,
     mutation_self_test as callback_binding_mutation_self_test,
 )
@@ -44,7 +44,7 @@ BASELINE_ROOT = os.fspath(REPO_ROOT / "benchmarks/drivers/baseline")
 HOLDOUT_ROOT = os.fspath(REPO_ROOT / "benchmarks/drivers/holdout")
 MULTISOURCE_ROOT = os.fspath(REPO_ROOT / "benchmarks/drivers/multisource")
 FIXTURES_ROOT = os.fspath(QA_ROOT / "tests" / "fixtures")
-VERIFICATION_ROOT = os.fspath(QA_ROOT / "verification")
+GATE_ROOT = os.fspath(SOURCE_ROOT / "gate")
 LINUX_SOURCE_ROOT = os.fspath(LINUX_ROOT)
 REPORTING_TOOLS_ROOT = os.fspath(REPO_ROOT / "tools/reporting")
 SOURCE_TOOLS_ROOT = os.fspath(REPO_ROOT / "tools/source")
@@ -3013,9 +3013,9 @@ def test_call_context_proof_uses_canonical_types_for_typedef_arguments():
 
 def test_real_linux_c67x00_multisource_driver():
     from extractor.metrics import count_clang_errors, driver_metrics
-    from verification.backend_lowering_oracle import (
+    from gate.backend_lowering_oracle import (
         build_generation_contract, verify_backend_lowering)
-    from verification.backend_lowering_plan import verify_backend_lowering_plan
+    from gate.backend_lowering_plan import verify_backend_lowering_plan
 
     result = extract_ris(ExtractorConfig(source=C67X00_MULTI))
     assert result.stats["translation_units"] == 4
@@ -3593,7 +3593,7 @@ def test_write_from_read_recipe_prevents_duplicate_hardware_reads():
     from extractor.spec import default_bind
     from backends import baremetal as baremetal_gen
     from backends import harness as harness_gen
-    from verification.backend_lowering_oracle import build_generation_contract
+    from gate.backend_lowering_oracle import build_generation_contract
 
     result = extract_ris(ExtractorConfig(source=FTGPIO))
     contract = build_generation_contract(result.formal)
@@ -3621,7 +3621,7 @@ def test_write_from_read_recipe_prevents_duplicate_hardware_reads():
 
 
 def test_wrapper_summary_operations_receive_lowering_recipes():
-    from verification.backend_lowering_oracle import build_generation_contract
+    from gate.backend_lowering_oracle import build_generation_contract
 
     evidence = {
         "origin": "wrapper_summary",
@@ -3677,7 +3677,7 @@ def test_generation_contract_and_digest_are_pure_and_mutation_sensitive():
     import copy
     from backends.common import lowering_receipt, ris_op_digest
     from backends.linux import _normalize_ops
-    from verification.backend_lowering_oracle import build_generation_contract
+    from gate.backend_lowering_oracle import build_generation_contract
 
     op = {"Write": {
         "op_id": "op_1",
@@ -3745,7 +3745,7 @@ def test_backend_lowering_oracle_cli_exit_status_and_output():
     import subprocess
     import tempfile
     from backends.common import lowering_receipt
-    from verification.backend_lowering_oracle import build_generation_contract
+    from gate.backend_lowering_oracle import build_generation_contract
 
     op = {"Write": {
         "op_id": "op_1",
@@ -3773,7 +3773,7 @@ def test_backend_lowering_oracle_cli_exit_status_and_output():
             handle.write(lowering_receipt(op) + "\n")
         command = [
             sys.executable,
-            os.path.join(VERIFICATION_ROOT,
+            os.path.join(GATE_ROOT,
                          "backend_lowering_oracle.py"),
             "--formal", formal_path,
             "--contract", contract_path,
@@ -4275,7 +4275,7 @@ def test_machine_readable_reliability_report_distinguishes_strict_and_opaque():
 
 
 def test_original_c_and_ris_differential_trace_match():
-    from verification.ris_trace_oracle import verify_path_state_trace
+    from gate.ris_trace_oracle import verify_path_state_trace
 
     result = verify_path_state_trace()
     assert all(case["matched"] for case in result["cases"].values())

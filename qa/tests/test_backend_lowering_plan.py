@@ -15,7 +15,7 @@ if __package__:
 else:
     from _bootstrap import QA_ROOT, SOURCE_ROOT
 
-from verification.backend_lowering_plan import (
+from gate.backend_lowering_plan import (
     build_backend_lowering_plan,
     verify_backend_lowering_plan,
 )
@@ -543,7 +543,7 @@ def _ast_leaf_report(contract: dict, required_ids: list[str],
 
 
 def _runtime_evidence(contract: dict, plan: dict) -> tuple[dict, dict]:
-    from verification.generated_c_ast_oracle import verify_generated_c_ast
+    from gate.generated_c_ast_oracle import verify_generated_c_ast
     from backends.linux.oracles.linux_registration_ast_oracle import (
         linux_kbuild_compile_context,
         verify_linux_registration_ast,
@@ -863,7 +863,7 @@ def test_linux_runtime_route_id_must_be_nonempty():
         assert report["runtime_complete"] is False
         assert report["complete"] is False
 
-    from verification.backend_lowering_plan import _route_fingerprint
+    from gate.backend_lowering_plan import _route_fingerprint
 
     runtime = copy.deepcopy(canonical_runtime)
     operation = runtime["operations"][0]
@@ -1259,7 +1259,7 @@ def test_cli_harness_compatibility_and_linux_requires_device_spec():
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
         base = [
             sys.executable,
-            str(QA_ROOT / "verification" / "backend_lowering_plan.py"),
+            str(SOURCE_ROOT / "gate" / "backend_lowering_plan.py"),
             "--formal", str(formal_path),
             "--contract", str(contract_path),
         ]
@@ -1299,7 +1299,7 @@ def test_cli_linux_device_spec_and_lowering_report():
             paths[key].write_text(json.dumps(value), encoding="utf-8")
         process = subprocess.run([
             sys.executable,
-            str(QA_ROOT / "verification" / "backend_lowering_plan.py"),
+            str(SOURCE_ROOT / "gate" / "backend_lowering_plan.py"),
             "--formal", str(paths["formal"]),
             "--contract", str(paths["contract"]),
             "--backend", "linux",

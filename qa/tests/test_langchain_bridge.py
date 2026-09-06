@@ -787,7 +787,7 @@ def test_generator_evidence_includes_framework_signatures_and_resources():
 
 
 def test_lowering_contract_normalizes_model_receipt_kind_case():
-    from verification.backend_lowering_oracle import verify_backend_lowering
+    from gate.backend_lowering_oracle import verify_backend_lowering
 
     op = {
         "Read": {

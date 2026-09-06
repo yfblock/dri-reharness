@@ -43,8 +43,7 @@ def run_backend_pipeline(res: Any, outdir: str, source: str,
     "return_code", "gen_results", "backend_results"}``.
     """
     root = _repository_root()
-    for entry in (str(root / "src"), str(root / "qa"),
-                  str(root / "qa" / "verification")):
+    for entry in (str(root / "src"),):
         if entry not in sys.path:
             sys.path.insert(0, entry)
 
@@ -60,12 +59,12 @@ def run_backend_pipeline(res: Any, outdir: str, source: str,
     from backends.oracles.virtio_state_oracle import verify_virtio_state_contract
     from backends.oracles.w1c_drain_oracle import (verify_w1c_drain_contract,
                                                    verify_w1c_drain_runtime)
-    from verification.subsystem_callback_oracle import verify_subsystem_callbacks
-    from verification.backend_lowering_oracle import (
+    from gate.subsystem_callback_oracle import verify_subsystem_callbacks
+    from gate.backend_lowering_oracle import (
         build_generation_contract, verify_backend_lowering)
-    from verification.backend_lowering_plan import verify_backend_lowering_plan
-    from verification.generated_c_ast_oracle import verify_generated_c_ast
-    from verification.subsystem_callback_oracle import _eval
+    from gate.backend_lowering_plan import verify_backend_lowering_plan
+    from gate.generated_c_ast_oracle import verify_generated_c_ast
+    from gate.subsystem_callback_oracle import _eval
     from extractor.formalize import save_formal_text
     from extractor.metrics import (_computed_is_lowerable, count_clang_errors,
                                    driver_metrics, format_metrics, format_score,
